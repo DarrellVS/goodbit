@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted-50: 210 40% 98%;
+  --muted-100: 210 40% 96%;
+  --muted-200: 214 32% 91%;
+  --muted-300: 213 27% 84%;
+  --muted-400: 215 20% 65%;
+  --muted-500: 215 16% 47%;
+  --muted-600: 215 19% 35%;
+  --muted-700: 215 25% 27%;
+  --muted-800: 217 33% 17%;
+  --muted-900: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-fg: 222 47% 11%;
+  --primary: 224 76% 50%;
+  --primary-fg: 0 0% 100%;
+  --danger: 0 84% 60%;
+  --danger-fg: 0 0% 100%;
+  --ring: 224 76% 50%;
+  --border: 214 32% 91%;
+}
+
+.dark {
+  --background: 222 47% 5%;
+  --foreground: 210 40% 98%;
+  --muted-50: 222 47% 11%;
+  --muted-100: 217 33% 17%;
+  --muted-200: 215 25% 27%;
+  --muted-300: 215 19% 35%;
+  --muted-400: 215 16% 47%;
+  --muted-500: 215 20% 65%;
+  --muted-600: 213 27% 84%;
+  --muted-700: 214 32% 91%;
+  --muted-800: 210 40% 96%;
+  --muted-900: 210 40% 98%;
+  --card: 222 47% 8%;
+  --card-fg: 210 40% 98%;
+  --primary: 224 76% 60%;
+  --primary-fg: 0 0% 100%;
+  --danger: 0 84% 60%;
+  --danger-fg: 0 0% 100%;
+  --ring: 224 76% 60%;
+  --border: 217 33% 17%;
+}
+
+html, body, #app { height: 100%; }
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.glass {
+  @apply bg-white/70 dark:bg-white/10 backdrop-blur;
+}
+
+.card {
+  @apply rounded-xl shadow-card bg-card border border-border;
+}
+
+.btn {
+  @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium shadow-soft border border-border hover:shadow-md transition;
+}
+.btn-primary { @apply bg-primary text-primary-fg; }
+.btn-danger { @apply bg-danger text-danger-fg; }
+.btn-ghost { @apply bg-transparent; }
+
+.input {
+  @apply w-full rounded-lg border border-border bg-white/60 dark:bg-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-ring;
+}
+
+.skeleton { @apply animate-pulse rounded-lg bg-muted-200 dark:bg-muted-700; }
+
+.clip-card { @apply transition hover:shadow-lg; }
+.clip-thumb { @apply relative overflow-hidden rounded-t-xl; }
+
+

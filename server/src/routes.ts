@@ -4,6 +4,16 @@ import { AppDataSource, VIDEOS_ROOT } from './data-source.js';
 import { Clip } from './entity/Clip.js';
 import { scanAndSyncClips } from './scan.js';
 import trash from 'trash';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegPath from 'ffmpeg-static';
+import path from 'node:path';
+import fsPromises from 'node:fs/promises';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+
+if (ffmpegPath) {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+}
 
 export const router = express.Router();
 
@@ -122,6 +132,53 @@ router.delete('/clips/:id', async (req, res, next) => {
     await trash([clip.filePath]);
     await repo.remove(clip);
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/clips/:id/thumbnail', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const repo = AppDataSource.getRepository(Clip);
+    const clip = await repo.findOneByOrFail({ id });
+
+    const cacheDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'thumbnails');
+    await fsPromises.mkdir(cacheDir, { recursive: true });
+    const key = crypto.createHash('md5').update(clip.filePath).digest('hex') + '.jpg';
+    const thumbPath = path.join(cacheDir, key);
+
+    const maybeServe = async () => {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.sendFile(thumbPath);
+    };
+
+    let needGenerate = true;
+    try {
+      const [tStat, vStat] = await Promise.all([
+        fsPromises.stat(thumbPath),
+        fsPromises.stat(clip.filePath),
+      ]);
+      if (tStat.mtimeMs >= vStat.mtimeMs && tStat.size > 0) {
+        needGenerate = false;
+      }
+    } catch {
+      needGenerate = true;
+    }
+
+    if (!needGenerate) {
+      return void maybeServe();
+    }
+
+    const cmd = ffmpeg(clip.filePath)
+      .frames(1)
+      .seekInput(1)
+      .outputOptions(['-q:v 4'])
+      .output(thumbPath)
+      .on('end', () => maybeServe())
+      .on('error', (err) => next(err));
+    cmd.run();
   } catch (err) {
     next(err);
   }
