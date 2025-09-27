@@ -6,6 +6,7 @@ import { scanAndSyncClips } from './scan.js';
 import trash from 'trash';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
 import path from 'node:path';
 import fsPromises from 'node:fs/promises';
 import fs from 'node:fs';
@@ -13,6 +14,9 @@ import crypto from 'node:crypto';
 
 if (ffmpegPath) {
   ffmpeg.setFfmpegPath(ffmpegPath);
+}
+if (ffprobePath?.path) {
+  ffmpeg.setFfprobePath(ffprobePath.path);
 }
 
 export const router = express.Router();
@@ -179,6 +183,119 @@ router.get('/clips/:id/thumbnail', async (req, res, next) => {
       .on('end', () => maybeServe())
       .on('error', (err) => next(err));
     cmd.run();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/clips/:id/meta', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const repo = AppDataSource.getRepository(Clip);
+    const clip = await repo.findOneByOrFail({ id });
+    ffmpeg.ffprobe(clip.filePath, (err, data) => {
+      if (err) return next(err);
+      const format = data.format || {} as any;
+      const streams = data.streams || [];
+      const v = streams.find(s => (s.codec_type === 'video')) as any;
+      res.json({
+        durationSec: Number(format.duration || 0),
+        width: v?.width || null,
+        height: v?.height || null,
+        codec: v?.codec_name || null,
+        fps: v?.avg_frame_rate || v?.r_frame_rate || null,
+      });
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/clips/:id/frame-strip', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const repo = AppDataSource.getRepository(Clip);
+    const clip = await repo.findOneByOrFail({ id });
+
+    const cacheDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'frames');
+    await fsPromises.mkdir(cacheDir, { recursive: true });
+    const key = crypto.createHash('md5').update(clip.filePath + ':strip').digest('hex') + '.jpg';
+    const stripPath = path.join(cacheDir, key);
+
+    const maybeSend = () => {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      res.sendFile(stripPath);
+    };
+
+    let need = true;
+    try {
+      const [s, v] = await Promise.all([fsPromises.stat(stripPath), fsPromises.stat(clip.filePath)]);
+      if (s.mtimeMs >= v.mtimeMs && s.size > 0) need = false;
+    } catch {}
+
+    if (!need) return void maybeSend();
+
+    // Single-pass contact sheet: sample 10 frames (1 fps as heuristic), scale, and tile horizontally
+    ffmpeg(clip.filePath)
+      .outputOptions([
+        '-frames:v', '1',
+        '-vf', 'fps=1,scale=320:-1,tile=10x1:padding=2:color=black'
+      ])
+      .output(stripPath)
+      .on('end', () => maybeSend())
+      .on('error', (e) => next(e))
+      .run();
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/clips/:id/trim', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const { startSec, endSec } = req.body as { startSec: number; endSec: number };
+    const repo = AppDataSource.getRepository(Clip);
+    const clip = await repo.findOneByOrFail({ id });
+    if (!(startSec >= 0) || !(endSec > startSec)) {
+      return res.status(400).json({ error: 'Invalid range' });
+    }
+
+    const dir = path.dirname(clip.filePath);
+    const ext = path.extname(clip.filePath) || '.mp4';
+    const tmpPath = path.join(dir, `${path.basename(clip.filePath, ext)}.tmp-${Date.now()}${ext}`);
+    const bakPath = `${clip.filePath}.bak`;
+
+    ffmpeg(clip.filePath)
+      .setStartTime(startSec)
+      .setDuration(endSec - startSec)
+      .outputOptions(['-c:v libx264', '-c:a aac', '-preset veryfast', '-y'])
+      .save(tmpPath)
+      .on('end', async () => {
+        try {
+          // Atomic-like swap via .bak
+          try { await fsPromises.rm(bakPath, { force: true }); } catch {}
+          await fsPromises.rename(clip.filePath, bakPath);
+          await fsPromises.rename(tmpPath, clip.filePath);
+          try { await fsPromises.rm(bakPath, { force: true }); } catch {}
+
+          // Update DB metadata
+          const st = await fsPromises.stat(clip.filePath);
+          clip.sizeBytes = st.size;
+          clip.fileModifiedAt = st.mtime;
+          await repo.save(clip);
+
+          res.json({ ok: true });
+        } catch (e) {
+          try { await fsPromises.rm(tmpPath, { force: true }); } catch {}
+          next(e);
+        }
+      })
+      .on('error', async (e) => {
+        try { await fsPromises.rm(tmpPath, { force: true }); } catch {}
+        next(e);
+      });
   } catch (err) {
     next(err);
   }

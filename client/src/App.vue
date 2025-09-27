@@ -8,7 +8,7 @@
     <header class="col-span-2 glass border-b border-border flex items-center justify-between px-6">
       <h1 class="text-2xl font-semibold">Clips</h1>
       <div class="flex items-center gap-3">
-        <input class="input w-96" v-model="searchText" placeholder="Search name or filename" @input="onSearch" />
+        <input class="input w-96" v-model="searchText" placeholder="Search name or filename" />
         <button class="btn" @click="rescan" :disabled="loading">Rescan</button>
       </div>
     </header>
@@ -77,11 +77,6 @@ async function fetchGames() {
 
 function selectGame(g: string) {
   selectedGame.value = g;
-  // TODO: hook this filter into ClipsPage via a store if needed
-}
-
-function onSearch() {
-  // TODO: hook this search into ClipsPage via a store if needed
 }
 
 async function rescan() {

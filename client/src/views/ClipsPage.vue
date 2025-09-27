@@ -1,9 +1,9 @@
 <template>
   <div class="p-6 space-y-6">
-      <section class="h-[calc(100vh-120px)] grid grid-cols-3 gap-6 pr-2">
+      <section class="h-[calc(100vh-120px)] grid grid-cols-3 gap-6 pr-2 h-fit">
         <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
           <div class="aspect-[21/9] bg-black clip-thumb">
-            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" controls preload="none" autoplay class="w-full h-full"></video>
+            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" controls class="w-full h-full" id="preview-video"></video>
             <img v-else :src="`/api/clips/${clip.id}/thumbnail`" alt="thumbnail" class="w-full h-full" />
         </div>
         <div class="p-4 space-y-3">
@@ -18,8 +18,9 @@
             <span>{{ formatSize(clip.sizeBytes) }}</span>
             <span>{{ new Date(clip.fileModifiedAt).toLocaleString() }}</span>
           </div>
-            <div class="flex justify-end gap-2">
-              <button class="btn btn-danger" @click="remove(clip)">Delete</button>
+          <div class="flex justify-between gap-2">
+            <RouterLink class="btn" :to="`/trim/${clip.id}`">Trim</RouterLink>
+            <button class="btn btn-danger" @click="remove(clip)">Delete</button>
           </div>
         </div>
       </article>
@@ -34,7 +35,8 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, computed, ref } from 'vue';
+import { onMounted, computed, ref, watch, nextTick } from 'vue';
+import { RouterLink } from 'vue-router';
 import axios from 'axios';
 import { useClipsStore, type Clip } from '../stores/clips';
 
@@ -43,7 +45,7 @@ const clips = computed(() => store.items);
 const total = computed(() => store.total);
 const page = computed(() => store.page);
 const pageSize = computed(() => store.pageSize);
-const hoveredId = ref<number | null>(11);
+const hoveredId = ref<number | null>(null);
 
 function goto(p: number) {
   store.goto(p);
@@ -71,6 +73,13 @@ async function remove(clip: Clip) {
   await axios.delete(`/api/clips/${clip.id}`);
   await store.fetchClips();
 }
+
+watch(hoveredId, () => {
+  setTimeout(() => {
+    const video = document.getElementById('preview-video') as HTMLVideoElement;
+    if (video) video.play().catch(() => {});
+  }, 100);
+});
 
 onMounted(() => store.fetchClips());
 </script>
