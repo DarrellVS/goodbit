@@ -3,7 +3,7 @@
       <section class="h-[calc(100vh-120px)] grid grid-cols-3 gap-6 pr-2 h-fit">
         <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
           <div class="aspect-[21/9] bg-black clip-thumb">
-            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" controls class="w-full h-full" id="preview-video" preload="none"></video>
+            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" id="preview-video" class="w-full h-full" preload="none" autoplay muted controls></video>
             <img v-else :src="`/api/clips/${clip.id}/thumbnail`" alt="thumbnail" class="w-full h-full" />
         </div>
         <div class="p-4 space-y-3">
@@ -19,7 +19,10 @@
             <span>{{ new Date(clip.fileModifiedAt).toLocaleString() }}</span>
           </div>
           <div class="flex justify-between gap-2">
-            <RouterLink class="btn" :to="`/trim/${clip.id}`">Trim</RouterLink>
+            <div class="flex gap-2">
+              <RouterLink class="btn" :to="`/trim/${clip.id}`">Trim</RouterLink>
+              <button class="btn" @click="open(clip)">Reveal in Explorer</button>
+            </div>
             <button class="btn btn-danger" @click="remove(clip)">Delete</button>
           </div>
         </div>
@@ -74,12 +77,21 @@ async function remove(clip: Clip) {
   await store.fetchClips();
 }
 
+async function open(clip: Clip) {
+  await axios.post(`/api/clips/${clip.id}/open`);
+}
+
+function playVideo() {
+  const video = document.getElementById('preview-video') as HTMLVideoElement;
+  if (video) {
+    video.muted = false;
+    video.play().catch(() => {});
+  }
+}
+
 watch(hoveredId, () => {
-  setTimeout(() => {
-    const video = document.getElementById('preview-video') as HTMLVideoElement;
-    if (video) video.play().catch(() => {});
-  }, 100);
-});
+  setTimeout(playVideo, 50);
+})
 
 onMounted(() => store.fetchClips());
 </script>

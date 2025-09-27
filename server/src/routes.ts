@@ -11,6 +11,7 @@ import path from 'node:path';
 import fsPromises from 'node:fs/promises';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { spawn } from 'node:child_process';
 
 if (ffmpegPath) {
   ffmpeg.setFfmpegPath(ffmpegPath);
@@ -29,6 +30,29 @@ router.post('/scan', async (_req, res, next) => {
   try {
     const result = await scanAndSyncClips();
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/clips/:id/open', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const repo = AppDataSource.getRepository(Clip);
+    const clip = await repo.findOneByOrFail({ id });
+
+    // Windows: open Explorer and select the file
+    const normalized = clip.filePath.replace(/\//g, '\\');
+    const arg = `/select,"${normalized}"`;
+    // Use cmd+start to ensure proper argument parsing and detached launch
+    const child = spawn('cmd', ['/c', 'start', '', 'explorer.exe', arg], {
+      detached: true,
+      stdio: 'ignore',
+      windowsVerbatimArguments: true,
+    });
+    child.unref();
+
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
