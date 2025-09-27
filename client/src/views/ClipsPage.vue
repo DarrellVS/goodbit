@@ -3,7 +3,7 @@
       <section class="h-[calc(100vh-120px)] grid grid-cols-3 gap-6 pr-2 h-fit">
         <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
           <div class="aspect-[21/9] bg-black clip-thumb">
-            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" controls class="w-full h-full" id="preview-video"></video>
+            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" controls class="w-full h-full" id="preview-video" preload="none"></video>
             <img v-else :src="`/api/clips/${clip.id}/thumbnail`" alt="thumbnail" class="w-full h-full" />
         </div>
         <div class="p-4 space-y-3">

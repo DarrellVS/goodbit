@@ -87,8 +87,16 @@ router.get('/clips/:id/stream', async (req, res, next) => {
 
     if (range) {
       const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      let start = parseInt(parts[0], 10);
+      let end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+      if (!Number.isFinite(start) || start < 0) start = 0;
+      if (!Number.isFinite(end) || end >= fileSize) end = fileSize - 1;
+      // If the client requested a stale offset beyond the new file size (after trim), reset to full file
+      if (start >= fileSize || start > end) {
+        start = 0;
+        end = fileSize - 1;
+      }
       const chunkSize = end - start + 1;
       const file = fs.createReadStream(filePath, { start, end });
       const head = {
@@ -96,6 +104,7 @@ router.get('/clips/:id/stream', async (req, res, next) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunkSize,
         'Content-Type': clip.extension.toLowerCase() === 'mov' ? 'video/quicktime' : 'video/mp4',
+        'Cache-Control': 'no-store',
       } as const;
       res.writeHead(206, head);
       file.pipe(res);
@@ -103,6 +112,7 @@ router.get('/clips/:id/stream', async (req, res, next) => {
       const head = {
         'Content-Length': fileSize,
         'Content-Type': clip.extension.toLowerCase() === 'mov' ? 'video/quicktime' : 'video/mp4',
+        'Cache-Control': 'no-store',
       } as const;
       res.writeHead(200, head);
       fs.createReadStream(filePath).pipe(res);
