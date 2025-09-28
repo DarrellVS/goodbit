@@ -4,31 +4,44 @@ import BaseButton from '../Base/BaseButton.vue';
 import { RouterLink } from 'vue-router';
 import type { Clip } from '../../types/clip';
 import { useFormat } from '../../composables/useFormat';
-import axios from '../../axios';
+import { updateClipName, deleteClip, openClip } from '../../services/clips';
 
 const props = defineProps<{ clip: Clip; posterUrl: string; videoUrl: string }>();
-const emit = defineEmits<{ (e: 'updated', clip: Clip): void; (e: 'deleted'): void }>();
+const emit = defineEmits<{ 
+  (e: 'updated', clip: Clip): void;
+  (e: 'deleted'): void 
+  (e: 'isHovered', isHovered: boolean): void
+}>();
 const { formatBytes } = useFormat();
 
 async function updateName(e: Event) {
   const input = e.target as HTMLInputElement;
-  const { data } = await axios.patch<Clip>(`/api/clips/${props.clip.id}`, { displayName: input.value || null });
-  emit('updated', data);
+  const updated = await updateClipName(props.clip.id, input.value || null);
+  emit('updated', updated);
 }
 
 async function remove() {
   if (!confirm(`Move to Recycle Bin and remove from list?\n${props.clip.filename}`)) return;
-  await axios.delete(`/api/clips/${props.clip.id}`);
+  await deleteClip(props.clip.id);
   emit('deleted');
 }
 
 async function open() {
-  await axios.post(`/api/clips/${props.clip.id}/open`);
+  await openClip(props.clip.id);
+}
+
+function onMouseEnter() {
+  console.log('onMouseEnter');
+  emit('isHovered', true);
+}
+
+function onMouseLeave() {
+  emit('isHovered', false);
 }
 </script>
 
 <template>
-  <BaseCard class="clip-card">
+  <BaseCard class="clip-card" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
     <div class="aspect-[21/9] bg-black clip-thumb">
       <video :src="videoUrl" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls :poster="posterUrl"></video>
     </div>

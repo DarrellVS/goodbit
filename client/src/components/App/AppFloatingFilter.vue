@@ -34,8 +34,8 @@ function select(value: string) {
         </div>
 
         <div
-          class="px-4 overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out"
-          :class="open ? 'max-h-[60vh] opacity-100 pb-3' : 'max-h-0 opacity-0 pb-0'"
+          class="px-4 overflow-hidden transition-[max-height,opacity,padding] duration-300 ease-in-out"
+          :class="open ? 'max-h-[60vh] opacity-100 py-3' : 'max-h-0 opacity-0 py-0'"
           @transitionend="onTransitionEnd"
         >
           <div class="flex flex-wrap gap-2">

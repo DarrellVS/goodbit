@@ -1,25 +1,3 @@
-<template>
-  <div class="p-6 space-y-6">
-      <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
-        <AppClipCard
-          v-for="clip in clips"
-          :key="clip.id"
-          :clip="clip"
-          :poster-url="thumbSrc(clip.id)"
-          :video-url="videoSrc(clip.id)"
-          @updated="onCardUpdated"
-          @deleted="onCardDeleted"
-        />
-      </section>
-
-    <footer class="flex items-center justify-center gap-3" v-if="total > pageSize">
-      <button class="btn" :disabled="page === 1" @click="goto(page - 1)">Prev</button>
-      <span>{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
-      <button class="btn" :disabled="page >= Math.ceil(total / pageSize)" @click="goto(page + 1)">Next</button>
-    </footer>
-  </div>
-</template>
-
 <script lang="ts" setup>
 import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
@@ -42,6 +20,10 @@ const hoveredId = ref<number | null>(null);
 
 function goto(p: number) {
   store.goto(p);
+}
+
+function onCardHovered(isHovered: boolean, clipId: number) {
+  hoveredId.value = isHovered ? clipId : null;
 }
 
 function onCardUpdated(updated: Clip) {
@@ -81,5 +63,30 @@ function thumbSrc(id: number) {
   return withAuthToken(`/api/clips/${id}/thumbnail`);
 }
 </script>
+
+<template>
+  <div class="p-6 space-y-6">
+      <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
+        <AppClipCard
+          v-for="clip in clips"
+          :key="clip.id"
+          :clip="clip"
+          :poster-url="thumbSrc(clip.id)"
+          :video-url="videoSrc(clip.id)"
+          @isHovered="isHovered => onCardHovered(isHovered, clip.id)"
+          @updated="onCardUpdated"
+          @deleted="onCardDeleted"
+        />
+      </section>
+
+    <footer class="flex items-center justify-center gap-3" v-if="total > pageSize">
+      <button class="btn" :disabled="page === 1" @click="goto(page - 1)">Prev</button>
+      <span>{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
+      <button class="btn" :disabled="page >= Math.ceil(total / pageSize)" @click="goto(page + 1)">Next</button>
+    </footer>
+  </div>
+</template>
+
+
 
 

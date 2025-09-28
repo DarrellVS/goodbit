@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from '../axios';
+import { fetchGames as fetchGamesService } from '../services/games';
 
 export type GameRow = { game: string; count: number };
 
@@ -9,11 +9,10 @@ export const useGamesStore = defineStore('games', {
     loading: false,
   }),
   actions: {
-    async fetchGames() {
+    async fetchGames(): Promise<void> {
       this.loading = true;
       try {
-        const { data } = await axios.get<GameRow[]>('/api/games');
-        this.items = data;
+        this.items = await fetchGamesService();
       } finally {
         this.loading = false;
       }

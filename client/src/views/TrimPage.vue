@@ -34,7 +34,7 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import RangeTrimSlider from '../components/RangeTrimSlider.vue';
-import axios from '../axios';
+import { getClipMeta, trimClip } from '../services/clips';
 import { useAuthStore } from '../stores/auth';
 import { withAuthToken } from '../utils/withAuthToken';
 import { useClipsStore } from '../stores/clips';
@@ -58,7 +58,7 @@ function videoSrc(id: string) {
 }
 
 async function loadMeta() {
-  const { data } = await axios.get(`/api/clips/${props.id}/meta`);
+  const data = await getClipMeta(Number(props.id));
   duration.value = data.durationSec || 0;
   range.value = [0, Math.max(1, duration.value)];
 }
@@ -67,7 +67,7 @@ async function doTrim() {
   if (saving.value) return;
   saving.value = true;
   try {
-    await axios.post(`/api/clips/${props.id}/trim`, { startSec: range.value[0], endSec: range.value[1] });
+    await trimClip(Number(props.id), range.value[0], range.value[1]);
     await clipsStore.fetchClips();
     await router.push('/');
   } finally {

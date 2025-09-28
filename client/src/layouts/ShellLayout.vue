@@ -12,7 +12,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref, watch, computed } from 'vue';
-import axios from '../axios';
+import { rescanGames } from '../services/games';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import { useAuthStore } from '../stores/auth';
@@ -36,7 +36,7 @@ function selectGame(g: string) {
 async function rescan() {
   isRescanLoading.value = true;
   try {
-    await axios.post('/api/scan');
+    await rescanGames();
     await Promise.all([gamesStore.fetchGames(), clipsStore.fetchClips()]);
   } finally {
     isRescanLoading.value = false;
