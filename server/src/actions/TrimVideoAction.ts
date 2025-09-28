@@ -11,7 +11,20 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, void> {
       ffmpegConfigured(inputPath)
         .setStartTime(startSec)
         .setDuration(duration)
-        .outputOptions(['-c:v libx264', '-c:a aac', '-preset veryfast', '-y'])
+        .outputOptions([
+          '-c:v libx264',
+          '-preset veryfast',
+          '-profile:v main',
+          '-level 4.0',
+          '-pix_fmt yuv420p',
+          '-movflags +faststart',
+          // audio for widest Windows compatibility
+          '-c:a aac',
+          '-b:a 192k',
+          '-ac 2',
+          '-ar 48000',
+          '-y',
+        ])
         .save(outputPath)
         .on('end', () => resolve())
         .on('error', (e: any) => reject(e));
