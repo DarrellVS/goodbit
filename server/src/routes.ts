@@ -21,6 +21,23 @@ if (ffprobePath?.path) {
 
 export const router = express.Router();
 
+async function removeClipCaches(filePath: string): Promise<void> {
+  try {
+    const thumbsDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'thumbnails');
+    const framesDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'frames');
+    const thumbKey = crypto.createHash('md5').update(filePath).digest('hex') + '.jpg';
+    const stripKey = crypto.createHash('md5').update(filePath + ':strip').digest('hex') + '.jpg';
+    const thumbPath = path.join(thumbsDir, thumbKey);
+    const stripPath = path.join(framesDir, stripKey);
+    await Promise.all([
+      fsPromises.rm(thumbPath, { force: true }).catch(() => {}),
+      fsPromises.rm(stripPath, { force: true }).catch(() => {}),
+    ]);
+  } catch {
+    // best-effort cache cleanup; ignore errors
+  }
+}
+
 router.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
@@ -167,6 +184,8 @@ router.delete('/clips/:id', async (req, res, next) => {
 
     // Move to recycle bin for safety
     await trash([clip.filePath]);
+    // Remove cached artifacts (thumbnail, frame strip)
+    await removeClipCaches(clip.filePath);
     await repo.remove(clip);
     res.json({ ok: true });
   } catch (err) {
@@ -318,6 +337,9 @@ router.post('/clips/:id/trim', async (req, res, next) => {
           clip.sizeBytes = st.size;
           clip.fileModifiedAt = st.mtime;
           await repo.save(clip);
+
+          // Invalidate cached artifacts so they regenerate on next request
+          await removeClipCaches(clip.filePath);
 
           res.json({ ok: true });
         } catch (e) {

@@ -31,7 +31,6 @@ async function open() {
 }
 
 function onMouseEnter() {
-  console.log('onMouseEnter');
   emit('isHovered', true);
 }
 
