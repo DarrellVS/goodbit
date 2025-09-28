@@ -13,14 +13,15 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, void> {
         .setDuration(duration)
         .outputOptions([
           '-c:v libx264',
-          '-preset veryfast',
+          '-preset medium',
+          '-crf 18',
           '-profile:v main',
           '-level 4.0',
           '-pix_fmt yuv420p',
           '-movflags +faststart',
           // audio for widest Windows compatibility
           '-c:a aac',
-          '-b:a 192k',
+          '-b:a 256k',
           '-ac 2',
           '-ar 48000',
           '-y',
