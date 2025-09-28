@@ -47,7 +47,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue';
-import { api } from './lib/api';
+import axios from 'axios';
 import { RouterLink, RouterView } from 'vue-router';
 import { useClipsStore } from './stores/clips';
 
@@ -71,8 +71,8 @@ const searchText = ref('');
 const loading = ref(false);
 
 async function fetchGames() {
-  const data = await api.listGames();
-  games.value = data as any;
+  const { data } = await axios.get<GameRow[]>('/api/games');
+  games.value = data;
 }
 
 function selectGame(g: string) {
@@ -82,7 +82,7 @@ function selectGame(g: string) {
 async function rescan() {
   loading.value = true;
   try {
-    await api.scan();
+    await axios.post('/api/scan');
     await Promise.all([fetchGames(), clipsStore.fetchClips()]);
   } finally {
     loading.value = false;

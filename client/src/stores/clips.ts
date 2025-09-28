@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { api } from '../lib/api';
+import axios from 'axios';
 
 export type Clip = {
   id: number;
@@ -30,7 +30,10 @@ export const useClipsStore = defineStore('clips', {
         const params: Record<string, string | number> = { page: this.page, pageSize: this.pageSize };
         if (this.selectedGame) params.game = this.selectedGame;
         if (this.searchText) params.q = this.searchText;
-        const data = await api.listClips(params as any);
+        const { data } = await axios.get<{ items: Clip[]; total: number; page: number; pageSize: number }>(
+          '/api/clips',
+          { params }
+        );
         this.items = data.items;
         this.total = data.total;
       } finally {

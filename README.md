@@ -12,7 +12,6 @@ Folder layout
 -------------
 - Server (API + SQLite via TypeORM): `server/`
 - Client (Vue 3 + Vite): `client/`
- - Desktop (Electron app): `desktop/`
 
 Your clips are expected at:
 ```
@@ -49,23 +48,6 @@ Features
 - Inline rename (stored in DB; files are never renamed)
 - Preview with seeking (HTTP Range streaming for MP4/MOV)
 - Delete -> moves to Windows Recycle Bin, and removes DB entry
-
-Desktop (Electron)
-------------------
-In a single terminal:
-```
-cd desktop
-npm i
-npm run dev
-```
-This starts the client dev server and launches Electron pointing to it.
-
-To build a packaged desktop app:
-```
-cd desktop
-npm run build
-```
-The Electron app embeds the server’s DB and media logic and communicates with the UI via IPC and custom protocols for media/thumbnail streaming.
 
 Configuration
 -------------
