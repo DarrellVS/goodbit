@@ -2,7 +2,7 @@ import { app, BrowserWindow, protocol } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import 'reflect-metadata';
-import { AppDataSource, VIDEOS_ROOT as SERVER_VIDEOS_ROOT } from '../../server/src/data-source.ts';
+import { AppDataSource, VIDEOS_ROOT as SERVER_VIDEOS_ROOT } from './datasource';
 import { registerClipIpc } from './modules/ipc-clips';
 import { registerCustomProtocols } from './modules/protocols';
 
@@ -26,8 +26,11 @@ async function createWindow() {
       nodeIntegration: false,
       autoplayPolicy: 'no-user-gesture-required',
       preload: path.join(__dirname, 'preload.js'),
+      devTools: true,
     },
   });
+
+  win.setMenu(null);
 
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {

@@ -5,7 +5,7 @@ import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
-import { AppDataSource, VIDEOS_ROOT } from '../../../server/src/data-source.ts';
+import { AppDataSource, VIDEOS_ROOT } from '../datasource';
 import { Clip } from '../../../server/src/entity/Clip.ts';
 
 if (ffmpegPath) {
