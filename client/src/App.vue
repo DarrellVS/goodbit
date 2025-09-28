@@ -39,7 +39,7 @@
       </div>
     </aside>
 
-    <main class="p-0">
+    <main class="p-0 overflow-hidden">
       <RouterView />
     </main>
   </div>

@@ -1,5 +1,5 @@
 import { ipcMain, shell } from 'electron';
-import { AppDataSource } from '../datasource';
+import { AppDataSource } from '../../../server/src/data-source.ts';
 import { Clip } from '../../../server/src/entity/Clip.ts';
 import { scanAndSyncClips } from '../../../server/src/scan.ts';
 import ffmpeg from 'fluent-ffmpeg';

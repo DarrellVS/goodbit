@@ -1,9 +1,10 @@
 <template>
   <div class="p-6 space-y-6">
-    <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit">
-      <article v-for="clip in clips" :key="clip.id" class="card clip-card" :id="`clip-card-${clip.id}`" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
-        <div class="aspect-[21/9] bg-black clip-thumb">
-          <video :src="streamUrl(clip.id)" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls @error="onVideoError" :poster="thumbnailUrl(clip.id)" @fullscreenchange="fullscreenCard($event, clip.id)"></video>
+      <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit">
+        <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
+          <div class="aspect-[21/9] bg-black clip-thumb">
+            <video v-if="hoveredId === clip.id" :src="streamUrl(clip.id)" id="preview-video" class="w-full h-full" preload="metadata" autoplay controls @error="onVideoError"></video>
+            <img v-else :src="thumbnailUrl(clip.id)" alt="thumbnail" class="w-full h-full" />
         </div>
         <div class="p-4 space-y-3">
           <input
@@ -37,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, computed, ref, watch } from 'vue';
+import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
 import { api } from '../lib/api';
 import { useClipsStore, type Clip } from '../stores/clips';
@@ -89,22 +90,6 @@ function onVideoError(e: Event) {
   const v = e.target as HTMLVideoElement;
   console.error('Video error', v?.error);
 }
-
-function fullscreenCard(e: Event, id: number) {
-  e.preventDefault();
-  const card = document.getElementById(`clip-card-${id}`) as HTMLDivElement;
-  card.requestFullscreen();
-}
-
-watch(hoveredId, (id) => {
-  const v = document.getElementById(`preview-video-${id}`) as HTMLVideoElement;
-  const otherVideos = document.querySelectorAll(`video:not(#preview-video-${id})`) as NodeListOf<HTMLVideoElement>;
-  otherVideos.forEach(v => {
-    v.pause();
-    v.currentTime = 0;
-  });
-  if (v) v.play().catch(() => {});
-});
 </script>
 
 
