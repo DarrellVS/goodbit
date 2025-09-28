@@ -43,8 +43,10 @@ import axios from '../axios';
 import { useClipsStore, type Clip } from '../stores/clips';
 import { useAuthStore } from '../stores/auth';
 import { withAuthToken } from '../utils/withAuthToken';
+import { useGamesStore } from '../stores/games';
 
 const store = useClipsStore();
+const gamesStore = useGamesStore();
 const auth = useAuthStore();
 const clips = computed(() => store.items);
 const total = computed(() => store.total);
@@ -77,6 +79,7 @@ async function remove(clip: Clip) {
   if (!confirm(`Move to Recycle Bin and remove from list?\n${clip.filename}`)) return;
   await axios.delete(`/api/clips/${clip.id}`);
   await store.fetchClips();
+  await gamesStore.fetchGames();
 }
 
 async function open(clip: Clip) {

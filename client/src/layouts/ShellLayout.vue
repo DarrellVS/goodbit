@@ -9,13 +9,13 @@
       <h1 class="text-2xl font-semibold">Clips</h1>
       <div class="flex items-center gap-3">
         <input class="input w-96" v-model="searchText" placeholder="Search name or filename" />
-        <button class="btn" @click="rescan" :disabled="loading">Rescan</button>
+        <button class="btn" @click="rescan" :disabled="isRescanLoading">Rescan</button>
         <button class="btn" v-if="user" @click="logout">Logout</button>
       </div>
     </header>
 
     <aside class="glass border-r border-border p-4 space-y-4">
-      <h2 class="font-semibold">Games <span class="text-sm text-muted-500">({{ games.length }})</span></h2>
+      <h2 class="font-semibold">Games <span class="text-sm text-muted-500">({{ gamesStore.items.length }})</span></h2>
       <div class="space-y-2 max-h-[calc(100vh-160px)] overflow-auto pr-2">
         <button
           class="w-full text-left btn btn-ghost hover:bg-muted-50"
@@ -23,7 +23,7 @@
         >
           All
         </button>
-        <div v-for="g in games" :key="g.game" class="flex">
+        <div v-for="g in gamesStore.items" :key="g.game" class="flex">
           <button
             class="w-full text-left btn btn-ghost hover:bg-muted-50"
             @click="selectGame(g.game)"
@@ -47,34 +47,28 @@ import axios from '../axios';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import { useAuthStore } from '../stores/auth';
+import { useGamesStore } from '../stores/games';
 
-type GameRow = { game: string; count: number };
-
-const games = ref<GameRow[]>([]);
+const gamesStore = useGamesStore();
 const clipsStore = useClipsStore();
 const selectedGame = ref('');
 const searchText = ref('');
-const loading = ref(false);
+const isRescanLoading = ref(false);
 const auth = useAuthStore();
 const user = computed(() => auth.user);
 const router = useRouter();
-
-async function fetchGames() {
-  const { data } = await axios.get<GameRow[]>('/api/games');
-  games.value = data;
-}
 
 function selectGame(g: string) {
   selectedGame.value = g;
 }
 
 async function rescan() {
-  loading.value = true;
+  isRescanLoading.value = true;
   try {
     await axios.post('/api/scan');
-    await Promise.all([fetchGames(), clipsStore.fetchClips()]);
+    await Promise.all([gamesStore.fetchGames(), clipsStore.fetchClips()]);
   } finally {
-    loading.value = false;
+    isRescanLoading.value = false;
   }
 }
 
@@ -84,7 +78,7 @@ async function logout() {
 }
 
 onMounted(async () => {
-  await fetchGames();
+  await gamesStore.fetchGames();
 });
 
 watch(selectedGame, (g) => {
