@@ -4,13 +4,21 @@ import SettingsPage from './views/SettingsPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import LoginPage from './views/LoginPage.vue';
 import { useAuthStore } from './stores/auth';
+import ShellLayout from './layouts/ShellLayout.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', name: 'login', component: LoginPage },
-    { path: '/', name: 'clips', component: ClipsPage, meta: { requiresAuth: true } },
-    { path: '/settings', name: 'settings', component: SettingsPage, meta: { requiresAuth: true } },
+    {
+      path: '/',
+      component: ShellLayout,
+      meta: { requiresAuth: true },
+      children: [
+        { path: '', name: 'clips', component: ClipsPage },
+        { path: 'settings', name: 'settings', component: SettingsPage },
+      ],
+    },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },
   ],
 });

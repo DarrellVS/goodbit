@@ -42,6 +42,7 @@ import { RouterLink } from 'vue-router';
 import axios from '../axios';
 import { useClipsStore, type Clip } from '../stores/clips';
 import { useAuthStore } from '../stores/auth';
+import { withAuthToken } from '../utils/withAuthToken';
 
 const store = useClipsStore();
 const auth = useAuthStore();
@@ -101,19 +102,12 @@ watch(hoveredId, (id) => {
 
 onMounted(() => store.fetchClips());
 
-function withToken(url: string) {
-  const token = auth.idToken;
-  if (!token) return url;
-  const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}token=${encodeURIComponent(token)}`;
-}
-
 function videoSrc(id: number) {
-  return withToken(`/api/clips/${id}/stream`);
+  return withAuthToken(`/api/clips/${id}/stream`);
 }
 
 function thumbSrc(id: number) {
-  return withToken(`/api/clips/${id}/thumbnail`);
+  return withAuthToken(`/api/clips/${id}/thumbnail`);
 }
 </script>
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full p-6 space-y-6">
+  <div class="h-full p-6 space-y-6 max-w-7xl mx-auto">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Trim Clip</h1>
       <RouterLink class="btn" to="/">Back</RouterLink>
@@ -7,7 +7,7 @@
 
     <div class="card p-4 space-y-4">
       <div class="relative h-24">
-        <img :src="`/api/clips/${id}/frame-strip`" alt="frames" class="w-full h-full object-cover rounded-lg pointer-events-none select-none" draggable="false" />
+        <img :src="withAuthToken(`/api/clips/${id}/frame-strip`)" alt="frames" class="w-full h-full object-cover rounded-lg pointer-events-none select-none" draggable="false" />
         <RangeTrimSlider v-model="range" :max="duration" :step="0.1" :min-steps-between-thumbs="1" />
         <div class="absolute inset-0 pointer-events-none">
           <div class="absolute inset-y-0 left-0 bg-black/30" :style="{ width: pct(range[0]) + '%' }"></div>
@@ -36,9 +36,12 @@ import { RouterLink, useRouter } from 'vue-router';
 import RangeTrimSlider from '../components/RangeTrimSlider.vue';
 import axios from '../axios';
 import { useAuthStore } from '../stores/auth';
+import { withAuthToken } from '../utils/withAuthToken';
+import { useClipsStore } from '../stores/clips';
 
 const props = defineProps<{ id: string }>();
 const auth = useAuthStore();
+const clipsStore = useClipsStore();
 const duration = ref(0);
 const range = ref<[number, number]>([0, 1]);
 const videoEl = ref<HTMLVideoElement | null>(null);
@@ -50,15 +53,8 @@ function pct(s: number) {
   return (s / duration.value) * 100;
 }
 
-function withToken(url: string) {
-  const token = auth.idToken;
-  if (!token) return url;
-  const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}token=${encodeURIComponent(token)}`;
-}
-
 function videoSrc(id: string) {
-  return withToken(`/api/clips/${id}/stream`);
+  return withAuthToken(`/api/clips/${id}/stream`);
 }
 
 async function loadMeta() {
@@ -72,6 +68,7 @@ async function doTrim() {
   saving.value = true;
   try {
     await axios.post(`/api/clips/${props.id}/trim`, { startSec: range.value[0], endSec: range.value[1] });
+    await clipsStore.fetchClips();
     await router.push('/');
   } finally {
     saving.value = false;
