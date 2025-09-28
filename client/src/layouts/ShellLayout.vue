@@ -1,10 +1,5 @@
 <template>
-  <div class="h-full grid grid-cols-[64px_300px_1fr] grid-rows-[72px_1fr]">
-    <nav class="row-span-2 glass border-r border-border flex flex-col items-center gap-4 py-6">
-      <RouterLink class="btn btn-ghost" to="/">🎞️</RouterLink>
-      <RouterLink class="btn btn-ghost" to="/settings">⚙️</RouterLink>
-    </nav>
-
+  <div class="h-full grid grid-cols-[300px_1fr] grid-rows-[72px_1fr]">
     <header class="col-span-2 glass border-b border-border flex items-center justify-between px-6">
       <h1 class="text-2xl font-semibold">Clips</h1>
       <div class="flex items-center gap-3">

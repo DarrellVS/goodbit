@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
-import SettingsPage from './views/SettingsPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import LoginPage from './views/LoginPage.vue';
 import { useAuthStore } from './stores/auth';
@@ -16,7 +15,6 @@ export const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         { path: '', name: 'clips', component: ClipsPage },
-        { path: 'settings', name: 'settings', component: SettingsPage },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },
