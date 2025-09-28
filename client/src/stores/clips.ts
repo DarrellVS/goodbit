@@ -18,7 +18,7 @@ export const useClipsStore = defineStore('clips', {
     items: [] as Clip[],
     total: 0,
     page: 1,
-    pageSize: 50,
+    pageSize: 10,
     selectedGame: '',
     searchText: '',
     loading: false,

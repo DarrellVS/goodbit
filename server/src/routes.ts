@@ -9,12 +9,11 @@ import ffmpegPath from 'ffmpeg-static';
 import ffprobePath from 'ffprobe-static';
 import path from 'node:path';
 import fsPromises from 'node:fs/promises';
-import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 
 if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
+  ffmpeg.setFfmpegPath(ffmpegPath as unknown as string);
 }
 if (ffprobePath?.path) {
   ffmpeg.setFfprobePath(ffprobePath.path);
@@ -215,7 +214,7 @@ router.get('/clips/:id/thumbnail', async (req, res, next) => {
       .outputOptions(['-q:v 4'])
       .output(thumbPath)
       .on('end', () => maybeServe())
-      .on('error', (err) => next(err));
+      .on('error', (err: any) => next(err));
     cmd.run();
   } catch (err) {
     next(err);
@@ -227,11 +226,11 @@ router.get('/clips/:id/meta', async (req, res, next) => {
     const id = Number(req.params.id);
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id });
-    ffmpeg.ffprobe(clip.filePath, (err, data) => {
+    ffmpeg.ffprobe(clip.filePath, (err: any, data: any) => {
       if (err) return next(err);
       const format = data.format || {} as any;
       const streams = data.streams || [];
-      const v = streams.find(s => (s.codec_type === 'video')) as any;
+      const v = streams.find((s: any) => (s.codec_type === 'video')) as any;
       res.json({
         durationSec: Number(format.duration || 0),
         width: v?.width || null,
@@ -278,7 +277,7 @@ router.get('/clips/:id/frame-strip', async (req, res, next) => {
       ])
       .output(stripPath)
       .on('end', () => maybeSend())
-      .on('error', (e) => next(e))
+      .on('error', (e: any) => next(e))
       .run();
 
   } catch (err) {
@@ -326,7 +325,7 @@ router.post('/clips/:id/trim', async (req, res, next) => {
           next(e);
         }
       })
-      .on('error', async (e) => {
+      .on('error', async (e: any) => {
         try { await fsPromises.rm(tmpPath, { force: true }); } catch {}
         next(e);
       });

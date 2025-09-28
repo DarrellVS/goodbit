@@ -1,10 +1,9 @@
 <template>
   <div class="p-6 space-y-6">
-      <section class="h-[calc(100vh-120px)] grid grid-cols-3 gap-6 pr-2 h-fit">
+      <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
         <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
           <div class="aspect-[21/9] bg-black clip-thumb">
-            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" id="preview-video" class="w-full h-full" preload="none" autoplay muted controls></video>
-            <img v-else :src="`/api/clips/${clip.id}/thumbnail`" alt="thumbnail" class="w-full h-full" />
+            <video :src="`/api/clips/${clip.id}/stream`" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls :poster="`/api/clips/${clip.id}/thumbnail`" @fullscreenchange="fullscreenCard($event, clip.id)"></video>
         </div>
         <div class="p-4 space-y-3">
           <input
@@ -81,17 +80,22 @@ async function open(clip: Clip) {
   await axios.post(`/api/clips/${clip.id}/open`);
 }
 
-function playVideo() {
-  const video = document.getElementById('preview-video') as HTMLVideoElement;
-  if (video) {
-    video.muted = false;
-    video.play().catch(() => {});
-  }
+function fullscreenCard(e: Event, id: number) {
+  e.preventDefault();
+  const card = document.getElementById(`clip-card-${id}`) as HTMLDivElement;
+  card.requestFullscreen();
 }
 
-watch(hoveredId, () => {
-  setTimeout(playVideo, 50);
-})
+watch(hoveredId, (id) => {
+  const v = document.getElementById(`preview-video-${id}`) as HTMLVideoElement;
+  const otherVideos = document.querySelectorAll(`video:not(#preview-video-${id})`) as NodeListOf<HTMLVideoElement>;
+  otherVideos.forEach(v => {
+    v.pause();
+    v.currentTime = 0;
+  });
+  if (v) v.play().catch(() => {});
+});
+
 
 onMounted(() => store.fetchClips());
 </script>
