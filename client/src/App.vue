@@ -10,6 +10,7 @@
       <div class="flex items-center gap-3">
         <input class="input w-96" v-model="searchText" placeholder="Search name or filename" />
         <button class="btn" @click="rescan" :disabled="loading">Rescan</button>
+        <button class="btn" v-if="user" @click="logout">Logout</button>
       </div>
     </header>
 
@@ -46,10 +47,11 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watch } from 'vue';
-import axios from 'axios';
+import { onMounted, ref, watch, computed } from 'vue';
+import axios from './axios';
 import { RouterLink, RouterView } from 'vue-router';
 import { useClipsStore } from './stores/clips';
+import { useAuthStore } from './stores/auth';
 
 type GameRow = { game: string; count: number };
 type Clip = {
@@ -69,6 +71,8 @@ const clipsStore = useClipsStore();
 const selectedGame = ref('');
 const searchText = ref('');
 const loading = ref(false);
+const auth = useAuthStore();
+const user = computed(() => auth.user);
 
 async function fetchGames() {
   const { data } = await axios.get<GameRow[]>('/api/games');
@@ -87,6 +91,10 @@ async function rescan() {
   } finally {
     loading.value = false;
   }
+}
+
+async function logout() {
+  await auth.logout();
 }
 
 onMounted(async () => {

@@ -3,7 +3,7 @@
       <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
         <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
           <div class="aspect-[21/9] bg-black clip-thumb">
-            <video :src="`/api/clips/${clip.id}/stream`" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls :poster="`/api/clips/${clip.id}/thumbnail`" @fullscreenchange="fullscreenCard($event, clip.id)"></video>
+            <video :src="videoSrc(clip.id)" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls :poster="thumbSrc(clip.id)" @fullscreenchange="fullscreenCard($event, clip.id)"></video>
         </div>
         <div class="p-4 space-y-3">
           <input
@@ -39,10 +39,12 @@
 <script lang="ts" setup>
 import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
-import axios from 'axios';
+import axios from '../axios';
 import { useClipsStore, type Clip } from '../stores/clips';
+import { useAuthStore } from '../stores/auth';
 
 const store = useClipsStore();
+const auth = useAuthStore();
 const clips = computed(() => store.items);
 const total = computed(() => store.total);
 const page = computed(() => store.page);
@@ -98,6 +100,21 @@ watch(hoveredId, (id) => {
 
 
 onMounted(() => store.fetchClips());
+
+function withToken(url: string) {
+  const token = auth.idToken;
+  if (!token) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}token=${encodeURIComponent(token)}`;
+}
+
+function videoSrc(id: number) {
+  return withToken(`/api/clips/${id}/stream`);
+}
+
+function thumbSrc(id: number) {
+  return withToken(`/api/clips/${id}/thumbnail`);
+}
 </script>
 
 

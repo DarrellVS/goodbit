@@ -6,6 +6,7 @@ import path from 'node:path';
 import { AppDataSource, VIDEOS_ROOT } from './data-source.js';
 import { router } from './routes.js';
 import { scanAndSyncClips } from './scan.js';
+import { verifyFirebaseToken } from './auth.js';
 
 dotenv.config();
 
@@ -13,7 +14,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api', router);
+// Public health endpoint
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// Protect the rest of the API
+app.use('/api', verifyFirebaseToken, router);
 
 const PORT = Number(process.env.PORT || 4000);
 

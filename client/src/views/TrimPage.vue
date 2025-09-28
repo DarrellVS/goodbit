@@ -25,7 +25,7 @@
     </div>
 
     <div class="card p-4">
-      <video ref="videoEl" :src="`/api/clips/${id}/stream`" controls preload="metadata" class="w-full rounded-lg"></video>
+      <video ref="videoEl" :src="videoSrc(id)" controls preload="metadata" class="w-full rounded-lg"></video>
     </div>
   </div>
 </template>
@@ -34,9 +34,11 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import RangeTrimSlider from '../components/RangeTrimSlider.vue';
-import axios from 'axios';
+import axios from '../axios';
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps<{ id: string }>();
+const auth = useAuthStore();
 const duration = ref(0);
 const range = ref<[number, number]>([0, 1]);
 const videoEl = ref<HTMLVideoElement | null>(null);
@@ -46,6 +48,17 @@ const router = useRouter();
 function pct(s: number) {
   if (!duration.value) return 0;
   return (s / duration.value) * 100;
+}
+
+function withToken(url: string) {
+  const token = auth.idToken;
+  if (!token) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}token=${encodeURIComponent(token)}`;
+}
+
+function videoSrc(id: string) {
+  return withToken(`/api/clips/${id}/stream`);
 }
 
 async function loadMeta() {
