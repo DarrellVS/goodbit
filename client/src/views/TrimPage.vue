@@ -7,7 +7,7 @@
 
     <div class="card p-4 space-y-4">
       <div class="relative h-24">
-        <img :src="`/api/clips/${id}/frame-strip`" alt="frames" class="w-full h-full object-cover rounded-lg pointer-events-none select-none" draggable="false" />
+        <img :src="frameStripUrl(id)" alt="frames" class="w-full h-full object-cover rounded-lg pointer-events-none select-none" draggable="false" />
         <RangeTrimSlider v-model="range" :max="duration" :step="0.1" :min-steps-between-thumbs="1" />
         <div class="absolute inset-0 pointer-events-none">
           <div class="absolute inset-y-0 left-0 bg-black/30" :style="{ width: pct(range[0]) + '%' }"></div>
@@ -25,7 +25,7 @@
     </div>
 
     <div class="card p-4">
-      <video ref="videoEl" :src="`/api/clips/${id}/stream`" controls preload="metadata" class="w-full rounded-lg"></video>
+      <video ref="videoEl" :src="streamUrl(id)" controls preload="metadata" playsinline class="w-full rounded-lg"></video>
     </div>
   </div>
 </template>
@@ -34,7 +34,7 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import RangeTrimSlider from '../components/RangeTrimSlider.vue';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 const props = defineProps<{ id: string }>();
 const duration = ref(0);
@@ -49,8 +49,8 @@ function pct(s: number) {
 }
 
 async function loadMeta() {
-  const { data } = await axios.get(`/api/clips/${props.id}/meta`);
-  duration.value = data.durationSec || 0;
+  const data = await api.meta(Number(props.id));
+  duration.value = (data as any).durationSec || 0;
   range.value = [0, Math.max(1, duration.value)];
 }
 
@@ -58,7 +58,7 @@ async function doTrim() {
   if (saving.value) return;
   saving.value = true;
   try {
-    await axios.post(`/api/clips/${props.id}/trim`, { startSec: range.value[0], endSec: range.value[1] });
+    await api.trim(Number(props.id), { startSec: range.value[0], endSec: range.value[1] });
     await router.push('/');
   } finally {
     saving.value = false;
@@ -120,6 +120,9 @@ onBeforeUnmount(() => {
   v.removeEventListener('loadedmetadata', handleLoadedMetadata);
   window.removeEventListener('keydown', handleKeydown, { capture: true } as any);
 });
+
+function streamUrl(id: string) { return api.streamUrl(id); }
+function frameStripUrl(id: string) { return api.frameStripUrl(id); }
 </script>
 
 

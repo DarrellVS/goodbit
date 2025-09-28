@@ -1,10 +1,10 @@
 <template>
   <div class="p-6 space-y-6">
-      <section class="h-[calc(100vh-120px)] grid grid-cols-3 gap-6 pr-2 h-fit">
+      <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit">
         <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
           <div class="aspect-[21/9] bg-black clip-thumb">
-            <video v-if="hoveredId === clip.id" :src="`/api/clips/${clip.id}/stream`" id="preview-video" class="w-full h-full" preload="none" autoplay muted controls></video>
-            <img v-else :src="`/api/clips/${clip.id}/thumbnail`" alt="thumbnail" class="w-full h-full" />
+            <video v-if="hoveredId === clip.id" :src="streamUrl(clip.id)" id="preview-video" class="w-full h-full" preload="metadata" autoplay controls @error="onVideoError"></video>
+            <img v-else :src="thumbnailUrl(clip.id)" alt="thumbnail" class="w-full h-full" />
         </div>
         <div class="p-4 space-y-3">
           <input
@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
-import axios from 'axios';
+import { api } from '../lib/api';
 import { useClipsStore, type Clip } from '../stores/clips';
 
 const store = useClipsStore();
@@ -66,34 +66,30 @@ function formatSize(bytes: number) {
 }
 
 async function updateName(clip: Clip, name: string) {
-  const { data } = await axios.patch<Clip>(`/api/clips/${clip.id}`, { displayName: name || null });
+  const data = await api.updateClip(clip.id, { displayName: name || null });
   const idx = store.items.findIndex(c => c.id === clip.id);
-  if (idx >= 0) store.items[idx] = data;
+  if (idx >= 0) store.items[idx] = data as any;
 }
 
 async function remove(clip: Clip) {
   if (!confirm(`Move to Recycle Bin and remove from list?\n${clip.filename}`)) return;
-  await axios.delete(`/api/clips/${clip.id}`);
+  await api.deleteClip(clip.id);
   await store.fetchClips();
 }
 
 async function open(clip: Clip) {
-  await axios.post(`/api/clips/${clip.id}/open`);
+  await api.openClip(clip.id);
 }
-
-function playVideo() {
-  const video = document.getElementById('preview-video') as HTMLVideoElement;
-  if (video) {
-    video.muted = false;
-    video.play().catch(() => {});
-  }
-}
-
-watch(hoveredId, () => {
-  setTimeout(playVideo, 50);
-})
 
 onMounted(() => store.fetchClips());
+
+function streamUrl(id: number) { return api.streamUrl(id); }
+function thumbnailUrl(id: number) { return api.thumbnailUrl(id); }
+
+function onVideoError(e: Event) {
+  const v = e.target as HTMLVideoElement;
+  console.error('Video error', v?.error);
+}
 </script>
 
 
