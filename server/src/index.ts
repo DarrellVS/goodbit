@@ -2,11 +2,11 @@ import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'node:path';
 import { AppDataSource, VIDEOS_ROOT } from './data-source.js';
-import { router } from './routes.js';
-import { scanAndSyncClips } from './scan.js';
+import { apiRouter } from './routes/index.js';
+import { videoService } from './services/videoService.js';
 import { verifyFirebaseToken } from './auth.js';
+import { errorHandler } from './middlewares/errorHandler.js';
 
 dotenv.config();
 
@@ -18,7 +18,10 @@ app.use(express.json());
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // Protect the rest of the API
-app.use('/api', verifyFirebaseToken, router);
+app.use('/api', verifyFirebaseToken, apiRouter);
+
+// Global error handler (last)
+app.use(errorHandler);
 
 const PORT = Number(process.env.PORT || 4000);
 
@@ -26,7 +29,7 @@ async function start() {
   await AppDataSource.initialize();
   // Initial scan at startup
   try {
-    await scanAndSyncClips();
+    await videoService.scanAndSyncClips();
     console.log('Initial scan completed');
   } catch (err) {
     console.error('Initial scan failed:', err);
