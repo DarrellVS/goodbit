@@ -1,32 +1,16 @@
 <template>
   <div class="p-6 space-y-6">
       <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
-        <article v-for="clip in clips" :key="clip.id" class="card clip-card" @mouseenter="hoveredId = clip.id" @mouseleave="hoveredId = null">
-          <div class="aspect-[21/9] bg-black clip-thumb">
-            <video :src="videoSrc(clip.id)" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls :poster="thumbSrc(clip.id)" @fullscreenchange="fullscreenCard($event, clip.id)"></video>
-        </div>
-        <div class="p-4 space-y-3">
-          <input
-            class="input"
-            :value="clip.displayName ?? ''"
-            :placeholder="clip.filename"
-            @change="e => updateName(clip, (e.target as HTMLInputElement).value)"
-          />
-          <div class="text-sm text-muted-500 flex gap-4">
-            <span>{{ clip.game }}</span>
-            <span>{{ formatSize(clip.sizeBytes) }}</span>
-            <span>{{ new Date(clip.fileModifiedAt).toLocaleString() }}</span>
-          </div>
-          <div class="flex justify-between gap-2">
-            <div class="flex gap-2">
-              <RouterLink class="btn" :to="`/trim/${clip.id}`">Trim</RouterLink>
-              <button class="btn" @click="open(clip)">Reveal in Explorer</button>
-            </div>
-            <button class="btn btn-danger" @click="remove(clip)">Delete</button>
-          </div>
-        </div>
-      </article>
-    </section>
+        <AppClipCard
+          v-for="clip in clips"
+          :key="clip.id"
+          :clip="clip"
+          :poster-url="thumbSrc(clip.id)"
+          :video-url="videoSrc(clip.id)"
+          @updated="onCardUpdated"
+          @deleted="onCardDeleted"
+        />
+      </section>
 
     <footer class="flex items-center justify-center gap-3" v-if="total > pageSize">
       <button class="btn" :disabled="page === 1" @click="goto(page - 1)">Prev</button>
@@ -40,10 +24,12 @@
 import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
 import axios from '../axios';
-import { useClipsStore, type Clip } from '../stores/clips';
+import { useClipsStore } from '../stores/clips';
+import type { Clip } from '../types/clip';
 import { useAuthStore } from '../stores/auth';
 import { withAuthToken } from '../utils/withAuthToken';
 import { useGamesStore } from '../stores/games';
+import AppClipCard from '../components/App/AppClipCard.vue';
 
 const store = useClipsStore();
 const gamesStore = useGamesStore();
@@ -58,32 +44,14 @@ function goto(p: number) {
   store.goto(p);
 }
 
-function formatSize(bytes: number) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let b = bytes;
-  let i = 0;
-  while (b >= 1024 && i < units.length - 1) {
-    b /= 1024;
-    i++;
-  }
-  return `${b.toFixed(1)} ${units[i]}`;
+function onCardUpdated(updated: Clip) {
+  const idx = store.items.findIndex(c => c.id === updated.id);
+  if (idx >= 0) store.items[idx] = updated;
 }
 
-async function updateName(clip: Clip, name: string) {
-  const { data } = await axios.patch<Clip>(`/api/clips/${clip.id}`, { displayName: name || null });
-  const idx = store.items.findIndex(c => c.id === clip.id);
-  if (idx >= 0) store.items[idx] = data;
-}
-
-async function remove(clip: Clip) {
-  if (!confirm(`Move to Recycle Bin and remove from list?\n${clip.filename}`)) return;
-  await axios.delete(`/api/clips/${clip.id}`);
+async function onCardDeleted() {
   await store.fetchClips();
   await gamesStore.fetchGames();
-}
-
-async function open(clip: Clip) {
-  await axios.post(`/api/clips/${clip.id}/open`);
 }
 
 function fullscreenCard(e: Event, id: number) {

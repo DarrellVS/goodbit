@@ -1,17 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from '../axios';
-
-export type Clip = {
-  id: number;
-  filePath: string;
-  relPath: string;
-  game: string;
-  filename: string;
-  displayName: string | null;
-  extension: string;
-  sizeBytes: number;
-  fileModifiedAt: string;
-};
+import type { Clip } from '../types/clip';
 
 export const useClipsStore = defineStore('clips', {
   state: () => ({
