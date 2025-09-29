@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed, watch, nextTick } from 'vue';
 import emblaCarouselVue from 'embla-carousel-vue';
 import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'radix-vue';
 import { useClipsStore } from '../stores/clips';
@@ -22,10 +22,18 @@ const selectedIndex = ref(0);
 const canPrev = ref(false);
 const canNext = ref(false);
 function onSelect() {
-  if (!emblaApi.value) return;
-  selectedIndex.value = emblaApi.value.selectedScrollSnap();
-  canPrev.value = emblaApi.value.canScrollPrev();
-  canNext.value = emblaApi.value.canScrollNext();
+  const api = emblaApi.value;
+  if (!api) return;
+  const count = typeof api.slideNodes === 'function' ? api.slideNodes().length : 0;
+  if (count === 0) {
+    selectedIndex.value = 0;
+    canPrev.value = false;
+    canNext.value = false;
+    return;
+  }
+  selectedIndex.value = api.selectedScrollSnap();
+  canPrev.value = api.canScrollPrev();
+  canNext.value = api.canScrollNext();
 }
 
 function prev() { emblaApi.value?.scrollPrev(); }
@@ -38,6 +46,14 @@ watch(emblaApi, (api) => {
     api.on('reInit', onSelect);
     onSelect();
   }
+});
+
+watch(todayClips, async () => {
+  const api = emblaApi.value;
+  if (!api) return;
+  await nextTick();
+  api.reInit();
+  onSelect();
 });
 
 async function onRename(clipId: number, name: string) {
@@ -57,8 +73,7 @@ onMounted(() => store.fetchClips());
 
 <template>
   <div class="p-6 space-y-6 max-w-7xl mx-auto mt-12">
-    <template v-if="todayClips.length > 0">
-      <div class="embla relative group">
+    <div class="embla relative group">
         <div class="embla__viewport" ref="emblaRef">
           <div class="embla__container">
               <div class="embla__slide" v-for="(clip, idx) in todayClips" :key="clip.id" :class="{ 'is-active': selectedIndex === idx }">
@@ -83,6 +98,7 @@ onMounted(() => store.fetchClips());
           :disabled="!canPrev"
           aria-label="Previous"
           @click="prev"
+          v-if="todayClips.length > 0"
         >
           <Icon icon="radix-icons:chevron-left" class="text-neutral-200 text-xl" />
         </button>
@@ -92,6 +108,7 @@ onMounted(() => store.fetchClips());
           :disabled="!canNext"
           aria-label="Next"
           @click="next"
+          v-if="todayClips.length > 0"
         >
           <Icon icon="radix-icons:chevron-right" class="text-neutral-200 text-xl" />
         </button>
@@ -107,8 +124,7 @@ onMounted(() => store.fetchClips());
           </div>
         </div>
       </div>
-    </template>
-    <div v-else class="py-24 flex flex-col items-center justify-center text-center gap-4 opacity-80">
+    <div v-if="todayClips.length === 0" class="py-24 flex flex-col items-center justify-center text-center gap-4 opacity-80">
       <div class="rounded-full w-20 h-20 flex items-center justify-center bg-muted-800 border border-border">
         <Icon icon="radix-icons:video" class="text-3xl text-muted-300" />
       </div>
