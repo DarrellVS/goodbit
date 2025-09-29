@@ -8,6 +8,8 @@ export type Clip = {
   extension: string;
   sizeBytes: number;
   fileModifiedAt: string;
+  published?: boolean;
+  publishedUrl?: string | null;
 };
 
 

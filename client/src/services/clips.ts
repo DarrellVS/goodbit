@@ -31,4 +31,14 @@ export async function trimClip(id: number, startSec: number, endSec: number): Pr
   await axios.post(`/api/clips/${id}/trim`, { startSec, endSec });
 }
 
+export async function publishClip(id: number): Promise<Clip> {
+  const { data } = await axios.post<Clip>(`/api/clips/${id}/publish`);
+  return data;
+}
+
+export async function unpublishClip(id: number): Promise<Clip> {
+  const { data } = await axios.post<Clip>(`/api/clips/${id}/unpublish`);
+  return data;
+}
+
 

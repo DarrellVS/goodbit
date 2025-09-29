@@ -37,6 +37,12 @@ export class Clip {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @Column({ type: 'boolean', default: false })
+  published!: boolean;
+
+  @Column('text', { nullable: true })
+  publishedUrl!: string | null;
 }
 
 

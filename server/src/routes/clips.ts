@@ -4,6 +4,8 @@ import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
+import { PublishClipAction } from '../actions/PublishClipAction.js';
+import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 
 export const clipsRouter = express.Router();
 
@@ -117,6 +119,20 @@ clipsRouter.post('/:id/trim', asyncHandler(async (req, res) => {
   }
   await videoService.trimAndSwapClip(id, startSec, endSec);
   res.json({ ok: true });
+}));
+
+clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const action = new PublishClipAction();
+  const { clip } = await action.execute({ id });
+  res.json(clip);
+}));
+
+clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const action = new UnpublishClipAction();
+  const { clip } = await action.execute({ id });
+  res.json(clip);
 }));
 
 

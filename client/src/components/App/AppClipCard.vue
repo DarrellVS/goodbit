@@ -5,6 +5,8 @@ import { RouterLink } from 'vue-router';
 import type { Clip } from '../../types/clip';
 import { useFormat } from '../../composables/useFormat';
 import { updateClipName, deleteClip, openClip } from '../../services/clips';
+import { publishClip, unpublishClip } from '../../services/clips';
+import { ref } from 'vue';
 
 const props = defineProps<{ clip: Clip; posterUrl: string; videoUrl: string }>();
 const emit = defineEmits<{ 
@@ -13,6 +15,8 @@ const emit = defineEmits<{
   (e: 'isHovered', isHovered: boolean): void
 }>();
 const { formatBytes } = useFormat();
+const isPublishing = ref(false);
+const lastPublishedUrl = ref<string | null>(null);
 
 async function updateName(e: Event) {
   const input = e.target as HTMLInputElement;
@@ -28,6 +32,39 @@ async function remove() {
 
 async function open() {
   await openClip(props.clip.id);
+}
+
+async function publish() {
+  if (isPublishing.value) return;
+  isPublishing.value = true;
+  try {
+    const updated = await publishClip(props.clip.id);
+    emit('updated', updated);
+    if (updated.publishedUrl) {
+      lastPublishedUrl.value = updated.publishedUrl;
+      await navigator.clipboard.writeText(updated.publishedUrl).catch(() => {});
+    }
+  } finally {
+    isPublishing.value = false;
+  }
+}
+
+async function unpublish() {
+  if (isPublishing.value) return;
+  isPublishing.value = true;
+  try {
+    const updated = await unpublishClip(props.clip.id);
+    emit('updated', updated);
+    lastPublishedUrl.value = null;
+  } finally {
+    isPublishing.value = false;
+  }
+}
+
+async function copyUrl() {
+  const url = props.clip.publishedUrl;
+  if (!url) return;
+  await navigator.clipboard.writeText(url).catch(() => {});
 }
 
 function onMouseEnter() {
@@ -52,11 +89,22 @@ function onMouseLeave() {
         <span>{{ new Date(clip.fileModifiedAt).toLocaleString() }}</span>
       </div>
       <div class="flex justify-between gap-2">
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
           <RouterLink class="btn" :to="`/trim/${clip.id}`">Trim</RouterLink>
           <BaseButton @click="open">Reveal in Explorer</BaseButton>
+          <BaseButton v-if="!clip.published" :disabled="isPublishing" @click="publish">
+            <span v-if="isPublishing">Publishing…</span>
+            <span v-else>Publish</span>
+          </BaseButton>
+          <BaseButton v-else variant="danger" :disabled="isPublishing" @click="unpublish">
+            <span v-if="isPublishing">Unpublishing…</span>
+            <span v-else>Unpublish</span>
+          </BaseButton>
+          <BaseButton v-if="clip.published && clip.publishedUrl" variant="outline" @click="copyUrl">
+            Copy URL
+          </BaseButton>
         </div>
-        <BaseButton variant="danger" @click="remove">Delete</BaseButton>
+        <BaseButton variant="danger" class="h-fit" @click="remove">Delete</BaseButton>
       </div>
     </div>
   </BaseCard>

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { AppDataSource, VIDEOS_ROOT } from './data-source.js';
 import { apiRouter } from './routes/index.js';
 import { videoService } from './services/videoService.js';
+import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { verifyFirebaseToken } from './auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -34,6 +35,14 @@ async function start() {
   } catch (err) {
     console.error('Initial scan failed:', err);
   }
+  
+  try {
+    const syncResult = await new SyncPublisherAction().execute();
+    console.log('Publisher sync completed', syncResult);
+  } catch (err) {
+    console.error('Publisher sync failed:', err);
+  }
+
   app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
     console.log(`VIDEOS_ROOT=${VIDEOS_ROOT}`);
