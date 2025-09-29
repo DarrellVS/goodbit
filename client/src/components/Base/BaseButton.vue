@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
+import type { ButtonVariant } from './types';
 
-const props = defineProps<{ variant?: 'default' | 'primary' | 'danger' | 'ghost' | 'outline' }>();
+const props = defineProps<{ variant?: ButtonVariant }>();
 
 const variantClass = computed(() => {
   switch (props.variant) {
@@ -13,6 +14,8 @@ const variantClass = computed(() => {
       return 'bg-transparent';
     case 'outline':
       return 'bg-transparent border border-border hover:bg-muted-50';
+    case 'muted':
+      return 'bg-transparent border border-border hover:bg-muted-50 bg-white/50';
     default:
       return '';
   }
