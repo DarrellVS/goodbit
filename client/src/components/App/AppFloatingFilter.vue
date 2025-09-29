@@ -21,7 +21,7 @@ function select(value: string) {
   <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[720px] max-w-[92vw] px-4 pointer-events-none">
     <div class="w-full pointer-events-auto" @mouseenter="onEnter" @mouseleave="onLeave">
       <div
-        class="bg-white/90 dark:bg-black/70 text-foreground border border-border/80 ring-1 ring-border/60 backdrop-blur-lg shadow-card overflow-hidden transition-all duration-300 ease-out rounded-2xl mx-auto"
+        class="bg-black/60 text-foreground border border-border/80 ring-1 ring-border/60 backdrop-blur-lg shadow-card overflow-hidden transition-all duration-300 ease-out rounded-2xl mx-auto"
         :class="open ? 'w-full' : 'w-[320px]'"
       >
         <div class="flex items-center justify-between px-4 py-2 select-none cursor-pointer mx-auto transition-[width] duration-300"

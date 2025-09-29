@@ -57,9 +57,6 @@ body {
   color: hsl(var(--foreground));
 }
 
-.glass { @apply bg-white/60 dark:bg-white/10 backdrop-blur-md border border-border; }
-.glass:hover { @apply backdrop-blur; }
-
 .card { @apply rounded-2xl shadow-card bg-card border border-border; }
 
 .btn { @apply inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-soft border border-border hover:shadow-md transition-all duration-200 active:scale-[0.98]; }
@@ -68,23 +65,10 @@ body {
 .btn-ghost { @apply bg-transparent; }
 .btn-outline { @apply bg-transparent border-border hover:bg-muted-50; }
 
-.input { @apply w-full rounded-xl border border-border bg-white/70 dark:bg-white/10 px-4 py-2.5 outline-none focus:ring-2 focus:ring-ring/70 transition; }
-
-.skeleton { @apply animate-pulse rounded-xl bg-muted-200 dark:bg-muted-700; }
+.input { @apply w-full rounded-xl border border-border bg-white/10 px-4 py-2.5 outline-none focus:ring-2 focus:ring-ring/70 transition; }
 
 .clip-card { @apply transition hover:shadow-lg; }
 .clip-thumb { @apply relative overflow-hidden rounded-t-2xl; }
-
-.badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-muted-100 dark:bg-muted-800 border border-border; }
-.pill { @apply inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white text-foreground border border-border shadow-soft hover:bg-muted-50 transition; }
-.pill-active { @apply ring-2 ring-primary/40 border-primary/60; }
-
-.text-gradient {
-  background-image: linear-gradient(135deg, hsl(var(--foreground)) 0%, #8b5cf6 40%, #06b6d4 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
 
 /* Subtle custom scrollbar */
 *::-webkit-scrollbar { width: 10px; height: 10px; }
