@@ -11,6 +11,8 @@
   "dependencies": {
     "@iconify/vue": "^5.0.0",
     "axios": "^1.7.7",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-vue": "^8.6.0",
     "firebase": "^12.3.0",
     "pinia": "^2.2.4",
     "radix-vue": "^1.9.17",

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
+import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import LoginPage from './views/LoginPage.vue';
 import { useAuthStore } from './stores/auth';
@@ -14,7 +15,8 @@ export const router = createRouter({
       component: ShellLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'clips', component: ClipsPage },
+        { path: '', name: 'clips', component: ClipsPage, meta: { hasSidebar: true } },
+        { path: 'today', name: 'today', component: TodaysClipsPage, meta: { hasSidebar: false } },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },

@@ -1,8 +1,8 @@
 <template>
-  <div class="h-full grid grid-rows-[72px_1fr]">
+  <div class="h-full grid grid-rows-[72px_1fr] grid-cols-1">
     <AppHeader :search="searchText" :rescan-loading="isRescanLoading" :show-logout="!!user" @update:search="(v) => searchText = v" @rescan="rescan" @logout="logout" />
 
-    <main class="p-0 pb-28">
+    <main class="p-0 pb-28 mx-auto">
       <RouterView />
     </main>
   </div>
@@ -19,6 +19,8 @@ import { useAuthStore } from '../stores/auth';
 import { useGamesStore } from '../stores/games';
 import AppHeader from '../components/App/AppHeader.vue';
 import AppFloatingFilter from '../components/App/AppFloatingFilter.vue';
+
+const props = defineProps<{ hasSidebar: boolean }>();
 
 const gamesStore = useGamesStore();
 const clipsStore = useClipsStore();

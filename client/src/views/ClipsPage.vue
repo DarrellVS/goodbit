@@ -66,18 +66,23 @@ function thumbSrc(id: number) {
 
 <template>
   <div class="p-6 space-y-6">
-      <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
-        <AppClipCard
-          v-for="clip in clips"
-          :key="clip.id"
-          :clip="clip"
-          :poster-url="thumbSrc(clip.id)"
-          :video-url="videoSrc(clip.id)"
-          @isHovered="isHovered => onCardHovered(isHovered, clip.id)"
-          @updated="onCardUpdated"
-          @deleted="onCardDeleted"
-        />
-      </section>
+    <header class="flex items-center justify-between">
+      <div />
+      <RouterLink to="/today" class="inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-medium shadow-soft border border-border hover:shadow-md transition-all">View Today's Clips</RouterLink>
+    </header>
+    <hr class="border-t border-border/60" />
+    <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
+      <AppClipCard
+        v-for="clip in clips"
+        :key="clip.id"
+        :clip="clip"
+        :poster-url="thumbSrc(clip.id)"
+        :video-url="videoSrc(clip.id)"
+        @isHovered="isHovered => onCardHovered(isHovered, clip.id)"
+        @updated="onCardUpdated"
+        @deleted="onCardDeleted"
+      />
+    </section>
 
     <footer class="flex items-center justify-center gap-3" v-if="total > pageSize">
       <button class="btn" :disabled="page === 1" @click="goto(page - 1)">Prev</button>
