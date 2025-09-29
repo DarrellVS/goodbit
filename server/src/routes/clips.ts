@@ -105,6 +105,16 @@ clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const repo = AppDataSource.getRepository(Clip);
   const clip = await repo.findOneByOrFail({ id });
+  // If published, unpublish first (remote delete + cache purge)
+  if (clip.published) {
+    try {
+      const action = new UnpublishClipAction();
+      await action.execute({ id });
+    } catch (err) {
+      // Proceed even if remote unpublish fails
+      console.warn('Unpublish before delete failed:', (err as Error)?.message);
+    }
+  }
   await videoService.removeClipCaches(clip.filePath);
   await videoService.moveClipFileToTrash(clip.filePath);
   await repo.remove(clip);

@@ -8,7 +8,8 @@ import { withAuthToken } from '../utils/withAuthToken';
 import { Icon } from '@iconify/vue';
 
 const store = useClipsStore();
-const [emblaRef, emblaApi] = emblaCarouselVue({ loop: true, duration: 24 }, []);
+const [emblaRef, emblaApi] = emblaCarouselVue({ loop: false, duration: 24 }, []);
+const [thumbsRef, thumbsApi] = emblaCarouselVue({ axis: 'x', align: 'start', containScroll: 'keepSnaps', dragFree: true, loop: false }, []);
 const todayClips = computed(() => {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -34,6 +35,7 @@ function onSelect() {
   selectedIndex.value = api.selectedScrollSnap();
   canPrev.value = api.canScrollPrev();
   canNext.value = api.canScrollNext();
+  thumbsApi.value?.scrollTo(selectedIndex.value);
 }
 
 function prev() { emblaApi.value?.scrollPrev(); }
@@ -48,12 +50,20 @@ watch(emblaApi, (api) => {
   }
 });
 
+watch(thumbsApi, (api) => {
+  if (api) {
+    api.on('reInit', () => thumbsApi.value?.scrollTo(selectedIndex.value));
+  }
+});
+
 watch(todayClips, async () => {
   const api = emblaApi.value;
   if (!api) return;
   await nextTick();
   api.reInit();
   onSelect();
+  thumbsApi.value?.reInit();
+  thumbsApi.value?.scrollTo(selectedIndex.value);
 });
 
 async function onRename(clipId: number, name: string) {
@@ -94,7 +104,7 @@ onMounted(() => store.fetchClips());
         </div>
         <button
           class="absolute -left-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-full w-11 h-11 flex items-center justify-center bg-neutral-800/70 backdrop-blur border border-white/10 shadow-md hover:shadow-lg hover:bg-neutral-700/80"
-          :class="{ 'opacity-40 cursor-not-allowed': !canPrev }"
+          :class="{ 'group-hover:opacity-40 cursor-not-allowed': !canPrev }"
           :disabled="!canPrev"
           aria-label="Previous"
           @click="prev"
@@ -104,7 +114,7 @@ onMounted(() => store.fetchClips());
         </button>
         <button
           class="absolute -right-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-full w-11 h-11 flex items-center justify-center bg-neutral-800/70 backdrop-blur border border-white/10 shadow-md hover:shadow-lg hover:bg-neutral-700/80"
-          :class="{ 'opacity-40 cursor-not-allowed': !canNext }"
+          :class="{ 'group-hover:opacity-40 cursor-not-allowed': !canNext }"
           :disabled="!canNext"
           aria-label="Next"
           @click="next"
@@ -114,16 +124,27 @@ onMounted(() => store.fetchClips());
         </button>
       </div>
 
-      <div class="mt-6 flex flex-wrap justify-center gap-4">
-        <div v-for="(clip, idx) in todayClips" :key="'thumb-'+clip.id" class="group transition-all cursor-pointer w-40" @click="goTo(idx)" :aria-current="selectedIndex === idx ? 'true' : 'false'" :class="{ 'scale-105': selectedIndex === idx }">
-          <div class="rounded-xl overflow-hidden transition-all" :class="{ 'shadow-[0_8px_8px_rgba(0,0,0,0.2)]': selectedIndex === idx }">
-            <img :src="thumbSrc(clip.id)" class="w-full h-24 object-cover" />
-          </div>
-          <div class="text-sm mt-2 text-muted-300 text-center">
-            {{ clip.game }}
-          </div>
+    <div class="embla-thumbs mt-6">
+      <div class="embla-thumbs__viewport p-2" ref="thumbsRef">
+        <div class="embla-thumbs__container">
+          <button
+            v-for="(clip, idx) in todayClips"
+            :key="'thumb-'+clip.id"
+            class="embla-thumbs__slide group"
+            :class="{ 'is-selected': selectedIndex === idx }"
+            @click="goTo(idx)"
+            :aria-current="selectedIndex === idx ? 'true' : 'false'"
+          >
+            <div class="thumb rounded-xl overflow-hidden transition-all">
+              <img :src="thumbSrc(clip.id)" class="w-full h-24 object-cover" />
+            </div>
+            <div class="text-sm mt-2 text-muted-300 text-center line-clamp-1">
+              {{ clip.game }}
+            </div>
+          </button>
         </div>
       </div>
+    </div>
     <div v-if="todayClips.length === 0" class="py-24 flex flex-col items-center justify-center text-center gap-4 opacity-80">
       <div class="rounded-full w-20 h-20 flex items-center justify-center bg-muted-800 border border-border">
         <Icon icon="radix-icons:video" class="text-3xl text-muted-300" />
@@ -140,6 +161,12 @@ onMounted(() => store.fetchClips());
 .embla__slide > div { transform: translateZ(0); transition: transform 1000ms cubic-bezier(.22,1,.36,1); }
 .embla__slide.is-active > div { transform: scale(1); }
 .embla__slide:not(.is-active) > div { transform: scale(.75); }
+
+.embla-thumbs__viewport { overflow: hidden; }
+.embla-thumbs__container { display: flex; gap: 16px; }
+.embla-thumbs__slide { flex: 0 0 auto; width: 160px; cursor: pointer; background: transparent; border: 0; padding: 0; }
+.embla-thumbs__slide.is-selected .thumb { box-shadow: 0 8px 8px rgba(0,0,0,0.2); transform: scale(1.05); }
+.thumb { transition: all 300ms ease; }
 </style>
 
 
