@@ -18,8 +18,17 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api', apiRouter);
 
-// Serve uploaded content publicly
-app.use(express.static(UPLOAD_DIR, { maxAge: '7d', etag: true }));
+// Serve uploaded content publicly with aggressive browser revalidation to avoid stale cached videos
+app.use(express.static(UPLOAD_DIR, {
+  etag: true,
+  maxAge: 0,
+  setHeaders: (res) => {
+    // Ensure browsers revalidate or refetch; CDN is purged separately
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  },
+}));
 
 app.use(errorHandler);
 
