@@ -5,6 +5,7 @@ import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'radi
 import { useClipsStore } from '../stores/clips';
 import { updateClipName, deleteClip } from '../services/clips';
 import { withAuthToken } from '../utils/withAuthToken';
+import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { Icon } from '@iconify/vue';
 
 const store = useClipsStore();
@@ -15,9 +16,6 @@ const todayClips = computed(() => {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return store.items.filter(c => new Date(c.fileModifiedAt) >= start);
 });
-
-function thumbSrc(id: number) { return withAuthToken(`/api/clips/${id}/thumbnail`); }
-function videoSrc(id: number) { return withAuthToken(`/api/clips/${id}/stream`); }
 
 const selectedIndex = ref(0);
 const canPrev = ref(false);
@@ -93,7 +91,7 @@ onMounted(() => store.fetchClips());
           <div class="embla__container">
               <div class="embla__slide" v-for="(clip, idx) in todayClips" :key="clip.id" :class="{ 'is-active': selectedIndex === idx }">
                 <div class="relative rounded-2xl overflow-hidden shadow-xl">
-                  <video :src="videoSrc(clip.id)" class="w-full aspect-[21/9] object-cover" controls :poster="thumbSrc(clip.id)"></video>
+                <video :src="videoUrlFor(clip.id, clip.fileModifiedAt)" class="w-full aspect-[21/9] object-cover" controls :poster="thumbUrlFor(clip.id, clip.fileModifiedAt)"></video>
                 </div>
                 <div class="mt-3 px-1 flex items-center justify-between">
                   <EditableRoot :default-value="clip.displayName || clip.filename" @update:model-value="(v: string) => onRename(clip.id, v)">
@@ -141,7 +139,7 @@ onMounted(() => store.fetchClips());
             :aria-current="selectedIndex === idx ? 'true' : 'false'"
           >
             <div class="thumb rounded-xl overflow-hidden transition-all">
-              <img :src="thumbSrc(clip.id)" class="w-full h-24 object-cover" />
+              <img :src="thumbUrlFor(clip.id, clip.fileModifiedAt)" class="w-full h-24 object-cover" />
             </div>
             <div class="text-sm mt-2 text-muted-300 text-center line-clamp-1">
               {{ clip.game }}

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
+import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import axios from '../axios';
 import { useClipsStore } from '../stores/clips';
 import type { Clip } from '../types/clip';
@@ -55,13 +56,8 @@ watch(hoveredId, (id) => {
 
 onMounted(() => store.fetchClips());
 
-function videoSrc(id: number) {
-  return withAuthToken(`/api/clips/${id}/stream`);
-}
-
-function thumbSrc(id: number) {
-  return withAuthToken(`/api/clips/${id}/thumbnail`);
-}
+function videoSrc(clip: Clip) { return videoUrlFor(clip.id, clip.fileModifiedAt); }
+function thumbSrc(clip: Clip) { return thumbUrlFor(clip.id, clip.fileModifiedAt); }
 </script>
 
 <template>
@@ -76,8 +72,8 @@ function thumbSrc(id: number) {
         v-for="clip in clips"
         :key="clip.id"
         :clip="clip"
-        :poster-url="thumbSrc(clip.id)"
-        :video-url="videoSrc(clip.id)"
+          :poster-url="thumbSrc(clip)"
+          :video-url="videoSrc(clip)"
         @isHovered="isHovered => onCardHovered(isHovered, clip.id)"
         @updated="onCardUpdated"
         @deleted="onCardDeleted"
