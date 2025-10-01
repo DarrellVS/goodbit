@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
+import StatsPage from './views/StatsPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import EditorPage from './views/EditorPage.vue';
 import LoginPage from './views/LoginPage.vue';
@@ -18,6 +19,7 @@ export const router = createRouter({
       children: [
         { path: '', name: 'clips', component: ClipsPage },
         { path: 'today', name: 'today', component: TodaysClipsPage },
+        { path: 'stats', name: 'stats', component: StatsPage },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },

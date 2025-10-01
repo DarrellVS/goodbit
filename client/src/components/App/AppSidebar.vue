@@ -21,7 +21,7 @@ const topGames = computed(() => gamesStore.topGames());
 </script>
 
 <template>
-  <aside class="w-64 bg-white/5 backdrop-blur-sm border-r border-border/50 flex flex-col h-full">
+  <aside class="w-64 bg-white/5 backdrop-blur-sm border-r border-gray-200 flex flex-col h-full">
     <div class="p-6">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
@@ -87,13 +87,15 @@ const topGames = computed(() => gamesStore.topGames());
       </div>
     </nav>
 
-    <div class="p-3 space-y-1 border-t border-border/50">
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
+    <div class="p-3 space-y-1 border-t border-gray-200">
+      <RouterLink
+        to="/stats"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
+        exact-active-class="bg-white/10 text-orange-500"
       >
-        <Icon icon="material-symbols:settings" class="text-lg" />
-        <span class="font-medium">Settings</span>
-      </button>
+        <Icon icon="material-symbols:bar-chart" class="text-lg" />
+        <span class="font-medium">Stats</span>
+      </RouterLink>
       
       <button
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"

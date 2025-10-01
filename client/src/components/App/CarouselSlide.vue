@@ -49,7 +49,7 @@ function handleDelete(): void {
       >
         <EditableArea class="text-lg font-semibold text-gray-900">
           <EditablePreview />
-          <EditableInput class="bg-transparent outline-none border-b border-border" />
+          <EditableInput class="bg-transparent outline-none border-b border-gray-300" />
         </EditableArea>
       </EditableRoot>
       

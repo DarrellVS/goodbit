@@ -1,10 +1,22 @@
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useClipsStore } from '../stores/clips';
 import type { FilterType } from '../components/App/ClipFilters.vue';
 
 export function useClipFilters() {
   const clipsStore = useClipsStore();
-  const activeFilter = ref<FilterType>('videos');
+  
+  const derivedFilter = computed<FilterType>(() => {
+    if (clipsStore.starredFilter) return 'starred';
+    if (clipsStore.publishedFilter === true) return 'published';
+    if (clipsStore.publishedFilter === false) return 'not-published';
+    return 'videos';
+  });
+
+  const activeFilter = ref<FilterType>(derivedFilter.value);
+
+  watch(derivedFilter, (newValue) => {
+    activeFilter.value = newValue;
+  });
 
   function applyFilter(filter: FilterType, oldFilter?: FilterType): void {
     if (filter === oldFilter) return;

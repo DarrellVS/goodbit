@@ -105,7 +105,7 @@ const displayDate = computed(() =>
 
 <template>
   <article 
-    class="clip-card group relative bg-white/5 rounded-xl overflow-hidden border border-border/50 hover:border-orange-500/50 transition-all hover:shadow-lg"
+    class="clip-card group relative bg-white/5 rounded-xl overflow-hidden border border-gray-300 hover:border-orange-500/50 transition-all hover:shadow-lg"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
   >
@@ -211,7 +211,7 @@ const displayDate = computed(() =>
           <div class="flex items-center gap-2">
             <input
               v-model="newTagName"
-              class="flex-1 rounded-lg border border-border/50 bg-white/5 px-3 h-9 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+              class="flex-1 rounded-lg border border-gray-300 bg-white/5 px-3 h-9 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
               placeholder="New tag name"
               @keyup.enter="addTag"
             />
@@ -223,7 +223,7 @@ const displayDate = computed(() =>
             </button>
           </div>
 
-          <div class="border-t border-border/30 pt-2">
+          <div class="border-t border-gray-200 pt-2">
             <div v-if="!availableTags.length" class="text-muted-400 text-sm py-4 text-center">
               No tags yet
             </div>
@@ -235,7 +235,7 @@ const displayDate = computed(() =>
                 class="flex items-center gap-2"
               >
                 <button
-                  class="flex-1 text-left rounded-lg border border-border/30 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
+                  class="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
                   :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': clip.tags?.includes(tag) }"
                   @click="toggleTag(tag)"
                 >
@@ -244,7 +244,7 @@ const displayDate = computed(() =>
                 </button>
                 
                 <button
-                  class="p-2 rounded-lg border border-border/30 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
+                  class="p-2 rounded-lg border border-gray-200 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
                   title="Delete tag"
                   @click.stop="removeTag(tag)"
                 >

@@ -1,5 +1,5 @@
 <template>
-  <header class="relative overflow-hidden border-b border-border/50">
+  <header class="relative overflow-hidden border-b border-gray-300">
     <div class="relative max-w-7xl mx-auto px-6 py-8">
       <div class="flex items-center justify-between">
         <div class="space-y-2">
@@ -18,7 +18,7 @@
         
         <RouterLink 
           to="/"
-          class="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-medium border border-border/50 bg-white/5 hover:bg-white/10 transition-all shadow-sm hover:shadow-md"
+          class="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-medium border border-gray-300 bg-white/5 hover:bg-white/10 transition-all shadow-sm hover:shadow-md"
         >
           <Icon icon="material-symbols:arrow-back" />
           <span>Back to Library</span>
