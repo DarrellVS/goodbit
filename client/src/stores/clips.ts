@@ -13,6 +13,8 @@ interface ClipsState {
   publishedFilter: boolean | null;
   starredFilter: boolean;
   loading: boolean;
+  abortController: AbortController | null;
+  requestId: number;
 }
 
 interface ClipsResponse {
@@ -34,6 +36,8 @@ export const useClipsStore = defineStore('clips', {
     publishedFilter: null,
     starredFilter: false,
     loading: false,
+    abortController: null,
+    requestId: 0,
   }),
 
   getters: {
@@ -44,7 +48,15 @@ export const useClipsStore = defineStore('clips', {
 
   actions: {
     async fetchClips(): Promise<void> {
+      if (this.abortController) {
+        this.abortController.abort();
+      }
+
+      this.abortController = new AbortController();
+      this.requestId++;
+      const currentRequestId = this.requestId;
       this.loading = true;
+
       try {
         const params: Record<string, string | number> = { 
           page: this.page, 
@@ -57,12 +69,29 @@ export const useClipsStore = defineStore('clips', {
         if (this.publishedFilter !== null) params.published = String(this.publishedFilter);
         if (this.starredFilter) params.starred = 'true';
 
-        const { data } = await axios.get<ClipsResponse>('/api/clips', { params });
+        const { data } = await axios.get<ClipsResponse>('/api/clips', { 
+          params,
+          signal: this.abortController.signal
+        });
 
-        this.items = data.items;
-        this.total = data.total;
+        if (currentRequestId === this.requestId) {
+          this.items = data.items;
+          this.total = data.total;
+          this.abortController = null;
+        }
+      } catch (error) {
+        if (axios.isCancel(error)) {
+          return;
+        }
+        
+        if (currentRequestId === this.requestId) {
+          this.abortController = null;
+          throw error;
+        }
       } finally {
-        this.loading = false;
+        if (currentRequestId === this.requestId) {
+          this.loading = false;
+        }
       }
     },
 
@@ -100,13 +129,27 @@ export const useClipsStore = defineStore('clips', {
     },
 
     setPublishedFilter(published: boolean | null): void {
+      if (this.publishedFilter === published) return;
+      
       this.publishedFilter = published;
       this.page = 1;
       void this.fetchClips();
     },
 
     setStarredFilter(starred: boolean): void {
+      if (this.starredFilter === starred) return;
+      
       this.starredFilter = starred;
+      this.page = 1;
+      void this.fetchClips();
+    },
+
+    resetFilters(): void {
+      this.selectedGame = '';
+      this.searchText = '';
+      this.selectedTags = [];
+      this.publishedFilter = null;
+      this.starredFilter = false;
       this.page = 1;
       void this.fetchClips();
     },

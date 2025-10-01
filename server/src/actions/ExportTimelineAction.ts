@@ -18,11 +18,18 @@ interface TimelineClipData {
 interface ExportTimelineInput {
   clips: TimelineClipData[];
   outputName?: string;
+  exportId?: string;
 }
+
+export const exportProgress = new Map<string, number>();
 
 export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip: Clip }> {
   async execute(input: ExportTimelineInput): Promise<{ clip: Clip }> {
-    const { clips, outputName = `Export_${Date.now()}` } = input;
+    const { clips, outputName = `Export_${Date.now()}`, exportId } = input;
+    
+    if (exportId) {
+      exportProgress.set(exportId, 0);
+    }
 
     if (!clips || clips.length === 0) {
       throw new Error('No clips provided for export');
@@ -45,6 +52,8 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const relPath = path.join('Editor', outputFilename);
 
     try {
+      const totalSteps = clips.length + 1;
+      
       for (let i = 0; i < clips.length; i++) {
         const timelineClip = clips[i];
         const dbClip = clipMap.get(timelineClip.clipId);
@@ -57,6 +66,10 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
         const tempOutputPath = path.join(tempDir, `segment_${i}_${Date.now()}.mp4`);
         tempFiles.push(tempOutputPath);
 
+        if (exportId) {
+          exportProgress.set(exportId, Math.round((i / totalSteps) * 100));
+        }
+
         await this.processClipSegment(
           inputPath,
           tempOutputPath,
@@ -65,6 +78,10 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
           timelineClip.volume,
           timelineClip.muted
         );
+      }
+      
+      if (exportId) {
+        exportProgress.set(exportId, Math.round(((clips.length) / totalSteps) * 100));
       }
 
       const concatContent = tempFiles.map(f => `file '${f}'`).join('\n');
@@ -91,8 +108,16 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
 
       await fs.rm(tempDir, { recursive: true, force: true });
 
+      if (exportId) {
+        exportProgress.set(exportId, 100);
+        setTimeout(() => exportProgress.delete(exportId), 5000);
+      }
+
       return { clip: savedClip };
     } catch (error) {
+      if (exportId) {
+        exportProgress.delete(exportId);
+      }
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
       throw error;
     }

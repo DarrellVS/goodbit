@@ -10,6 +10,7 @@ interface Props {
   canUndo: boolean;
   canRedo: boolean;
   exporting?: boolean;
+  exportProgress?: number;
 }
 
 interface Emits {
@@ -101,16 +102,23 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-6 bg-gray-300" />
       
       <button
-        class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
         :disabled="props.exporting"
         @click="emit('export')"
       >
+        <div
+          v-if="props.exporting && props.exportProgress !== undefined"
+          class="absolute inset-0 bg-orange-700/30 transition-all duration-300"
+          :style="{ width: `${props.exportProgress}%` }"
+        />
         <Icon 
           :icon="props.exporting ? 'material-symbols:hourglass-top' : 'material-symbols:download'" 
-          class="text-lg"
+          class="text-lg relative z-10"
           :class="{ 'animate-spin': props.exporting }"
         />
-        {{ props.exporting ? 'Exporting...' : 'Export' }}
+        <span class="relative z-10">
+          {{ props.exporting ? `Exporting ${props.exportProgress || 0}%` : 'Export' }}
+        </span>
       </button>
     </div>
   </div>

@@ -20,9 +20,10 @@ interface ExportTimelineRequest {
     muted: boolean;
   }>;
   outputName?: string;
+  exportId?: string;
 }
 
-export async function exportTimeline(clips: readonly TimelineClip[], outputName?: string): Promise<{ id: number }> {
+export async function exportTimeline(clips: readonly TimelineClip[], outputName?: string, exportId?: string): Promise<{ id: number }> {
   const payload: ExportTimelineRequest = {
     clips: clips.map(clip => ({
       clipId: clip.clipId,
@@ -33,10 +34,16 @@ export async function exportTimeline(clips: readonly TimelineClip[], outputName?
       muted: clip.muted,
     })),
     outputName,
+    exportId,
   };
 
   const response = await axios.post('/api/clips/export', payload);
   return response.data;
+}
+
+export async function getExportProgress(exportId: string): Promise<number | null> {
+  const response = await axios.get(`/api/clips/export/${exportId}/progress`);
+  return response.data.progress;
 }
 
 export async function updateClipName(id: number, displayName: string | null): Promise<Clip> {

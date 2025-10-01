@@ -8,7 +8,7 @@ import { useTimeline } from '../composables/useTimeline';
 import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { loadVideoMetadata } from '../composables/useVideoMetadata';
-import { exportTimeline } from '../services/clips';
+import { exportTimeline, getExportProgress } from '../services/clips';
 import { EDITOR_CONSTANTS } from '../constants/editor';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import type { Clip } from '../types/clip';
@@ -51,6 +51,7 @@ const selectedClipId = ref<string | null>(null);
 const showLibrary = ref(true);
 const showProperties = ref(true);
 const isExporting = ref(false);
+const exportProgress = ref(0);
 
 const selectedClip = computed(() => 
   timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
@@ -101,18 +102,34 @@ async function handleExport(): Promise<void> {
   }
 
   isExporting.value = true;
+  exportProgress.value = 0;
+  const exportId = `export-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  const progressInterval = setInterval(async () => {
+    try {
+      const progress = await getExportProgress(exportId);
+      if (progress !== null) {
+        exportProgress.value = progress;
+      }
+    } catch (error) {
+      console.error('Failed to fetch progress:', error);
+    }
+  }, 500);
   
   try {
     const outputName = `Edited_${new Date().toISOString().split('T')[0]}`;
-    const newClip = await exportTimeline(timelineClips.value, outputName);
+    const newClip = await exportTimeline(timelineClips.value, outputName, exportId);
     
+    exportProgress.value = 100;
     toastStore.success('Your edited clip has been saved!', 'Export successful');
     router.push('/');
   } catch (error) {
     console.error('Export failed:', error);
     toastStore.error('Please try again.', 'Export failed');
   } finally {
+    clearInterval(progressInterval);
     isExporting.value = false;
+    exportProgress.value = 0;
   }
 }
 
@@ -252,6 +269,7 @@ watch(() => route.query.clip, async (clipId) => {
       :can-undo="false"
       :can-redo="false"
       :exporting="isExporting"
+      :export-progress="exportProgress"
       @play="play"
       @pause="pause"
       @skip-backward="skipBackward()"

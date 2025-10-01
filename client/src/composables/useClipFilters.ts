@@ -6,27 +6,35 @@ export function useClipFilters() {
   const clipsStore = useClipsStore();
   const activeFilter = ref<FilterType>('videos');
 
-  function applyFilter(filter: FilterType): void {
+  function applyFilter(filter: FilterType, oldFilter?: FilterType): void {
+    if (filter === oldFilter) return;
+
+    const updates: Array<() => void> = [];
+    
     switch (filter) {
       case 'published':
-        clipsStore.setPublishedFilter(true);
-        clipsStore.setStarredFilter(false);
+        updates.push(() => clipsStore.setPublishedFilter(true));
+        updates.push(() => clipsStore.setStarredFilter(false));
         break;
       case 'not-published':
-        clipsStore.setPublishedFilter(false);
-        clipsStore.setStarredFilter(false);
+        updates.push(() => clipsStore.setPublishedFilter(false));
+        updates.push(() => clipsStore.setStarredFilter(false));
         break;
       case 'starred':
-        clipsStore.setPublishedFilter(null);
-        clipsStore.setStarredFilter(true);
+        updates.push(() => clipsStore.setPublishedFilter(null));
+        updates.push(() => clipsStore.setStarredFilter(true));
         break;
       default:
-        clipsStore.setPublishedFilter(null);
-        clipsStore.setStarredFilter(false);
+        updates.push(() => clipsStore.setPublishedFilter(null));
+        updates.push(() => clipsStore.setStarredFilter(false));
     }
+
+    updates.forEach(update => update());
   }
 
-  watch(activeFilter, applyFilter);
+  watch(activeFilter, (newValue, oldValue) => {
+    applyFilter(newValue, oldValue);
+  }, { immediate: false });
 
   return {
     activeFilter,

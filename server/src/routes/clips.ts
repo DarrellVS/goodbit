@@ -7,7 +7,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
-import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
+import { ExportTimelineAction, exportProgress } from '../actions/ExportTimelineAction.js';
 
 export const clipsRouter = express.Router();
 
@@ -190,10 +190,16 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
 }));
 
 clipsRouter.post('/export', asyncHandler(async (req, res) => {
-  const { clips, outputName } = req.body;
+  const { clips, outputName, exportId } = req.body;
   const action = new ExportTimelineAction();
-  const { clip } = await action.execute({ clips, outputName });
+  const { clip } = await action.execute({ clips, outputName, exportId });
   res.json(clip);
+}));
+
+clipsRouter.get('/export/:exportId/progress', asyncHandler(async (req, res) => {
+  const { exportId } = req.params;
+  const progress = exportProgress.get(exportId);
+  res.json({ progress: progress ?? null });
 }));
 
 clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
