@@ -29,7 +29,7 @@ export const useClipsStore = defineStore('clips', {
     items: [],
     total: 0,
     page: 1,
-    pageSize: 12,
+    pageSize: 5,
     selectedGame: '',
     searchText: '',
     selectedTags: [],
@@ -47,7 +47,7 @@ export const useClipsStore = defineStore('clips', {
   },
 
   actions: {
-    async fetchClips(): Promise<void> {
+    async fetchClips(append = false): Promise<void> {
       if (this.abortController) {
         this.abortController.abort();
       }
@@ -75,7 +75,11 @@ export const useClipsStore = defineStore('clips', {
         });
 
         if (currentRequestId === this.requestId) {
-          this.items = data.items;
+          if (append) {
+            this.items = [...this.items, ...data.items];
+          } else {
+            this.items = data.items;
+          }
           this.total = data.total;
           this.abortController = null;
         }
@@ -93,6 +97,12 @@ export const useClipsStore = defineStore('clips', {
           this.loading = false;
         }
       }
+    },
+
+    async loadMore(): Promise<void> {
+      if (this.loading || !this.hasNextPage) return;
+      this.page++;
+      await this.fetchClips(true);
     },
 
     updateClip(updatedClip: Clip): void {
@@ -113,19 +123,19 @@ export const useClipsStore = defineStore('clips', {
     setGame(game: string): void {
       this.selectedGame = game;
       this.page = 1;
-      void this.fetchClips();
+      void this.fetchClips(false);
     },
 
     setSearch(query: string): void {
       this.searchText = query;
       this.page = 1;
-      void this.fetchClips();
+      void this.fetchClips(false);
     },
 
     setTags(tags: string[]): void {
       this.selectedTags = tags;
       this.page = 1;
-      void this.fetchClips();
+      void this.fetchClips(false);
     },
 
     setPublishedFilter(published: boolean | null): void {
@@ -133,7 +143,7 @@ export const useClipsStore = defineStore('clips', {
       
       this.publishedFilter = published;
       this.page = 1;
-      void this.fetchClips();
+      void this.fetchClips(false);
     },
 
     setStarredFilter(starred: boolean): void {
@@ -141,7 +151,7 @@ export const useClipsStore = defineStore('clips', {
       
       this.starredFilter = starred;
       this.page = 1;
-      void this.fetchClips();
+      void this.fetchClips(false);
     },
 
     resetFilters(): void {
@@ -151,7 +161,12 @@ export const useClipsStore = defineStore('clips', {
       this.publishedFilter = null;
       this.starredFilter = false;
       this.page = 1;
-      void this.fetchClips();
+      void this.fetchClips(false);
+    },
+
+    resetPagination(): void {
+      this.page = 1;
+      this.items = [];
     },
 
     goto(page: number): void {

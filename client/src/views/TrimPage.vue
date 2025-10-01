@@ -94,7 +94,8 @@ async function handleSave(): Promise<void> {
   try {
     const [startTime, endTime] = range.value;
     await trimClip(Number(props.id), startTime, endTime);
-    await clipsStore.fetchClips();
+    clipsStore.resetPagination();
+    await clipsStore.fetchClips(false);
     await router.push('/');
   } catch (error) {
     console.error('Failed to trim clip:', error);

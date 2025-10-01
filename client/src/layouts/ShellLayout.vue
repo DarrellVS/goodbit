@@ -87,7 +87,8 @@ async function rescan() {
   isRescanLoading.value = true;
   try {
     await rescanGames();
-    await Promise.all([gamesStore.fetchGames(), clipsStore.fetchClips()]);
+    clipsStore.resetPagination();
+    await Promise.all([gamesStore.fetchGames(), clipsStore.fetchClips(false)]);
   } finally {
     isRescanLoading.value = false;
   }

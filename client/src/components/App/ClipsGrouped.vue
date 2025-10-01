@@ -30,6 +30,7 @@ interface ClipGroup {
 
 const groupedClips = computed(() => {
   const groups = new Map<string, ClipGroup>();
+  const groupOrder: string[] = [];
 
   props.clips.forEach(clip => {
     const date = new Date(clip.fileModifiedAt);
@@ -37,6 +38,7 @@ const groupedClips = computed(() => {
     const groupKey = `${dateKey}-${clip.game}`;
 
     if (!groups.has(groupKey)) {
+      groupOrder.push(groupKey);
       groups.set(groupKey, {
         date: dateKey,
         game: clip.game,
@@ -48,11 +50,7 @@ const groupedClips = computed(() => {
     groups.get(groupKey)!.clips.push(clip);
   });
 
-  return Array.from(groups.values()).sort((a, b) => {
-    const dateCompare = b.date.localeCompare(a.date);
-    if (dateCompare !== 0) return dateCompare;
-    return a.game.localeCompare(b.game);
-  });
+  return groupOrder.map(key => groups.get(key)!);
 });
 
 function formatDate(date: Date): string {

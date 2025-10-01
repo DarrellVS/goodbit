@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useFormat } from '../../composables/useFormat';
@@ -27,6 +27,7 @@ const emit = defineEmits<Emits>();
 
 const router = useRouter();
 const { formatBytes } = useFormat();
+const showExactDate = ref(false);
 
 const { actions } = useClipActions({
   clip: computed(() => props.clip),
@@ -62,6 +63,44 @@ async function handleToggleStar(): Promise<void> {
     console.error('Failed to toggle star:', error);
   }
 }
+
+function formatRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now.getTime() - then.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSecs < 60) return 'just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`;
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths !== 1 ? 's' : ''} ago`;
+  return `${diffYears} year${diffYears !== 1 ? 's' : ''} ago`;
+}
+
+function formatExactDate(date: Date | string): string {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
+}
+
+const displayDate = computed(() => 
+  showExactDate.value 
+    ? formatExactDate(props.clip.fileModifiedAt)
+    : formatRelativeTime(props.clip.fileModifiedAt)
+);
 </script>
 
 <template>
@@ -126,8 +165,13 @@ async function handleToggleStar(): Promise<void> {
       
       <div class="flex items-center justify-between text-xs text-muted-500">
         <span>{{ formatBytes(clip.sizeBytes) }}</span>
-        <time :datetime="clip.fileModifiedAt">
-          {{ new Date(clip.fileModifiedAt).toLocaleDateString() }}
+        <time 
+          :datetime="clip.fileModifiedAt"
+          class="cursor-default transition-colors hover:text-orange-500"
+          @mouseenter="showExactDate = true"
+          @mouseleave="showExactDate = false"
+        >
+          {{ displayDate }}
         </time>
       </div>
 

@@ -49,7 +49,8 @@ async function handleClipRename(clipId: number, name: string): Promise<void> {
 
 async function handleClipDelete(clipId: number): Promise<void> {
   await deleteClip(clipId);
-  await clipsStore.fetchClips();
+  clipsStore.resetPagination();
+  await clipsStore.fetchClips(false);
 }
 
 function getVideoUrl(clip: Clip): string {

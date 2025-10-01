@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue';
+import { Icon } from '@iconify/vue';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
+import { useInfiniteScroll } from '../composables/useInfiniteScroll';
 import type { Clip } from '../types/clip';
 import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
 import ClipsGrid from '../components/App/ClipsGrid.vue';
 import ClipsGrouped from '../components/App/ClipsGrouped.vue';
 import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
-import BasePagination from '../components/Base/BasePagination.vue';
 
 const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
@@ -18,21 +19,23 @@ const viewMode = ref<ViewMode>('grouped');
 
 const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
-const currentPage = computed(() => clipsStore.page);
-const totalPages = computed(() => clipsStore.totalPages);
-const hasNextPage = computed(() => clipsStore.hasNextPage);
-const hasPreviousPage = computed(() => clipsStore.hasPreviousPage);
 const loading = computed(() => clipsStore.loading);
 const isEmpty = computed(() => !loading.value && !clips.value.length);
-const shouldShowPagination = computed(() => totalPages.value > 1);
+const hasMore = computed(() => clipsStore.hasNextPage);
+
+useInfiniteScroll({
+  onLoadMore: () => clipsStore.loadMore(),
+  enabled: () => hasMore.value && !loading.value,
+});
 
 function handleClipUpdated(updatedClip: Clip): void {
   clipsStore.updateClip(updatedClip);
 }
 
 async function handleClipDeleted(): Promise<void> {
+  clipsStore.resetPagination();
   await Promise.all([
-    clipsStore.fetchClips(),
+    clipsStore.fetchClips(false),
     gamesStore.fetchGames()
   ]);
 }
@@ -84,15 +87,23 @@ onMounted(() => {
         @clip-deleted="handleClipDeleted"
       />
 
-      <BasePagination
-        v-if="shouldShowPagination"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :has-next="hasNextPage"
-        :has-previous="hasPreviousPage"
-        @next="clipsStore.nextPage()"
-        @previous="clipsStore.previousPage()"
-      />
+      <div v-if="loading" class="flex justify-center py-8">
+        <Icon icon="material-symbols:progress-activity" class="w-8 h-8 text-orange-500 animate-spin" />
+      </div>
+
+      <div v-else-if="hasMore && clips.length > 0" class="flex justify-center py-8">
+        <button
+          class="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2"
+          @click="clipsStore.loadMore()"
+        >
+          <Icon icon="material-symbols:expand-more" class="text-xl" />
+          <span>Load More</span>
+        </button>
+      </div>
+
+      <div v-else-if="!hasMore && clips.length > 0" class="text-center py-8 text-sm text-gray-400">
+        No more clips to load
+      </div>
     </div>
   </div>
 </template>
