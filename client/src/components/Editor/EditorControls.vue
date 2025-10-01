@@ -9,6 +9,7 @@ interface Props {
   zoom: number;
   canUndo: boolean;
   canRedo: boolean;
+  exporting?: boolean;
 }
 
 interface Emits {
@@ -100,11 +101,16 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-6 bg-gray-300" />
       
       <button
-        class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-white"
+        class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="props.exporting"
         @click="emit('export')"
       >
-        <Icon icon="material-symbols:download" class="text-lg" />
-        Export
+        <Icon 
+          :icon="props.exporting ? 'material-symbols:hourglass-top' : 'material-symbols:download'" 
+          class="text-lg"
+          :class="{ 'animate-spin': props.exporting }"
+        />
+        {{ props.exporting ? 'Exporting...' : 'Export' }}
       </button>
     </div>
   </div>

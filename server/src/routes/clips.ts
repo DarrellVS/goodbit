@@ -7,6 +7,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
+import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
 
 export const clipsRouter = express.Router();
 
@@ -186,6 +187,13 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
   const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
   res.json(normalized);
+}));
+
+clipsRouter.post('/export', asyncHandler(async (req, res) => {
+  const { clips, outputName } = req.body;
+  const action = new ExportTimelineAction();
+  const { clip } = await action.execute({ clips, outputName });
+  res.json(clip);
 }));
 
 clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {

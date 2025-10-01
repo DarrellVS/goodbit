@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'radix-vue';
+import { useToastStore } from '../../stores/toast';
 import type { Clip } from '../../types/clip';
 
 interface Props {
@@ -16,15 +17,14 @@ interface Emits {
 
 defineProps<Props>();
 const emit = defineEmits<Emits>();
+const toastStore = useToastStore();
 
 function handleRename(name: string): void {
   emit('rename', name);
 }
 
 function handleDelete(): void {
-  if (confirm('Delete this clip?')) {
-    emit('delete');
-  }
+  toastStore.confirm('This action cannot be undone.', () => emit('delete'), 'Delete this clip?');
 }
 </script>
 

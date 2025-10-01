@@ -106,18 +106,46 @@ export function useTimeline() {
     const clampedStart = Math.max(0, Math.min(trimStart, clip.originalDuration));
     const clampedEnd = Math.max(clampedStart + EDITOR_CONSTANTS.MIN_CLIP_DURATION, Math.min(trimEnd, clip.originalDuration));
     const newDuration = clampedEnd - clampedStart;
-    const deltaTime = newDuration - clip.duration;
+    const oldDuration = clip.duration;
+    const durationChange = newDuration - oldDuration;
+    
+    if (durationChange === 0) return;
     
     const index = clips.value.indexOf(clip);
-    const newClips = clips.value.map((c, i) => {
-      if (i === index) {
-        return { ...c, trimStart: clampedStart, trimEnd: clampedEnd, duration: newDuration };
+    const newClips = [...clips.value];
+    
+    newClips[index] = { 
+      ...clip, 
+      trimStart: clampedStart, 
+      trimEnd: clampedEnd, 
+      duration: newDuration 
+    };
+    
+    if (index + 1 >= newClips.length) {
+      clips.value = newClips;
+      clipMap.set(clipId, newClips[index]);
+      return;
+    }
+    
+    const nextClip = newClips[index + 1];
+    const oldClipEnd = clip.startTime + oldDuration;
+    const currentGap = nextClip.startTime - oldClipEnd;
+    
+    if (durationChange > 0) {
+      if (currentGap < durationChange) {
+        const pushAmount = durationChange - currentGap;
+        for (let i = index + 1; i < newClips.length; i++) {
+          newClips[i] = { ...newClips[i], startTime: newClips[i].startTime + pushAmount };
+        }
       }
-      if (i > index) {
-        return { ...c, startTime: c.startTime + deltaTime };
+    } else {
+      if (currentGap === 0) {
+        const pullAmount = Math.abs(durationChange);
+        for (let i = index + 1; i < newClips.length; i++) {
+          newClips[i] = { ...newClips[i], startTime: newClips[i].startTime - pullAmount };
+        }
       }
-      return c;
-    });
+    }
     
     clips.value = newClips;
     clipMap.set(clipId, newClips[index]);

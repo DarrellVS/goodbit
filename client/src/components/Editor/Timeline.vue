@@ -26,6 +26,7 @@ const emit = defineEmits<Emits>();
 const selectedClipId = shallowRef<string | null>(null);
 const rulerRef = shallowRef<HTMLElement | null>(null);
 const contentRef = shallowRef<HTMLElement | null>(null);
+const isDraggingRuler = shallowRef(false);
 
 const pixelsPerSecond = computed(() => EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * props.zoom);
 const timelineWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
@@ -37,6 +38,17 @@ function syncScroll(event: Event): void {
   if (target && target.scrollLeft !== source.scrollLeft) {
     target.scrollLeft = source.scrollLeft;
   }
+}
+
+function seekFromMousePosition(event: MouseEvent): void {
+  const ruler = rulerRef.value;
+  if (!ruler) return;
+  
+  const rect = ruler.getBoundingClientRect();
+  const x = event.clientX - rect.left + ruler.scrollLeft - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
+  const time = x / pixelsPerSecond.value;
+  
+  emit('seek', Math.max(0, Math.min(time, props.duration)));
 }
 
 const rulerMarks = computed((): RulerMark[] => {
@@ -55,15 +67,23 @@ const rulerMarks = computed((): RulerMark[] => {
   return marks;
 });
 
-function handleRulerClick(event: MouseEvent): void {
-  const ruler = rulerRef.value;
-  if (!ruler) return;
+function handleRulerMouseDown(event: MouseEvent): void {
+  isDraggingRuler.value = true;
+  seekFromMousePosition(event);
   
-  const rect = ruler.getBoundingClientRect();
-  const x = event.clientX - rect.left + ruler.scrollLeft - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
-  const time = x / pixelsPerSecond.value;
-  
-  emit('seek', Math.max(0, Math.min(time, props.duration)));
+  document.addEventListener('mousemove', handleRulerDrag);
+  document.addEventListener('mouseup', handleRulerMouseUp);
+}
+
+function handleRulerDrag(event: MouseEvent): void {
+  if (!isDraggingRuler.value) return;
+  seekFromMousePosition(event);
+}
+
+function handleRulerMouseUp(): void {
+  isDraggingRuler.value = false;
+  document.removeEventListener('mousemove', handleRulerDrag);
+  document.removeEventListener('mouseup', handleRulerMouseUp);
 }
 
 function handleClipSelect(clipId: string): void {
@@ -77,7 +97,7 @@ function handleClipSelect(clipId: string): void {
     <div 
       ref="rulerRef"
       class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-gray-300 relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
-      @click="handleRulerClick"
+      @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
       <div class="relative h-full" :style="{ width: `${timelineWidth}px` }">

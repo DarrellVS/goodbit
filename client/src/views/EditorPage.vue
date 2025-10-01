@@ -3,10 +3,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useClipsStore } from '../stores/clips';
+import { useToastStore } from '../stores/toast';
 import { useTimeline } from '../composables/useTimeline';
-import { useVideoPlayback } from '../composables/useVideoPlayback';
+import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { loadVideoMetadata } from '../composables/useVideoMetadata';
+import { exportTimeline } from '../services/clips';
 import { EDITOR_CONSTANTS } from '../constants/editor';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import type { Clip } from '../types/clip';
@@ -19,6 +21,7 @@ import ClipLibrary from '../components/Editor/ClipLibrary.vue';
 const router = useRouter();
 const route = useRoute();
 const clipsStore = useClipsStore();
+const toastStore = useToastStore();
 
 const {
   clips: timelineClips,
@@ -37,7 +40,7 @@ const {
   pause,
 } = useTimeline();
 
-const { videoElement, togglePlayback, skipForward, skipBackward } = useVideoPlayback(
+const { videoElement, togglePlayback, skipForward, skipBackward } = useEditorVideoPlayback(
   timelineClips,
   currentTime,
   playing,
@@ -47,6 +50,7 @@ const { videoElement, togglePlayback, skipForward, skipBackward } = useVideoPlay
 const selectedClipId = ref<string | null>(null);
 const showLibrary = ref(true);
 const showProperties = ref(true);
+const isExporting = ref(false);
 
 const selectedClip = computed(() => 
   timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
@@ -88,6 +92,28 @@ function handleZoomIn(): void {
 
 function handleZoomOut(): void {
   setZoom(zoom.value * 1.25);
+}
+
+async function handleExport(): Promise<void> {
+  if (timelineClips.value.length === 0) {
+    toastStore.warning('Add clips to the timeline before exporting');
+    return;
+  }
+
+  isExporting.value = true;
+  
+  try {
+    const outputName = `Edited_${new Date().toISOString().split('T')[0]}`;
+    const newClip = await exportTimeline(timelineClips.value, outputName);
+    
+    toastStore.success('Your edited clip has been saved!', 'Export successful');
+    router.push('/');
+  } catch (error) {
+    console.error('Export failed:', error);
+    toastStore.error('Please try again.', 'Export failed');
+  } finally {
+    isExporting.value = false;
+  }
 }
 
 function goBack(): void {
@@ -180,7 +206,6 @@ watch(() => route.query.clip, async (clipId) => {
             <video
               ref="videoElement"
               class="max-w-full max-h-full shadow-2xl rounded-lg border border-gray-300"
-              style="aspect-ratio: 16/9"
               preload="metadata"
             />
           </div>
@@ -226,6 +251,7 @@ watch(() => route.query.clip, async (clipId) => {
       :zoom="zoom"
       :can-undo="false"
       :can-redo="false"
+      :exporting="isExporting"
       @play="play"
       @pause="pause"
       @skip-backward="skipBackward()"
@@ -234,7 +260,7 @@ watch(() => route.query.clip, async (clipId) => {
       @zoom-out="handleZoomOut"
       @undo="() => {}"
       @redo="() => {}"
-      @export="() => {}"
+      @export="handleExport"
     />
   </div>
 </template>

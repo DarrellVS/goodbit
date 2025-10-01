@@ -1,4 +1,5 @@
 import axios from '../axios';
+import type { TimelineClip } from '../types/editor';
 import type { Clip } from '../types/clip';
 
 export type ClipMeta = {
@@ -8,6 +9,35 @@ export type ClipMeta = {
   codec: string | null;
   fps: string | null;
 };
+
+interface ExportTimelineRequest {
+  clips: Array<{
+    clipId: number;
+    startTime: number;
+    trimStart: number;
+    trimEnd: number;
+    volume: number;
+    muted: boolean;
+  }>;
+  outputName?: string;
+}
+
+export async function exportTimeline(clips: readonly TimelineClip[], outputName?: string): Promise<{ id: number }> {
+  const payload: ExportTimelineRequest = {
+    clips: clips.map(clip => ({
+      clipId: clip.clipId,
+      startTime: clip.startTime,
+      trimStart: clip.trimStart,
+      trimEnd: clip.trimEnd,
+      volume: clip.volume,
+      muted: clip.muted,
+    })),
+    outputName,
+  };
+
+  const response = await axios.post('/api/clips/export', payload);
+  return response.data;
+}
 
 export async function updateClipName(id: number, displayName: string | null): Promise<Clip> {
   const { data } = await axios.patch<Clip>(`/api/clips/${id}`, { displayName });
@@ -64,5 +94,4 @@ export async function unstarClip(id: number): Promise<Clip> {
   const { data } = await axios.post<Clip>(`/api/clips/${id}/unstar`);
   return data;
 }
-
 

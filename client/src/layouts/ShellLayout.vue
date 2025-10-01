@@ -55,6 +55,7 @@ import { useClipsStore } from '../stores/clips';
 import { useAuthStore } from '../stores/auth';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
+import { useToastStore } from '../stores/toast';
 import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
 import { deleteTag } from '../services/clips';
@@ -62,6 +63,7 @@ import { Icon } from '@iconify/vue';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
+const toastStore = useToastStore();
 const clipsStore = useClipsStore();
 const selectedGame = ref('');
 const searchText = ref('');
@@ -109,22 +111,26 @@ watch(searchText, (q) => {
 });
 
 async function removeTagFromHeader(tagName: string) {
-  if (!confirm(`Delete tag "${tagName}"?\n\nThis will remove it from all clips.`)) return;
-  
-  try {
-    await deleteTag(tagName);
-    
-    // Remove from store
-    const idx = tagsStore.items.indexOf(tagName);
-    if (idx >= 0) tagsStore.items.splice(idx, 1);
-    
-    // If this tag was selected, remove it from the filter
-    if (clipsStore.selectedTags.includes(tagName)) {
-      clipsStore.setTags(clipsStore.selectedTags.filter(t => t !== tagName));
-    }
-  } catch (error) {
-    console.error('Failed to delete tag:', error);
-    alert('Failed to delete tag. Please try again.');
-  }
+  toastStore.confirm(
+    `This will remove "${tagName}" from all clips.`,
+    async () => {
+      try {
+        await deleteTag(tagName);
+        
+        const idx = tagsStore.items.indexOf(tagName);
+        if (idx >= 0) tagsStore.items.splice(idx, 1);
+        
+        if (clipsStore.selectedTags.includes(tagName)) {
+          clipsStore.setTags(clipsStore.selectedTags.filter(t => t !== tagName));
+        }
+        
+        toastStore.success(`Tag "${tagName}" deleted successfully`);
+      } catch (error) {
+        console.error('Failed to delete tag:', error);
+        toastStore.error('Please try again.', 'Failed to delete tag');
+      }
+    },
+    'Delete tag?'
+  );
 }
 </script>
