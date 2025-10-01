@@ -12,6 +12,7 @@ export const useClipsStore = defineStore('clips', {
     searchText: '',
     selectedTags: [] as string[],
     publishedFilter: null as boolean | null, // null = all, true = published only, false = not published only
+    starredFilter: false, // true = starred only, false = all
     loading: false,
   }),
   actions: {
@@ -24,6 +25,7 @@ export const useClipsStore = defineStore('clips', {
         if (this.searchText) params.q = this.searchText;
         if (this.selectedTags.length > 0) params.tags = this.selectedTags.join(',');
         if (this.publishedFilter !== null) params.published = String(this.publishedFilter);
+        if (this.starredFilter) params.starred = 'true';
 
         const { data } = await axios.get<{ items: Clip[]; total: number; page: number; pageSize: number }>(
           '/api/clips',
@@ -53,6 +55,11 @@ export const useClipsStore = defineStore('clips', {
     },
     setPublishedFilter(published: boolean | null) {
       this.publishedFilter = published;
+      this.page = 1;
+      void this.fetchClips();
+    },
+    setStarredFilter(starred: boolean) {
+      this.starredFilter = starred;
       this.page = 1;
       void this.fetchClips();
     },

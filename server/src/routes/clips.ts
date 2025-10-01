@@ -11,7 +11,7 @@ import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 export const clipsRouter = express.Router();
 
 clipsRouter.get('/', asyncHandler(async (req, res) => {
-  const { game, q, tags, published, page = '1', pageSize = '50' } = req.query as Record<string, string>;
+  const { game, q, tags, published, starred, page = '1', pageSize = '50' } = req.query as Record<string, string>;
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
   const pageSz = Math.min(Math.max(parseInt(pageSize || '50', 10) || 50, 1), 200);
 
@@ -25,6 +25,8 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
 
   if (published === 'true') qb = qb.andWhere('clip.published = :published', { published: true });
   if (published === 'false') qb = qb.andWhere('clip.published = :published', { published: false });
+  
+  qb = qb.andWhere('(clip.starred = :starred)', { starred: starred === 'true' });
 
   if (q && q.length > 0) {
     qb = qb.andWhere('(' +
@@ -193,6 +195,26 @@ clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
   const repo = AppDataSource.getRepository(Clip);
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
   const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
+  res.json(normalized);
+}));
+
+clipsRouter.post('/:id/star', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const repo = AppDataSource.getRepository(Clip);
+  const clip = await repo.findOneOrFail({ where: { id }, relations: ['tags'] });
+  clip.starred = true;
+  await repo.save(clip);
+  const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
+  res.json(normalized);
+}));
+
+clipsRouter.post('/:id/unstar', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const repo = AppDataSource.getRepository(Clip);
+  const clip = await repo.findOneOrFail({ where: { id }, relations: ['tags'] });
+  clip.starred = false;
+  await repo.save(clip);
+  const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
   res.json(normalized);
 }));
 

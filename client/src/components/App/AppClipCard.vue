@@ -7,7 +7,7 @@ import type { PopoverAction } from '../Base/types';
 import { useClipActions } from '../../composables/useClipActions';
 import type { Clip } from '../../types/clip';
 import { useFormat } from '../../composables/useFormat';
-import { updateClipName, updateClipTags, deleteClip, openClip, deleteTag } from '../../services/clips';
+import { updateClipName, updateClipTags, deleteClip, openClip, deleteTag, starClip, unstarClip } from '../../services/clips';
 import { useTagsStore } from '../../stores/tags';
 import { publishClip, unpublishClip } from '../../services/clips';
 import { computed, ref } from 'vue';
@@ -83,6 +83,15 @@ async function removeTag(tagName: string) {
   }
 }
 
+async function toggleStar() {
+  try {
+    const updated = props.clip.starred ? await unstarClip(props.clip.id) : await starClip(props.clip.id);
+    emit('updated', updated);
+  } catch (error) {
+    console.error('Failed to toggle star:', error);
+  }
+}
+
 const { actions } = useClipActions({
   clip: computed(() => props.clip),
   emitUpdated: (clip) => emit('updated', clip),
@@ -101,9 +110,20 @@ function onMouseLeave() {
 
 <template>
   <div class="clip-card group relative bg-white/5 rounded-xl overflow-hidden border border-border/50 hover:border-orange-500/50 transition-all hover:shadow-lg" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
-    <div v-if="clip.published" class="absolute top-3 left-3 z-10">
+    <!-- Published Badge -->
+    <div v-if="clip.published" class="absolute top-3 right-14 z-10">
       <div class="bg-green-500/90 text-white text-xs font-medium px-2 py-1 rounded">Published</div>
     </div>
+    
+    <!-- Star Button -->
+    <button 
+      class="absolute top-3 left-3 z-10 rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 px-2 py-2 outline-none size-8 hover:bg-black/80 transition"
+      :class="{ 'opacity-100': clip.starred, 'opacity-0 group-hover:opacity-100': !clip.starred }"
+      @click.stop="toggleStar"
+      :title="clip.starred ? 'Unstar' : 'Star'"
+    >
+      <Icon icon="material-symbols:star" class="text-lg" :class="clip.starred ? 'text-orange-400' : 'text-white'" />
+    </button>
     
     <!-- Menu Button -->
     <div class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -117,7 +137,7 @@ function onMouseLeave() {
       </BasePopover>
     </div>
 
-    <div class="aspect-video bg-black relative">
+    <div class="aspect-[21/9] bg-black relative">
       <video :src="videoUrl" :id="`preview-video-${clip.id}`" class="w-full h-full m-0 p-0 object-cover" preload="none" controls :poster="posterUrl"></video>
     </div>
     
@@ -125,7 +145,7 @@ function onMouseLeave() {
       <div class="flex items-start justify-between gap-2 mb-2">
         <div class="flex-1 min-w-0">
           <input 
-            class="w-full bg-transparent border-0 outline-none px-0 py-0 font-medium text-sm truncate hover:bg-white/5 focus:bg-white/5 rounded px-1" 
+            class="w-full bg-transparent border-0 outline-none px-0 py-0 font-medium text-sm truncate hover:bg-white/5 focus:bg-white/5 rounded" 
             :value="clip.displayName ?? clip.filename" 
             @change="updateName"
             :title="clip.displayName ?? clip.filename"

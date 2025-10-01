@@ -55,4 +55,14 @@ export async function deleteTag(tagName: string): Promise<void> {
   await axios.delete(`/api/tags/${encodeURIComponent(tagName)}`);
 }
 
+export async function starClip(id: number): Promise<Clip> {
+  const { data } = await axios.post<Clip>(`/api/clips/${id}/star`);
+  return data;
+}
+
+export async function unstarClip(id: number): Promise<Clip> {
+  const { data } = await axios.post<Clip>(`/api/clips/${id}/unstar`);
+  return data;
+}
+
 

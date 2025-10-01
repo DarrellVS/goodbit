@@ -102,10 +102,16 @@ watch(searchText, (q) => {
 watch(activeFilter, (filter) => {
   if (filter === 'published') {
     clipsStore.setPublishedFilter(true);
+    clipsStore.setStarredFilter(false);
   } else if (filter === 'not-published') {
     clipsStore.setPublishedFilter(false);
+    clipsStore.setStarredFilter(false);
+  } else if (filter === 'starred') {
+    clipsStore.setPublishedFilter(null);
+    clipsStore.setStarredFilter(true);
   } else {
     clipsStore.setPublishedFilter(null);
+    clipsStore.setStarredFilter(false);
   }
 });
 

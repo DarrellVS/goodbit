@@ -45,6 +45,9 @@ export class Clip {
   @Column('text', { nullable: true })
   publishedUrl!: string | null;
 
+  @Column({ type: 'boolean', default: false })
+  starred!: boolean;
+
   @ManyToMany(() => Tag, { cascade: ['insert'] })
   @JoinTable()
   tags!: Tag[];

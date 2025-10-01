@@ -18,6 +18,7 @@ const clips = computed(() => store.items);
 const total = computed(() => store.total);
 const page = computed(() => store.page);
 const pageSize = computed(() => store.pageSize);
+const loading = computed(() => store.loading);
 const hoveredId = ref<number | null>(null);
 
 function goto(p: number) {
@@ -68,7 +69,19 @@ function thumbSrc(clip: Clip) { return thumbUrlFor(clip.id, clip.fileModifiedAt)
       <div class="text-sm text-muted-400">{{ total }} Videos</div>
     </div>
 
-    <section class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+    <!-- Empty State -->
+    <div v-if="!loading && clips.length === 0" class="py-24 flex flex-col items-center justify-center text-center gap-4 opacity-80">
+      <div class="rounded-full w-20 h-20 flex items-center justify-center bg-white/5 border border-border">
+        <Icon icon="material-symbols:video-library" class="text-3xl text-muted-400" />
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold mb-2">No clips found</h2>
+        <p class="text-muted-400">Try adjusting your filters or adding some clips to your library.</p>
+      </div>
+    </div>
+
+    <!-- Clips Grid -->
+    <section v-else class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-4">
       <AppClipCard
         v-for="clip in clips"
         :key="clip.id"
