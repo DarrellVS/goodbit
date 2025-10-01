@@ -19,12 +19,18 @@ export function useClipActions(opts: {
         router: opts.router as any,
     });
 
+    function onAdvancedEdit() {
+        const clip = toValue(opts.clip);
+        opts.router.push(`/editor?clip=${clip.id}`);
+    }
+
     const actions = computed<PopoverAction[]>(() => {
         const clip = toValue(opts.clip);
         const list: PopoverAction[] = [];
 
         list.push(
             { key: 'trim', label: 'Trim', onClick: onTrim, variant: 'muted' },
+            { key: 'edit', label: 'Advanced Edit', onClick: onAdvancedEdit, variant: 'muted' },
             { key: 'reveal', label: 'Reveal in Explorer', onClick: onReveal, variant: 'muted' },
         );
 

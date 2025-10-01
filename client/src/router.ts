@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import TrimPage from './views/TrimPage.vue';
+import EditorPage from './views/EditorPage.vue';
 import LoginPage from './views/LoginPage.vue';
 import { useAuthStore } from './stores/auth';
 import ShellLayout from './layouts/ShellLayout.vue';
@@ -20,6 +21,7 @@ export const router = createRouter({
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },
+    { path: '/editor', name: 'editor', component: EditorPage, meta: { requiresAuth: true } },
   ],
 });
 
