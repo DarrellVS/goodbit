@@ -1,21 +1,18 @@
-import { ref, computed, watch } from 'vue';
-import type { TimelineClip, TimelineState, AudioSegment } from '../types/editor';
+import { ref, computed, readonly, shallowRef } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
+import { EDITOR_CONSTANTS } from '../constants/editor';
+import type { TimelineClip } from '../types/editor';
 
 export function useTimeline() {
-  const clips = ref<TimelineClip[]>([]);
-  const audioSegments = ref<AudioSegment[]>([]);
+  const clips = shallowRef<TimelineClip[]>([]);
+  const clipMap = new Map<string, TimelineClip>();
   const currentTime = ref(0);
   const zoom = ref(1);
   const playing = ref(false);
 
-  const duration = computed(() => {
-    if (!clips.value.length) return 0;
-    return clips.value.reduce((max, clip) => {
-      const clipEnd = clip.startTime + clip.duration;
-      return Math.max(max, clipEnd);
-    }, 0);
-  });
+  const duration = computed(() =>
+    clips.value.reduce((max, clip) => Math.max(max, clip.startTime + clip.duration), 0)
+  );
 
   function addClip(
     clipId: number,
@@ -23,7 +20,7 @@ export function useTimeline() {
     thumbnailUrl: string,
     originalDuration: number
   ): void {
-    const newClip: TimelineClip = {
+    const clip: TimelineClip = {
       id: uuidv4(),
       clipId,
       startTime: duration.value,
@@ -36,76 +33,108 @@ export function useTimeline() {
       thumbnailUrl,
       originalDuration,
     };
-    clips.value.push(newClip);
+    
+    clips.value = [...clips.value, clip];
+    clipMap.set(clip.id, clip);
   }
 
   function removeClip(clipId: string): void {
-    const index = clips.value.findIndex(c => c.id === clipId);
-    if (index === -1) return;
-    
-    clips.value.splice(index, 1);
-    reorderClips();
-  }
-
-  function updateClip(clipId: string, updates: Partial<TimelineClip>): void {
-    const clip = clips.value.find(c => c.id === clipId);
+    const clip = clipMap.get(clipId);
     if (!clip) return;
     
-    Object.assign(clip, updates);
+    const index = clips.value.indexOf(clip);
+    const newClips = [...clips.value];
+    newClips.splice(index, 1);
+    
+    for (let i = index; i < newClips.length; i++) {
+      newClips[i] = { ...newClips[i], startTime: newClips[i].startTime - clip.duration };
+    }
+    
+    clips.value = newClips;
+    clipMap.delete(clipId);
+  }
+
+  function updateClipProperties(
+    clipId: string,
+    updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>
+  ): void {
+    const clip = clipMap.get(clipId);
+    if (!clip) return;
+    
+    const updated = { ...clip };
+    if (updates.volume !== undefined) updated.volume = Math.max(0, Math.min(1, updates.volume));
+    if (updates.muted !== undefined) updated.muted = updates.muted;
+    
+    const index = clips.value.indexOf(clip);
+    const newClips = [...clips.value];
+    newClips[index] = updated;
+    clips.value = newClips;
+    clipMap.set(clipId, updated);
   }
 
   function moveClip(clipId: string, newStartTime: number): void {
-    const clip = clips.value.find(c => c.id === clipId);
+    const clip = clipMap.get(clipId);
     if (!clip) return;
     
-    clip.startTime = Math.max(0, newStartTime);
-    reorderClips();
-  }
-
-  function reorderClips(): void {
-    clips.value.sort((a, b) => a.startTime - b.startTime);
+    const clampedStart = Math.max(0, newStartTime);
+    const updated = { ...clip, startTime: clampedStart };
     
-    for (let i = 1; i < clips.value.length; i++) {
-      const prevClip = clips.value[i - 1];
-      const currentClip = clips.value[i];
-      const prevEnd = prevClip.startTime + prevClip.duration;
-      
-      if (currentClip.startTime < prevEnd) {
-        currentClip.startTime = prevEnd;
+    const newClips = clips.value.filter(c => c.id !== clipId);
+    const insertIndex = newClips.findIndex(c => c.startTime > clampedStart);
+    
+    if (insertIndex === -1) {
+      newClips.push(updated);
+    } else {
+      newClips.splice(insertIndex, 0, updated);
+    }
+    
+    for (let i = 1; i < newClips.length; i++) {
+      const prevEnd = newClips[i - 1].startTime + newClips[i - 1].duration;
+      if (newClips[i].startTime < prevEnd) {
+        newClips[i] = { ...newClips[i], startTime: prevEnd };
       }
     }
+    
+    clips.value = newClips;
+    clipMap.set(clipId, updated);
   }
 
   function trimClip(clipId: string, trimStart: number, trimEnd: number): void {
-    const clip = clips.value.find(c => c.id === clipId);
+    const clip = clipMap.get(clipId);
     if (!clip) return;
     
-    clip.trimStart = Math.max(0, trimStart);
-    clip.trimEnd = Math.min(clip.originalDuration, trimEnd);
-    clip.duration = clip.trimEnd - clip.trimStart;
-  }
-
-  function muteSegment(startTime: number, endTime: number): void {
-    audioSegments.value.push({
-      id: uuidv4(),
-      startTime,
-      endTime,
-      muted: true,
+    const clampedStart = Math.max(0, Math.min(trimStart, clip.originalDuration));
+    const clampedEnd = Math.max(clampedStart + EDITOR_CONSTANTS.MIN_CLIP_DURATION, Math.min(trimEnd, clip.originalDuration));
+    const newDuration = clampedEnd - clampedStart;
+    const deltaTime = newDuration - clip.duration;
+    
+    const index = clips.value.indexOf(clip);
+    const newClips = clips.value.map((c, i) => {
+      if (i === index) {
+        return { ...c, trimStart: clampedStart, trimEnd: clampedEnd, duration: newDuration };
+      }
+      if (i > index) {
+        return { ...c, startTime: c.startTime + deltaTime };
+      }
+      return c;
     });
-  }
-
-  function removeAudioSegment(segmentId: string): void {
-    const index = audioSegments.value.findIndex(s => s.id === segmentId);
-    if (index !== -1) {
-      audioSegments.value.splice(index, 1);
-    }
+    
+    clips.value = newClips;
+    clipMap.set(clipId, newClips[index]);
   }
 
   function seekTo(time: number): void {
     currentTime.value = Math.max(0, Math.min(time, duration.value));
   }
 
+  function setZoom(value: number): void {
+    zoom.value = Math.max(EDITOR_CONSTANTS.ZOOM.MIN, Math.min(EDITOR_CONSTANTS.ZOOM.MAX, value));
+  }
+
   function play(): void {
+    if (currentTime.value >= duration.value) {
+      currentTime.value = 0;
+    }
     playing.value = true;
   }
 
@@ -115,30 +144,27 @@ export function useTimeline() {
 
   function reset(): void {
     clips.value = [];
-    audioSegments.value = [];
+    clipMap.clear();
     currentTime.value = 0;
     playing.value = false;
+    zoom.value = 1;
   }
 
   return {
-    clips,
-    audioSegments,
+    clips: readonly(clips),
     currentTime,
     duration,
     zoom,
     playing,
     addClip,
     removeClip,
-    updateClip,
+    updateClipProperties,
     moveClip,
     trimClip,
-    muteSegment,
-    removeAudioSegment,
     seekTo,
+    setZoom,
     play,
     pause,
     reset,
   };
 }
-
-

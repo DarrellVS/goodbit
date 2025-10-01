@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useClipsStore } from '../stores/clips';
 import { useTimeline } from '../composables/useTimeline';
-import { useEditorPlayback } from '../composables/useEditorPlayback';
+import { useVideoPlayback } from '../composables/useVideoPlayback';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
+import { loadVideoMetadata } from '../composables/useVideoMetadata';
+import { EDITOR_CONSTANTS } from '../constants/editor';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import type { Clip } from '../types/clip';
+import type { TimelineClip } from '../types/editor';
 import Timeline from '../components/Editor/Timeline.vue';
 import EditorControls from '../components/Editor/EditorControls.vue';
 import ClipProperties from '../components/Editor/ClipProperties.vue';
@@ -18,23 +22,22 @@ const clipsStore = useClipsStore();
 
 const {
   clips: timelineClips,
-  audioSegments,
   currentTime,
   duration,
   zoom,
   playing,
   addClip,
   removeClip,
-  updateClip,
+  updateClipProperties,
   moveClip,
   trimClip,
-  muteSegment,
   seekTo,
+  setZoom,
   play,
   pause,
 } = useTimeline();
 
-const { videoElement, activeClip, togglePlayback, skipForward, skipBackward } = useEditorPlayback(
+const { videoElement, togglePlayback, skipForward, skipBackward } = useVideoPlayback(
   timelineClips,
   currentTime,
   playing,
@@ -42,45 +45,23 @@ const { videoElement, activeClip, togglePlayback, skipForward, skipBackward } = 
 );
 
 const selectedClipId = ref<string | null>(null);
-const selectedClip = computed(() => 
-  selectedClipId.value 
-    ? timelineClips.value.find(c => c.id === selectedClipId.value) || null
-    : null
-);
-
 const showLibrary = ref(true);
 const showProperties = ref(true);
-const exporting = ref(false);
+
+const selectedClip = computed(() => 
+  timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
+);
 
 async function handleAddToTimeline(clip: Clip): Promise<void> {
   const videoUrl = videoUrlFor(clip.id, clip.fileModifiedAt);
-  
-  const tempVideo = document.createElement('video');
-  tempVideo.src = videoUrl;
+  const thumbnailUrl = thumbUrlFor(clip.id, clip.fileModifiedAt);
   
   try {
-    await new Promise<void>((resolve, reject) => {
-      tempVideo.addEventListener('loadedmetadata', () => resolve());
-      tempVideo.addEventListener('error', () => reject());
-      setTimeout(() => reject(new Error('Timeout')), 5000);
-    });
-    
-    const videoDuration = tempVideo.duration;
-    
-    addClip(
-      clip.id,
-      videoUrl,
-      thumbUrlFor(clip.id, clip.fileModifiedAt),
-      videoDuration
-    );
+    const videoDuration = await loadVideoMetadata(videoUrl);
+    addClip(clip.id, videoUrl, thumbnailUrl, videoDuration);
   } catch (error) {
-    console.error('Failed to load video metadata, using default duration:', error);
-    addClip(
-      clip.id,
-      videoUrl,
-      thumbUrlFor(clip.id, clip.fileModifiedAt),
-      30
-    );
+    console.error('Failed to load video metadata:', error);
+    addClip(clip.id, videoUrl, thumbnailUrl, EDITOR_CONSTANTS.DEFAULT_VIDEO_DURATION);
   }
 }
 
@@ -88,78 +69,55 @@ function handleSelectClip(clipId: string): void {
   selectedClipId.value = clipId;
 }
 
-function handleUpdateClip(updates: Partial<any>): void {
-  if (!selectedClipId.value) return;
-  updateClip(selectedClipId.value, updates);
+function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>): void {
+  if (selectedClipId.value) {
+    updateClipProperties(selectedClipId.value, updates);
+  }
 }
 
-function handleMoveClip(clipId: string, newStartTime: number): void {
-  moveClip(clipId, newStartTime);
+function handleDeleteClip(): void {
+  if (selectedClipId.value) {
+    removeClip(selectedClipId.value);
+    selectedClipId.value = null;
+  }
 }
-
 
 function handleZoomIn(): void {
-  zoom.value = Math.max(0.25, zoom.value * 0.75);
+  setZoom(zoom.value * 0.75);
 }
 
 function handleZoomOut(): void {
-  zoom.value = Math.min(3, zoom.value * 1.25);
-}
-
-function handleExport(): void {
-  exporting.value = true;
-  
-  setTimeout(() => {
-    alert('Export functionality will render your timeline to a final video file!\nThis requires backend FFmpeg processing.');
-    exporting.value = false;
-  }, 500);
+  setZoom(zoom.value * 1.25);
 }
 
 function goBack(): void {
   router.push('/');
 }
 
-function getThumbUrl(clip: Clip): string {
-  return thumbUrlFor(clip.id, clip.fileModifiedAt);
+async function loadClipFromQuery(clipId: string): Promise<void> {
+  const clip = clipsStore.items.find((c: Clip) => c.id === Number(clipId));
+  if (clip) await handleAddToTimeline(clip);
 }
 
-function handleKeyboard(event: KeyboardEvent): void {
-  if (event.code === 'Space' && event.target === document.body) {
-    event.preventDefault();
-    togglePlayback();
-  } else if (event.code === 'ArrowLeft') {
-    skipBackward(5);
-  } else if (event.code === 'ArrowRight') {
-    skipForward(5);
-  } else if (event.code === 'Delete' && selectedClipId.value) {
-    removeClip(selectedClipId.value);
-    selectedClipId.value = null;
-  }
-}
+useKeyboardShortcuts({
+  Space: togglePlayback,
+  ArrowLeft: () => skipBackward(),
+  ArrowRight: () => skipForward(),
+  Delete: handleDeleteClip,
+});
 
 onMounted(async () => {
   await clipsStore.fetchClips();
   
   const clipId = route.query.clip;
-  if (clipId) {
-    const clip = clipsStore.items.find(c => c.id === Number(clipId));
-    if (clip) {
-      await handleAddToTimeline(clip);
-    }
+  if (clipId && !Array.isArray(clipId)) {
+    await loadClipFromQuery(clipId);
   }
-  
-  document.addEventListener('keydown', handleKeyboard);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeyboard);
 });
 
 watch(() => route.query.clip, async (clipId) => {
-  if (!clipId) return;
-  const clip = clipsStore.items.find(c => c.id === Number(clipId));
-  if (clip) {
-    await handleAddToTimeline(clip);
+  if (clipId && !Array.isArray(clipId)) {
+    await loadClipFromQuery(clipId);
   }
 });
 </script>
@@ -211,14 +169,14 @@ watch(() => route.query.clip, async (clipId) => {
       <aside v-if="showLibrary" class="w-64 flex-shrink-0">
         <ClipLibrary
           :clips="clipsStore.items"
-          :get-thumb-url="getThumbUrl"
+          :get-thumb-url="(clip: Clip) => thumbUrlFor(clip.id, clip.fileModifiedAt)"
           @add-to-timeline="handleAddToTimeline"
         />
       </aside>
 
       <main class="flex-1 flex flex-col gap-3 min-w-0">
         <div class="flex-1 relative bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
-          <div v-if="activeClip" class="absolute inset-0 flex items-center justify-center p-6">
+          <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
             <video
               ref="videoElement"
               class="max-w-full max-h-full shadow-2xl rounded-lg border border-gray-300"
@@ -248,7 +206,7 @@ watch(() => route.query.clip, async (clipId) => {
             @select-clip="handleSelectClip"
             @remove-clip="removeClip"
             @trim-clip="trimClip"
-            @move-clip="handleMoveClip"
+            @move-clip="moveClip"
           />
         </div>
       </main>
@@ -270,13 +228,13 @@ watch(() => route.query.clip, async (clipId) => {
       :can-redo="false"
       @play="play"
       @pause="pause"
-      @skip-backward="skipBackward(5)"
-      @skip-forward="skipForward(5)"
+      @skip-backward="skipBackward()"
+      @skip-forward="skipForward()"
       @zoom-in="handleZoomIn"
       @zoom-out="handleZoomOut"
       @undo="() => {}"
       @redo="() => {}"
-      @export="handleExport"
+      @export="() => {}"
     />
   </div>
 </template>

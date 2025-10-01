@@ -12,6 +12,18 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+function formatDuration(seconds: number): string {
+  return seconds.toFixed(2) + 's';
+}
+
+function getVolumePercentage(volume: number): number {
+  return Math.round(volume * 100);
+}
+
+function volumeToDecimal(percentage: number): number {
+  return percentage / 100;
+}
 </script>
 
 <template>
@@ -40,15 +52,15 @@ const emit = defineEmits<Emits>();
             <Icon icon="material-symbols:volume-up" class="text-orange-500" />
             Volume
           </span>
-          <span class="text-gray-900 font-mono text-sm">{{ Math.round(clip.volume * 100) }}%</span>
+          <span class="text-gray-900 font-mono text-sm">{{ getVolumePercentage(clip.volume) }}%</span>
         </label>
         <input
           type="range"
           min="0"
           max="100"
-          :value="clip.volume * 100"
+          :value="getVolumePercentage(clip.volume)"
           class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
-          @input="emit('update', { volume: ($event.target as HTMLInputElement).valueAsNumber / 100 })"
+          @input="emit('update', { volume: volumeToDecimal(($event.target as HTMLInputElement).valueAsNumber) })"
         />
       </div>
 
@@ -77,19 +89,19 @@ const emit = defineEmits<Emits>();
         <div class="space-y-1.5 text-xs bg-white/80 rounded-lg p-3 border border-gray-300">
           <div class="flex justify-between">
             <span class="text-gray-600">Original:</span>
-            <span class="font-mono text-gray-900">{{ clip.originalDuration.toFixed(2) }}s</span>
+            <span class="font-mono text-gray-900">{{ formatDuration(clip.originalDuration) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Current:</span>
-            <span class="font-mono text-gray-900">{{ clip.duration.toFixed(2) }}s</span>
+            <span class="font-mono text-gray-900">{{ formatDuration(clip.duration) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Trim Start:</span>
-            <span class="font-mono text-gray-900">{{ clip.trimStart.toFixed(2) }}s</span>
+            <span class="font-mono text-gray-900">{{ formatDuration(clip.trimStart) }}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Trim End:</span>
-            <span class="font-mono text-gray-900">{{ clip.trimEnd.toFixed(2) }}s</span>
+            <span class="font-mono text-gray-900">{{ formatDuration(clip.trimEnd) }}</span>
           </div>
         </div>
       </div>

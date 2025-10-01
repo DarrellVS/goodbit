@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import type { Clip } from '../../types/clip';
 import { useFormat } from '../../composables/useFormat';
+import type { Clip } from '../../types/clip';
 
 interface Props {
   clips: Clip[];
@@ -16,6 +16,10 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const { formatBytes } = useFormat();
+
+function formatDate(date: string | Date): string {
+  return new Date(date).toLocaleDateString();
+}
 </script>
 
 <template>
@@ -43,7 +47,7 @@ const { formatBytes } = useFormat();
           <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
           
           <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-mono text-gray-700">
-            {{ new Date(clip.fileModifiedAt).toLocaleDateString() }}
+            {{ formatDate(clip.fileModifiedAt) }}
           </div>
           
           <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/40 backdrop-blur-sm">

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import type { TimelineClip } from '../../types/editor';
+import { computed, shallowRef } from 'vue';
+import { formatTimeSimple } from '../../utils/timeFormat';
+import { EDITOR_CONSTANTS, getRulerInterval } from '../../constants/editor';
+import type { TimelineClip, RulerMark } from '../../types/editor';
 import TimelineTrack from './TimelineTrack.vue';
 
 interface Props {
-  clips: TimelineClip[];
+  clips: readonly TimelineClip[];
   currentTime: number;
   duration: number;
   zoom: number;
@@ -21,56 +23,62 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const selectedClipId = ref<string | null>(null);
-const timelineRef = ref<HTMLElement | null>(null);
-const rulerRef = ref<HTMLElement | null>(null);
+const selectedClipId = shallowRef<string | null>(null);
+const rulerRef = shallowRef<HTMLElement | null>(null);
+const contentRef = shallowRef<HTMLElement | null>(null);
 
-const TIMELINE_OFFSET = 12;
-
-const pixelsPerSecond = computed(() => 50 * props.zoom);
+const pixelsPerSecond = computed(() => EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * props.zoom);
 const timelineWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
-const playheadPosition = computed(() => TIMELINE_OFFSET + (props.currentTime * pixelsPerSecond.value));
+const playheadPosition = computed(() => EDITOR_CONSTANTS.TIMELINE_OFFSET_PX + (props.currentTime * pixelsPerSecond.value));
+
+function syncScroll(event: Event): void {
+  const source = event.target as HTMLElement;
+  const target = source === rulerRef.value ? contentRef.value : rulerRef.value;
+  if (target && target.scrollLeft !== source.scrollLeft) {
+    target.scrollLeft = source.scrollLeft;
+  }
+}
+
+const rulerMarks = computed((): RulerMark[] => {
+  const marks: RulerMark[] = [];
+  const interval = getRulerInterval(props.zoom);
+  const pps = pixelsPerSecond.value;
+  const offset = EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
+  
+  for (let i = 0; i <= Math.ceil(props.duration); i += interval) {
+    marks.push({
+      position: offset + (i * pps),
+      label: formatTimeSimple(i),
+    });
+  }
+  
+  return marks;
+});
 
 function handleRulerClick(event: MouseEvent): void {
-  if (!rulerRef.value) return;
+  const ruler = rulerRef.value;
+  if (!ruler) return;
   
-  const rect = rulerRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left + rulerRef.value.scrollLeft - TIMELINE_OFFSET;
+  const rect = ruler.getBoundingClientRect();
+  const x = event.clientX - rect.left + ruler.scrollLeft - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
   const time = x / pixelsPerSecond.value;
   
   emit('seek', Math.max(0, Math.min(time, props.duration)));
 }
 
-function selectClip(clipId: string): void {
+function handleClipSelect(clipId: string): void {
   selectedClipId.value = clipId;
   emit('select-clip', clipId);
 }
-
-function generateRulerMarks(): Array<{ position: number; label: string }> {
-  const marks: Array<{ position: number; label: string }> = [];
-  const interval = props.zoom < 0.5 ? 10 : props.zoom < 1 ? 5 : 1;
-  
-  for (let i = 0; i <= Math.ceil(props.duration); i += interval) {
-    const mins = Math.floor(i / 60);
-    const secs = i % 60;
-    marks.push({
-      position: TIMELINE_OFFSET + (i * pixelsPerSecond.value),
-      label: `${mins}:${secs.toString().padStart(2, '0')}`,
-    });
-  }
-  
-  return marks;
-}
-
-const rulerMarks = computed(generateRulerMarks);
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
+  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden select-none">
     <div 
       ref="rulerRef"
-      class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-gray-300 relative overflow-x-auto overflow-y-hidden cursor-pointer"
+      class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-gray-300 relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @click="handleRulerClick"
+      @scroll="syncScroll"
     >
       <div class="relative h-full" :style="{ width: `${timelineWidth}px` }">
         <div
@@ -85,9 +93,10 @@ const rulerMarks = computed(generateRulerMarks);
       </div>
     </div>
 
-    <div
-      ref="timelineRef"
+    <div 
+      ref="contentRef"
       class="flex-1 relative overflow-x-auto overflow-y-hidden"
+      @scroll="syncScroll"
     >
       <div class="relative h-full py-3" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
         <div class="relative h-16 bg-orange-50/30 rounded-lg mx-3 border border-gray-300">
@@ -95,13 +104,12 @@ const rulerMarks = computed(generateRulerMarks);
             v-for="clip in clips"
             :key="clip.id"
             :clip="clip"
-            :zoom="zoom"
             :pixels-per-second="pixelsPerSecond"
             :selected="selectedClipId === clip.id"
-            @select="selectClip"
+            @select="handleClipSelect"
             @remove="emit('remove-clip', $event)"
-            @trim="(clipId, trimStart, trimEnd) => emit('trim-clip', clipId, trimStart, trimEnd)"
-            @move="(clipId, newStartTime) => emit('move-clip', clipId, newStartTime)"
+            @trim="(id, start, end) => emit('trim-clip', id, start, end)"
+            @move="(id, time) => emit('move-clip', id, time)"
           />
         </div>
 

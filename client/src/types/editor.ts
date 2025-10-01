@@ -19,19 +19,13 @@ export interface AudioSegment {
   muted: boolean;
 }
 
-export interface TimelineState {
-  clips: TimelineClip[];
-  audioSegments: AudioSegment[];
-  currentTime: number;
-  duration: number;
-  zoom: number;
-  playing: boolean;
+export interface RulerMark {
+  position: number;
+  label: string;
 }
 
-export interface ExportSettings {
-  quality: 'high' | 'medium' | 'low';
-  format: 'mp4' | 'webm';
-  fps: 30 | 60;
-  resolution: '1080p' | '720p' | '480p';
+export interface DragState {
+  active: boolean;
+  startX: number;
+  initialValue: number;
 }
-
