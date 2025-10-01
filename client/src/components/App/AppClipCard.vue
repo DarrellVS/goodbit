@@ -250,15 +250,15 @@ const displayDate = computed(() =>
               No tags yet
             </div>
             
-            <div v-else class="space-y-1">
+            <div v-else class="space-y-1.5">
               <div
                 v-for="tag in availableTags"
                 :key="tag"
                 class="flex items-center gap-2"
               >
                 <button
-                  class="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
-                  :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': clip.tags?.includes(tag) }"
+                  class="flex-1 text-left rounded-lg border-2 border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
+                  :class="{ 'bg-orange-500/10 border-orange-500': clip.tags?.includes(tag) }"
                   @click="toggleTag(tag)"
                 >
                   <span class="text-sm">#{{ tag }}</span>

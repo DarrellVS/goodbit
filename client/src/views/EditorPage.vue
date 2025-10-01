@@ -150,7 +150,7 @@ useKeyboardShortcuts({
 });
 
 onMounted(async () => {
-  await clipsStore.fetchClips();
+  await clipsStore.fetchClips(false);
   
   const clipId = route.query.clip;
   if (clipId && !Array.isArray(clipId)) {
