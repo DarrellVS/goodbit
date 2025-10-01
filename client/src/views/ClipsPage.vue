@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
+import { onMounted, computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
 import { useInfiniteScroll } from '../composables/useInfiniteScroll';
+import { useConfiguration } from '../composables/useConfiguration';
 import type { Clip } from '../types/clip';
 import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
 import ClipsGrid from '../components/App/ClipsGrid.vue';
@@ -14,8 +15,14 @@ import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
 
 const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
+const config = useConfiguration();
 const { activeFilter } = useClipFilters();
-const viewMode = ref<ViewMode>('grouped');
+const viewMode = computed({
+  get: () => config.public.value.viewMode,
+  set: (value: ViewMode) => {
+    config.public.value.viewMode = value;
+  },
+});
 
 const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
@@ -70,7 +77,7 @@ onMounted(() => {
       />
 
       <ClipsGrid
-        v-else-if="viewMode === 'grid'"
+        v-else-if="config.public.value.viewMode === 'grid'"
         :clips="clips"
         :get-video-url="getVideoUrl"
         :get-thumb-url="getThumbUrl"

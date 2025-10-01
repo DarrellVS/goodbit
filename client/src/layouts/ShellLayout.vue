@@ -73,14 +73,18 @@ const user = computed(() => auth.user);
 const router = useRouter();
 
 const headerTitle = computed(() => {
-  if (router.currentRoute.value.name === 'today') {
+  const route = router.currentRoute.value;
+  if (route.name === 'today') {
     return "Today's Clips";
   }
-  if (router.currentRoute.value.name === 'stats') {
+  if (route.name === 'stats') {
     return 'Statistics';
   }
-  if (router.currentRoute.value.name === 'tag-patterns') {
+  if (route.name === 'tag-patterns') {
     return 'Smart Tag Patterns';
+  }
+  if (route.name === 'collection') {
+    return 'Collection';
   }
   return 'My Library';
 });

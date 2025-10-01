@@ -18,7 +18,7 @@ export const useGamesStore = defineStore('games', {
   }),
 
   getters: {
-    topGames: (state) => (limit: number = 5) => state.items.slice(0, limit),
+    games: (state) => (limit: number = Infinity) => state.items.slice(0, limit),
     totalGames: (state) => state.items.length,
   },
 

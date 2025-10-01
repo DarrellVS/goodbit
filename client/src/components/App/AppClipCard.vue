@@ -5,6 +5,7 @@ import { Icon } from '@iconify/vue';
 import { useFormat } from '../../composables/useFormat';
 import { useClipActions } from '../../composables/useClipActions';
 import { useClipTags } from '../../composables/useClipTags';
+import { useDragAndDrop } from '../../composables/useDragAndDrop';
 import { updateClipName, starClip, unstarClip } from '../../services/clips';
 import type { Clip } from '../../types/clip';
 import BasePopover from '../Base/BasePopover.vue';
@@ -27,7 +28,12 @@ const emit = defineEmits<Emits>();
 
 const router = useRouter();
 const { formatBytes } = useFormat();
+const { startDrag, endDrag } = useDragAndDrop();
 const showExactDate = ref(false);
+
+function handleDragStart(event: DragEvent) {
+  startDrag({ type: 'clip', clipId: props.clip.id }, event);
+}
 
 const { actions } = useClipActions({
   clip: computed(() => props.clip),
@@ -108,9 +114,12 @@ const displayDate = computed(() =>
 
 <template>
   <article 
+    draggable="true"
     class="clip-card shadow group relative bg-white/5 rounded-xl overflow-hidden border border-gray-300 hover:border-orange-500/50 transition-all hover:shadow-lg"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
+    @dragstart="handleDragStart"
+    @dragend="endDrag"
   >
     <div v-if="clip.published" class="absolute top-3 right-14 z-10">
       <span class="bg-green-500/90 text-white text-xs font-medium px-2 py-1 rounded">

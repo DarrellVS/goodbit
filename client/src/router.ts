@@ -3,6 +3,7 @@ import ClipsPage from './views/ClipsPage.vue';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';
+import CollectionPage from './views/CollectionPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import EditorPage from './views/EditorPage.vue';
 import LoginPage from './views/LoginPage.vue';
@@ -22,6 +23,7 @@ export const router = createRouter({
         { path: 'today', name: 'today', component: TodaysClipsPage },
         { path: 'tag-patterns', name: 'tag-patterns', component: TagPatternsPage },
         { path: 'stats', name: 'stats', component: StatsPage },
+        { path: 'collections/:id', name: 'collection', component: CollectionPage, props: true },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },
