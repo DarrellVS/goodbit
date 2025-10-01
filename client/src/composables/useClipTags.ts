@@ -4,7 +4,7 @@ import { useTagsStore } from '../stores/tags';
 import { useToastStore } from '../stores/toast';
 import { useClipsStore } from '../stores/clips';
 import { getAllPatterns } from '../services/tagPatternsDb';
-import { resolveTagAlias, getCategoryForTag } from '../utils/tagSuggestions';
+import { getCategoryForTag } from '../utils/tagSuggestions';
 import type { Clip } from '../types/clip';
 import type { TagPattern } from '../utils/tagSuggestions';
 
@@ -88,15 +88,14 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
     if (!name) return;
 
     const clip = clipRef.value;
-    const resolvedTag = resolveTagAlias(name, patterns.value);
     const currentTags = new Set(clip.tags || []);
-    currentTags.add(resolvedTag);
+    currentTags.add(name);
 
     const updated = await updateClipTags(clip.id, Array.from(currentTags));
     onUpdate(updated);
 
-    if (!tagsStore.items.includes(resolvedTag)) {
-      tagsStore.items.push(resolvedTag);
+    if (!tagsStore.items.includes(name)) {
+      tagsStore.items.push(name);
     }
 
     newTagName.value = '';

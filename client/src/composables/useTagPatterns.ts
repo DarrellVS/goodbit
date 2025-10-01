@@ -25,15 +25,13 @@ export function useTagPatterns() {
   async function addPattern(
     tag: string,
     patternStrings: string[],
-    category: TagCategory,
-    aliases?: string[]
+    category: TagCategory
   ): Promise<void> {
     try {
       const pattern: TagPattern = {
         tag,
         patterns: patternStrings.map(p => new RegExp(p, 'i')),
         category,
-        aliases,
       };
       
       await savePattern(pattern);
@@ -47,10 +45,9 @@ export function useTagPatterns() {
   async function updatePattern(
     tag: string,
     patternStrings: string[],
-    category: TagCategory,
-    aliases?: string[]
+    category: TagCategory
   ): Promise<void> {
-    await addPattern(tag, patternStrings, category, aliases);
+    await addPattern(tag, patternStrings, category);
   }
 
   async function removePattern(tag: string): Promise<void> {

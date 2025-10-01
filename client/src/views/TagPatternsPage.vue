@@ -17,12 +17,10 @@ const isAddingNew = ref(false);
 const newTag = ref('');
 const newPatterns = ref('');
 const newCategory = ref<TagCategory>('General');
-const newAliases = ref('');
 
 const editingTag = ref<string | null>(null);
 const editPatterns = ref('');
 const editCategory = ref<TagCategory>('General');
-const editAliases = ref('');
 
 const filteredPatterns = computed(() => {
   let result = patterns.value;
@@ -66,14 +64,12 @@ function startEdit(tag: string): void {
   editingTag.value = tag;
   editPatterns.value = pattern.patterns.map(p => p.source).join(', ');
   editCategory.value = pattern.category;
-  editAliases.value = pattern.aliases?.join(', ') || '';
 }
 
 function cancelEdit(): void {
   editingTag.value = null;
   editPatterns.value = '';
   editCategory.value = 'General';
-  editAliases.value = '';
 }
 
 async function saveEdit(): Promise<void> {
@@ -81,9 +77,8 @@ async function saveEdit(): Promise<void> {
   
   try {
     const patternStrings = editPatterns.value.split(',').map(p => p.trim()).filter(Boolean);
-    const aliases = editAliases.value ? editAliases.value.split(',').map(a => a.trim()).filter(Boolean) : undefined;
     
-    await updatePattern(editingTag.value, patternStrings, editCategory.value, aliases);
+    await updatePattern(editingTag.value, patternStrings, editCategory.value);
     toastStore.success('Pattern updated successfully');
     cancelEdit();
   } catch (err) {
@@ -111,7 +106,6 @@ function startAddNew(): void {
   newTag.value = '';
   newPatterns.value = '';
   newCategory.value = 'General';
-  newAliases.value = '';
 }
 
 function cancelAddNew(): void {
@@ -123,9 +117,8 @@ async function saveNew(): Promise<void> {
   
   try {
     const patternStrings = newPatterns.value.split(',').map(p => p.trim()).filter(Boolean);
-    const aliases = newAliases.value ? newAliases.value.split(',').map(a => a.trim()).filter(Boolean) : undefined;
     
-    await addPattern(newTag.value, patternStrings, newCategory.value, aliases);
+    await addPattern(newTag.value, patternStrings, newCategory.value);
     toastStore.success('Pattern added successfully');
     cancelAddNew();
   } catch (err) {
@@ -184,16 +177,6 @@ async function saveNew(): Promise<void> {
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Aliases (optional, comma-separated)</label>
-          <input
-            v-model="newAliases"
-            type="text"
-            placeholder="e.g., hs, headie"
-            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
-          />
         </div>
         
         <div class="flex gap-2">
@@ -263,12 +246,6 @@ async function saveNew(): Promise<void> {
                 >
                   <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
-                <input
-                  v-model="editAliases"
-                  type="text"
-                  placeholder="Aliases (comma-separated)"
-                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
-                />
                 <div class="flex gap-2">
                   <button
                     class="flex-1 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
@@ -314,10 +291,6 @@ async function saveNew(): Promise<void> {
                       {{ p.source }}
                     </span>
                   </div>
-                  
-                  <div v-if="pattern.aliases && pattern.aliases.length > 0" class="text-xs text-gray-600">
-                    Aliases: {{ pattern.aliases.join(', ') }}
-                  </div>
                 </div>
               </div>
             </div>
@@ -344,12 +317,6 @@ async function saveNew(): Promise<void> {
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
-          <input
-            v-model="editAliases"
-            type="text"
-            placeholder="Aliases (comma-separated)"
-            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
-          />
           <div class="flex gap-2">
             <button
               class="flex-1 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
@@ -394,10 +361,6 @@ async function saveNew(): Promise<void> {
               >
                 {{ p.source }}
               </span>
-            </div>
-            
-            <div v-if="pattern.aliases && pattern.aliases.length > 0" class="text-xs text-gray-600">
-              Aliases: {{ pattern.aliases.join(', ') }}
             </div>
           </div>
         </div>

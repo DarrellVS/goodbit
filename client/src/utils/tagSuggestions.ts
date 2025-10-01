@@ -3,9 +3,8 @@
  * 
  * Auto-suggests tags based on:
  * 1. Filename pattern matching (regex-based)
- * 2. Tag aliases (e.g., "ace" → "5k")
- * 3. Most frequent tags from similar clips
- * 4. Tag categories for organization
+ * 2. Most frequent tags from similar clips
+ * 3. Tag categories for organization
  * 
  * Suggestions are generated only when the tags popover is opened to avoid performance issues.
  * Maximum 3 suggestions per clip to avoid overwhelming the user.
@@ -17,7 +16,6 @@ export interface TagPattern {
   tag: string;
   patterns: RegExp[];
   category: TagCategory;
-  aliases?: string[];
 }
 
 export type TagCategory = 'Gameplay' | 'Weapons' | 'Maps' | 'Modes' | 'Quality' | 'General';
@@ -25,10 +23,10 @@ export type TagCategory = 'Gameplay' | 'Weapons' | 'Maps' | 'Modes' | 'Quality' 
 export const TAG_PATTERNS: TagPattern[] = [
   // Gameplay
   { tag: 'clutch', patterns: [/clutch/i, /1v[2-5]/i], category: 'Gameplay' },
-  { tag: '5k', patterns: [/\b5k\b/i, /ace/i, /penta/i], category: 'Gameplay', aliases: ['ace'] },
+  { tag: '5k', patterns: [/\b5k\b/i, /ace/i, /penta/i], category: 'Gameplay' },
   { tag: '4k', patterns: [/\b4k\b/i, /quad/i], category: 'Gameplay' },
   { tag: '3k', patterns: [/\b3k\b/i, /triple/i], category: 'Gameplay' },
-  { tag: 'team-wipe', patterns: [/team[-_]wipe/i, /squad[-_]wipe/i], category: 'Gameplay', aliases: ['squad-wipe'] },
+  { tag: 'team-wipe', patterns: [/team[-_]wipe/i, /squad[-_]wipe/i], category: 'Gameplay' },
   { tag: 'flank', patterns: [/flank/i, /backstab/i], category: 'Gameplay' },
   { tag: 'grenade', patterns: [/grenade/i, /nade/i, /\bfrag\b/i], category: 'Gameplay' },
   { tag: 'knife', patterns: [/knife/i, /melee/i, /takedown/i], category: 'Gameplay' },
@@ -58,9 +56,9 @@ export const TAG_PATTERNS: TagPattern[] = [
   { tag: 'renewal', patterns: [/renewal/i], category: 'Maps' },
   
   // Quality
-  { tag: 'headshot', patterns: [/headshot/i, /\bhs\b/i], category: 'Quality', aliases: ['hs'] },
-  { tag: 'noscope', patterns: [/no[-_]scope/i, /noscope/i], category: 'Quality', aliases: ['no-scope'] },
-  { tag: 'quickscope', patterns: [/quick[-_]scope/i, /quickscope/i], category: 'Quality', aliases: ['quick-scope'] },
+  { tag: 'headshot', patterns: [/headshot/i, /\bhs\b/i], category: 'Quality' },
+  { tag: 'noscope', patterns: [/no[-_]scope/i, /noscope/i], category: 'Quality' },
+  { tag: 'quickscope', patterns: [/quick[-_]scope/i, /quickscope/i], category: 'Quality' },
   { tag: 'wallbang', patterns: [/wallbang/i, /through[-_]wall/i], category: 'Quality' },
   { tag: 'long-range', patterns: [/long[-_]range/i, /distance/i], category: 'Quality' },
   { tag: 'funny', patterns: [/funny/i, /hilarious/i, /lol/i], category: 'General' },
@@ -112,25 +110,6 @@ function getFrequentTags(allTags: string[], excludeTags: string[]): string[] {
     .sort((a, b) => b[1] - a[1])
     .map(([tag]) => tag)
     .slice(0, 3);
-}
-
-export function buildAliasMap(patterns: TagPattern[]): Record<string, string> {
-  const aliasMap: Record<string, string> = {};
-  
-  for (const pattern of patterns) {
-    if (pattern.aliases && pattern.aliases.length > 0) {
-      for (const alias of pattern.aliases) {
-        aliasMap[alias.toLowerCase()] = pattern.tag;
-      }
-    }
-  }
-  
-  return aliasMap;
-}
-
-export function resolveTagAlias(tag: string, patterns: TagPattern[]): string {
-  const aliasMap = buildAliasMap(patterns);
-  return aliasMap[tag.toLowerCase()] || tag;
 }
 
 export function getCategoryForTag(tag: string): TagCategory {
