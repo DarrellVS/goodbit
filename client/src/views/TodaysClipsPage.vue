@@ -80,12 +80,10 @@ onMounted(() => store.fetchClips());
 </script>
 
 <template>
-  <header class="flex items-center justify-between w-screen py-6">
-    <div />
-    <RouterLink to="/" class="inline-flex items-center rounded-xl px-4 py-2.5 mr-6 text-sm font-medium shadow-soft border border-border hover:shadow-md transition-all">View All Clips</RouterLink>
-  </header>
-  <hr class="border-t border-border/60" />
-  <div class="p-6 space-y-6 max-w-7xl mx-auto mt-12">
+  <div class="border-b border-border/50 px-6 py-4">
+    <h2 class="text-2xl font-bold">Today's Clips</h2>
+  </div>
+  <div class="p-6 space-y-6 max-w-7xl mx-auto">
     <div class="embla relative group">
         <div class="embla__viewport" ref="emblaRef">
           <div class="embla__container">

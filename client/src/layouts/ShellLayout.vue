@@ -1,28 +1,30 @@
 <template>
-  <div class="h-full grid grid-rows-[72px_1fr] grid-cols-1">
-    <AppHeader :search="searchText" :rescan-loading="isRescanLoading" :show-logout="!!user" @update:search="(v) => searchText = v" @rescan="rescan" @logout="logout">
-      <template #tags-filter>
-        <div class="flex flex-col gap-2 max-h-72 overflow-auto min-w-[240px] p-1">
-          <button
-            v-for="t in tagsStore.items"
-            :key="t"
-            class="text-left rounded-lg border border-border px-3 py-2 bg-white/5 hover:bg-white/10"
-            :class="{ 'ring-2 ring-primary/50': clipsStore.selectedTags.includes(t) }"
-            @click="clipsStore.setTags(clipsStore.selectedTags.includes(t) ? clipsStore.selectedTags.filter(x => x !== t) : [...clipsStore.selectedTags, t])"
-          >
-            <span>#{{ t }}</span>
-            <span v-if="clipsStore.selectedTags.includes(t)" class="ml-2 text-xs text-primary">selected</span>
-          </button>
-        </div>
-      </template>
-    </AppHeader>
+  <div class="h-full grid grid-cols-[256px_1fr] grid-rows-1">
+    <AppSidebar :active-game="selectedGame" @logout="logout" @select-game="selectGame" />
+    
+    <div class="flex flex-col h-full overflow-hidden">
+      <AppHeader :search="searchText" :rescan-loading="isRescanLoading" :active-filter="activeFilter" @update:search="(v) => searchText = v" @update:filter="(v) => activeFilter = v" @rescan="rescan">
+        <template #tags-filter>
+          <div class="flex flex-col gap-2 max-h-72 overflow-auto min-w-[240px] p-1">
+            <button
+              v-for="t in tagsStore.items"
+              :key="t"
+              class="text-left rounded-lg border border-border px-3 py-2 bg-white/5 hover:bg-white/10"
+              :class="{ 'ring-2 ring-orange-500/50': clipsStore.selectedTags.includes(t) }"
+              @click="clipsStore.setTags(clipsStore.selectedTags.includes(t) ? clipsStore.selectedTags.filter(x => x !== t) : [...clipsStore.selectedTags, t])"
+            >
+              <span>#{{ t }}</span>
+              <span v-if="clipsStore.selectedTags.includes(t)" class="ml-2 text-xs text-orange-500">selected</span>
+            </button>
+          </div>
+        </template>
+      </AppHeader>
 
-    <main class="p-0 pb-28 mx-auto">
-      <RouterView />
-    </main>
+      <main class="flex-1 overflow-y-auto">
+        <RouterView />
+      </main>
+    </div>
   </div>
-
-  <AppFloatingFilter :items="gamesStore.items" :active="selectedGame" @select="selectGame" />
 </template>
 
 <script lang="ts" setup>
@@ -34,7 +36,7 @@ import { useAuthStore } from '../stores/auth';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
 import AppHeader from '../components/App/AppHeader.vue';
-import AppFloatingFilter from '../components/App/AppFloatingFilter.vue';
+import AppSidebar from '../components/App/AppSidebar.vue';
 
 const props = defineProps<{ hasSidebar: boolean }>();
 
@@ -44,6 +46,7 @@ const clipsStore = useClipsStore();
 const selectedGame = ref('');
 const searchText = ref('');
 const isRescanLoading = ref(false);
+const activeFilter = ref('videos');
 const auth = useAuthStore();
 const user = computed(() => auth.user);
 const router = useRouter();
@@ -79,5 +82,13 @@ watch(searchText, (q) => {
   clipsStore.setSearch(q);
 });
 
-// Floating filter moved into AppFloatingFilter, hover gating handled via composable there
+watch(activeFilter, (filter) => {
+  if (filter === 'published') {
+    clipsStore.setPublishedFilter(true);
+  } else if (filter === 'not-published') {
+    clipsStore.setPublishedFilter(false);
+  } else {
+    clipsStore.setPublishedFilter(null);
+  }
+});
 </script>

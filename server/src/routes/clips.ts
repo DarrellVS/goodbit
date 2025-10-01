@@ -11,7 +11,7 @@ import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 export const clipsRouter = express.Router();
 
 clipsRouter.get('/', asyncHandler(async (req, res) => {
-  const { game, q, tags, page = '1', pageSize = '50' } = req.query as Record<string, string>;
+  const { game, q, tags, published, page = '1', pageSize = '50' } = req.query as Record<string, string>;
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
   const pageSz = Math.min(Math.max(parseInt(pageSize || '50', 10) || 50, 1), 200);
 
@@ -22,6 +22,9 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
     .orderBy('clip.fileModifiedAt', 'DESC');
     
   if (game && game.length > 0) qb = qb.andWhere('clip.game = :game', { game });
+
+  if (published === 'true') qb = qb.andWhere('clip.published = :published', { published: true });
+  if (published === 'false') qb = qb.andWhere('clip.published = :published', { published: false });
 
   if (q && q.length > 0) {
     qb = qb.andWhere('(' +

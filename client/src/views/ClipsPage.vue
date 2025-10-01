@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, computed, ref, watch, nextTick } from 'vue';
 import { RouterLink } from 'vue-router';
+import { Icon } from '@iconify/vue';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import axios from '../axios';
 import { useClipsStore } from '../stores/clips';
@@ -62,12 +63,12 @@ function thumbSrc(clip: Clip) { return thumbUrlFor(clip.id, clip.fileModifiedAt)
 
 <template>
   <div class="p-6 space-y-6">
-    <header class="flex items-center justify-between">
-      <div />
-      <RouterLink to="/today" class="inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-medium shadow-soft border border-border hover:shadow-md transition-all">View Today's Clips</RouterLink>
-    </header>
-    <hr class="border-t border-border/60" />
-    <section class="h-[calc(100vh-120px)] grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-6 pr-2 h-fit mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <div></div>
+      <div class="text-sm text-muted-400">{{ total }} Videos</div>
+    </div>
+
+    <section class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
       <AppClipCard
         v-for="clip in clips"
         :key="clip.id"
@@ -80,10 +81,10 @@ function thumbSrc(clip: Clip) { return thumbUrlFor(clip.id, clip.fileModifiedAt)
       />
     </section>
 
-    <footer class="flex items-center justify-center gap-3" v-if="total > pageSize">
-      <button class="btn" :disabled="page === 1" @click="goto(page - 1)">Prev</button>
-      <span>{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
-      <button class="btn" :disabled="page >= Math.ceil(total / pageSize)" @click="goto(page + 1)">Next</button>
+    <footer class="flex items-center justify-center gap-3 pt-6" v-if="total > pageSize">
+      <button class="px-4 py-2 rounded-lg bg-white/5 border border-border/50 hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed" :disabled="page === 1" @click="goto(page - 1)">Prev</button>
+      <span class="text-sm text-muted-400">{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
+      <button class="px-4 py-2 rounded-lg bg-white/5 border border-border/50 hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed" :disabled="page >= Math.ceil(total / pageSize)" @click="goto(page + 1)">Next</button>
     </footer>
   </div>
 </template>

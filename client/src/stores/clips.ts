@@ -11,6 +11,7 @@ export const useClipsStore = defineStore('clips', {
     selectedGame: '',
     searchText: '',
     selectedTags: [] as string[],
+    publishedFilter: null as boolean | null, // null = all, true = published only, false = not published only
     loading: false,
   }),
   actions: {
@@ -18,13 +19,17 @@ export const useClipsStore = defineStore('clips', {
       this.loading = true;
       try {
         const params: Record<string, string | number> = { page: this.page, pageSize: this.pageSize };
+        
         if (this.selectedGame) params.game = this.selectedGame;
         if (this.searchText) params.q = this.searchText;
         if (this.selectedTags.length > 0) params.tags = this.selectedTags.join(',');
+        if (this.publishedFilter !== null) params.published = String(this.publishedFilter);
+
         const { data } = await axios.get<{ items: Clip[]; total: number; page: number; pageSize: number }>(
           '/api/clips',
           { params }
         );
+
         this.items = data.items;
         this.total = data.total;
       } finally {
@@ -43,6 +48,11 @@ export const useClipsStore = defineStore('clips', {
     },
     setTags(tags: string[]) {
       this.selectedTags = tags;
+      this.page = 1;
+      void this.fetchClips();
+    },
+    setPublishedFilter(published: boolean | null) {
+      this.publishedFilter = published;
       this.page = 1;
       void this.fetchClips();
     },
