@@ -22,6 +22,7 @@ defineEmits<{
           <div class="relative">
             <Icon icon="material-symbols:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
             <input
+              id="global-search-input"
               type="text"
               :value="search"
               placeholder="Search your video, recent, tags, idea"

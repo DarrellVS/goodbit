@@ -56,6 +56,7 @@ import { useAuthStore } from '../stores/auth';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
 import { useToastStore } from '../stores/toast';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
 import { deleteTag } from '../services/clips';
@@ -152,4 +153,28 @@ async function removeTagFromHeader(tagName: string) {
     'Delete tag?'
   );
 }
+
+// Global keyboard shortcuts
+useKeyboardShortcuts({
+  shortcuts: {
+    KeyG: () => {
+      if (router.currentRoute.value.name !== 'clips') {
+        router.push('/');
+      }
+    },
+    KeyS: () => {
+      if (router.currentRoute.value.name !== 'settings') {
+        router.push('/settings');
+      }
+    },
+    Slash: (event) => {
+      event.preventDefault();
+      const searchInput = document.getElementById('global-search-input') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    },
+  },
+});
 </script>

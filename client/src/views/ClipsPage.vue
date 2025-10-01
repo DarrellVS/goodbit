@@ -6,6 +6,7 @@ import { useClipFilters } from '../composables/useClipFilters';
 import { useInfiniteScroll } from '../composables/useInfiniteScroll';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useClipHandlers } from '../composables/useClipHandlers';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import type { Clip } from '../types/clip';
 import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
@@ -49,6 +50,32 @@ async function handleClipDeleted(): Promise<void> {
 
 onMounted(() => {
   void clipsStore.fetchClips(false);
+});
+
+useKeyboardShortcuts({
+  shortcuts: {
+    KeyL: () => {
+      viewMode.value = viewMode.value === 'grid' ? 'grouped' : 'grid';
+    },
+    Space: (event) => {
+      if (hasMore.value && !loading.value) {
+        event.preventDefault();
+        clipsStore.loadMore();
+      }
+    },
+    ArrowDown: () => {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.scrollBy({ top: 300, behavior: 'smooth' });
+      }
+    },
+    ArrowUp: () => {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.scrollBy({ top: -300, behavior: 'smooth' });
+      }
+    },
+  },
 });
 </script>
 

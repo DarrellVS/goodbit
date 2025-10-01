@@ -313,6 +313,35 @@ function importSettings() {
               </button>
             </div>
 
+            <!-- Keyboard Shortcuts Reference -->
+            <div v-if="config.public.value.enableKeyboardShortcuts" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div class="flex gap-3">
+                <Icon icon="material-symbols:keyboard" class="text-blue-500 text-xl flex-shrink-0 mt-0.5" />
+                <div class="flex-1">
+                  <h3 class="font-medium text-blue-900 mb-2">Available Keyboard Shortcuts</h3>
+                  <div class="space-y-3 text-sm text-blue-800">
+                    <div>
+                      <div class="font-semibold mb-1">Global Navigation</div>
+                      <ul class="space-y-1 ml-2">
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">G</kbd> - Go to Library</li>
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">S</kbd> - Go to Settings</li>
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">/</kbd> - Focus Search</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div class="font-semibold mb-1">Clip Pages</div>
+                      <ul class="space-y-1 ml-2">
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">L</kbd> - Toggle View Mode (Grid/List)</li>
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">Space</kbd> - Load More Clips</li>
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">↑</kbd> - Scroll Up</li>
+                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">↓</kbd> - Scroll Down</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Info Box -->
             <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div class="flex gap-3">

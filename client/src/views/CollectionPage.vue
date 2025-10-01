@@ -7,6 +7,7 @@ import { useGamesStore } from '../stores/games';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useInfiniteScroll } from '../composables/useInfiniteScroll';
 import { useClipHandlers } from '../composables/useClipHandlers';
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import type { Clip } from '../types/clip';
 import ViewModeToggle from '../components/App/ViewModeToggle.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
@@ -62,6 +63,32 @@ watch([
 ], () => {
   collectionsStore.resetCollectionClips();
   void collectionsStore.fetchCollectionClips(collectionId.value);
+});
+
+useKeyboardShortcuts({
+  shortcuts: {
+    KeyL: () => {
+      config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
+    },
+    Space: (event) => {
+      if (hasMore.value && !loading.value) {
+        event.preventDefault();
+        collectionsStore.loadMoreCollectionClips();
+      }
+    },
+    ArrowDown: () => {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.scrollBy({ top: 300, behavior: 'smooth' });
+      }
+    },
+    ArrowUp: () => {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.scrollBy({ top: -300, behavior: 'smooth' });
+      }
+    },
+  },
 });
 </script>
 

@@ -1,21 +1,57 @@
 import { onMounted, onBeforeUnmount } from 'vue';
+import { useConfiguration } from './useConfiguration';
 
-type ShortcutKey = 'Space' | 'ArrowLeft' | 'ArrowRight' | 'Delete' | 'Escape';
+export type ShortcutKey = 
+  | 'Space' 
+  | 'ArrowLeft' 
+  | 'ArrowRight' 
+  | 'ArrowUp' 
+  | 'ArrowDown'
+  | 'Delete' 
+  | 'Escape'
+  | 'KeyG'
+  | 'KeyL'
+  | 'KeyS'
+  | 'KeyF'
+  | 'Slash';
 
-type ShortcutHandler = () => void;
+type ShortcutHandler = (event: KeyboardEvent) => void;
 
-export function useKeyboardShortcuts(shortcuts: Partial<Record<ShortcutKey, ShortcutHandler>>) {
+export interface KeyboardShortcutsOptions {
+  shortcuts: Partial<Record<ShortcutKey, ShortcutHandler>>;
+  /**
+   * If true, shortcuts will work even when the setting is disabled.
+   * Use this for critical shortcuts like Escape to close modals.
+   */
+  ignoreSettings?: boolean;
+}
+
+export function useKeyboardShortcuts(options: KeyboardShortcutsOptions | Partial<Record<ShortcutKey, ShortcutHandler>>) {
+  const config = useConfiguration();
+  
+  // Support both old and new API
+  const opts = typeof options === 'function' || !('shortcuts' in options)
+    ? { shortcuts: options as Partial<Record<ShortcutKey, ShortcutHandler>>, ignoreSettings: false }
+    : options;
+
   function handleKeyDown(event: KeyboardEvent): void {
+    // Check if shortcuts are enabled (unless explicitly ignored)
+    if (!opts.ignoreSettings && !config.public.value.enableKeyboardShortcuts) {
+      return;
+    }
+
+    // Ignore if typing in an input field
     if (shouldIgnoreEvent(event)) return;
 
-    const handler = shortcuts[event.code as ShortcutKey];
+    const handler = opts.shortcuts[event.code as ShortcutKey];
     if (!handler) return;
 
-    if (event.code === 'Space') {
+    // Prevent default for certain keys
+    if (['Space', 'Slash', 'ArrowUp', 'ArrowDown'].includes(event.code)) {
       event.preventDefault();
     }
 
-    handler();
+    handler(event);
   }
 
   function shouldIgnoreEvent(event: KeyboardEvent): boolean {
