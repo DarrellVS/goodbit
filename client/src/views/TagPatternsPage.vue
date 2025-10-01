@@ -1,0 +1,413 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { Icon } from '@iconify/vue';
+import { useTagPatterns } from '../composables/useTagPatterns';
+import { useToastStore } from '../stores/toast';
+import type { TagCategory } from '../utils/tagSuggestions';
+
+const { patterns, loading, addPattern, updatePattern, removePattern } = useTagPatterns();
+const toastStore = useToastStore();
+
+const categories: TagCategory[] = ['General', 'Gameplay', 'Weapons', 'Maps', 'Modes', 'Quality'];
+
+const selectedCategory = ref<TagCategory | 'All'>('All');
+const searchQuery = ref('');
+const isAddingNew = ref(false);
+
+const newTag = ref('');
+const newPatterns = ref('');
+const newCategory = ref<TagCategory>('General');
+const newAliases = ref('');
+
+const editingTag = ref<string | null>(null);
+const editPatterns = ref('');
+const editCategory = ref<TagCategory>('General');
+const editAliases = ref('');
+
+const filteredPatterns = computed(() => {
+  let result = patterns.value;
+  
+  if (selectedCategory.value !== 'All') {
+    result = result.filter(p => p.category === selectedCategory.value);
+  }
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(p => 
+      p.tag.toLowerCase().includes(query) ||
+      p.patterns.some(pattern => pattern.source.toLowerCase().includes(query))
+    );
+  }
+  
+  return result;
+});
+
+const patternsByCategory = computed(() => {
+  const grouped: Record<TagCategory, typeof patterns.value> = {
+    General: [],
+    Gameplay: [],
+    Weapons: [],
+    Maps: [],
+    Modes: [],
+    Quality: [],
+  };
+  
+  filteredPatterns.value.forEach(pattern => {
+    grouped[pattern.category].push(pattern);
+  });
+  
+  return grouped;
+});
+
+function startEdit(tag: string): void {
+  const pattern = patterns.value.find(p => p.tag === tag);
+  if (!pattern) return;
+  
+  editingTag.value = tag;
+  editPatterns.value = pattern.patterns.map(p => p.source).join(', ');
+  editCategory.value = pattern.category;
+  editAliases.value = pattern.aliases?.join(', ') || '';
+}
+
+function cancelEdit(): void {
+  editingTag.value = null;
+  editPatterns.value = '';
+  editCategory.value = 'General';
+  editAliases.value = '';
+}
+
+async function saveEdit(): Promise<void> {
+  if (!editingTag.value || !editPatterns.value) return;
+  
+  try {
+    const patternStrings = editPatterns.value.split(',').map(p => p.trim()).filter(Boolean);
+    const aliases = editAliases.value ? editAliases.value.split(',').map(a => a.trim()).filter(Boolean) : undefined;
+    
+    await updatePattern(editingTag.value, patternStrings, editCategory.value, aliases);
+    toastStore.success('Pattern updated successfully');
+    cancelEdit();
+  } catch (err) {
+    toastStore.error('Failed to update pattern');
+  }
+}
+
+async function handleDelete(tag: string): Promise<void> {
+  toastStore.confirm(
+    `This will remove the tag pattern for "${tag}".`,
+    async () => {
+      try {
+        await removePattern(tag);
+        toastStore.success('Pattern deleted successfully');
+      } catch (err) {
+        toastStore.error('Failed to delete pattern');
+      }
+    },
+    'Delete pattern?'
+  );
+}
+
+function startAddNew(): void {
+  isAddingNew.value = true;
+  newTag.value = '';
+  newPatterns.value = '';
+  newCategory.value = 'General';
+  newAliases.value = '';
+}
+
+function cancelAddNew(): void {
+  isAddingNew.value = false;
+}
+
+async function saveNew(): Promise<void> {
+  if (!newTag.value || !newPatterns.value) return;
+  
+  try {
+    const patternStrings = newPatterns.value.split(',').map(p => p.trim()).filter(Boolean);
+    const aliases = newAliases.value ? newAliases.value.split(',').map(a => a.trim()).filter(Boolean) : undefined;
+    
+    await addPattern(newTag.value, patternStrings, newCategory.value, aliases);
+    toastStore.success('Pattern added successfully');
+    cancelAddNew();
+  } catch (err) {
+    toastStore.error('Failed to add pattern');
+  }
+}
+</script>
+
+<template>
+  <div class="p-6 space-y-6">
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Smart Tag Patterns</h1>
+        <p class="text-sm text-gray-600 mt-1">Manage automatic tag suggestions based on clip names</p>
+      </div>
+      
+      <button
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium shadow-lg shadow-orange-500/20 transition-all"
+        @click="startAddNew"
+      >
+        <Icon icon="material-symbols:add" class="text-lg" />
+        <span>Add Pattern</span>
+      </button>
+    </header>
+
+    <div v-if="isAddingNew" class="bg-white border border-gray-300 rounded-xl p-6 shadow-sm">
+      <h3 class="text-lg font-semibold mb-4">New Tag Pattern</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Tag Name</label>
+          <input
+            v-model="newTag"
+            type="text"
+            placeholder="e.g., headshot"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Patterns (comma-separated regex)</label>
+          <input
+            v-model="newPatterns"
+            type="text"
+            placeholder="e.g., headshot, \\bhs\\b"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          />
+          <p class="text-xs text-gray-500 mt-1">Use regex patterns like: \b5k\b, ace, clutch</p>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+          <select
+            v-model="newCategory"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          >
+            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Aliases (optional, comma-separated)</label>
+          <input
+            v-model="newAliases"
+            type="text"
+            placeholder="e.g., hs, headie"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          />
+        </div>
+        
+        <div class="flex gap-2">
+          <button
+            class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition"
+            @click="saveNew"
+          >
+            Save
+          </button>
+          <button
+            class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium transition"
+            @click="cancelAddNew"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-4">
+      <div class="flex-1">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search patterns..."
+          class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+        >
+      </div>
+      
+      <select
+        v-model="selectedCategory"
+        class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+      >
+        <option value="All">All Categories</option>
+        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <div v-if="loading" class="flex justify-center py-12">
+      <Icon icon="material-symbols:progress-activity" class="w-8 h-8 text-orange-500 animate-spin" />
+    </div>
+
+    <div v-else-if="selectedCategory === 'All'" class="space-y-6">
+      <div v-for="category in categories" :key="category">
+        <div v-if="patternsByCategory[category].length > 0">
+          <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+            <Icon icon="material-symbols:label" class="text-orange-500" />
+            {{ category }}
+            <span class="text-sm font-normal text-gray-500">({{ patternsByCategory[category].length }})</span>
+          </h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div
+              v-for="pattern in patternsByCategory[category]"
+              :key="pattern.tag"
+              class="bg-white border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div v-if="editingTag === pattern.tag" class="space-y-3">
+                <input
+                  v-model="editPatterns"
+                  type="text"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                />
+                <select
+                  v-model="editCategory"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                >
+                  <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+                <input
+                  v-model="editAliases"
+                  type="text"
+                  placeholder="Aliases (comma-separated)"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                />
+                <div class="flex gap-2">
+                  <button
+                    class="flex-1 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
+                    @click="saveEdit"
+                  >
+                    Save
+                  </button>
+                  <button
+                    class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 text-sm font-medium transition"
+                    @click="cancelEdit"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              
+              <div v-else>
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="font-semibold text-gray-900">#{{ pattern.tag }}</h3>
+                  <div class="flex gap-1">
+                    <button
+                      class="p-1.5 rounded-lg hover:bg-orange-100 transition-colors"
+                      @click="startEdit(pattern.tag)"
+                    >
+                      <Icon icon="material-symbols:edit" class="text-orange-500" />
+                    </button>
+                    <button
+                      class="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                      @click="handleDelete(pattern.tag)"
+                    >
+                      <Icon icon="material-symbols:delete" class="text-red-500" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="(p, idx) in pattern.patterns"
+                      :key="idx"
+                      class="text-xs bg-gray-100 px-2 py-1 rounded font-mono"
+                    >
+                      {{ p.source }}
+                    </span>
+                  </div>
+                  
+                  <div v-if="pattern.aliases && pattern.aliases.length > 0" class="text-xs text-gray-600">
+                    Aliases: {{ pattern.aliases.join(', ') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div
+        v-for="pattern in filteredPatterns"
+        :key="pattern.tag"
+        class="bg-white border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow"
+      >
+        <div v-if="editingTag === pattern.tag" class="space-y-3">
+          <input
+            v-model="editPatterns"
+            type="text"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          />
+          <select
+            v-model="editCategory"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          >
+            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+          <input
+            v-model="editAliases"
+            type="text"
+            placeholder="Aliases (comma-separated)"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+          />
+          <div class="flex gap-2">
+            <button
+              class="flex-1 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
+              @click="saveEdit"
+            >
+              Save
+            </button>
+            <button
+              class="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 text-sm font-medium transition"
+              @click="cancelEdit"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+        
+        <div v-else>
+          <div class="flex items-start justify-between mb-2">
+            <h3 class="font-semibold text-gray-900">#{{ pattern.tag }}</h3>
+            <div class="flex gap-1">
+              <button
+                class="p-1.5 rounded-lg hover:bg-orange-100 transition-colors"
+                @click="startEdit(pattern.tag)"
+              >
+                <Icon icon="material-symbols:edit" class="text-orange-500" />
+              </button>
+              <button
+                class="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                @click="handleDelete(pattern.tag)"
+              >
+                <Icon icon="material-symbols:delete" class="text-red-500" />
+              </button>
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="(p, idx) in pattern.patterns"
+                :key="idx"
+                class="text-xs bg-gray-100 px-2 py-1 rounded font-mono"
+              >
+                {{ p.source }}
+              </span>
+            </div>
+            
+            <div v-if="pattern.aliases && pattern.aliases.length > 0" class="text-xs text-gray-600">
+              Aliases: {{ pattern.aliases.join(', ') }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="!loading && filteredPatterns.length === 0" class="text-center py-12">
+      <Icon icon="material-symbols:search-off" class="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <p class="text-gray-500">No patterns found</p>
+    </div>
+  </div>
+</template>
+

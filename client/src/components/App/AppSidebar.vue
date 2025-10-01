@@ -89,6 +89,15 @@ const topGames = computed(() => gamesStore.topGames());
 
     <div class="p-3 space-y-1 border-t border-gray-200">
       <RouterLink
+        to="/tag-patterns"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
+        exact-active-class="bg-white/10 text-orange-500"
+      >
+        <Icon icon="material-symbols:auto-awesome" class="text-lg" />
+        <span class="font-medium">Smart Tags</span>
+      </RouterLink>
+      
+      <RouterLink
         to="/stats"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
         exact-active-class="bg-white/10 text-orange-500"

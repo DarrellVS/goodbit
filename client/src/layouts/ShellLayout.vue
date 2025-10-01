@@ -79,6 +79,9 @@ const headerTitle = computed(() => {
   if (router.currentRoute.value.name === 'stats') {
     return 'Statistics';
   }
+  if (router.currentRoute.value.name === 'tag-patterns') {
+    return 'Smart Tag Patterns';
+  }
   return 'My Library';
 });
 

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, toRef } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useFormat } from '../../composables/useFormat';
@@ -39,10 +39,13 @@ const { actions } = useClipActions({
 const {
   newTagName,
   availableTags,
+  suggestedTags,
   toggleTag,
   addTag,
+  applySuggestedTag,
   removeTag,
-} = useClipTags(props.clip, (updated) => emit('updated', updated));
+  getCategoryForTag,
+} = useClipTags(toRef(() => props.clip), (updated) => emit('updated', updated));
 
 const visibleTags = computed(() => props.clip.tags?.slice(0, 2) || []);
 const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0) - 2));
@@ -208,16 +211,35 @@ const displayDate = computed(() =>
             <h3 class="text-sm font-semibold">Manage Tags</h3>
           </header>
           
+          <div v-if="suggestedTags.length > 0" class="space-y-2">
+            <div class="flex items-center gap-2 text-xs text-gray-600">
+              <Icon icon="material-symbols:auto-awesome" class="text-orange-500" />
+              <span class="font-medium">Suggested Tags</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="tag in suggestedTags"
+                :key="tag"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/20 transition-all text-xs font-medium group"
+                :title="`Category: ${getCategoryForTag(tag)}`"
+                @click="applySuggestedTag(tag)"
+              >
+                <Icon icon="material-symbols:add" class="text-orange-500 text-sm group-hover:scale-110 transition-transform" />
+                <span class="text-gray-900">#{{ tag }}</span>
+              </button>
+            </div>
+          </div>
+          
           <div class="flex items-center gap-2">
             <input
               v-model="newTagName"
               class="flex-1 rounded-lg border border-gray-300 bg-white/5 px-3 h-9 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
               placeholder="New tag name"
-              @keyup.enter="addTag"
+              @keyup.enter="addTag()"
             />
             <button 
               class="rounded-lg bg-orange-500 hover:bg-orange-600 px-3 h-9 text-white text-sm font-medium transition"
-              @click="addTag"
+              @click="addTag()"
             >
               Add
             </button>

@@ -49,7 +49,7 @@ function getThumbUrl(clip: Clip): string {
 }
 
 onMounted(() => {
-  void clipsStore.fetchClips();
+  void clipsStore.fetchClips(false);
 });
 </script>
 
