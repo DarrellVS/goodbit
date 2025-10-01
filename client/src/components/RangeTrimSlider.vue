@@ -10,11 +10,21 @@
       <SliderRange class="absolute h-full bg-primary/20" />
     </SliderTrack>
     <SliderThumb
-      v-for="(_, i) in 2"
+      v-for="(value, i) in model"
       :key="i"
-      aria-label="Trim handle"
-      class="block h-full w-[10px] bg-primary cursor-ew-resize rounded-md shadow-soft border border-ring outline-none focus:ring-2 focus:ring-ring pointer-events-auto touch-none"
-    />
+      :aria-label="i === 0 ? 'Start time' : 'End time'"
+      class="relative block h-full w-[1px] bg-orange-500 cursor-ew-resize rounded-md outline-none ring-2 ring-orange-500 pointer-events-auto touch-none"
+    >
+      <!-- Timestamp label positioned relative to thumb -->
+      <div 
+        :class="[
+          'absolute left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
+          i === 0 ? '-top-1 rounded-t' : '-bottom-1 rounded-b'
+        ]"
+      >
+        {{ value.toFixed(1) }}s
+      </div>
+    </SliderThumb>
   </SliderRoot>
 </template>
 

@@ -30,10 +30,6 @@ defineEmits<{
             />
           </div>
           
-          <button class="p-2.5 rounded-lg border border-border/50 bg-white/5 hover:bg-white/10 transition">
-            <Icon icon="material-symbols:notifications" class="text-lg" />
-          </button>
-          
           <BasePopover side="bottom" :side-offset="10">
             <template #trigger>
               <button class="rounded-lg inline-flex items-center justify-center border border-border/50 bg-white/5 hover:bg-white/10 px-3 py-2 outline-none gap-2">
