@@ -69,46 +69,44 @@ watch(todayClips, async () => {
 
 <template>
   <div class="p-6 space-y-6 max-w-7xl mx-auto">
-    <template v-if="todayClips.length">
-      <div class="embla relative group">
-        <div class="embla__viewport" ref="emblaRef">
-          <div class="embla__container">
-            <CarouselSlide
-              v-for="(clip, index) in todayClips"
-              :key="clip.id"
-              :clip="clip"
-              :video-url="getVideoUrl(clip)"
-              :poster-url="getThumbUrl(clip)"
-              :is-active="selectedIndex === index"
-              @rename="name => handleClipRename(clip.id, name)"
-              @delete="handleClipDelete(clip.id)"
-            />
-          </div>
-        </div>
-
-        <CarouselNavigation
-          :can-prev="canScrollPrev"
-          :can-next="canScrollNext"
-          :show-controls="todayClips.length > 0"
-          @previous="scrollPrev"
-          @next="scrollNext"
-        />
-      </div>
-
-      <nav class="embla-thumbs mt-6" aria-label="Clip thumbnails">
-        <div class="embla-thumbs__viewport p-2" ref="thumbsRef">
-          <ThumbnailStrip
-            :clips="todayClips"
-            :selected-index="selectedIndex"
-            :get-thumb-url="getThumbUrl"
-            @select="scrollTo"
+    <div class="embla relative group">
+      <div class="embla__viewport" ref="emblaRef">
+        <div class="embla__container">
+          <CarouselSlide
+            v-for="(clip, index) in todayClips"
+            :key="clip.id"
+            :clip="clip"
+            :video-url="getVideoUrl(clip)"
+            :poster-url="getThumbUrl(clip)"
+            :is-active="selectedIndex === index"
+            @rename="name => handleClipRename(clip.id, name)"
+            @delete="handleClipDelete(clip.id)"
           />
         </div>
-      </nav>
-    </template>
+      </div>
+
+      <CarouselNavigation
+        :can-prev="canScrollPrev"
+        :can-next="canScrollNext"
+        :show-controls="todayClips.length > 0"
+        @previous="scrollPrev"
+        @next="scrollNext"
+      />
+    </div>
+
+    <nav class="embla-thumbs mt-6" aria-label="Clip thumbnails">
+      <div class="embla-thumbs__viewport px-8 pt-2 -mx-8" ref="thumbsRef">
+        <ThumbnailStrip
+          :clips="todayClips"
+          :selected-index="selectedIndex"
+          :get-thumb-url="getThumbUrl"
+          @select="scrollTo"
+        />
+      </div>
+    </nav>
 
     <BaseEmptyState
-      v-else
+      v-if="todayClips.length === 0"
       icon="material-symbols:video-library"
       title="No clips from today"
       description="Clips you create today will appear here."
@@ -119,6 +117,7 @@ watch(todayClips, async () => {
 <style scoped>
 .embla__viewport {
   overflow: hidden;
+  border-radius: 18px;
 }
 
 .embla__container {

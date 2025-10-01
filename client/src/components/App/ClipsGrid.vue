@@ -1,31 +1,24 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 import type { Clip } from '../../types/clip';
 import AppClipCard from './AppClipCard.vue';
 
 interface Props {
   clips: Clip[];
-  hoveredClipId: number | null;
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
 }
 
 interface Emits {
-  (e: 'update:hovered-clip-id', id: number | null): void;
   (e: 'clip-updated', clip: Clip): void;
   (e: 'clip-deleted'): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const hoveredClipId = ref<number | null>(null);
 
-function handleCardHovered(isHovered: boolean, clipId: number): void {
-  emit('update:hovered-clip-id', isHovered ? clipId : null);
-}
-
-watch(() => props.hoveredClipId, (currentId) => {
-  if (!currentId) return;
-  
+watch(hoveredClipId, (currentId) => {
   const targetVideo = document.getElementById(`preview-video-${currentId}`) as HTMLVideoElement;
   const otherVideos = document.querySelectorAll(`video:not(#preview-video-${currentId})`) as NodeListOf<HTMLVideoElement>;
   
@@ -49,7 +42,7 @@ watch(() => props.hoveredClipId, (currentId) => {
       :clip="clip"
       :poster-url="getThumbUrl(clip)"
       :video-url="getVideoUrl(clip)"
-      @is-hovered="isHovered => handleCardHovered(isHovered, clip.id)"
+      @is-hovered="isHovered => hoveredClipId = isHovered ? clip.id : null"
       @updated="emit('clip-updated', $event)"
       @deleted="emit('clip-deleted')"
     />

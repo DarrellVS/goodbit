@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
-import { useClipHover } from '../composables/useClipHover';
 import type { Clip } from '../types/clip';
 import ClipFilters from '../components/App/ClipFilters.vue';
 import ClipsGrid from '../components/App/ClipsGrid.vue';
@@ -14,7 +13,6 @@ import BasePagination from '../components/Base/BasePagination.vue';
 const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
 const { activeFilter } = useClipFilters();
-const { hoveredClipId, setHoveredClip } = useClipHover();
 
 const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
@@ -68,7 +66,6 @@ onMounted(() => {
       <ClipsGrid
         v-else
         :clips="clips"
-        v-model:hovered-clip-id="hoveredClipId"
         :get-video-url="getVideoUrl"
         :get-thumb-url="getThumbUrl"
         @clip-updated="handleClipUpdated"
