@@ -7,6 +7,7 @@ import SidebarSectionHeader from './SidebarSectionHeader.vue';
 
 interface Props {
   activeGame?: string;
+  disableGamesFilter?: boolean;
 }
 
 interface Emits {
@@ -14,7 +15,9 @@ interface Emits {
   (e: 'select-game', game: string): void;
 }
 
-defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  disableGamesFilter: false,
+});
 const emit = defineEmits<Emits>();
 </script>
 
@@ -52,7 +55,11 @@ const emit = defineEmits<Emits>();
         </RouterLink>
       </div>
 
-      <SidebarGames :active-game="activeGame" @select-game="emit('select-game', $event)" />
+      <SidebarGames 
+        :active-game="activeGame"
+        :disabled="props.disableGamesFilter"
+        @select-game="emit('select-game', $event)" 
+      />
 
       <SidebarCollections />
     </nav>

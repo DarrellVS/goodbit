@@ -1,12 +1,24 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import FloatingVue from 'floating-vue';
+import 'floating-vue/dist/style.css';
 import App from './App.vue';
 import './styles.css';
+import './tooltip.css';
 import { router } from './router';
 import { useAuthStore } from './stores/auth';
 
 const app = createApp(App);
 app.use(createPinia());
+app.use(FloatingVue, {
+  themes: {
+    tooltip: {
+      distance: 8,
+      triggers: ['hover', 'focus'],
+      delay: { show: 200, hide: 0 },
+    },
+  },
+});
 const auth = useAuthStore();
 auth.init().then(() => {
   app.use(router);

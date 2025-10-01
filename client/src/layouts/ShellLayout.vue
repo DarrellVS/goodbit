@@ -1,6 +1,11 @@
 <template>
   <div class="h-full grid grid-cols-[256px_1fr] grid-rows-1">
-    <AppSidebar :active-game="selectedGame" @logout="logout" @select-game="selectGame" />
+    <AppSidebar 
+      :active-game="selectedGame" 
+      :disable-games-filter="disableGamesFilter"
+      @logout="logout" 
+      @select-game="selectGame" 
+    />
     
     <div class="flex flex-col h-full overflow-hidden">
       <AppHeader 
@@ -74,6 +79,12 @@ const auth = useAuthStore();
 const user = computed(() => auth.user);
 const router = useRouter();
 
+// Disable games filter on pages where it doesn't make sense
+const disableGamesFilter = computed(() => {
+  const routeName = router.currentRoute.value.name;
+  return !(routeName === 'clips' || routeName === 'today' || routeName === 'collection');
+});
+
 function selectGame(g: string) {
   selectedGame.value = g;
 }
@@ -109,6 +120,14 @@ watch(() => clipsStore.selectedGame, (g) => {
 
 watch(searchText, (q) => {
   clipsStore.setSearch(q);
+});
+
+// Clear game filter when navigating to pages that don't support it
+watch(disableGamesFilter, (isDisabled) => {
+  if (isDisabled && selectedGame.value) {
+    selectedGame.value = '';
+    clipsStore.setGame('');
+  }
 });
 
 async function removeTagFromHeader(tagName: string) {

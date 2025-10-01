@@ -1,0 +1,21 @@
+/* Custom tooltip styles for floating-vue */
+
+.v-popper--theme-tooltip .v-popper__inner {
+  background: #1f2937;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.v-popper--theme-tooltip .v-popper__arrow-inner,
+.v-popper--theme-tooltip .v-popper__arrow-outer {
+  border-color: #1f2937;
+}
+
+.v-popper--theme-tooltip.v-popper__popper--shown {
+  z-index: 9999;
+}
+
