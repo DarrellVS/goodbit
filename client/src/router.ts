@@ -11,6 +11,14 @@ import LoginPage from './views/LoginPage.vue';
 import { useAuthStore } from './stores/auth';
 import ShellLayout from './layouts/ShellLayout.vue';
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean;
+    title?: string;
+    subtitle?: string;
+  }
+}
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -20,12 +28,61 @@ export const router = createRouter({
       component: ShellLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'clips', component: ClipsPage },
-        { path: 'today', name: 'today', component: TodaysClipsPage },
-        { path: 'tag-patterns', name: 'tag-patterns', component: TagPatternsPage },
-        { path: 'stats', name: 'stats', component: StatsPage },
-        { path: 'settings', name: 'settings', component: SettingsPage },
-        { path: 'collections/:id', name: 'collection', component: CollectionPage, props: true },
+        { 
+          path: '', 
+          name: 'clips', 
+          component: ClipsPage,
+          meta: { 
+            title: 'My Library',
+            subtitle: 'Browse and manage your video clips'
+          }
+        },
+        { 
+          path: 'today', 
+          name: 'today', 
+          component: TodaysClipsPage,
+          meta: { 
+            title: "Today's Clips",
+            subtitle: 'Clips captured today'
+          }
+        },
+        { 
+          path: 'tag-patterns', 
+          name: 'tag-patterns', 
+          component: TagPatternsPage,
+          meta: { 
+            title: 'Smart Tag Patterns',
+            subtitle: 'Manage automatic tag suggestions'
+          }
+        },
+        { 
+          path: 'stats', 
+          name: 'stats', 
+          component: StatsPage,
+          meta: { 
+            title: 'Statistics',
+            subtitle: 'View your clip statistics'
+          }
+        },
+        { 
+          path: 'settings', 
+          name: 'settings', 
+          component: SettingsPage,
+          meta: { 
+            title: 'Settings',
+            subtitle: 'Customize your experience',
+          }
+        },
+        { 
+          path: 'collections/:id', 
+          name: 'collection', 
+          component: CollectionPage, 
+          props: true,
+          meta: { 
+            title: 'Collection',
+            subtitle: 'View collection clips'
+          }
+        },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },

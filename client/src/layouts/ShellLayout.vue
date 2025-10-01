@@ -6,7 +6,8 @@
       <AppHeader 
         v-model:search="searchText" 
         :rescan-loading="isRescanLoading"
-        :title="headerTitle"
+        :title="router.currentRoute.value.meta.title as string"
+        :subtitle="router.currentRoute.value.meta.subtitle as string"
         @rescan="rescan"
       >
         <template #tags-filter>
@@ -72,26 +73,6 @@ const isRescanLoading = ref(false);
 const auth = useAuthStore();
 const user = computed(() => auth.user);
 const router = useRouter();
-
-const headerTitle = computed(() => {
-  const route = router.currentRoute.value;
-  if (route.name === 'today') {
-    return "Today's Clips";
-  }
-  if (route.name === 'stats') {
-    return 'Statistics';
-  }
-  if (route.name === 'tag-patterns') {
-    return 'Smart Tag Patterns';
-  }
-  if (route.name === 'collection') {
-    return 'Collection';
-  }
-  if (route.name === 'settings') {
-    return 'Settings';
-  }
-  return 'My Library';
-});
 
 function selectGame(g: string) {
   selectedGame.value = g;

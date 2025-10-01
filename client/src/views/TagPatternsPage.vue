@@ -129,21 +129,6 @@ async function saveNew(): Promise<void> {
 
 <template>
   <div class="p-6 space-y-6">
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Smart Tag Patterns</h1>
-        <p class="text-sm text-gray-600 mt-1">Manage automatic tag suggestions based on clip names</p>
-      </div>
-      
-      <button
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium shadow-lg shadow-orange-500/20 transition-all"
-        @click="startAddNew"
-      >
-        <Icon icon="material-symbols:add" class="text-lg" />
-        <span>Add Pattern</span>
-      </button>
-    </header>
-
     <div v-if="isAddingNew" class="bg-white border border-gray-300 rounded-xl p-6 shadow-sm">
       <h3 class="text-lg font-semibold mb-4">New Tag Pattern</h3>
       
@@ -208,11 +193,20 @@ async function saveNew(): Promise<void> {
       
       <select
         v-model="selectedCategory"
-        class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+        class="rounded-lg border border-gray-300 bg-white pl-4 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-orange-500/50 transition cursor-pointer appearance-none bg-no-repeat"
+        style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27%3e%3cpath fill=%27%23374151%27 d=%27M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z%27/%3e%3c/svg%3e'); background-position: right 1rem center;"
       >
         <option value="All">All Categories</option>
         <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
       </select>
+
+      <button
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium shadow-lg shadow-orange-500/20 transition-all"
+        @click="startAddNew"
+      >
+        <Icon icon="material-symbols:add" class="text-lg" />
+        <span>Add Pattern</span>
+      </button>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">

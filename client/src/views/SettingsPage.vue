@@ -77,15 +77,7 @@ function importSettings() {
   <div class="h-full flex">
     <!-- Settings Sidebar -->
     <aside class="w-64 border-r border-gray-200 bg-gray-50/50 flex flex-col">
-      <div class="p-6">
-        <h1 class="text-2xl font-bold flex items-center gap-2">
-          <Icon icon="material-symbols:settings" class="text-orange-500" />
-          Settings
-        </h1>
-        <p class="text-sm text-muted-500 mt-1">Customize your experience</p>
-      </div>
-
-      <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto pt-6">
         <button
           v-for="section in sections"
           :key="section.id"

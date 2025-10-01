@@ -6,6 +6,7 @@ defineProps<{
   search: string; 
   rescanLoading?: boolean;
   title?: string;
+  subtitle?: string;
 }>();
 defineEmits<{
   (e: 'update:search', value: string): void;
@@ -17,7 +18,15 @@ defineEmits<{
   <header class="bg-white/5 backdrop-blur-sm">
     <div class="px-6 py-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold">{{ title || 'My Library' }}</h2>
+        <div>
+          <h2 class="text-2xl font-bold">{{ title || 'My Library' }}</h2>
+          <p 
+            v-if="subtitle" 
+            class="text-sm mt-1 text-muted-500"
+          >
+            {{ subtitle }}
+          </p>
+        </div>
         <div class="flex items-center gap-3">
           <div class="relative">
             <Icon icon="material-symbols:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
