@@ -10,7 +10,6 @@ import { ScanAndSyncClipsAction, type ScanResult } from '../actions/ScanAndSyncC
 import { GetClipMetaAction, type ClipMeta } from '../actions/GetClipMetaAction.js';
 import { OpenClipAction } from '../actions/OpenClipAction.js';
 import { MoveFileToTrashAction } from '../actions/MoveFileToTrashAction.js';
-import { AnalyzeAudioHighlightsAction, type AudioHighlight } from '../actions/AnalyzeAudioHighlightsAction.js';
 
 /**
  * VideoService orchestrates video-related operations using actions and helpers.
@@ -62,10 +61,6 @@ class VideoService {
 
   async moveClipFileToTrash(filePath: string): Promise<void> {
     await new MoveFileToTrashAction().execute({ filePath });
-  }
-
-  async getAudioHighlights(clip: Clip): Promise<AudioHighlight[]> {
-    return await new AnalyzeAudioHighlightsAction().execute({ clip });
   }
 }
 
