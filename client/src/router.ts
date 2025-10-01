@@ -15,8 +15,8 @@ export const router = createRouter({
       component: ShellLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'clips', component: ClipsPage, meta: { hasSidebar: true } },
-        { path: 'today', name: 'today', component: TodaysClipsPage, meta: { hasSidebar: false } },
+        { path: '', name: 'clips', component: ClipsPage },
+        { path: 'today', name: 'today', component: TodaysClipsPage },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },

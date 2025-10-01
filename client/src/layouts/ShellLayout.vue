@@ -60,8 +60,6 @@ import AppSidebar from '../components/App/AppSidebar.vue';
 import { deleteTag } from '../services/clips';
 import { Icon } from '@iconify/vue';
 
-const props = defineProps<{ hasSidebar: boolean }>();
-
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
 const clipsStore = useClipsStore();

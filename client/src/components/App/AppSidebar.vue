@@ -1,19 +1,27 @@
 <script lang="ts" setup>
-import { Icon } from '@iconify/vue';
-import { RouterLink } from 'vue-router';
-import { useGamesStore } from '../../stores/games';
 import { computed } from 'vue';
+import { RouterLink } from 'vue-router';
+import { Icon } from '@iconify/vue';
+import { useGamesStore } from '../../stores/games';
 
-defineProps<{ activeGame?: string }>();
-const emit = defineEmits<{ (e: 'logout'): void; (e: 'selectGame', game: string): void }>();
+interface Props {
+  activeGame?: string;
+}
+
+interface Emits {
+  (e: 'logout'): void;
+  (e: 'select-game', game: string): void;
+}
+
+defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const gamesStore = useGamesStore();
-const games = computed(() => gamesStore.items);
+const topGames = computed(() => gamesStore.topGames());
 </script>
 
 <template>
   <aside class="w-64 bg-white/5 backdrop-blur-sm border-r border-border/50 flex flex-col h-full">
-    <!-- Logo/Brand -->
     <div class="p-6">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
@@ -23,7 +31,6 @@ const games = computed(() => gamesStore.items);
       </div>
     </div>
 
-    <!-- Main Menu -->
     <nav class="flex-1 px-3 space-y-1">
       <div class="text-xs font-semibold text-muted-400 px-3 mb-2">MAIN MENU</div>
       
@@ -45,36 +52,41 @@ const games = computed(() => gamesStore.items);
         <span class="font-medium">Today</span>
       </RouterLink>
 
-      <!-- Games Section -->
-      <div v-if="games.length > 0" class="pt-4">
+      <div v-if="topGames.length" class="pt-4">
         <div class="text-xs font-semibold text-muted-400 px-3 mb-2">GAMES</div>
+        
         <button
           class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
-          :class="{ 'bg-white/10 text-orange-500': !activeGame || activeGame === '' }"
-          @click="$emit('selectGame', '')"
+          :class="{ 'bg-white/10 text-orange-500': !activeGame }"
+          @click="emit('select-game', '')"
         >
           <div class="flex items-center gap-3">
-            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-            <span class="font-medium truncate">All</span>
+            <div class="w-2 h-2 rounded-full bg-orange-500" />
+            <span class="font-medium">All</span>
           </div>
         </button>
+
         <button
-          v-for="game in games.slice(0, 5)"
+          v-for="game in topGames"
           :key="game.game"
           class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
           :class="{ 'bg-white/10 text-orange-500': activeGame === game.game }"
-          @click="$emit('selectGame', game.game)"
+          @click="emit('select-game', game.game)"
         >
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></div>
-            <span class="font-medium truncate" :title="game.game || 'Unknown'">{{ game.game || 'Unknown' }}</span>
+            <div class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
+            <span 
+              class="font-medium truncate" 
+              :title="game.game || 'Unknown'"
+            >
+              {{ game.game || 'Unknown' }}
+            </span>
           </div>
           <span class="text-xs text-muted-400 flex-shrink-0 ml-2">{{ game.count }}</span>
         </button>
       </div>
     </nav>
 
-    <!-- Bottom Section -->
     <div class="p-3 space-y-1 border-t border-border/50">
       <button
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
@@ -85,7 +97,7 @@ const games = computed(() => gamesStore.items);
       
       <button
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
-        @click="$emit('logout')"
+        @click="emit('logout')"
       >
         <Icon icon="material-symbols:logout" class="text-lg" />
         <span class="font-medium">Logout</span>
@@ -93,4 +105,3 @@ const games = computed(() => gamesStore.items);
     </div>
   </aside>
 </template>
-
