@@ -21,8 +21,28 @@ export async function deleteCollection(id: number): Promise<void> {
   await axios.delete(`/api/collections/${id}`);
 }
 
-export async function getCollectionClips(id: number): Promise<Clip[]> {
-  const { data } = await axios.get(`/api/collections/${id}/clips`);
+interface CollectionClipsParams {
+  page?: number;
+  pageSize?: number;
+  game?: string;
+  q?: string;
+  tags?: string;
+  published?: string;
+  starred?: string;
+}
+
+interface CollectionClipsResponse {
+  items: Clip[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function getCollectionClips(
+  id: number,
+  params?: CollectionClipsParams
+): Promise<CollectionClipsResponse> {
+  const { data } = await axios.get(`/api/collections/${id}/clips`, { params });
   return data;
 }
 

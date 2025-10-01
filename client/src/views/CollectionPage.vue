@@ -1,47 +1,66 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { useCollectionsStore } from '../stores/collections';
+import { useClipsStore } from '../stores/clips';
+import { useGamesStore } from '../stores/games';
 import { useConfiguration } from '../composables/useConfiguration';
+import { useInfiniteScroll } from '../composables/useInfiniteScroll';
+import { useClipHandlers } from '../composables/useClipHandlers';
 import type { Clip } from '../types/clip';
-import ClipsGrid from '../components/App/ClipsGrid.vue';
-import ClipsGrouped from '../components/App/ClipsGrouped.vue';
-import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
-import { Icon } from '@iconify/vue';
+import ViewModeToggle from '../components/App/ViewModeToggle.vue';
+import ClipsDisplay from '../components/App/ClipsDisplay.vue';
+import ClipsPaginationControls from '../components/App/ClipsPaginationControls.vue';
 
 const route = useRoute();
 const collectionsStore = useCollectionsStore();
+const clipsStore = useClipsStore();
+const gamesStore = useGamesStore();
 const config = useConfiguration();
+const { getVideoUrl, getThumbUrl } = useClipHandlers();
 
 const collectionId = computed(() => Number(route.params.id));
-const clips = computed(() => collectionsStore.currentCollectionClips);
-const loading = computed(() => collectionsStore.loading);
+const clips = computed(() => collectionsStore.clipsState.items);
+const total = computed(() => collectionsStore.clipsState.total);
+const loading = computed(() => collectionsStore.clipsState.loading);
 const isEmpty = computed(() => !loading.value && !clips.value.length);
+const hasMore = computed(() => collectionsStore.hasNextPage);
 const collection = computed(() => 
   collectionsStore.items.find(c => c.id === collectionId.value)
 );
 
+useInfiniteScroll({
+  onLoadMore: () => collectionsStore.loadMoreCollectionClips(),
+  enabled: () => hasMore.value && !loading.value,
+});
+
 function handleClipUpdated(updatedClip: Clip): void {
-  const index = clips.value.findIndex(c => c.id === updatedClip.id);
+  const index = collectionsStore.clipsState.items.findIndex(c => c.id === updatedClip.id);
   if (index !== -1) {
-    clips.value[index] = updatedClip;
+    collectionsStore.clipsState.items[index] = updatedClip;
   }
 }
 
-async function handleClipDeleted(clipId: number): Promise<void> {
-  await collectionsStore.removeClipFromCollection(collectionId.value, clipId);
-}
-
-function getVideoUrl(clip: Clip): string {
-  return videoUrlFor(clip.id, clip.fileModifiedAt);
-}
-
-function getThumbUrl(clip: Clip): string {
-  return thumbUrlFor(clip.id, clip.fileModifiedAt);
+async function handleClipDeleted(): Promise<void> {
+  collectionsStore.resetCollectionClips();
+  await Promise.all([
+    collectionsStore.fetchCollectionClips(collectionId.value),
+    gamesStore.fetchGames()
+  ]);
 }
 
 onMounted(() => {
+  void collectionsStore.fetchCollectionClips(collectionId.value);
+});
+
+watch([
+  () => clipsStore.selectedGame,
+  () => clipsStore.searchText,
+  () => clipsStore.selectedTags,
+  () => clipsStore.publishedFilter,
+  () => clipsStore.starredFilter,
+], () => {
+  collectionsStore.resetCollectionClips();
   void collectionsStore.fetchCollectionClips(collectionId.value);
 });
 </script>
@@ -52,59 +71,33 @@ onMounted(() => {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold">{{ collection?.name || 'Collection' }}</h1>
-          <p class="text-sm text-muted-500 mt-1">{{ clips.length }} clips</p>
+          <p class="text-sm text-muted-500 mt-1">{{ total }} clip{{ total === 1 ? '' : 's' }}</p>
         </div>
         
-        <div class="flex items-center gap-2">
-          <button
-            class="p-2 rounded-lg transition-colors"
-            :class="config.public.value.viewMode === 'grid' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-black/5'"
-            @click="config.public.value.viewMode = 'grid'"
-            title="Grid view"
-          >
-            <Icon icon="material-symbols:grid-view" class="text-lg" />
-          </button>
-          <button
-            class="p-2 rounded-lg transition-colors"
-            :class="config.public.value.viewMode === 'grouped' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-black/5'"
-            @click="config.public.value.viewMode = 'grouped'"
-            title="Grouped view"
-          >
-            <Icon icon="material-symbols:view-agenda" class="text-lg" />
-          </button>
-        </div>
+        <ViewModeToggle v-model="config.public.value.viewMode" />
       </div>
     </div>
 
     <div class="p-6 space-y-6">
-      <BaseEmptyState
-        v-if="isEmpty"
-        icon="material-symbols:folder-open"
-        title="No clips in this collection"
-        description="Drag and drop clips from your library to add them here."
-      />
-
-      <ClipsGrid
-        v-else-if="config.public.value.viewMode === 'grid'"
+      <ClipsDisplay
         :clips="clips"
+        :view-mode="config.public.value.viewMode"
+        :is-empty="isEmpty"
+        empty-icon="material-symbols:folder-open"
+        empty-title="No clips in this collection"
+        empty-description="Drag and drop clips from your library to add them here."
         :get-video-url="getVideoUrl"
         :get-thumb-url="getThumbUrl"
         @clip-updated="handleClipUpdated"
-        @clip-deleted="() => handleClipDeleted"
+        @clip-deleted="handleClipDeleted"
       />
 
-      <ClipsGrouped
-        v-else
-        :clips="clips"
-        :get-video-url="getVideoUrl"
-        :get-thumb-url="getThumbUrl"
-        @clip-updated="handleClipUpdated"
-        @clip-deleted="() => handleClipDeleted"
+      <ClipsPaginationControls
+        :loading="loading"
+        :has-more="hasMore"
+        :has-clips="clips.length > 0"
+        @load-more="collectionsStore.loadMoreCollectionClips()"
       />
-
-      <div v-if="loading" class="flex justify-center py-8">
-        <Icon icon="material-symbols:progress-activity" class="w-8 h-8 text-orange-500 animate-spin" />
-      </div>
     </div>
   </div>
 </template>

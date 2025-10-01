@@ -1,20 +1,41 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { Collection } from '../types/collection';
 import type { Clip } from '../types/clip';
 import * as collectionsService from '../services/collections';
+import { useClipsStore } from './clips';
+
+interface CollectionClipsState {
+  currentCollectionId: number | null;
+  items: Clip[];
+  total: number;
+  page: number;
+  pageSize: number;
+  loading: boolean;
+  abortController: AbortController | null;
+  requestId: number;
+}
 
 export const useCollectionsStore = defineStore('collections', () => {
   const items = ref<Collection[]>([]);
-  const loading = ref(false);
-  const currentCollectionClips = ref<Clip[]>([]);
+  const clipsStore = useClipsStore();
+  
+  const clipsState = ref<CollectionClipsState>({
+    currentCollectionId: null,
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 50,
+    loading: false,
+    abortController: null,
+    requestId: 0,
+  });
 
   async function fetchCollections(): Promise<void> {
-    loading.value = true;
     try {
       items.value = await collectionsService.getCollections();
-    } finally {
-      loading.value = false;
+    } catch (error) {
+      console.error('Failed to fetch collections:', error);
     }
   }
 
@@ -37,15 +58,84 @@ export const useCollectionsStore = defineStore('collections', () => {
     items.value = items.value.filter(c => c.id !== id);
   }
 
-  async function fetchCollectionClips(id: number): Promise<Clip[]> {
-    loading.value = true;
+  async function fetchCollectionClips(collectionId: number, append = false): Promise<void> {
+    if (collectionId !== clipsState.value.currentCollectionId) {
+      clipsState.value.currentCollectionId = collectionId;
+      clipsState.value.page = 1;
+      clipsState.value.items = [];
+    }
+
+    if (clipsState.value.abortController) {
+      clipsState.value.abortController.abort();
+    }
+
+    clipsState.value.abortController = new AbortController();
+    clipsState.value.requestId++;
+    const currentRequestId = clipsState.value.requestId;
+    clipsState.value.loading = true;
+
     try {
-      currentCollectionClips.value = await collectionsService.getCollectionClips(id);
-      return currentCollectionClips.value;
+      const params: Record<string, string | number> = {
+        page: clipsState.value.page,
+        pageSize: clipsState.value.pageSize,
+      };
+
+      if (clipsStore.selectedGame) params.game = clipsStore.selectedGame;
+      if (clipsStore.searchText) params.q = clipsStore.searchText;
+      if (clipsStore.selectedTags.length) params.tags = clipsStore.selectedTags.join(',');
+      if (clipsStore.publishedFilter !== null) params.published = String(clipsStore.publishedFilter);
+      if (clipsStore.starredFilter) params.starred = 'true';
+
+      const result = await collectionsService.getCollectionClips(collectionId, params);
+
+      if (currentRequestId === clipsState.value.requestId) {
+        if (append) {
+          clipsState.value.items = [...clipsState.value.items, ...result.items];
+        } else {
+          clipsState.value.items = result.items;
+        }
+        clipsState.value.total = result.total;
+        clipsState.value.abortController = null;
+      }
+    } catch (error: any) {
+      if (error?.code === 'ERR_CANCELED') {
+        return;
+      }
+      
+      if (currentRequestId === clipsState.value.requestId) {
+        clipsState.value.abortController = null;
+        throw error;
+      }
     } finally {
-      loading.value = false;
+      if (currentRequestId === clipsState.value.requestId) {
+        clipsState.value.loading = false;
+      }
     }
   }
+
+  async function loadMoreCollectionClips(): Promise<void> {
+    if (clipsState.value.loading || !hasNextPage.value) return;
+    clipsState.value.page++;
+    if (clipsState.value.currentCollectionId !== null) {
+      await fetchCollectionClips(clipsState.value.currentCollectionId, true);
+    }
+  }
+
+  function resetCollectionClips(): void {
+    clipsState.value.currentCollectionId = null;
+    clipsState.value.page = 1;
+    clipsState.value.items = [];
+    clipsState.value.total = 0;
+  }
+
+  const hasNextPage = computed(() => {
+    const totalPages = Math.ceil(clipsState.value.total / clipsState.value.pageSize);
+    return clipsState.value.page < totalPages;
+  });
+
+  const hasPreviousPage = computed(() => {
+    return clipsState.value.page > 1;
+  });
 
   async function addClipToCollection(collectionId: number, clipId: number): Promise<void> {
     const updated = await collectionsService.addClipToCollection(collectionId, clipId);
@@ -61,18 +151,22 @@ export const useCollectionsStore = defineStore('collections', () => {
     if (index !== -1) {
       items.value[index] = updated;
     }
-    currentCollectionClips.value = currentCollectionClips.value.filter(c => c.id !== clipId);
+    clipsState.value.items = clipsState.value.items.filter(c => c.id !== clipId);
+    clipsState.value.total = Math.max(0, clipsState.value.total - 1);
   }
 
   return {
     items,
-    loading,
-    currentCollectionClips,
+    clipsState,
+    hasNextPage,
+    hasPreviousPage,
     fetchCollections,
     createCollection,
     updateCollection,
     deleteCollection,
     fetchCollectionClips,
+    loadMoreCollectionClips,
+    resetCollectionClips,
     addClipToCollection,
     removeClipFromCollection,
   };

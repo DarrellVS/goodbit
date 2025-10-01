@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
+import ViewModeToggle from './ViewModeToggle.vue';
 
 export type FilterType = 'videos' | 'starred' | 'published' | 'not-published';
 export type ViewMode = 'grid' | 'grouped';
@@ -53,22 +54,7 @@ const filters: FilterOption[] = [
         {{ totalCount }} Videos
       </div>
       
-      <div class="flex gap-2">
-        <button
-          class="p-2 rounded-lg transition-colors"
-          :class="viewMode === 'grouped' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-          @click="emit('update:view-mode', 'grouped')"
-        >
-          <Icon icon="material-symbols:stacks" class="w-5 h-5" />
-        </button>
-        <button
-          class="p-2 rounded-lg transition-colors"
-          :class="viewMode === 'grid' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-          @click="emit('update:view-mode', 'grid')"
-        >
-          <Icon icon="material-symbols:grid-view" class="w-5 h-5" />
-        </button>
-      </div>
+      <ViewModeToggle :model-value="viewMode" @update:model-value="emit('update:view-mode', $event)" />
     </div>
   </nav>
 </template>

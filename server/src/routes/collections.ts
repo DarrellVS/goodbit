@@ -40,9 +40,21 @@ collectionsRouter.delete('/:id', asyncHandler(async (req, res) => {
 
 collectionsRouter.get('/:id/clips', asyncHandler(async (req, res) => {
   const collectionId = Number(req.params.id);
+  const { game, q, tags, published, starred, page, pageSize } = req.query as Record<string, string>;
+  
   const action = new GetCollectionClipsAction();
-  const result = await action.execute({ collectionId });
-  res.json(result.clips);
+  const result = await action.execute({
+    collectionId,
+    game,
+    q,
+    tags,
+    published,
+    starred,
+    page: page ? parseInt(page, 10) : undefined,
+    pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
+  });
+  
+  res.json(result);
 }));
 
 collectionsRouter.post('/:id/clips/:clipId', asyncHandler(async (req, res) => {
