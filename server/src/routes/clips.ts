@@ -113,6 +113,14 @@ clipsRouter.get('/:id/meta', asyncHandler(async (req, res) => {
   res.json(meta);
 }));
 
+clipsRouter.get('/:id/highlights', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const repo = AppDataSource.getRepository(Clip);
+  const clip = await repo.findOneByOrFail({ id });
+  const highlights = await videoService.getAudioHighlights(clip);
+  res.json(highlights);
+}));
+
 clipsRouter.post('/:id/open', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   await videoService.openClip(id);

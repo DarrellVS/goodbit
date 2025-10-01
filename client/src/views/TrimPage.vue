@@ -52,10 +52,14 @@
             </div>
             <div>
               <h2 class="font-semibold text-lg">Timeline</h2>
-              <p class="text-xs text-muted-400">Drag the handles to trim your clip</p>
+              <p class="text-xs text-muted-400">Drag the handles to trim your clip • <span v-if="highlights.length > 0" class="text-orange-500">{{ highlights.length }} audio highlights detected</span></p>
             </div>
           </div>
           <div class="flex items-center gap-4 text-sm">
+            <div v-if="highlights.length > 0" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
+              <div class="w-1 h-4 bg-gradient-to-b from-orange-400 via-orange-500 to-orange-400 rounded-full shadow-[0_0_4px_rgba(251,146,60,0.6)]"></div>
+              <span class="text-xs text-muted-400">Audio peaks</span>
+            </div>
             <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
               <Icon icon="material-symbols:timer" class="text-orange-500" />
               <span class="text-muted-400">Duration:</span>
@@ -66,6 +70,23 @@
 
         <div class="relative h-32 rounded-xl overflow-visible border border-border/50">
           <img :src="withAuthToken(`/api/clips/${id}/frame-strip`)" alt="frames" class="w-full h-full object-cover pointer-events-none select-none rounded-xl" draggable="false" />
+          
+          <!-- Audio Highlights -->
+          <div class="absolute inset-0 pointer-events-none z-30">
+            <div
+              v-for="(highlight, idx) in highlights"
+              :key="idx"
+              class="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400/60 via-orange-500/80 to-orange-400/60 shadow-[0_0_8px_rgba(251,146,60,0.6)]"
+              :style="{ 
+                left: pct(highlight.timestamp) + '%',
+                opacity: 0.4 + (highlight.peak * 0.6)
+              }"
+              :title="`Highlight at ${highlight.timestamp.toFixed(1)}s`"
+            >
+              <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_6px_rgba(251,146,60,0.8)]"></div>
+            </div>
+          </div>
+          
           <RangeTrimSlider v-model="range" :max="duration" :step="0.1" :min-steps-between-thumbs="1" />
           <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
             <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-[2px]" :style="{ width: pct(range[0]) + '%' }"></div>
@@ -115,7 +136,7 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import RangeTrimSlider from '../components/RangeTrimSlider.vue';
-import { getClipMeta, trimClip } from '../services/clips';
+import { getClipMeta, trimClip, getClipHighlights, type AudioHighlight } from '../services/clips';
 import { useAuthStore } from '../stores/auth';
 import { withAuthToken } from '../utils/withAuthToken';
 import { useClipsStore } from '../stores/clips';
@@ -128,6 +149,7 @@ const range = ref<[number, number]>([0, 1]);
 const videoEl = ref<HTMLVideoElement | null>(null);
 const saving = ref(false);
 const router = useRouter();
+const highlights = ref<AudioHighlight[]>([]);
 
 function pct(s: number) {
   if (!duration.value) return 0;
@@ -142,6 +164,14 @@ async function loadMeta() {
   const data = await getClipMeta(Number(props.id));
   duration.value = data.durationSec || 0;
   range.value = [0, Math.max(1, duration.value)];
+  
+  // Load audio highlights
+  try {
+    highlights.value = await getClipHighlights(Number(props.id));
+  } catch (error) {
+    console.error('Failed to load highlights:', error);
+    highlights.value = [];
+  }
 }
 
 async function doTrim() {

@@ -65,4 +65,14 @@ export async function unstarClip(id: number): Promise<Clip> {
   return data;
 }
 
+export interface AudioHighlight {
+  timestamp: number;
+  peak: number;
+}
+
+export async function getClipHighlights(id: number): Promise<AudioHighlight[]> {
+  const { data } = await axios.get<AudioHighlight[]>(`/api/clips/${id}/highlights`);
+  return data;
+}
+
 
