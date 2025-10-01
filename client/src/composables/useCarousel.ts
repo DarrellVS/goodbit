@@ -1,13 +1,23 @@
 import { ref, watch, type Ref } from 'vue';
-import type { EmblaCarouselVueType } from 'embla-carousel-vue';
+import type { EmblaCarouselType } from 'embla-carousel';
 
 export function useCarousel(
-  emblaApi: Ref<EmblaCarouselVueType[1] | undefined>,
-  thumbsApi?: Ref<EmblaCarouselVueType[1] | undefined>
+  emblaApi: Ref<EmblaCarouselType | undefined>,
+  thumbsApi?: Ref<EmblaCarouselType | undefined>
 ) {
   const selectedIndex = ref(0);
   const canScrollPrev = ref(false);
   const canScrollNext = ref(false);
+
+  function pauseAllVideos(): void {
+    const allVideos = document.querySelectorAll('.embla__slide video') as NodeListOf<HTMLVideoElement>;
+    allVideos.forEach(video => {
+      if (!video.paused) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+  }
 
   function updateState(): void {
     const api = emblaApi.value;
@@ -21,7 +31,14 @@ export function useCarousel(
       return;
     }
 
-    selectedIndex.value = api.selectedScrollSnap();
+    const previousIndex = selectedIndex.value;
+    const newIndex = api.selectedScrollSnap();
+    
+    if (previousIndex !== newIndex) {
+      pauseAllVideos();
+    }
+
+    selectedIndex.value = newIndex;
     canScrollPrev.value = api.canScrollPrev();
     canScrollNext.value = api.canScrollNext();
 

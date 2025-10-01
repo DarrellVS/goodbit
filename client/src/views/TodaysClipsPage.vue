@@ -5,6 +5,7 @@ import { updateClipName, deleteClip } from '../services/clips';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { useTodayClips } from '../composables/useTodayClips';
 import { useCarousel } from '../composables/useCarousel';
+import { useVideoPlayback } from '../composables/useVideoPlayback';
 import type { Clip } from '../types/clip';
 import CarouselSlide from '../components/App/CarouselSlide.vue';
 import CarouselNavigation from '../components/App/CarouselNavigation.vue';
@@ -38,6 +39,8 @@ const {
   scrollTo,
   reinitialize,
 } = useCarousel(emblaApi, thumbsApi);
+
+useVideoPlayback(selectedIndex);
 
 async function handleClipRename(clipId: number, name: string): Promise<void> {
   const updated = await updateClipName(clipId, name || null);
