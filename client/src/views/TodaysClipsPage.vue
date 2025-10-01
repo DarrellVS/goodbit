@@ -80,9 +80,6 @@ onMounted(() => store.fetchClips());
 </script>
 
 <template>
-  <div class="border-b border-border/50 px-6 py-4">
-    <h2 class="text-2xl font-bold">Today's Clips</h2>
-  </div>
   <div class="p-6 space-y-6 max-w-7xl mx-auto">
     <div class="embla relative group">
         <div class="embla__viewport" ref="emblaRef">

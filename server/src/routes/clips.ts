@@ -26,7 +26,7 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   if (published === 'true') qb = qb.andWhere('clip.published = :published', { published: true });
   if (published === 'false') qb = qb.andWhere('clip.published = :published', { published: false });
   
-  qb = qb.andWhere('(clip.starred = :starred)', { starred: starred === 'true' });
+  if (starred === 'true') qb = qb.andWhere('(clip.starred = :starred)', { starred: true });
 
   if (q && q.length > 0) {
     qb = qb.andWhere('(' +

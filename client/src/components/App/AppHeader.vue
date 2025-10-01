@@ -4,21 +4,20 @@ import BasePopover from '../Base/BasePopover.vue';
 
 defineProps<{ 
   search: string; 
-  rescanLoading?: boolean; 
-  activeFilter?: string;
+  rescanLoading?: boolean;
+  title?: string;
 }>();
 defineEmits<{
   (e: 'update:search', value: string): void;
   (e: 'rescan'): void;
-  (e: 'update:filter', value: string): void;
 }>();
 </script>
 
 <template>
   <header class="bg-white/5 backdrop-blur-sm border-b border-border/50">
     <div class="px-6 py-4">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold">My Library</h2>
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">{{ title || 'My Library' }}</h2>
         <div class="flex items-center gap-3">
           <div class="relative">
             <Icon icon="material-symbols:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
@@ -54,45 +53,6 @@ defineEmits<{
             <span>Rescan</span>
           </button>
         </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex items-center gap-6 border-b border-border/30 -mb-px">
-        <button
-          class="flex items-center gap-2 px-1 py-3 border-b-2 transition-colors font-medium"
-          :class="!activeFilter || activeFilter === 'videos' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
-          @click="$emit('update:filter', 'videos')"
-        >
-          <Icon icon="material-symbols:play-circle" />
-          <span>Videos</span>
-        </button>
-
-        <button
-          class="flex items-center gap-2 px-1 py-3 border-b-2 transition-colors font-medium"
-          :class="activeFilter === 'starred' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
-          @click="$emit('update:filter', 'starred')"
-        >
-          <Icon icon="material-symbols:star" />
-          <span>Starred</span>
-        </button>
-
-        <button
-          class="flex items-center gap-2 px-1 py-3 border-b-2 transition-colors font-medium"
-          :class="activeFilter === 'published' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
-          @click="$emit('update:filter', 'published')"
-        >
-          <Icon icon="material-symbols:check-circle" />
-          <span>Published</span>
-        </button>
-
-        <button
-          class="flex items-center gap-2 px-1 py-3 border-b-2 transition-colors font-medium"
-          :class="activeFilter === 'not-published' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
-          @click="$emit('update:filter', 'not-published')"
-        >
-          <Icon icon="material-symbols:cancel" />
-          <span>Not Published</span>
-        </button>
       </div>
     </div>
   </header>

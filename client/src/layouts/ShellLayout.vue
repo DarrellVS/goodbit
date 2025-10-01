@@ -3,7 +3,12 @@
     <AppSidebar :active-game="selectedGame" @logout="logout" @select-game="selectGame" />
     
     <div class="flex flex-col h-full overflow-hidden">
-      <AppHeader :search="searchText" :rescan-loading="isRescanLoading" :active-filter="activeFilter" @update:search="(v) => searchText = v" @update:filter="(v) => activeFilter = v" @rescan="rescan">
+      <AppHeader 
+        v-model:search="searchText" 
+        :rescan-loading="isRescanLoading"
+        :title="headerTitle"
+        @rescan="rescan"
+      >
         <template #tags-filter>
           <div class="flex flex-col gap-3 max-h-72 overflow-auto min-w-[280px]">
             <div class="text-sm font-semibold">Filter by Tags</div>
@@ -63,10 +68,16 @@ const clipsStore = useClipsStore();
 const selectedGame = ref('');
 const searchText = ref('');
 const isRescanLoading = ref(false);
-const activeFilter = ref('videos');
 const auth = useAuthStore();
 const user = computed(() => auth.user);
 const router = useRouter();
+
+const headerTitle = computed(() => {
+  if (router.currentRoute.value.name === 'today') {
+    return "Today's Clips";
+  }
+  return 'My Library';
+});
 
 function selectGame(g: string) {
   selectedGame.value = g;
@@ -97,22 +108,6 @@ watch(selectedGame, (g) => {
 
 watch(searchText, (q) => {
   clipsStore.setSearch(q);
-});
-
-watch(activeFilter, (filter) => {
-  if (filter === 'published') {
-    clipsStore.setPublishedFilter(true);
-    clipsStore.setStarredFilter(false);
-  } else if (filter === 'not-published') {
-    clipsStore.setPublishedFilter(false);
-    clipsStore.setStarredFilter(false);
-  } else if (filter === 'starred') {
-    clipsStore.setPublishedFilter(null);
-    clipsStore.setStarredFilter(true);
-  } else {
-    clipsStore.setPublishedFilter(null);
-    clipsStore.setStarredFilter(false);
-  }
 });
 
 async function removeTagFromHeader(tagName: string) {
