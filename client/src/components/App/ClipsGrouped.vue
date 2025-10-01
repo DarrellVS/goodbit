@@ -106,23 +106,13 @@ function handleClipDeleted(): void {
       </div>
 
       <div class="relative">
-        <div 
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-          :class="{ 
-            'stack-container': group.clips.length > 1,
-          }"
-        >
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <AppClipCard
             v-for="(clip, index) in group.clips"
             :key="clip.id"
             :clip="clip"
             :video-url="getVideoUrl(clip)"
             :poster-url="getThumbUrl(clip)"
-            :style="group.clips.length > 1 ? {
-              transform: `translateY(${index * 4}px) translateX(${index * 4}px)`,
-              zIndex: group.clips.length - index,
-            } : {}"
-            class="transition-transform hover:scale-[1.02]"
             @is-hovered="isHovered => handleClipHover(clip.id, isHovered)"
             @updated="handleClipUpdated"
             @deleted="handleClipDeleted"
@@ -132,18 +122,3 @@ function handleClipDeleted(): void {
     </div>
   </div>
 </template>
-
-<style scoped>
-.stack-container {
-  position: relative;
-}
-
-.stack-container > * {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.stack-container > *:hover {
-  z-index: 9999 !important;
-}
-</style>
-

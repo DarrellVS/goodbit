@@ -108,7 +108,7 @@ const displayDate = computed(() =>
 
 <template>
   <article 
-    class="clip-card group relative bg-white/5 rounded-xl overflow-hidden border border-gray-300 hover:border-orange-500/50 transition-all hover:shadow-lg"
+    class="clip-card shadow group relative bg-white/5 rounded-xl overflow-hidden border border-gray-300 hover:border-orange-500/50 transition-all hover:shadow-lg"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
   >
