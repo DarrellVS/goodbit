@@ -6,6 +6,7 @@ import { useFormat } from '../../composables/useFormat';
 import { useClipActions } from '../../composables/useClipActions';
 import { useClipTags } from '../../composables/useClipTags';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
+import { useConfiguration } from '../../composables/useConfiguration';
 import { updateClipName, starClip, unstarClip } from '../../services/clips';
 import type { Clip } from '../../types/clip';
 import BasePopover from '../Base/BasePopover.vue';
@@ -27,6 +28,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const router = useRouter();
+const config = useConfiguration();
 const { formatBytes } = useFormat();
 const { startDrag, endDrag } = useDragAndDrop();
 const showExactDate = ref(false);
@@ -105,11 +107,14 @@ function formatExactDate(date: Date | string): string {
   return `${day}-${month}-${year} ${hours}:${minutes}`;
 }
 
-const displayDate = computed(() => 
-  showExactDate.value 
+const displayDate = computed(() => {
+  if (config.public.value.dateFormat === 'absolute') {
+    return formatExactDate(props.clip.fileModifiedAt);
+  }
+  return showExactDate.value 
     ? formatExactDate(props.clip.fileModifiedAt)
-    : formatRelativeTime(props.clip.fileModifiedAt)
-);
+    : formatRelativeTime(props.clip.fileModifiedAt);
+});
 </script>
 
 <template>
@@ -156,13 +161,14 @@ const displayDate = computed(() =>
         :id="`preview-video-${clip.id}`"
         :src="videoUrl" 
         :poster="posterUrl"
+        :muted="config.public.value.muteVideosByDefault"
         class="w-full h-full m-0 p-0 object-cover" 
         preload="none" 
         controls
       />
     </div>
     
-    <div class="p-3">
+    <div :class="config.public.value.compactMode ? 'p-2' : 'p-3'">
       <div class="flex items-start justify-between gap-2 mb-2">
         <div class="flex-1 min-w-0">
           <input 
@@ -175,7 +181,7 @@ const displayDate = computed(() =>
         </div>
       </div>
       
-      <div class="flex items-center justify-between text-xs text-muted-500">
+      <div v-if="config.public.value.showMetadata" class="flex items-center justify-between text-xs text-muted-500">
         <span>{{ formatBytes(clip.sizeBytes) }}</span>
         <time 
           :datetime="clip.fileModifiedAt"

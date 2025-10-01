@@ -86,6 +86,9 @@ const headerTitle = computed(() => {
   if (route.name === 'collection') {
     return 'Collection';
   }
+  if (route.name === 'settings') {
+    return 'Settings';
+  }
   return 'My Library';
 });
 

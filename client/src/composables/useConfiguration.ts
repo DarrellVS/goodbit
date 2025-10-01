@@ -1,48 +1,38 @@
 import { useLocalStorage } from '@vueuse/core';
-import type { RemovableRef } from '@vueuse/core';
+import { computed, reactive } from 'vue';
 
-export type ViewMode = 'grid' | 'grouped';
-
-interface PublicSettings {
-  viewMode: ViewMode;
-  theme: 'light' | 'dark' | 'auto';
+export interface PublicConfig {
+  viewMode: 'grid' | 'grouped';
+  pageSize: number;
+  autoPlayOnHover: boolean;
+  showMetadata: boolean;
+  dateFormat: 'relative' | 'absolute';
+  enableKeyboardShortcuts: boolean;
+  confirmBeforeDelete: boolean;
+  compactMode: boolean;
+  muteVideosByDefault: boolean;
 }
 
-interface PrivateSettings {
-  lastVisitedCollection: number | null;
-  sidebarCollapsed: boolean;
-}
-
-const defaultPublicSettings: PublicSettings = {
+const publicConfig = useLocalStorage<PublicConfig>('filmpje-public-config', {
   viewMode: 'grouped',
-  theme: 'light',
-};
+  pageSize: 25,
+  autoPlayOnHover: true,
+  showMetadata: true,
+  dateFormat: 'relative',
+  enableKeyboardShortcuts: true,
+  confirmBeforeDelete: true,
+  compactMode: false,
+  muteVideosByDefault: false,
+});
 
-const defaultPrivateSettings: PrivateSettings = {
-  lastVisitedCollection: null,
+const privateConfig = reactive({
+  lastVisitedCollection: null as number | null,
   sidebarCollapsed: false,
-};
-
-class Configuration {
-  public: RemovableRef<PublicSettings>;
-  private: RemovableRef<PrivateSettings>;
-
-  constructor() {
-    this.public = useLocalStorage('filmpje:settings:public', defaultPublicSettings, {
-      mergeDefaults: true,
-    });
-    this.private = useLocalStorage('filmpje:settings:private', defaultPrivateSettings, {
-      mergeDefaults: true,
-    });
-  }
-}
-
-let instance: Configuration | null = null;
+});
 
 export function useConfiguration() {
-  if (!instance) {
-    instance = new Configuration();
-  }
-  return instance;
+  return {
+    public: publicConfig,
+    private: computed(() => privateConfig),
+  };
 }
-

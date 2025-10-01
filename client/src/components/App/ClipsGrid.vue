@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Clip } from '../../types/clip';
 import { useClipHover } from '../../composables/useClipHover';
+import { useConfiguration } from '../../composables/useConfiguration';
 import AppClipCard from './AppClipCard.vue';
 
 interface Props {
@@ -16,12 +17,14 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const config = useConfiguration();
 const { handleClipHover } = useClipHover();
 </script>
 
 <template>
   <section 
-    class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-4"
+    class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))]"
+    :class="config.public.value.compactMode ? 'gap-2' : 'gap-4'"
     aria-label="Video clips grid"
   >
     <AppClipCard

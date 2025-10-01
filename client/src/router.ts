@@ -4,6 +4,7 @@ import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';
 import CollectionPage from './views/CollectionPage.vue';
+import SettingsPage from './views/SettingsPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import EditorPage from './views/EditorPage.vue';
 import LoginPage from './views/LoginPage.vue';
@@ -23,6 +24,7 @@ export const router = createRouter({
         { path: 'today', name: 'today', component: TodaysClipsPage },
         { path: 'tag-patterns', name: 'tag-patterns', component: TagPatternsPage },
         { path: 'stats', name: 'stats', component: StatsPage },
+        { path: 'settings', name: 'settings', component: SettingsPage },
         { path: 'collections/:id', name: 'collection', component: CollectionPage, props: true },
       ],
     },

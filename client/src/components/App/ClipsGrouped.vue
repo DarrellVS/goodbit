@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import type { Clip } from '../../types/clip';
 import { useClipHover } from '../../composables/useClipHover';
+import { useConfiguration } from '../../composables/useConfiguration';
 import AppClipCard from './AppClipCard.vue';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const config = useConfiguration();
 const { handleClipHover } = useClipHover();
 
 
@@ -83,11 +85,11 @@ function handleClipDeleted(): void {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div :class="config.public.value.compactMode ? 'space-y-4' : 'space-y-6'">
     <div
       v-for="group in groupedClips"
       :key="`${group.date}-${group.game}`"
-      class="space-y-3"
+      :class="config.public.value.compactMode ? 'space-y-2' : 'space-y-3'"
     >
       <div class="flex items-center gap-3 px-2">
         <Icon icon="material-symbols:stacks" class="w-5 h-5 text-orange-500" />
@@ -106,7 +108,10 @@ function handleClipDeleted(): void {
       </div>
 
       <div class="relative">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div 
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+          :class="config.public.value.compactMode ? 'gap-2' : 'gap-4'"
+        >
           <AppClipCard
             v-for="(clip, index) in group.clips"
             :key="clip.id"

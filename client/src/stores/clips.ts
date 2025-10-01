@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from '../axios';
+import { useConfiguration } from '../composables/useConfiguration';
 import type { Clip } from '../types/clip';
 
 interface ClipsState {
@@ -41,8 +42,14 @@ export const useClipsStore = defineStore('clips', {
   }),
 
   getters: {
-    totalPages: (state) => Math.ceil(state.total / state.pageSize),
-    hasNextPage: (state) => state.page < Math.ceil(state.total / state.pageSize),
+    totalPages: (state) => {
+      const config = useConfiguration();
+      return Math.ceil(state.total / config.public.value.pageSize);
+    },
+    hasNextPage: (state) => {
+      const config = useConfiguration();
+      return state.page < Math.ceil(state.total / config.public.value.pageSize);
+    },
     hasPreviousPage: (state) => state.page > 1,
   },
 
@@ -57,10 +64,12 @@ export const useClipsStore = defineStore('clips', {
       const currentRequestId = this.requestId;
       this.loading = true;
 
+      const config = useConfiguration();
+
       try {
         const params: Record<string, string | number> = { 
-          page: this.page, 
-          pageSize: this.pageSize 
+          page: this.page,
+          pageSize: config.public.value.pageSize 
         };
         
         if (this.selectedGame) params.game = this.selectedGame;

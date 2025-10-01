@@ -66,7 +66,7 @@ const emit = defineEmits<Emits>();
         <Icon icon="material-symbols:auto-awesome" class="text-lg" />
         <span class="font-medium">Smart Tags</span>
       </RouterLink>
-      
+
       <RouterLink
         to="/stats"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
@@ -75,7 +75,16 @@ const emit = defineEmits<Emits>();
         <Icon icon="material-symbols:bar-chart" class="text-lg" />
         <span class="font-medium">Stats</span>
       </RouterLink>
-      
+
+      <RouterLink
+        to="/settings"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
+        exact-active-class="bg-white/10 text-orange-500"
+      >
+        <Icon icon="material-symbols:settings" class="text-lg" />
+        <span class="font-medium">Settings</span>
+      </RouterLink>
+
       <button
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
         @click="emit('logout')"

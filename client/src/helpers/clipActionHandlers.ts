@@ -3,6 +3,7 @@ import { toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import type { Clip } from '../types/clip';
 import { publishClip, unpublishClip, openClip, deleteClip } from '../services/clips';
 import { useToastStore } from '../stores/toast';
+import { useConfiguration } from '../composables/useConfiguration';
 
 export function createClipActionHandlers(params: {
   clip: MaybeRefOrGetter<Clip>;
@@ -13,6 +14,7 @@ export function createClipActionHandlers(params: {
 }) {
   const clip = toValue(params.clip);
   const toastStore = useToastStore();
+  const config = useConfiguration();
   
   async function onPublish() {
     if (params.isPublishing.value) return;
@@ -64,15 +66,21 @@ export function createClipActionHandlers(params: {
   }
 
   async function onDelete() {
-    toastStore.confirm(
-      `${clip.filename}`,
-      async () => {
-        await deleteClip(clip.id);
-        params.emitDeleted();
-        toastStore.success('Clip moved to Recycle Bin');
-      },
-      'Move to Recycle Bin?'
-    );
+    const performDelete = async () => {
+      await deleteClip(clip.id);
+      params.emitDeleted();
+      toastStore.success('Clip moved to Recycle Bin');
+    };
+
+    if (config.public.value.confirmBeforeDelete) {
+      toastStore.confirm(
+        `${clip.filename}`,
+        performDelete,
+        'Move to Recycle Bin?'
+      );
+    } else {
+      await performDelete();
+    }
   }
 
   return { onPublish, onUnpublish, onCopyUrl, onReveal, onTrim, onDelete };

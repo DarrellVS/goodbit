@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { useConfiguration } from '../composables/useConfiguration';
 import type { Collection } from '../types/collection';
 import type { Clip } from '../types/clip';
 import * as collectionsService from '../services/collections';
@@ -19,6 +20,7 @@ interface CollectionClipsState {
 export const useCollectionsStore = defineStore('collections', () => {
   const items = ref<Collection[]>([]);
   const clipsStore = useClipsStore();
+  const config = useConfiguration();
   
   const clipsState = ref<CollectionClipsState>({
     currentCollectionId: null,
@@ -77,7 +79,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     try {
       const params: Record<string, string | number> = {
         page: clipsState.value.page,
-        pageSize: clipsState.value.pageSize,
+        pageSize: config.public.value.pageSize,
       };
 
       if (clipsStore.selectedGame) params.game = clipsStore.selectedGame;
@@ -129,7 +131,7 @@ export const useCollectionsStore = defineStore('collections', () => {
   }
 
   const hasNextPage = computed(() => {
-    const totalPages = Math.ceil(clipsState.value.total / clipsState.value.pageSize);
+    const totalPages = Math.ceil(clipsState.value.total / config.public.value.pageSize);
     return clipsState.value.page < totalPages;
   });
 
