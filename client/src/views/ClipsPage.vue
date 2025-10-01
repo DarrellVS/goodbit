@@ -5,14 +5,16 @@ import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
 import type { Clip } from '../types/clip';
-import ClipFilters from '../components/App/ClipFilters.vue';
+import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
 import ClipsGrid from '../components/App/ClipsGrid.vue';
+import ClipsGrouped from '../components/App/ClipsGrouped.vue';
 import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
 import BasePagination from '../components/Base/BasePagination.vue';
 
 const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
 const { activeFilter } = useClipFilters();
+const viewMode = ref<ViewMode>('grouped');
 
 const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
@@ -52,6 +54,7 @@ onMounted(() => {
   <div>
     <ClipFilters 
       v-model:active-filter="activeFilter"
+      v-model:view-mode="viewMode"
       :total-count="total"
     />
 
@@ -64,6 +67,15 @@ onMounted(() => {
       />
 
       <ClipsGrid
+        v-else-if="viewMode === 'grid'"
+        :clips="clips"
+        :get-video-url="getVideoUrl"
+        :get-thumb-url="getThumbUrl"
+        @clip-updated="handleClipUpdated"
+        @clip-deleted="handleClipDeleted"
+      />
+
+      <ClipsGrouped
         v-else
         :clips="clips"
         :get-video-url="getVideoUrl"

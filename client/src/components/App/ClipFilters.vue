@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue';
 
 export type FilterType = 'videos' | 'starred' | 'published' | 'not-published';
+export type ViewMode = 'grid' | 'grouped';
 
 interface FilterOption {
   value: FilterType;
@@ -11,11 +12,13 @@ interface FilterOption {
 
 interface Props {
   activeFilter: FilterType;
+  viewMode: ViewMode;
   totalCount: number;
 }
 
 interface Emits {
   (e: 'update:active-filter', filter: FilterType): void;
+  (e: 'update:view-mode', mode: ViewMode): void;
 }
 
 defineProps<Props>();
@@ -45,8 +48,27 @@ const filters: FilterOption[] = [
       <span>{{ filter.label }}</span>
     </button>
 
-    <div class="text-sm text-muted-400 ml-auto self-end" role="status">
-      {{ totalCount }} Videos
+    <div class="flex items-center gap-3 ml-auto self-end">
+      <div class="text-sm text-muted-400" role="status">
+        {{ totalCount }} Videos
+      </div>
+      
+      <div class="flex gap-2">
+        <button
+          class="p-2 rounded-lg transition-colors"
+          :class="viewMode === 'grouped' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          @click="emit('update:view-mode', 'grouped')"
+        >
+          <Icon icon="material-symbols:stacks" class="w-5 h-5" />
+        </button>
+        <button
+          class="p-2 rounded-lg transition-colors"
+          :class="viewMode === 'grid' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          @click="emit('update:view-mode', 'grid')"
+        >
+          <Icon icon="material-symbols:grid-view" class="w-5 h-5" />
+        </button>
+      </div>
     </div>
   </nav>
 </template>

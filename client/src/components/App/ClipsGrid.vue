@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
 import type { Clip } from '../../types/clip';
+import { useClipHover } from '../../composables/useClipHover';
 import AppClipCard from './AppClipCard.vue';
 
 interface Props {
@@ -16,19 +16,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-const hoveredClipId = ref<number | null>(null);
-
-watch(hoveredClipId, (currentId) => {
-  const targetVideo = document.getElementById(`preview-video-${currentId}`) as HTMLVideoElement;
-  const otherVideos = document.querySelectorAll(`video:not(#preview-video-${currentId})`) as NodeListOf<HTMLVideoElement>;
-  
-  otherVideos.forEach(video => {
-    video.pause();
-    video.currentTime = 0;
-  });
-  
-  targetVideo?.play().catch(() => {});
-});
+const { handleClipHover } = useClipHover();
 </script>
 
 <template>
@@ -42,7 +30,7 @@ watch(hoveredClipId, (currentId) => {
       :clip="clip"
       :poster-url="getThumbUrl(clip)"
       :video-url="getVideoUrl(clip)"
-      @is-hovered="isHovered => hoveredClipId = isHovered ? clip.id : null"
+      @is-hovered="isHovered => handleClipHover(clip.id, isHovered)"
       @updated="emit('clip-updated', $event)"
       @deleted="emit('clip-deleted')"
     />
