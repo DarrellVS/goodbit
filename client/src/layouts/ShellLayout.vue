@@ -5,17 +5,21 @@
     <div class="flex flex-col h-full overflow-hidden">
       <AppHeader :search="searchText" :rescan-loading="isRescanLoading" :active-filter="activeFilter" @update:search="(v) => searchText = v" @update:filter="(v) => activeFilter = v" @rescan="rescan">
         <template #tags-filter>
-          <div class="flex flex-col gap-2 max-h-72 overflow-auto min-w-[240px] p-1">
-            <button
-              v-for="t in tagsStore.items"
-              :key="t"
-              class="text-left rounded-lg border border-border px-3 py-2 bg-white/5 hover:bg-white/10"
-              :class="{ 'ring-2 ring-orange-500/50': clipsStore.selectedTags.includes(t) }"
-              @click="clipsStore.setTags(clipsStore.selectedTags.includes(t) ? clipsStore.selectedTags.filter(x => x !== t) : [...clipsStore.selectedTags, t])"
-            >
-              <span>#{{ t }}</span>
-              <span v-if="clipsStore.selectedTags.includes(t)" class="ml-2 text-xs text-orange-500">selected</span>
-            </button>
+          <div class="flex flex-col gap-3 max-h-72 overflow-auto min-w-[280px]">
+            <div class="text-sm font-semibold">Filter by Tags</div>
+            <div v-if="tagsStore.items.length === 0" class="text-muted-400 text-sm py-4 text-center">No tags yet</div>
+            <div v-else class="space-y-1">
+              <button
+                v-for="t in tagsStore.items"
+                :key="t"
+                class="w-full text-left rounded-lg border border-border/30 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
+                :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': clipsStore.selectedTags.includes(t) }"
+                @click="clipsStore.setTags(clipsStore.selectedTags.includes(t) ? clipsStore.selectedTags.filter(x => x !== t) : [...clipsStore.selectedTags, t])"
+              >
+                <span class="text-sm">#{{ t }}</span>
+                <span v-if="clipsStore.selectedTags.includes(t)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
+              </button>
+            </div>
           </div>
         </template>
       </AppHeader>

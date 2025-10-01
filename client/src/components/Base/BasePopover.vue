@@ -13,10 +13,10 @@ const props = defineProps<{ side?: 'top' | 'right' | 'bottom' | 'left'; sideOffs
       <PopoverContent
         :side="props.side ?? 'bottom'"
         :side-offset="props.sideOffset ?? 6"
-        class="rounded-xl bg-black/40 shadow-2xl border border-gray-500 p-4 min-w-[200px] backdrop-blur-lg"
+        class="rounded-xl bg-[hsl(var(--card))] shadow-xl border border-border/50 p-4 min-w-[200px] backdrop-blur-md z-50"
       >
         <slot />
-        <PopoverArrow class="fill-gray-500" />
+        <PopoverArrow class="fill-[hsl(var(--card))]" />
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>

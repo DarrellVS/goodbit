@@ -22,7 +22,6 @@ const { formatBytes } = useFormat();
 const router = useRouter();
 const tagsStore = useTagsStore();
 const newTag = ref('');
-const showTagsPopover = ref(false);
 
 async function updateName(e: Event) {
   const input = e.target as HTMLInputElement;
@@ -130,41 +129,48 @@ function onMouseLeave() {
         </BasePopover>
       </div>
 
-      <!-- Manage tags button - only visible on hover -->
-      <button 
-        class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity text-left"
-        @click="showTagsPopover = true"
-      >
-        Manage tags
-      </button>
-
-      <!-- Hidden popover for managing tags -->
-      <BasePopover side="bottom" :side-offset="8" v-model:open="showTagsPopover">
+      <!-- Manage tags popover - only visible on hover -->
+      <BasePopover side="bottom" :side-offset="8">
         <template #trigger>
-          <button class="hidden"></button>
+          <button class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity text-left">
+            Manage tags
+          </button>
         </template>
-        <div class="flex flex-col gap-2 max-h-72 overflow-auto min-w-[240px]">
-          <div class="text-xs text-muted-500">Select tags</div>
+        <div class="flex flex-col gap-3 max-h-72 overflow-auto min-w-[280px]">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-semibold">Manage Tags</div>
+          </div>
+          
           <div class="flex items-center gap-2">
             <input
-              class="w-full rounded-xl border border-border bg-white/10 px-3 h-9 outline-none"
+              class="flex-1 rounded-lg border border-border/50 bg-white/5 px-3 h-9 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
               v-model="newTag"
               placeholder="New tag name"
               @keyup.enter="addTag"
             />
-            <button class="rounded-xl border border-border bg-white/10 px-3 py-2" @click="addTag">Add</button>
+            <button 
+              class="rounded-lg bg-orange-500 hover:bg-orange-600 px-3 h-9 text-white text-sm font-medium transition"
+              @click="addTag"
+            >
+              Add
+            </button>
           </div>
-          <div v-if="tagsStore.items.length === 0" class="text-muted-500 text-sm">No tags yet</div>
-          <button
-            v-for="t in tagsStore.items"
-            :key="t"
-            class="text-left rounded-lg border border-border px-3 py-2 bg-white/5 hover:bg-white/10"
-            :class="{ 'ring-2 ring-orange-500/50': (clip.tags || []).includes(t) }"
-            @click="toggleTag(t)"
-          >
-            <span>#{{ t }}</span>
-            <span v-if="(clip.tags || []).includes(t)" class="ml-2 text-xs text-orange-500">selected</span>
-          </button>
+
+          <div class="border-t border-border/30 pt-2">
+            <div v-if="tagsStore.items.length === 0" class="text-muted-400 text-sm py-4 text-center">No tags yet</div>
+            <div v-else class="space-y-1">
+              <button
+                v-for="t in tagsStore.items"
+                :key="t"
+                class="w-full text-left rounded-lg border border-border/30 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
+                :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': (clip.tags || []).includes(t) }"
+                @click="toggleTag(t)"
+              >
+                <span class="text-sm">#{{ t }}</span>
+                <span v-if="(clip.tags || []).includes(t)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
+              </button>
+            </div>
+          </div>
         </div>
       </BasePopover>
     </div>
