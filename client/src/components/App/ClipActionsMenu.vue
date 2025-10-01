@@ -18,6 +18,7 @@ import type { Clip } from '../../types/clip';
 interface Props {
   clip: Clip;
   isPublishing: boolean;
+  collectionId?: number;
 }
 
 interface Emits {
@@ -28,6 +29,7 @@ interface Emits {
   (e: 'publish'): void;
   (e: 'unpublish'): void;
   (e: 'delete'): void;
+  (e: 'remove-from-collection'): void;
 }
 
 const props = defineProps<Props>();
@@ -102,6 +104,18 @@ const emit = defineEmits<Emits>();
             <span>Copy URL</span>
           </MenubarItem>
 
+          <MenubarSeparator v-if="collectionId" class="h-px bg-gray-200 my-1" />
+
+          <!-- Remove from Collection -->
+          <MenubarItem
+            v-if="collectionId"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-50 text-orange-600 outline-none cursor-pointer select-none"
+            @click="emit('remove-from-collection')"
+          >
+            <Icon icon="material-symbols:folder-delete" class="text-base" />
+            <span>Remove from Collection</span>
+          </MenubarItem>
+
           <MenubarSeparator class="h-px bg-gray-200 my-1" />
 
           <!-- Publish/Unpublish -->
@@ -123,6 +137,8 @@ const emit = defineEmits<Emits>();
             <Icon icon="material-symbols:cloud-upload" class="text-base" />
             <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
           </MenubarItem>
+
+          <MenubarSeparator class="h-px bg-gray-200 my-1" />
 
           <!-- Delete -->
           <MenubarItem

@@ -123,6 +123,7 @@ useKeyboardShortcuts({
         :clips="clips"
         :view-mode="config.public.value.viewMode"
         :is-empty="isEmpty"
+        :collection-id="collectionId"
         empty-icon="material-symbols:folder-open"
         empty-title="No clips in this collection"
         empty-description="Drag and drop clips from your library to add them here."

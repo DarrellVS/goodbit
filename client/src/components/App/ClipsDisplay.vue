@@ -13,6 +13,7 @@ interface Props {
   emptyDescription?: string;
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
+  collectionId?: number;
 }
 
 interface Emits {
@@ -42,6 +43,7 @@ const emit = defineEmits<Emits>();
     :clips="clips"
     :get-video-url="getVideoUrl"
     :get-thumb-url="getThumbUrl"
+    :collection-id="collectionId"
     @clip-updated="emit('clip-updated', $event)"
     @clip-deleted="emit('clip-deleted')"
   />
@@ -51,6 +53,7 @@ const emit = defineEmits<Emits>();
     :clips="clips"
     :get-video-url="getVideoUrl"
     :get-thumb-url="getThumbUrl"
+    :collection-id="collectionId"
     @clip-updated="emit('clip-updated', $event)"
     @clip-deleted="emit('clip-deleted')"
   />

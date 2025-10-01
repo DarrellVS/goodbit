@@ -10,6 +10,7 @@ interface Props {
   clips: Clip[];
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
+  collectionId?: number;
 }
 
 interface Emits {
@@ -118,6 +119,7 @@ function handleClipDeleted(): void {
             :clip="clip"
             :video-url="getVideoUrl(clip)"
             :poster-url="getThumbUrl(clip)"
+            :collection-id="collectionId"
             @is-hovered="isHovered => handleClipHover(clip.id, isHovered)"
             @updated="handleClipUpdated"
             @deleted="handleClipDeleted"

@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
 import { useConfiguration } from '../../composables/useConfiguration';
 import { useClipActionsHandlers } from '../../composables/useClipActionsHandlers';
+import { useCollectionsStore } from '../../stores/collections';
+import { useToastStore } from '../../stores/toast';
 import type { Clip } from '../../types/clip';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
@@ -16,6 +18,7 @@ interface Props {
   clip: Clip;
   posterUrl: string;
   videoUrl: string;
+  collectionId?: number;
 }
 
 interface Emits {
@@ -29,6 +32,8 @@ const emit = defineEmits<Emits>();
 
 const router = useRouter();
 const config = useConfiguration();
+const collectionsStore = useCollectionsStore();
+const toastStore = useToastStore();
 const { startDrag, endDrag } = useDragAndDrop();
 
 function handleDragStart(event: DragEvent) {
@@ -53,6 +58,18 @@ const {
 function onAdvancedEdit() {
   router.push(`/editor?clip=${props.clip.id}`);
 }
+
+async function onRemoveFromCollection() {
+  if (!props.collectionId) return;
+  
+  try {
+    await collectionsStore.removeClipFromCollection(props.collectionId, props.clip.id);
+    toastStore.success('Clip removed from collection');
+  } catch (error) {
+    console.error('Failed to remove clip from collection:', error);
+    toastStore.error('Failed to remove clip from collection');
+  }
+}
 </script>
 
 <template>
@@ -72,6 +89,7 @@ function onAdvancedEdit() {
       <ClipActionsMenu
         :clip="clip"
         :is-publishing="isPublishing"
+        :collection-id="collectionId"
         @trim="onTrim"
         @advanced-edit="onAdvancedEdit"
         @reveal="onReveal"
@@ -79,6 +97,7 @@ function onAdvancedEdit() {
         @publish="onPublish"
         @unpublish="onUnpublish"
         @delete="onDelete"
+        @remove-from-collection="onRemoveFromCollection"
       />
     </div>
 
