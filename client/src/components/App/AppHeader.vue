@@ -21,7 +21,7 @@ defineEmits<{
         <h2 class="text-2xl font-bold">My Library</h2>
         <div class="flex items-center gap-3">
           <div class="relative">
-            <Icon icon="radix-icons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
+            <Icon icon="material-symbols:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
             <input
               type="text"
               :value="search"
@@ -32,13 +32,13 @@ defineEmits<{
           </div>
           
           <button class="p-2.5 rounded-lg border border-border/50 bg-white/5 hover:bg-white/10 transition">
-            <Icon icon="radix-icons:bell" class="text-lg" />
+            <Icon icon="material-symbols:notifications" class="text-lg" />
           </button>
           
           <BasePopover side="bottom" :side-offset="10">
             <template #trigger>
               <button class="rounded-lg inline-flex items-center justify-center border border-border/50 bg-white/5 hover:bg-white/10 px-3 py-2 outline-none gap-2">
-                <Icon icon="radix-icons:component-1" class="text-lg" />
+                <Icon icon="material-symbols:label" class="text-lg" />
                 <span>Tags</span>
               </button>
             </template>
@@ -50,7 +50,7 @@ defineEmits<{
             :disabled="rescanLoading"
             @click="$emit('rescan')"
           >
-            <Icon icon="radix-icons:reload" :class="{ 'animate-spin': rescanLoading }" />
+            <Icon icon="material-symbols:refresh" :class="{ 'animate-spin': rescanLoading }" />
             <span>Rescan</span>
           </button>
         </div>
@@ -63,7 +63,7 @@ defineEmits<{
           :class="!activeFilter || activeFilter === 'videos' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
           @click="$emit('update:filter', 'videos')"
         >
-          <Icon icon="radix-icons:video" />
+          <Icon icon="material-symbols:play-circle" />
           <span>Videos</span>
         </button>
 
@@ -72,7 +72,7 @@ defineEmits<{
           :class="activeFilter === 'starred' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
           @click="$emit('update:filter', 'starred')"
         >
-          <Icon icon="radix-icons:star" />
+          <Icon icon="material-symbols:star" />
           <span>Starred</span>
         </button>
 
@@ -81,7 +81,7 @@ defineEmits<{
           :class="activeFilter === 'published' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
           @click="$emit('update:filter', 'published')"
         >
-          <Icon icon="radix-icons:check-circled" />
+          <Icon icon="material-symbols:check-circle" />
           <span>Published</span>
         </button>
 
@@ -90,7 +90,7 @@ defineEmits<{
           :class="activeFilter === 'not-published' ? 'border-orange-500 text-orange-500' : 'border-transparent text-muted-400 hover:text-foreground'"
           @click="$emit('update:filter', 'not-published')"
         >
-          <Icon icon="radix-icons:cross-circled" />
+          <Icon icon="material-symbols:cancel" />
           <span>Not Published</span>
         </button>
       </div>

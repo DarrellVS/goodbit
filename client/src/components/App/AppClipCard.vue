@@ -7,7 +7,7 @@ import type { PopoverAction } from '../Base/types';
 import { useClipActions } from '../../composables/useClipActions';
 import type { Clip } from '../../types/clip';
 import { useFormat } from '../../composables/useFormat';
-import { updateClipName, updateClipTags, deleteClip, openClip } from '../../services/clips';
+import { updateClipName, updateClipTags, deleteClip, openClip, deleteTag } from '../../services/clips';
 import { useTagsStore } from '../../stores/tags';
 import { publishClip, unpublishClip } from '../../services/clips';
 import { computed, ref } from 'vue';
@@ -60,6 +60,29 @@ function addTag() {
   });
 }
 
+async function removeTag(tagName: string) {
+  if (!confirm(`Delete tag "${tagName}"?\n\nThis will remove it from all clips.`)) return;
+  
+  try {
+    await deleteTag(tagName);
+    
+    // Remove from store
+    const idx = tagsStore.items.indexOf(tagName);
+    if (idx >= 0) tagsStore.items.splice(idx, 1);
+    
+    // Remove from current clip if it has this tag
+    if ((props.clip.tags || []).includes(tagName)) {
+      const current = new Set(props.clip.tags || []);
+      current.delete(tagName);
+      const updated = await updateClipTags(props.clip.id, Array.from(current));
+      emit('updated', updated);
+    }
+  } catch (error) {
+    console.error('Failed to delete tag:', error);
+    alert('Failed to delete tag. Please try again.');
+  }
+}
+
 const { actions } = useClipActions({
   clip: computed(() => props.clip),
   emitUpdated: (clip) => emit('updated', clip),
@@ -87,7 +110,7 @@ function onMouseLeave() {
       <BasePopover side="bottom" :side-offset="8">
         <template #trigger>
           <button class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 px-2 py-2 outline-none size-8 hover:bg-black/80 transition">
-            <Icon icon="radix-icons:dots-vertical" class="text-white" />
+            <Icon icon="material-symbols:more-vert" class="text-white" />
           </button>
         </template>
         <BasePopoverActions :actions="actions" />
@@ -107,7 +130,7 @@ function onMouseLeave() {
             @change="updateName"
             :title="clip.displayName ?? clip.filename"
           />
-          <div class="text-xs text-muted-400 mt-1">{{ clip.game }}</div>
+          <div class="text-xs text-muted-400 mt-1 line-clamp-1">{{ clip.game }}</div>
         </div>
       </div>
       
@@ -159,16 +182,27 @@ function onMouseLeave() {
           <div class="border-t border-border/30 pt-2">
             <div v-if="tagsStore.items.length === 0" class="text-muted-400 text-sm py-4 text-center">No tags yet</div>
             <div v-else class="space-y-1">
-              <button
+              <div
                 v-for="t in tagsStore.items"
                 :key="t"
-                class="w-full text-left rounded-lg border border-border/30 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
-                :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': (clip.tags || []).includes(t) }"
-                @click="toggleTag(t)"
+                class="flex items-center gap-2"
               >
-                <span class="text-sm">#{{ t }}</span>
-                <span v-if="(clip.tags || []).includes(t)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
-              </button>
+                <button
+                  class="flex-1 text-left rounded-lg border border-border/30 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
+                  :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': (clip.tags || []).includes(t) }"
+                  @click="toggleTag(t)"
+                >
+                  <span class="text-sm">#{{ t }}</span>
+                  <span v-if="(clip.tags || []).includes(t)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
+                </button>
+                <button
+                  class="p-2 rounded-lg border border-border/30 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
+                  @click.stop="removeTag(t)"
+                  title="Delete tag"
+                >
+                  <Icon icon="material-symbols:delete" class="text-muted-400 group-hover:text-red-500 transition-colors" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -17,7 +17,7 @@ const games = computed(() => gamesStore.items);
     <div class="p-6">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-          <Icon icon="radix-icons:video" class="text-white text-lg" />
+          <Icon icon="material-symbols:video-library" class="text-white text-lg" />
         </div>
         <h1 class="text-xl font-bold">Filmpje</h1>
       </div>
@@ -32,7 +32,7 @@ const games = computed(() => gamesStore.items);
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
         active-class="bg-white/10 text-orange-500"
       >
-        <Icon icon="radix-icons:video" class="text-lg" />
+        <Icon icon="material-symbols:video-library" class="text-lg" />
         <span class="font-medium">Library</span>
       </RouterLink>
 
@@ -41,7 +41,7 @@ const games = computed(() => gamesStore.items);
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
         active-class="bg-white/10 text-orange-500"
       >
-        <Icon icon="radix-icons:clock" class="text-lg" />
+        <Icon icon="material-symbols:schedule" class="text-lg" />
         <span class="font-medium">Today</span>
       </RouterLink>
 
@@ -65,11 +65,11 @@ const games = computed(() => gamesStore.items);
           :class="{ 'bg-white/10 text-orange-500': activeGame === game.game }"
           @click="$emit('selectGame', game.game)"
         >
-          <div class="flex items-center gap-3">
-            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-            <span class="font-medium truncate">{{ game.game || 'Unknown' }}</span>
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></div>
+            <span class="font-medium truncate" :title="game.game || 'Unknown'">{{ game.game || 'Unknown' }}</span>
           </div>
-          <span class="text-xs text-muted-400">{{ game.count }}</span>
+          <span class="text-xs text-muted-400 flex-shrink-0 ml-2">{{ game.count }}</span>
         </button>
       </div>
     </nav>
@@ -79,7 +79,7 @@ const games = computed(() => gamesStore.items);
       <button
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
       >
-        <Icon icon="radix-icons:gear" class="text-lg" />
+        <Icon icon="material-symbols:settings" class="text-lg" />
         <span class="font-medium">Settings</span>
       </button>
       
@@ -87,7 +87,7 @@ const games = computed(() => gamesStore.items);
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group text-left"
         @click="$emit('logout')"
       >
-        <Icon icon="radix-icons:exit" class="text-lg" />
+        <Icon icon="material-symbols:logout" class="text-lg" />
         <span class="font-medium">Logout</span>
       </button>
     </div>

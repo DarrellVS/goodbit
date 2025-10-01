@@ -51,4 +51,8 @@ export async function unpublishClip(id: number): Promise<Clip> {
   return data;
 }
 
+export async function deleteTag(tagName: string): Promise<void> {
+  await axios.delete(`/api/tags/${encodeURIComponent(tagName)}`);
+}
+
 

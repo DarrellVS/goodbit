@@ -111,7 +111,7 @@ onMounted(() => store.fetchClips());
           @click="prev"
           v-if="todayClips.length > 0"
         >
-          <Icon icon="radix-icons:chevron-left" class="text-neutral-200 text-xl" />
+          <Icon icon="material-symbols:chevron-left" class="text-neutral-200 text-xl" />
         </button>
         <button
           class="absolute -right-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-full w-11 h-11 flex items-center justify-center bg-neutral-800/70 backdrop-blur border border-white/10 shadow-md hover:shadow-lg hover:bg-neutral-700/80"
@@ -121,7 +121,7 @@ onMounted(() => store.fetchClips());
           @click="next"
           v-if="todayClips.length > 0"
         >
-          <Icon icon="radix-icons:chevron-right" class="text-neutral-200 text-xl" />
+          <Icon icon="material-symbols:chevron-right" class="text-neutral-200 text-xl" />
         </button>
       </div>
 
@@ -148,7 +148,7 @@ onMounted(() => store.fetchClips());
     </div>
     <div v-if="todayClips.length === 0" class="py-24 flex flex-col items-center justify-center text-center gap-4 opacity-80">
       <div class="rounded-full w-20 h-20 flex items-center justify-center bg-muted-800 border border-border">
-        <Icon icon="radix-icons:video" class="text-3xl text-muted-300" />
+        <Icon icon="material-symbols:video-library" class="text-3xl text-muted-300" />
       </div>
       <h2 class="text-2xl font-semibold text-gray-900">No clips from today</h2>
     </div>
