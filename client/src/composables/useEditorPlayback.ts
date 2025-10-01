@@ -47,14 +47,28 @@ export function useEditorPlayback(
 
     if (clip && videoElement.value) {
       const relativeTime = currentTime.value - clip.startTime;
-      const videoTime = clip.trimStart + (relativeTime * clip.speed);
+      const videoTime = clip.trimStart + relativeTime;
+      
+      if (relativeTime >= clip.duration) {
+        const nextClip = findActiveClip(currentTime.value);
+        if (nextClip && nextClip.id !== clip.id) {
+          activeClipId.value = nextClip.id;
+          activeClip.value = nextClip;
+          loadClipIntoVideo(nextClip);
+        } else {
+          playing.value = false;
+          if (videoElement.value) {
+            videoElement.value.pause();
+          }
+          return;
+        }
+      }
       
       if (Math.abs(videoElement.value.currentTime - videoTime) > 0.1) {
         videoElement.value.currentTime = videoTime;
       }
 
       if (videoElement.value.paused) {
-        videoElement.value.playbackRate = clip.speed;
         videoElement.value.volume = clip.muted ? 0 : clip.volume;
         videoElement.value.play().catch(() => {});
       }
@@ -68,13 +82,17 @@ export function useEditorPlayback(
 
     videoElement.value.src = clip.videoUrl;
     videoElement.value.currentTime = clip.trimStart;
-    videoElement.value.playbackRate = clip.speed;
     videoElement.value.volume = clip.muted ? 0 : clip.volume;
     
     if (playing.value) {
       videoElement.value.play().catch(() => {});
     }
   }
+
+  watch(() => activeClip.value, (clip) => {
+    if (!clip || !videoElement.value) return;
+    videoElement.value.volume = clip.muted ? 0 : clip.volume;
+  }, { deep: true });
 
   watch(playing, (isPlaying) => {
     if (isPlaying) {
@@ -105,7 +123,7 @@ export function useEditorPlayback(
         }, 0);
       } else if (videoElement.value) {
         const relativeTime = time - clip.startTime;
-        const videoTime = clip.trimStart + (relativeTime * clip.speed);
+        const videoTime = clip.trimStart + relativeTime;
         videoElement.value.currentTime = videoTime;
       }
     } else {

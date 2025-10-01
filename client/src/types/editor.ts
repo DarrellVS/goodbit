@@ -6,10 +6,7 @@ export interface TimelineClip {
   trimStart: number;
   trimEnd: number;
   volume: number;
-  speed: number;
   muted: boolean;
-  fadeIn: number;
-  fadeOut: number;
   videoUrl: string;
   thumbnailUrl: string;
   originalDuration: number;

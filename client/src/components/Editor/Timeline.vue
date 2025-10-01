@@ -14,6 +14,8 @@ interface Emits {
   (e: 'seek', time: number): void;
   (e: 'select-clip', clipId: string): void;
   (e: 'remove-clip', clipId: string): void;
+  (e: 'trim-clip', clipId: string, trimStart: number, trimEnd: number): void;
+  (e: 'move-clip', clipId: string, newStartTime: number): void;
 }
 
 const props = defineProps<Props>();
@@ -21,16 +23,19 @@ const emit = defineEmits<Emits>();
 
 const selectedClipId = ref<string | null>(null);
 const timelineRef = ref<HTMLElement | null>(null);
+const rulerRef = ref<HTMLElement | null>(null);
+
+const TIMELINE_OFFSET = 12;
 
 const pixelsPerSecond = computed(() => 50 * props.zoom);
 const timelineWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
-const playheadPosition = computed(() => props.currentTime * pixelsPerSecond.value);
+const playheadPosition = computed(() => TIMELINE_OFFSET + (props.currentTime * pixelsPerSecond.value));
 
-function handleTimelineClick(event: MouseEvent): void {
-  if (!timelineRef.value) return;
+function handleRulerClick(event: MouseEvent): void {
+  if (!rulerRef.value) return;
   
-  const rect = timelineRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left + timelineRef.value.scrollLeft;
+  const rect = rulerRef.value.getBoundingClientRect();
+  const x = event.clientX - rect.left + rulerRef.value.scrollLeft - TIMELINE_OFFSET;
   const time = x / pixelsPerSecond.value;
   
   emit('seek', Math.max(0, Math.min(time, props.duration)));
@@ -49,7 +54,7 @@ function generateRulerMarks(): Array<{ position: number; label: string }> {
     const mins = Math.floor(i / 60);
     const secs = i % 60;
     marks.push({
-      position: i * pixelsPerSecond.value,
+      position: TIMELINE_OFFSET + (i * pixelsPerSecond.value),
       label: `${mins}:${secs.toString().padStart(2, '0')}`,
     });
   }
@@ -61,8 +66,12 @@ const rulerMarks = computed(generateRulerMarks);
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 rounded-xl border border-white/10 overflow-hidden">
-    <div class="flex-shrink-0 h-8 bg-black/30 border-b border-white/10 relative overflow-hidden">
+  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
+    <div 
+      ref="rulerRef"
+      class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-gray-300 relative overflow-x-auto overflow-y-hidden cursor-pointer"
+      @click="handleRulerClick"
+    >
       <div class="relative h-full" :style="{ width: `${timelineWidth}px` }">
         <div
           v-for="mark in rulerMarks"
@@ -70,19 +79,18 @@ const rulerMarks = computed(generateRulerMarks);
           class="absolute top-0 bottom-0 flex flex-col items-center"
           :style="{ left: `${mark.position}px` }"
         >
-          <div class="h-2 w-px bg-white/20" />
-          <span class="text-[9px] font-mono text-white/60 mt-0.5">{{ mark.label }}</span>
+          <div class="h-2 w-px bg-gray-300" />
+          <span class="text-[9px] font-mono text-gray-500 mt-0.5">{{ mark.label }}</span>
         </div>
       </div>
     </div>
 
     <div
       ref="timelineRef"
-      class="flex-1 relative overflow-x-auto overflow-y-hidden cursor-pointer"
-      @click="handleTimelineClick"
+      class="flex-1 relative overflow-x-auto overflow-y-hidden"
     >
-      <div class="relative h-full py-4" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
-        <div class="relative h-20 bg-white/5 rounded-lg mx-4">
+      <div class="relative h-full py-3" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
+        <div class="relative h-16 bg-orange-50/30 rounded-lg mx-3 border border-gray-300">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -92,17 +100,18 @@ const rulerMarks = computed(generateRulerMarks);
             :selected="selectedClipId === clip.id"
             @select="selectClip"
             @remove="emit('remove-clip', $event)"
+            @trim="(clipId, trimStart, trimEnd) => emit('trim-clip', clipId, trimStart, trimEnd)"
+            @move="(clipId, newStartTime) => emit('move-clip', clipId, newStartTime)"
           />
         </div>
 
         <div
-          class="absolute top-0 bottom-0 w-0.5 bg-orange-500 pointer-events-none z-10"
+          class="absolute top-0 bottom-0 w-0.5 bg-orange-500 pointer-events-none z-20 shadow-lg shadow-orange-500/50"
           :style="{ left: `${playheadPosition}px` }"
         >
-          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50" />
+          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50 border-2 border-white" />
         </div>
       </div>
     </div>
   </div>
 </template>
-

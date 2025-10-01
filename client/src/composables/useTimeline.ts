@@ -31,10 +31,7 @@ export function useTimeline() {
       trimStart: 0,
       trimEnd: originalDuration,
       volume: 1,
-      speed: 1,
       muted: false,
-      fadeIn: 0,
-      fadeOut: 0,
       videoUrl,
       thumbnailUrl,
       originalDuration,
@@ -85,22 +82,7 @@ export function useTimeline() {
     
     clip.trimStart = Math.max(0, trimStart);
     clip.trimEnd = Math.min(clip.originalDuration, trimEnd);
-    clip.duration = (clip.trimEnd - clip.trimStart) / clip.speed;
-  }
-
-  function setSpeed(clipId: string, speed: number): void {
-    const clip = clips.value.find(c => c.id === clipId);
-    if (!clip) return;
-    
-    const oldDuration = clip.duration;
-    clip.speed = speed;
-    clip.duration = (clip.trimEnd - clip.trimStart) / speed;
-    
-    const deltaTime = clip.duration - oldDuration;
-    
-    for (let i = clips.value.indexOf(clip) + 1; i < clips.value.length; i++) {
-      clips.value[i].startTime += deltaTime;
-    }
+    clip.duration = clip.trimEnd - clip.trimStart;
   }
 
   function muteSegment(startTime: number, endTime: number): void {
@@ -150,7 +132,6 @@ export function useTimeline() {
     updateClip,
     moveClip,
     trimClip,
-    setSpeed,
     muteSegment,
     removeAudioSegment,
     seekTo,
@@ -159,4 +140,5 @@ export function useTimeline() {
     reset,
   };
 }
+
 
