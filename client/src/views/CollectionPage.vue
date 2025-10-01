@@ -54,6 +54,19 @@ onMounted(() => {
   void collectionsStore.fetchCollectionClips(collectionId.value);
 });
 
+// Watch for collection ID changes (navigating between collections)
+watch(collectionId, (newId) => {
+  collectionsStore.resetCollectionClips();
+  void collectionsStore.fetchCollectionClips(newId);
+  
+  // Scroll to top when switching collections
+  const mainElement = document.querySelector('main');
+  if (mainElement) {
+    mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+// Watch for filter changes
 watch([
   () => clipsStore.selectedGame,
   () => clipsStore.searchText,
