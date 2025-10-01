@@ -10,6 +10,7 @@ export const useClipsStore = defineStore('clips', {
     pageSize: 12,
     selectedGame: '',
     searchText: '',
+    selectedTags: [] as string[],
     loading: false,
   }),
   actions: {
@@ -19,6 +20,7 @@ export const useClipsStore = defineStore('clips', {
         const params: Record<string, string | number> = { page: this.page, pageSize: this.pageSize };
         if (this.selectedGame) params.game = this.selectedGame;
         if (this.searchText) params.q = this.searchText;
+        if (this.selectedTags.length > 0) params.tags = this.selectedTags.join(',');
         const { data } = await axios.get<{ items: Clip[]; total: number; page: number; pageSize: number }>(
           '/api/clips',
           { params }
@@ -36,6 +38,11 @@ export const useClipsStore = defineStore('clips', {
     },
     setSearch(q: string) {
       this.searchText = q;
+      this.page = 1;
+      void this.fetchClips();
+    },
+    setTags(tags: string[]) {
+      this.selectedTags = tags;
       this.page = 1;
       void this.fetchClips();
     },

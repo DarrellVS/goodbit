@@ -14,6 +14,16 @@ export async function updateClipName(id: number, displayName: string | null): Pr
   return data;
 }
 
+export async function updateClipTags(id: number, tags: string[]): Promise<Clip> {
+  const { data } = await axios.patch<Clip>(`/api/clips/${id}`, { tags });
+  return data;
+}
+
+export async function listAllTags(): Promise<string[]> {
+  const { data } = await axios.get<{ items: string[] }>(`/api/tags`);
+  return data.items;
+}
+
 export async function deleteClip(id: number): Promise<void> {
   await axios.delete(`/api/clips/${id}`);
 }

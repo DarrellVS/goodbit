@@ -10,6 +10,7 @@ export type Clip = {
   fileModifiedAt: string;
   published?: boolean;
   publishedUrl?: string | null;
+  tags?: string[];
 };
 
 

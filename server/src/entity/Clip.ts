@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Tag } from './Tag.js';
 
 @Entity()
 export class Clip {
@@ -43,6 +44,10 @@ export class Clip {
 
   @Column('text', { nullable: true })
   publishedUrl!: string | null;
+
+  @ManyToMany(() => Tag, { cascade: ['insert'] })
+  @JoinTable()
+  tags!: Tag[];
 }
 
 

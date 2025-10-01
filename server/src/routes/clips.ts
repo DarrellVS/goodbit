@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'node:fs';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
+import { Tag } from '../entity/Tag.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
@@ -10,16 +11,38 @@ import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 export const clipsRouter = express.Router();
 
 clipsRouter.get('/', asyncHandler(async (req, res) => {
-  const { game, q, page = '1', pageSize = '50' } = req.query as Record<string, string>;
+  const { game, q, tags, page = '1', pageSize = '50' } = req.query as Record<string, string>;
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
   const pageSz = Math.min(Math.max(parseInt(pageSize || '50', 10) || 50, 1), 200);
 
   const repo = AppDataSource.getRepository(Clip);
-  let qb = repo.createQueryBuilder('clip').orderBy('clip.fileModifiedAt', 'DESC');
+  let qb = repo
+    .createQueryBuilder('clip')
+    .leftJoinAndSelect('clip.tags', 'tag')
+    .orderBy('clip.fileModifiedAt', 'DESC');
+    
   if (game && game.length > 0) qb = qb.andWhere('clip.game = :game', { game });
-  if (q && q.length > 0) qb = qb.andWhere('(clip.filename LIKE :q OR clip.displayName LIKE :q)', { q: `%${q}%` });
+
+  if (q && q.length > 0) {
+    qb = qb.andWhere('(' +
+      'clip.filename LIKE :q OR ' +
+      'clip.displayName LIKE :q OR ' +
+      'tag.name LIKE :q' +
+    ')', { q: `%${q}%` });
+  }
+
+  if (tags && tags.length > 0) {
+    const tagList = tags.split(',').map((s) => s.trim()).filter(Boolean);
+    if (tagList.length > 0) {
+      qb = qb.andWhere('tag.name IN (:...names)', { names: tagList })
+             .groupBy('clip.id')
+             .having('COUNT(DISTINCT tag.name) >= :required', { required: tagList.length });
+    }
+  }
+
   const [items, total] = await qb.skip((pageNum - 1) * pageSz).take(pageSz).getManyAndCount();
-  res.json({ items, total, page: pageNum, pageSize: pageSz });
+  const normalized = items.map((c) => ({ ...c, tags: (c.tags || []).map((t) => t.name) }));
+  res.json({ items: normalized, total, page: pageNum, pageSize: pageSz });
 }));
 
 clipsRouter.get('/:id/stream', asyncHandler(async (req, res) => {
@@ -93,12 +116,31 @@ clipsRouter.post('/:id/open', asyncHandler(async (req, res) => {
 
 clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { displayName } = req.body as { displayName?: string | null };
+  const { displayName, tags } = req.body as { displayName?: string | null; tags?: string[] };
   const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOneByOrFail({ id });
+  const tagRepo = AppDataSource.getRepository(Tag);
+  const clip = await repo.findOne({ where: { id }, relations: ['tags'] }) as Clip | null;
+  if (!clip) return res.status(404).json({ error: 'Not found' });
   clip.displayName = displayName === undefined ? clip.displayName : (displayName && displayName.trim().length > 0 ? displayName.trim() : null);
-  await repo.save(clip);
-  res.json(clip);
+  if (tags !== undefined) {
+    const normalized = Array.isArray(tags)
+      ? Array.from(new Set(tags.map((t) => t.trim()).filter((t) => t.length > 0)))
+      : [];
+    if (normalized.length === 0) {
+      clip.tags = [];
+    } else {
+      const existing = await tagRepo.find({ where: normalized.map((name) => ({ name })) });
+      const existingNames = new Set(existing.map((t) => t.name));
+      const toCreateNames = normalized.filter((n) => !existingNames.has(n));
+      const toCreate = toCreateNames.map((name) => tagRepo.create({ name }));
+      if (toCreate.length) await tagRepo.save(toCreate);
+      const all = await tagRepo.find({ where: normalized.map((name) => ({ name })) });
+      clip.tags = all;
+    }
+  }
+  const saved = await repo.save(clip);
+  const normalizedSaved = { ...saved, tags: (saved.tags || []).map((t: Tag) => t.name) } as any;
+  res.json(normalizedSaved);
 }));
 
 clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
@@ -135,14 +177,20 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const action = new PublishClipAction();
   const { clip } = await action.execute({ id });
-  res.json(clip);
+  const repo = AppDataSource.getRepository(Clip);
+  const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
+  const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
+  res.json(normalized);
 }));
 
 clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const action = new UnpublishClipAction();
   const { clip } = await action.execute({ id });
-  res.json(clip);
+  const repo = AppDataSource.getRepository(Clip);
+  const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
+  const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
+  res.json(normalized);
 }));
 
 
