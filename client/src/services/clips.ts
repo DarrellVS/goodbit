@@ -56,6 +56,11 @@ export async function updateClipTags(id: number, tags: string[]): Promise<Clip> 
   return data;
 }
 
+export async function updateClipNotes(id: number, notes: string | null): Promise<Clip> {
+  const { data } = await axios.patch<Clip>(`/api/clips/${id}`, { notes });
+  return data;
+}
+
 export async function listAllTags(): Promise<string[]> {
   const { data } = await axios.get<{ items: string[] }>(`/api/tags`);
   return data.items;

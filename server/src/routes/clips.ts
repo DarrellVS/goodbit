@@ -205,16 +205,23 @@ clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
 
 clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { displayName, tags } = req.body as { displayName?: string | null; tags?: string[] };
+  const { displayName, tags, notes } = req.body as { displayName?: string | null; tags?: string[]; notes?: string | null };
   const repo = AppDataSource.getRepository(Clip);
   const tagRepo = AppDataSource.getRepository(Tag);
   const clip = await repo.findOne({ where: { id }, relations: ['tags'] }) as Clip | null;
   if (!clip) return res.status(404).json({ error: 'Not found' });
+
   clip.displayName = displayName === undefined ? clip.displayName : (displayName && displayName.trim().length > 0 ? displayName.trim() : null);
+
+  if (notes !== undefined) {
+    clip.notes = notes && notes.trim().length > 0 ? notes.trim() : null;
+  }
+
   if (tags !== undefined) {
     const normalized = Array.isArray(tags)
       ? Array.from(new Set(tags.map((t) => t.trim()).filter((t) => t.length > 0)))
       : [];
+
     if (normalized.length === 0) {
       clip.tags = [];
     } else {
@@ -222,13 +229,17 @@ clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
       const existingNames = new Set(existing.map((t) => t.name));
       const toCreateNames = normalized.filter((n) => !existingNames.has(n));
       const toCreate = toCreateNames.map((name) => tagRepo.create({ name }));
+
       if (toCreate.length) await tagRepo.save(toCreate);
+
       const all = await tagRepo.find({ where: normalized.map((name) => ({ name })) });
       clip.tags = all;
     }
   }
+
   const saved = await repo.save(clip);
   const normalizedSaved = { ...saved, tags: (saved.tags || []).map((t: Tag) => t.name) } as any;
+  
   res.json(normalizedSaved);
 }));
 

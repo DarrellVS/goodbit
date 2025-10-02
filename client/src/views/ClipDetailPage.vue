@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { getClip, getClipMeta, type ClipMeta } from '../services/clips';
+import { getClip, getClipMeta, updateClipNotes, type ClipMeta } from '../services/clips';
 import { useClipActionsHandlers } from '../composables/useClipActionsHandlers';
 import { useClipTags } from '../composables/useClipTags';
 import { useFormat } from '../composables/useFormat';
+import { useToastStore } from '../stores/toast';
 import { withAuthToken } from '../utils/withAuthToken';
 import { formatRelativeTime, formatExactDate } from '../helpers/dateFormat';
 import { formatTimeSimple } from '../utils/timeFormat';
@@ -15,6 +16,7 @@ import ClipTags from '../components/App/ClipTags.vue';
 import ClipStarButton from '../components/App/ClipStarButton.vue';
 import ClipPublishedBadge from '../components/App/ClipPublishedBadge.vue';
 import BasePopover from '../components/Base/BasePopover.vue';
+import MarkdownEditor from '../components/Base/MarkdownEditor.vue';
 
 interface Props {
   id: string;
@@ -22,6 +24,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const router = useRouter();
+const toastStore = useToastStore();
 const { formatBytes } = useFormat();
 
 const clip = ref<Clip | null>(null);
@@ -29,6 +32,9 @@ const metadata = ref<ClipMeta | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const showExactDate = ref(false);
+const notes = ref<string>('');
+const savingNotes = ref(false);
+const videoElement = ref<HTMLVideoElement | null>(null);
 
 const videoUrl = computed(() => 
   clip.value ? withAuthToken(`/api/clips/${clip.value.id}/stream`) : ''
@@ -95,12 +101,40 @@ async function loadClip() {
     
     clip.value = clipData;
     metadata.value = metaData;
+    notes.value = clipData.notes || '';
   } catch (err) {
     console.error('Failed to load clip:', err);
     error.value = 'Failed to load clip. It may have been deleted.';
   } finally {
     loading.value = false;
   }
+}
+
+async function saveNotes() {
+  if (!clip.value || savingNotes.value) return;
+  
+  savingNotes.value = true;
+  try {
+    const updatedClip = await updateClipNotes(clip.value.id, notes.value || null);
+    clip.value = updatedClip;
+    toastStore.success('Notes saved successfully');
+  } catch (err) {
+    console.error('Failed to save notes:', err);
+    toastStore.error('Failed to save notes');
+  } finally {
+    savingNotes.value = false;
+  }
+}
+
+function handleTimestampClick(seconds: number) {
+  if (!videoElement.value) return;
+  
+  videoElement.value.currentTime = seconds;
+  videoElement.value.play();
+  
+  // Scroll to video
+  videoElement.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toastStore.success(`Jumped to ${formatTimeSimple(seconds)}`);
 }
 
 onMounted(() => {
@@ -237,6 +271,7 @@ onMounted(() => {
           <!-- Video Player -->
           <div class="relative rounded-2xl overflow-hidden shadow-2xl bg-black">
             <video 
+              ref="videoElement"
               :src="videoUrl" 
               :poster="posterUrl"
               class="w-full object-contain" 
@@ -257,6 +292,45 @@ onMounted(() => {
               <h2 class="text-lg font-semibold">Tags</h2>
             </div>
             <ClipTags :clip="clip" @updated="clip = $event" />
+          </div>
+
+          <!-- Notes Section -->
+          <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <Icon icon="material-symbols:note" class="text-xl text-orange-500" />
+                <h2 class="text-lg font-semibold">Notes & Annotations</h2>
+              </div>
+              <button
+                class="px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                :disabled="savingNotes"
+                @click="saveNotes"
+              >
+                <Icon 
+                  :icon="savingNotes ? 'material-symbols:progress-activity' : 'material-symbols:save'" 
+                  class="text-lg"
+                  :class="{ 'animate-spin': savingNotes }"
+                />
+                <span>{{ savingNotes ? 'Saving...' : 'Save Notes' }}</span>
+              </button>
+            </div>
+            
+            <MarkdownEditor
+              v-model="notes"
+              placeholder="Add notes, context, or annotations about this clip... Markdown is supported for rich formatting."
+              @timestamp-click="handleTimestampClick"
+            />
+            
+            <div class="mt-3 text-xs text-gray-500 flex items-center gap-4">
+              <span class="flex items-center gap-1">
+                <Icon icon="material-symbols:info" />
+                Supports Markdown formatting
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon icon="material-symbols:auto-awesome" />
+                Use timestamps like 0:30 to mark specific moments
+              </span>
+            </div>
           </div>
         </div>
 

@@ -12,6 +12,7 @@ export type Clip = {
   publishedUrl?: string | null;
   starred?: boolean;
   tags?: string[];
+  notes?: string | null;
 };
 
 
