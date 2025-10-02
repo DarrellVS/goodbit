@@ -1,9 +1,10 @@
 import { BaseAction } from './BaseAction.js';
-import { AppDataSource } from '../data-source.js';
+import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
 import { videoService } from '../services/videoService.js';
 import { publisherService } from '../services/publisherService.js';
+import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
 
 export interface BatchStarInput {
   clipIds: number[];
@@ -186,7 +187,7 @@ export class BatchDeleteAction extends BaseBatchAction<BatchDeleteInput, BatchOp
     const validIds = this.validateClipIds(input.clipIds);
     const repo = AppDataSource.getRepository(Clip);
     
-    return this.processClips(validIds, async (clip) => {
+    const result = await this.processClips(validIds, async (clip) => {
       // If published, unpublish first
       if (clip.published) {
         try {
@@ -201,5 +202,12 @@ export class BatchDeleteAction extends BaseBatchAction<BatchDeleteInput, BatchOp
       await videoService.moveClipFileToTrash(clip.filePath);
       await repo.remove(clip);
     });
+
+    // Clean up empty folders after batch delete (async, don't wait)
+    cleanupEmptyFolders(VIDEOS_ROOT).catch((err) => {
+      console.error('Failed to cleanup empty folders after batch delete:', err);
+    });
+
+    return result;
   }
 }

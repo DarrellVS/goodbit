@@ -1,7 +1,7 @@
 import express from 'express';
 import fs from 'node:fs';
 import multer from 'multer';
-import { AppDataSource } from '../data-source.js';
+import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -17,6 +17,7 @@ import {
 } from '../actions/BatchOperationsAction.js';
 import { ImportFilesAction } from '../actions/ImportFilesAction.js';
 import { MoveClipToGameAction } from '../actions/MoveClipToGameAction.js';
+import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -232,6 +233,12 @@ clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
   await videoService.removeClipCaches(clip.filePath);
   await videoService.moveClipFileToTrash(clip.filePath);
   await repo.remove(clip);
+  
+  // Clean up empty folders after delete (async, don't wait)
+  cleanupEmptyFolders(VIDEOS_ROOT).catch((err) => {
+    console.error('Failed to cleanup empty folders after delete:', err);
+  });
+  
   res.json({ ok: true });
 }));
 

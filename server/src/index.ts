@@ -8,6 +8,7 @@ import { videoService } from './services/videoService.js';
 import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { verifyFirebaseToken } from './auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
 
 dotenv.config();
 
@@ -28,6 +29,14 @@ const PORT = Number(process.env.PORT || 4000);
 
 async function start() {
   await AppDataSource.initialize();
+  
+  // Clean up empty folders
+  try {
+    await cleanupEmptyFolders(VIDEOS_ROOT);
+  } catch (err) {
+    console.error('Folder cleanup failed:', err);
+  }
+  
   // Initial scan at startup
   try {
     await videoService.scanAndSyncClips();

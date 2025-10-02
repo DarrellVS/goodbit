@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
+import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
 
 export interface MoveClipToGameInput {
   clipId: number;
@@ -46,6 +47,9 @@ export class MoveClipToGameAction extends BaseAction<MoveClipToGameInput, MoveCl
       counter++;
     }
 
+    // Store old directory for cleanup
+    const oldDir = path.dirname(oldPath);
+
     // Move the physical file
     await fs.rename(oldPath, newPath);
 
@@ -59,6 +63,11 @@ export class MoveClipToGameAction extends BaseAction<MoveClipToGameInput, MoveCl
     clip.filename = newFilename;
 
     const savedClip = await repo.save(clip);
+
+    // Clean up empty folders in the old directory (async, don't wait)
+    cleanupEmptyFolders(VIDEOS_ROOT).catch((err) => {
+      console.error('Failed to cleanup empty folders after move:', err);
+    });
 
     return { clip: savedClip };
   }
