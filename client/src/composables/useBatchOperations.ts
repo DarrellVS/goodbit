@@ -1,0 +1,319 @@
+import { ref, computed, type Ref } from 'vue';
+import { useBatchOperationsStore } from '../stores/batchOperations';
+import { useToastStore } from '../stores/toast';
+import { useCollectionsStore } from '../stores/collections';
+import { useTagsStore } from '../stores/tags';
+import * as clipsService from '../services/clips';
+import type { Clip } from '../types/clip';
+import type { BatchOperationResult } from '../services/clips';
+
+interface UseBatchOperationsOptions {
+  clips: Ref<Clip[]>;
+  onClipsUpdated: () => Promise<void>;
+  collectionId?: number;
+}
+
+// Helper to get valid clip IDs
+function getValidClipIds(clips: Clip[]): number[] {
+  return clips
+    .map(clip => clip.id)
+    .filter(id => Number.isFinite(id) && id > 0);
+}
+
+// Helper to pluralize clip/clips
+function pluralize(count: number, singular: string = 'clip', plural?: string): string {
+  return count === 1 ? singular : (plural || `${singular}s`);
+}
+
+// Helper to exit selection mode and cleanup
+function exitAndCleanup(batchStore: ReturnType<typeof useBatchOperationsStore>) {
+  batchStore.deselectAll();
+  batchStore.exitSelectionMode();
+}
+
+// Helper to handle batch operation results
+function handleBatchResult(
+  result: BatchOperationResult,
+  toastStore: ReturnType<typeof useToastStore>,
+  actionPastTense: string, // e.g., "starred", "published", "deleted"
+) {
+  if (result.failed > 0) {
+    toastStore.warning(
+      `${result.success} ${actionPastTense}, ${result.failed} failed`,
+      `Batch ${actionPastTense} completed with errors`
+    );
+    if (result.errors) {
+      console.error(`Batch ${actionPastTense} errors:`, result.errors);
+    }
+  } else {
+    toastStore.success(
+      `${result.success} ${pluralize(result.success)} ${actionPastTense} successfully`
+    );
+  }
+}
+
+export function useBatchOperations(options: UseBatchOperationsOptions) {
+  const batchStore = useBatchOperationsStore();
+  const toastStore = useToastStore();
+  const collectionsStore = useCollectionsStore();
+  const tagsStore = useTagsStore();
+
+  const showTagDialog = ref(false);
+  const showCollectionDialog = ref(false);
+  const isProcessing = ref(false);
+
+  const selectedClips = computed(() => 
+    batchStore.getSelectedClips(options.clips.value)
+  );
+
+  function handleCheckboxClick(clip: Clip, index: number, event: MouseEvent): void {
+    if (event.shiftKey && batchStore.selectedCount > 0) {
+      batchStore.toggleRange(options.clips.value, index);
+    } else {
+      batchStore.toggleClip(clip.id, index);
+    }
+  }
+
+  function handleSelectAll(): void {
+    if (batchStore.selectedCount === options.clips.value.length) {
+      batchStore.deselectAll();
+    } else {
+      batchStore.selectAll(options.clips.value);
+    }
+  }
+
+  // Generic batch operation executor
+  async function executeBatchOperation<T extends BatchOperationResult>(
+    operation: () => Promise<T>,
+    actionName: string, // e.g., "star", "delete"
+    actionPastTense: string, // e.g., "starred", "deleted"
+    operationOptions: {
+      refreshNeeded?: boolean;
+      validateIds?: boolean;
+    } = {}
+  ): Promise<void> {
+    const { refreshNeeded = true, validateIds = false } = operationOptions;
+    
+    isProcessing.value = true;
+    
+    try {
+      const result = await operation();
+      handleBatchResult(result, toastStore, actionPastTense);
+      
+      exitAndCleanup(batchStore);
+      
+      if (refreshNeeded) {
+        await options.onClipsUpdated();
+      }
+    } catch (error) {
+      console.error(`Batch ${actionName} failed:`, error);
+      toastStore.error(`Failed to ${actionName} clips`);
+    } finally {
+      isProcessing.value = false;
+    }
+  }
+
+  async function handleBatchDelete(): Promise<void> {
+    const count = selectedClips.value.length;
+    
+    if (!confirm(`Are you sure you want to delete ${count} ${pluralize(count)}? They will be moved to the Recycle Bin.`)) {
+      return;
+    }
+
+    const clipIds = getValidClipIds(selectedClips.value);
+    await executeBatchOperation(
+      () => clipsService.batchDelete(clipIds),
+      'delete',
+      'deleted'
+    );
+  }
+
+  async function handleBatchPublish(): Promise<void> {
+    const clipsToPublish = selectedClips.value.filter(clip => !clip.published);
+    
+    if (clipsToPublish.length === 0) {
+      toastStore.info('All selected clips are already published');
+      exitAndCleanup(batchStore);
+      isProcessing.value = false;
+      return;
+    }
+    
+    const clipIds = getValidClipIds(clipsToPublish);
+    await executeBatchOperation(
+      () => clipsService.batchPublish(clipIds, true),
+      'publish',
+      'published'
+    );
+  }
+
+  async function handleBatchUnpublish(): Promise<void> {
+    const clipsToUnpublish = selectedClips.value.filter(clip => clip.published);
+    
+    if (clipsToUnpublish.length === 0) {
+      toastStore.info('No selected clips are published');
+      exitAndCleanup(batchStore);
+      isProcessing.value = false;
+      return;
+    }
+    
+    const clipIds = getValidClipIds(clipsToUnpublish);
+    await executeBatchOperation(
+      () => clipsService.batchPublish(clipIds, false),
+      'unpublish',
+      'unpublished'
+    );
+  }
+
+  async function handleBatchStar(): Promise<void> {
+    const clipsToStar = selectedClips.value.filter(clip => !clip.starred);
+    
+    if (clipsToStar.length === 0) {
+      toastStore.info('All selected clips are already starred');
+      exitAndCleanup(batchStore);
+      isProcessing.value = false;
+      return;
+    }
+    
+    const clipIds = getValidClipIds(clipsToStar);
+    
+    if (clipIds.length === 0) {
+      toastStore.error('No valid clip IDs found');
+      return;
+    }
+    
+    console.log('Batch starring clips:', clipIds);
+    await executeBatchOperation(
+      () => clipsService.batchStar(clipIds, true),
+      'star',
+      'starred'
+    );
+  }
+
+  async function handleBatchUnstar(): Promise<void> {
+    const clipsToUnstar = selectedClips.value.filter(clip => clip.starred);
+    
+    if (clipsToUnstar.length === 0) {
+      toastStore.info('No selected clips are starred');
+      exitAndCleanup(batchStore);
+      isProcessing.value = false;
+      return;
+    }
+    
+    const clipIds = getValidClipIds(clipsToUnstar);
+    
+    if (clipIds.length === 0) {
+      toastStore.error('No valid clip IDs found');
+      return;
+    }
+    
+    console.log('Batch unstarring clips:', clipIds);
+    await executeBatchOperation(
+      () => clipsService.batchStar(clipIds, false),
+      'unstar',
+      'unstarred'
+    );
+  }
+
+  async function handleBatchAddTags(tags: string[]): Promise<void> {
+    const clipIds = getValidClipIds(selectedClips.value);
+    
+    isProcessing.value = true;
+    
+    try {
+      const result = await clipsService.batchAddTags(clipIds, tags);
+      handleBatchResult(result, toastStore, 'tagged');
+      
+      // Refresh tags store BEFORE cleanup and clips refresh
+      // This ensures new tags are available immediately when popovers reopen
+      await tagsStore.fetchTags();
+      
+      exitAndCleanup(batchStore);
+      await options.onClipsUpdated();
+    } catch (error) {
+      console.error('Batch tag failed:', error);
+      toastStore.error('Failed to tag clips');
+    } finally {
+      isProcessing.value = false;
+    }
+  }
+
+  async function handleBatchAddToCollection(collectionId: number): Promise<void> {
+    isProcessing.value = true;
+    
+    try {
+      const promises = selectedClips.value.map(clip => 
+        collectionsStore.addClipToCollection(collectionId, clip.id)
+      );
+      
+      await Promise.all(promises);
+      
+      const count = selectedClips.value.length;
+      toastStore.success(`${count} ${pluralize(count)} added to collection`);
+      exitAndCleanup(batchStore);
+    } catch (error) {
+      console.error('Batch add to collection failed:', error);
+      toastStore.error('Failed to add some clips to collection');
+    } finally {
+      isProcessing.value = false;
+    }
+  }
+
+  async function handleBatchRemoveFromCollection(): Promise<void> {
+    if (!options.collectionId) return;
+
+    const count = selectedClips.value.length;
+    
+    if (!confirm(`Remove ${count} ${pluralize(count)} from this collection?`)) {
+      return;
+    }
+
+    isProcessing.value = true;
+    
+    try {
+      const promises = selectedClips.value.map(clip => 
+        collectionsStore.removeClipFromCollection(options.collectionId!, clip.id)
+      );
+      
+      await Promise.all(promises);
+      
+      toastStore.success(`${count} ${pluralize(count)} removed from collection`);
+      exitAndCleanup(batchStore);
+      await options.onClipsUpdated();
+    } catch (error) {
+      console.error('Batch remove from collection failed:', error);
+      toastStore.error('Failed to remove some clips from collection');
+    } finally {
+      isProcessing.value = false;
+    }
+  }
+
+  return {
+    // State
+    isSelectionMode: computed(() => batchStore.isSelectionMode),
+    selectedCount: computed(() => batchStore.selectedCount),
+    hasSelection: computed(() => batchStore.hasSelection),
+    selectedClips,
+    isProcessing,
+    showTagDialog,
+    showCollectionDialog,
+
+    // Methods
+    isSelected: batchStore.isSelected,
+    toggleClip: batchStore.toggleClip,
+    enterSelectionMode: batchStore.enterSelectionMode,
+    exitSelectionMode: batchStore.exitSelectionMode,
+    deselectAll: batchStore.deselectAll,
+    handleCheckboxClick,
+    handleSelectAll,
+    
+    // Actions
+    handleBatchDelete,
+    handleBatchPublish,
+    handleBatchUnpublish,
+    handleBatchStar,
+    handleBatchUnstar,
+    handleBatchAddTags,
+    handleBatchAddToCollection,
+    handleBatchRemoveFromCollection,
+  };
+}

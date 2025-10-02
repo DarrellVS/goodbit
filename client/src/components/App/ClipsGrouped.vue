@@ -11,6 +11,7 @@ interface Props {
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
   collectionId?: number;
+  isSelectionMode?: boolean;
 }
 
 interface Emits {
@@ -18,7 +19,10 @@ interface Emits {
   (e: 'clip-deleted'): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isSelectionMode: false,
+});
+
 const emit = defineEmits<Emits>();
 const config = useConfiguration();
 const { handleClipHover } = useClipHover();
@@ -31,11 +35,20 @@ interface ClipGroup {
   displayDate: string;
 }
 
+interface ClipWithIndex {
+  clip: Clip;
+  globalIndex: number;
+}
+
+interface ClipGroupWithIndices extends Omit<ClipGroup, 'clips'> {
+  clips: ClipWithIndex[];
+}
+
 const groupedClips = computed(() => {
-  const groups = new Map<string, ClipGroup>();
+  const groups = new Map<string, ClipGroupWithIndices>();
   const groupOrder: string[] = [];
 
-  props.clips.forEach(clip => {
+  props.clips.forEach((clip, globalIndex) => {
     const date = new Date(clip.fileModifiedAt);
     const dateKey = date.toISOString().split('T')[0];
     const groupKey = `${dateKey}-${clip.game}`;
@@ -50,7 +63,7 @@ const groupedClips = computed(() => {
       });
     }
 
-    groups.get(groupKey)!.clips.push(clip);
+    groups.get(groupKey)!.clips.push({ clip, globalIndex });
   });
 
   return groupOrder.map(key => groups.get(key)!);
@@ -114,13 +127,15 @@ function handleClipDeleted(): void {
           :class="config.public.value.compactMode ? 'gap-2' : 'gap-4'"
         >
           <AppClipCard
-            v-for="(clip, index) in group.clips"
-            :key="clip.id"
-            :clip="clip"
-            :video-url="getVideoUrl(clip)"
-            :poster-url="getThumbUrl(clip)"
+            v-for="clipWithIndex in group.clips"
+            :key="clipWithIndex.clip.id"
+            :clip="clipWithIndex.clip"
+            :clip-index="clipWithIndex.globalIndex"
+            :video-url="getVideoUrl(clipWithIndex.clip)"
+            :poster-url="getThumbUrl(clipWithIndex.clip)"
             :collection-id="collectionId"
-            @is-hovered="isHovered => handleClipHover(clip.id, isHovered)"
+            :is-selection-mode="isSelectionMode"
+            @is-hovered="isHovered => handleClipHover(clipWithIndex.clip.id, isHovered)"
             @updated="handleClipUpdated"
             @deleted="handleClipDeleted"
           />

@@ -9,6 +9,7 @@ interface Props {
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
   collectionId?: number;
+  isSelectionMode?: boolean;
 }
 
 interface Emits {
@@ -16,7 +17,10 @@ interface Emits {
   (e: 'clip-deleted'): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isSelectionMode: false,
+});
+
 const emit = defineEmits<Emits>();
 const config = useConfiguration();
 const { handleClipHover } = useClipHover();
@@ -29,12 +33,14 @@ const { handleClipHover } = useClipHover();
     aria-label="Video clips grid"
   >
     <AppClipCard
-      v-for="clip in clips"
+      v-for="(clip, index) in clips"
       :key="clip.id"
       :clip="clip"
+      :clip-index="index"
       :poster-url="getThumbUrl(clip)"
       :video-url="getVideoUrl(clip)"
       :collection-id="collectionId"
+      :is-selection-mode="isSelectionMode"
       @is-hovered="isHovered => handleClipHover(clip.id, isHovered)"
       @updated="emit('clip-updated', $event)"
       @deleted="emit('clip-deleted')"

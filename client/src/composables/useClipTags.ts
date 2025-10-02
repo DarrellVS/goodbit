@@ -112,11 +112,13 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
         try {
           await deleteTagService(tagName);
 
+          // Remove from tags store
           const tagIndex = tagsStore.items.indexOf(tagName);
           if (tagIndex >= 0) {
             tagsStore.items.splice(tagIndex, 1);
           }
 
+          // Update current clip
           const clip = clipRef.value;
           if (clip.tags?.includes(tagName)) {
             const currentTags = new Set(clip.tags);
@@ -124,6 +126,9 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
             const updated = await updateClipTags(clip.id, Array.from(currentTags));
             onUpdate(updated);
           }
+
+          // Refresh all clips to update the tag removal across the entire list
+          await clipsStore.fetchClips(false);
           
           toastStore.success(`Tag "${tagName}" deleted successfully`);
         } catch (error) {
@@ -137,7 +142,7 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
 
   return {
     newTagName,
-    availableTags: tagsStore.items,
+    availableTags: computed(() => tagsStore.items),
     suggestedTags,
     toggleTag,
     addTag,

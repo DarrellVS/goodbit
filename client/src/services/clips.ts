@@ -102,3 +102,30 @@ export async function unstarClip(id: number): Promise<Clip> {
   return data;
 }
 
+// Batch operations
+export interface BatchOperationResult {
+  success: number;
+  failed: number;
+  errors?: string[];
+}
+
+export async function batchStar(clipIds: number[], starred: boolean): Promise<BatchOperationResult> {
+  const { data } = await axios.post<BatchOperationResult>('/api/clips/batch/star', { clipIds, starred });
+  return data;
+}
+
+export async function batchPublish(clipIds: number[], publish: boolean): Promise<BatchOperationResult> {
+  const { data } = await axios.post<BatchOperationResult>('/api/clips/batch/publish', { clipIds, publish });
+  return data;
+}
+
+export async function batchAddTags(clipIds: number[], tags: string[]): Promise<BatchOperationResult> {
+  const { data } = await axios.post<BatchOperationResult>('/api/clips/batch/add-tags', { clipIds, tags });
+  return data;
+}
+
+export async function batchDelete(clipIds: number[]): Promise<BatchOperationResult> {
+  const { data } = await axios.post<BatchOperationResult>('/api/clips/batch/delete', { clipIds });
+  return data;
+}
+

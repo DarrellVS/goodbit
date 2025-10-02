@@ -55,6 +55,9 @@ const filters: FilterOption[] = [
       </div>
       
       <ViewModeToggle :model-value="viewMode" @update:model-value="emit('update:view-mode', $event)" />
+
+      <!-- Custom actions slot -->
+      <slot name="actions" />
     </div>
   </nav>
 </template>

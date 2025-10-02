@@ -14,6 +14,7 @@ interface Props {
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
   collectionId?: number;
+  isSelectionMode?: boolean;
 }
 
 interface Emits {
@@ -25,6 +26,7 @@ withDefaults(defineProps<Props>(), {
   emptyIcon: 'material-symbols:video-library',
   emptyTitle: 'No clips found',
   emptyDescription: 'Try adjusting your filters or adding some clips to your library.',
+  isSelectionMode: false,
 });
 
 const emit = defineEmits<Emits>();
@@ -44,6 +46,7 @@ const emit = defineEmits<Emits>();
     :get-video-url="getVideoUrl"
     :get-thumb-url="getThumbUrl"
     :collection-id="collectionId"
+    :is-selection-mode="isSelectionMode"
     @clip-updated="emit('clip-updated', $event)"
     @clip-deleted="emit('clip-deleted')"
   />
@@ -54,6 +57,7 @@ const emit = defineEmits<Emits>();
     :get-video-url="getVideoUrl"
     :get-thumb-url="getThumbUrl"
     :collection-id="collectionId"
+    :is-selection-mode="isSelectionMode"
     @clip-updated="emit('clip-updated', $event)"
     @clip-deleted="emit('clip-deleted')"
   />

@@ -8,6 +8,12 @@ import { videoService } from '../services/videoService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction, exportProgress } from '../actions/ExportTimelineAction.js';
+import { 
+  BatchStarAction, 
+  BatchPublishAction, 
+  BatchAddTagsAction, 
+  BatchDeleteAction 
+} from '../actions/BatchOperationsAction.js';
 
 export const clipsRouter = express.Router();
 
@@ -112,6 +118,39 @@ clipsRouter.get('/:id/meta', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const meta = await videoService.getClipMeta(id);
   res.json(meta);
+}));
+
+// Batch operations (must be before /:id routes to avoid matching "batch" as an id)
+clipsRouter.post('/batch/star', asyncHandler(async (req, res) => {
+  console.log('Batch star request:', req.body);
+  const { clipIds, starred } = req.body as { clipIds: number[]; starred: boolean };
+  const action = new BatchStarAction();
+  const result = await action.execute({ clipIds, starred });
+  res.json(result);
+}));
+
+clipsRouter.post('/batch/publish', asyncHandler(async (req, res) => {
+  console.log('Batch publish request:', req.body);
+  const { clipIds, publish } = req.body as { clipIds: number[]; publish: boolean };
+  const action = new BatchPublishAction();
+  const result = await action.execute({ clipIds, publish });
+  res.json(result);
+}));
+
+clipsRouter.post('/batch/add-tags', asyncHandler(async (req, res) => {
+  console.log('Batch add tags request:', req.body);
+  const { clipIds, tags } = req.body as { clipIds: number[]; tags: string[] };
+  const action = new BatchAddTagsAction();
+  const result = await action.execute({ clipIds, tags });
+  res.json(result);
+}));
+
+clipsRouter.post('/batch/delete', asyncHandler(async (req, res) => {
+  console.log('Batch delete request:', req.body);
+  const { clipIds } = req.body as { clipIds: number[] };
+  const action = new BatchDeleteAction();
+  const result = await action.execute({ clipIds });
+  res.json(result);
 }));
 
 clipsRouter.post('/:id/open', asyncHandler(async (req, res) => {
@@ -231,5 +270,4 @@ clipsRouter.post('/:id/unstar', asyncHandler(async (req, res) => {
   const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
   res.json(normalized);
 }));
-
 
