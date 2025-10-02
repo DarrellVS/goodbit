@@ -157,8 +157,11 @@ export const useCollectionsStore = defineStore('collections', () => {
     clipsState.value.total = Math.max(0, clipsState.value.total - 1);
   }
 
+  const collections = computed(() => items.value);
+
   return {
     items,
+    collections,
     clipsState,
     hasNextPage,
     hasPreviousPage,

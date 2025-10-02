@@ -23,8 +23,8 @@ export const useToastStore = defineStore('toast', () => {
     return id;
   }
 
-  function success(description: string, title?: string): string {
-    return show({ description, title, type: 'success', duration: 3000 });
+  function success(description: string, title?: string, action?: Toast['action']): string {
+    return show({ description, title, type: 'success', duration: 3000, action });
   }
 
   function error(description: string, title?: string): string {

@@ -1,23 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { getClip, getClipMeta, updateClipNotes, type ClipMeta } from '../services/clips';
-import { useClipActionsHandlers } from '../composables/useClipActionsHandlers';
-import { useClipTags } from '../composables/useClipTags';
-import { useFormat } from '../composables/useFormat';
+import { getClip, getClipMeta, type ClipMeta } from '../services/clips';
 import { useToastStore } from '../stores/toast';
-import { withAuthToken } from '../utils/withAuthToken';
-import { formatRelativeTime, formatExactDate } from '../helpers/dateFormat';
-import { formatTimeSimple } from '../utils/timeFormat';
+import { useCollectionsStore } from '../stores/collections';
 import type { Clip } from '../types/clip';
 import ClipNameInput from '../components/App/ClipNameInput.vue';
 import ClipTags from '../components/App/ClipTags.vue';
 import ClipStarButton from '../components/App/ClipStarButton.vue';
-import BasePopover from '../components/Base/BasePopover.vue';
-import BaseDialog from '../components/Base/BaseDialog.vue';
-import MarkdownEditor from '../components/Base/MarkdownEditor.vue';
-import NotesDisplay from '../components/Base/NotesDisplay.vue';
+import ClipCollections from '../components/App/ClipCollections.vue';
+import ClipActionsMenu from '../components/App/ClipActionsMenu.vue';
+import ClipVideoPlayer from '../components/ClipDetail/ClipVideoPlayer.vue';
+import ClipPublishedInfo from '../components/ClipDetail/ClipPublishedInfo.vue';
+import ClipFileInfo from '../components/ClipDetail/ClipFileInfo.vue';
+import ClipVideoInfo from '../components/ClipDetail/ClipVideoInfo.vue';
+import ClipNotesSection from '../components/ClipDetail/ClipNotesSection.vue';
+import ClipNotesEditor from '../components/ClipDetail/ClipNotesEditor.vue';
 
 interface Props {
   id: string;
@@ -26,69 +25,26 @@ interface Props {
 const props = defineProps<Props>();
 const router = useRouter();
 const toastStore = useToastStore();
-const { formatBytes } = useFormat();
+const collectionsStore = useCollectionsStore();
 
 const clip = ref<Clip | null>(null);
 const metadata = ref<ClipMeta | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const showExactDate = ref(false);
-const notes = ref<string>('');
-const savingNotes = ref(false);
-const videoElement = ref<HTMLVideoElement | null>(null);
 const showNotesDialog = ref(false);
-
-const videoUrl = computed(() => 
-  clip.value ? withAuthToken(`/api/clips/${clip.value.id}/stream`) : ''
-);
-
-const posterUrl = computed(() => 
-  clip.value ? withAuthToken(`/api/clips/${clip.value.id}/thumbnail`) : ''
-);
-
-const displayDate = computed(() => {
-  if (!clip.value) return '';
-  return showExactDate.value 
-    ? formatExactDate(clip.value.fileModifiedAt)
-    : formatRelativeTime(clip.value.fileModifiedAt);
-});
-
-const durationFormatted = computed(() => {
-  if (!metadata.value?.durationSec) return 'Unknown';
-  return formatTimeSimple(metadata.value.durationSec);
-});
-
-const resolution = computed(() => {
-  if (!metadata.value?.width || !metadata.value?.height) return 'Unknown';
-  return `${metadata.value.width}x${metadata.value.height}`;
-});
-
-const {
-  onPublish,
-  onUnpublish,
-  onCopyUrl,
-  onReveal,
-  onTrim,
-  onDelete,
-  isPublishing,
-} = useClipActionsHandlers({
-  clip: computed(() => clip.value!),
-  emitUpdated: (updatedClip) => {
-    clip.value = updatedClip;
-  },
-  emitDeleted: () => {
-    router.push('/');
-  },
-  router,
-});
-
-function onAdvancedEdit() {
-  if (!clip.value) return;
-  router.push(`/editor?clip=${clip.value.id}`);
-}
+const videoPlayerRef = ref<InstanceType<typeof ClipVideoPlayer> | null>(null);
 
 function goBack() {
   router.back();
+}
+
+function handleClipUpdated(updatedClip: Clip | null) {
+  if (updatedClip) clip.value = updatedClip;
+}
+
+function handleClipDeleted() {
+  router.push('/');
 }
 
 async function loadClip() {
@@ -96,56 +52,35 @@ async function loadClip() {
   error.value = null;
   
   try {
-    const [clipData, metaData] = await Promise.all([
-      getClip(Number(props.id)),
-      getClipMeta(Number(props.id)).catch(() => null),
-    ]);
-    
-    clip.value = clipData;
-    metadata.value = metaData;
-    notes.value = clipData.notes || '';
-  } catch (err) {
+    clip.value = await getClip(Number(props.id));
+    metadata.value = await getClipMeta(Number(props.id));
+  } catch (err: any) {
     console.error('Failed to load clip:', err);
-    error.value = 'Failed to load clip. It may have been deleted.';
+    error.value = err?.response?.data?.error || 'Failed to load clip';
   } finally {
     loading.value = false;
   }
 }
 
-async function saveNotes() {
-  if (!clip.value || savingNotes.value) return;
-  
-  savingNotes.value = true;
-  try {
-    const updatedClip = await updateClipNotes(clip.value.id, notes.value || null);
-    clip.value = { ...updatedClip }; // Force reactivity with new object reference
-    showNotesDialog.value = false;
-    toastStore.success('Notes saved successfully');
-  } catch (err) {
-    console.error('Failed to save notes:', err);
-    toastStore.error('Failed to save notes');
-  } finally {
-    savingNotes.value = false;
-  }
-}
-
-function openNotesEditor() {
-  showNotesDialog.value = true;
-}
-
 function handleTimestampClick(seconds: number) {
-  if (!videoElement.value) return;
+  const videoEl = videoPlayerRef.value?.videoElement;
+  if (!videoEl) return;
   
-  videoElement.value.currentTime = seconds;
-  videoElement.value.play();
+  videoEl.currentTime = seconds;
+  videoEl.play();
   
   // Scroll to video
-  videoElement.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  toastStore.success(`Jumped to ${formatTimeSimple(seconds)}`);
+  videoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  toastStore.success(`Jumped to ${seconds}s`);
+}
+
+function toggleDateDisplay() {
+  showExactDate.value = !showExactDate.value;
 }
 
 onMounted(() => {
   void loadClip();
+  void collectionsStore.fetchCollections();
 });
 </script>
 
@@ -165,80 +100,11 @@ onMounted(() => {
           
           <div v-if="clip" class="flex items-center gap-3">
             <ClipStarButton :clip="clip" @updated="clip = $event" />
-            
-            <button
-              v-if="!clip.published"
-              class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 font-medium border border-orange-700"
-              :disabled="isPublishing"
-              @click="onPublish"
-            >
-              <Icon icon="material-symbols:cloud-upload-rounded" class="text-xl" />
-              <span>{{ isPublishing ? 'Publishing...' : 'Publish' }}</span>
-            </button>
-            
-            <button
-              v-else
-              class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 transition-all font-medium border border-gray-700"
-              @click="onUnpublish"
-            >
-              <Icon icon="material-symbols:cloud-off-rounded" class="text-xl" />
-              <span>Unpublish</span>
-            </button>
-            
-            <BasePopover side="bottom" :side-offset="8">
-              <template #trigger>
-                <button
-                  class="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-gradient-to-br hover:from-gray-100 hover:to-gray-50 transition-all"
-                >
-                  <Icon icon="material-symbols:more-vert-rounded" class="text-2xl text-gray-700" />
-                </button>
-              </template>
-              
-              <div class="flex flex-col gap-0.5 min-w-[180px]">
-                <button
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
-                  @click="onTrim"
-                >
-                  <Icon icon="material-symbols:content-cut-rounded" class="text-lg text-orange-600" />
-                  <span class="text-sm font-medium">Trim Clip</span>
-                </button>
-                
-                <button
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
-                  @click="onAdvancedEdit"
-                >
-                  <Icon icon="material-symbols:video-library-rounded" class="text-lg text-orange-600" />
-                  <span class="text-sm font-medium">Advanced Edit</span>
-                </button>
-                
-                <button
-                  v-if="clip.publishedUrl"
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
-                  @click="onCopyUrl"
-                >
-                  <Icon icon="material-symbols:link-rounded" class="text-lg text-orange-600" />
-                  <span class="text-sm font-medium">Copy URL</span>
-                </button>
-                
-                <button
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
-                  @click="onReveal"
-                >
-                  <Icon icon="material-symbols:folder-open-rounded" class="text-lg text-orange-600" />
-                  <span class="text-sm font-medium">Reveal in Folder</span>
-                </button>
-                
-                <div class="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent my-1" />
-                
-                <button
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition-all text-left group"
-                  @click="onDelete"
-                >
-                  <Icon icon="material-symbols:delete-rounded" class="text-lg" />
-                  <span class="text-sm font-medium">Delete Clip</span>
-                </button>
-              </div>
-            </BasePopover>
+            <ClipActionsMenu 
+              :clip="clip" 
+              @updated="handleClipUpdated" 
+              @deleted="handleClipDeleted"
+            />
           </div>
         </div>
       </div>
@@ -272,26 +138,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Video Player Section -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Video Player -->
-          <div class="relative group">
-            <div v-if="clip.published" class="absolute top-4 left-4 z-10">
-              <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium border border-emerald-700">
-                <Icon icon="material-symbols:cloud-done-rounded" class="text-xl" />
-                <span>Published</span>
-              </div>
-            </div>
-            
-            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-gray-300">
-              <video 
-                ref="videoElement"
-                :src="videoUrl" 
-                :poster="posterUrl"
-                class="w-full object-contain" 
-                controls
-                autoplay
-              />
-            </div>
-          </div>
+          <ClipVideoPlayer ref="videoPlayerRef" :clip="clip" />
 
           <!-- Clip Title & Game -->
           <div class="bg-white rounded-2xl p-6 border border-gray-300">
@@ -309,172 +156,46 @@ onMounted(() => {
             <ClipTags :clip="clip" @updated="clip = $event" />
           </div>
 
-          <!-- Notes Section -->
-          <div class="bg-gradient-to-br from-white to-orange-50/30 rounded-2xl p-6 border border-gray-300">
+          <!-- Collections Section -->
+          <div class="bg-gradient-to-br from-white to-purple-50/30 rounded-2xl p-6 border border-gray-300">
             <div class="flex items-center gap-2 mb-6">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                <Icon icon="material-symbols:note-rounded" class="text-xl text-white" />
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Icon icon="material-symbols:folder-special-rounded" class="text-xl text-white" />
               </div>
-              <h2 class="text-lg font-bold text-gray-900">Notes & Annotations</h2>
+              <h2 class="text-lg font-bold text-gray-900">Collections</h2>
             </div>
-            
-            <NotesDisplay
-              :notes="clip.notes || null"
-              @edit="openNotesEditor"
-              @timestamp-click="handleTimestampClick"
-            />
+
+            <ClipCollections :clip="clip" />
           </div>
+
+          <!-- Notes Section -->
+          <ClipNotesSection 
+            :clip="clip" 
+            @edit="showNotesDialog = true"
+            @timestamp-click="handleTimestampClick"
+          />
         </div>
 
         <!-- Metadata Sidebar -->
         <div class="space-y-6">
-          <!-- Publishing Information -->
-          <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 border border-gray-300">
-            <div class="flex items-center gap-2 mb-4">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                <Icon icon="material-symbols:cloud-done-rounded" class="text-xl text-white" />
-              </div>
-              <h2 class="text-lg font-bold text-emerald-900">Published</h2>
-            </div>
-            
-            <div class="space-y-3">
-              <p class="text-sm text-emerald-800">
-                This clip has been published and is publicly accessible.
-              </p>
-              
-              <button
-                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-medium transition-all"
-                @click="onCopyUrl"
-              >
-                <Icon icon="material-symbols:link-rounded" class="text-xl" />
-                <span>Copy Public URL</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- File Information -->
-          <div class="bg-white rounded-2xl p-6 border border-gray-300">
-            <div class="flex items-center gap-2 mb-4">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-                <Icon icon="material-symbols:folder-rounded" class="text-xl text-blue-600" />
-              </div>
-              <h2 class="text-lg font-bold text-gray-900">File Information</h2>
-            </div>
-            
-            <div class="space-y-4">
-              <div>
-                <div class="text-sm text-gray-500 mb-1">Filename</div>
-                <div class="text-sm font-mono bg-gray-50 px-3 py-2 rounded-lg break-all">
-                  {{ clip.filename }}
-                </div>
-              </div>
-              
-              <div>
-                <div class="text-sm text-gray-500 mb-1">Size</div>
-                <div class="text-sm font-medium">{{ formatBytes(clip.sizeBytes) }}</div>
-              </div>
-              
-              <div>
-                <div class="text-sm text-gray-500 mb-1">Modified</div>
-                <time 
-                  :datetime="clip.fileModifiedAt"
-                  class="text-sm font-medium cursor-default"
-                  @mouseenter="showExactDate = true"
-                  @mouseleave="showExactDate = false"
-                >
-                  {{ displayDate }}
-                </time>
-              </div>
-              
-              <div>
-                <div class="text-sm text-gray-500 mb-1">File Path</div>
-                <div class="text-xs font-mono bg-gray-50 px-3 py-2 rounded-lg break-all text-gray-600">
-                  {{ clip.relPath }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Video Information -->
-          <div v-if="metadata" class="bg-white rounded-2xl p-6 border border-gray-300">
-            <div class="flex items-center gap-2 mb-4">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-                <Icon icon="material-symbols:play-circle-rounded" class="text-xl text-purple-600" />
-              </div>
-              <h2 class="text-lg font-bold text-gray-900">Video Information</h2>
-            </div>
-            
-            <div class="space-y-4">
-              <div>
-                <div class="text-sm text-gray-500 mb-1">Duration</div>
-                <div class="text-sm font-medium">{{ durationFormatted }}</div>
-              </div>
-              
-              <div>
-                <div class="text-sm text-gray-500 mb-1">Resolution</div>
-                <div class="text-sm font-medium">{{ resolution }}</div>
-              </div>
-              
-              <div v-if="metadata.codec">
-                <div class="text-sm text-gray-500 mb-1">Codec</div>
-                <div class="text-sm font-medium font-mono">{{ metadata.codec }}</div>
-              </div>
-              
-              <div v-if="metadata.fps">
-                <div class="text-sm text-gray-500 mb-1">Frame Rate</div>
-                <div class="text-sm font-medium">{{ metadata.fps }} fps</div>
-              </div>
-            </div>
-          </div>
+          <ClipPublishedInfo :clip="clip" />
+          <ClipFileInfo 
+            :clip="clip" 
+            :show-exact-date="showExactDate" 
+            @toggle-date="toggleDateDisplay"
+          />
+          <ClipVideoInfo :metadata="metadata" />
         </div>
       </div>
     </main>
 
     <!-- Notes Editor Dialog -->
-    <BaseDialog
+    <ClipNotesEditor
       v-model:open="showNotesDialog"
-      title="Edit Notes & Annotations"
-      max-width="xl"
-    >
-      <div class="p-6">
-        <MarkdownEditor
-          v-model="notes"
-          placeholder="Add notes, context, or annotations about this clip... Markdown is supported for rich formatting."
-          @timestamp-click="handleTimestampClick"
-        />
-        
-        <div class="mt-4 flex items-center gap-3 text-xs text-gray-600 bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-200">
-          <Icon icon="material-symbols:info-rounded" class="text-orange-600 text-lg flex-shrink-0" />
-          <div class="space-y-1">
-            <p class="font-medium">Use Markdown for rich formatting and add timestamps like <code class="px-1.5 py-0.5 bg-white rounded">1:30</code> to mark specific moments.</p>
-            <p>Click timestamps in preview mode to jump to that moment in the video!</p>
-          </div>
-        </div>
-      </div>
-      
-      <template #footer>
-        <div class="flex items-center justify-end gap-3">
-          <button
-            class="px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors font-medium"
-            @click="showNotesDialog = false"
-          >
-            Cancel
-          </button>
-          <button
-            class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium border border-orange-700 flex items-center gap-2"
-            :disabled="savingNotes"
-            @click="saveNotes"
-          >
-            <Icon 
-              :icon="savingNotes ? 'material-symbols:progress-activity' : 'material-symbols:save-rounded'" 
-              class="text-xl"
-              :class="{ 'animate-spin': savingNotes }"
-            />
-            <span>{{ savingNotes ? 'Saving...' : 'Save Notes' }}</span>
-          </button>
-        </div>
-      </template>
-    </BaseDialog>
+      :clip="clip"
+      @updated="handleClipUpdated"
+      @timestamp-click="handleTimestampClick"
+    />
   </div>
 </template>
 

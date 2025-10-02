@@ -9,6 +9,9 @@ import { Collection } from './entity/Collection.js';
 const DEFAULT_VIDEOS_ROOT = 'C:\\Users\\darre\\Videos';
 export const VIDEOS_ROOT = process.env.VIDEOS_ROOT || DEFAULT_VIDEOS_ROOT;
 
+const DEFAULT_AUDIO_ROOT = 'C:\\Users\\darre\\Music';
+export const AUDIO_ROOT = process.env.AUDIO_ROOT || DEFAULT_AUDIO_ROOT;
+
 // Ensure the videos root exists
 if (!fs.existsSync(VIDEOS_ROOT)) {
   throw new Error(`VIDEOS_ROOT does not exist: ${VIDEOS_ROOT}`);

@@ -166,3 +166,22 @@ export async function getClip(id: number): Promise<Clip> {
   return data;
 }
 
+export interface ExportAudioResult {
+  audioPath: string;
+  filename: string;
+}
+
+export async function exportAudio(id: number): Promise<ExportAudioResult> {
+  const { data } = await axios.post<ExportAudioResult>(`/api/clips/${id}/export-audio`);
+  return data;
+}
+
+export async function getClipCollections(id: number): Promise<number[]> {
+  const { data } = await axios.get<{ collectionIds: number[] }>(`/api/clips/${id}/collections`);
+  return data.collectionIds;
+}
+
+export async function revealFileInExplorer(filePath: string): Promise<void> {
+  await axios.post('/api/clips/reveal-file', { filePath });
+}
+

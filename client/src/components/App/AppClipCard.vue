@@ -60,25 +60,6 @@ function handleCheckboxClick(event: MouseEvent) {
   batchStore.toggleClip(props.clip.id, props.clipIndex);
 }
 
-const {
-  onPublish,
-  onUnpublish,
-  onCopyUrl,
-  onReveal,
-  onTrim,
-  onDelete,
-  isPublishing,
-} = useClipActionsHandlers({
-  clip: computed(() => props.clip),
-  emitUpdated: (clip) => emit('updated', clip),
-  emitDeleted: () => emit('deleted'),
-  router,
-});
-
-function onAdvancedEdit() {
-  router.push(`/editor?clip=${props.clip.id}`);
-}
-
 function handleCardClick(event: MouseEvent) {
   // Don't navigate if clicking on interactive elements
   const target = event.target as HTMLElement;
@@ -90,32 +71,6 @@ function handleCardClick(event: MouseEvent) {
   
   if (!isInteractiveElement && !props.isSelectionMode) {
     router.push(`/clips/${props.clip.id}`);
-  }
-}
-
-async function onMoveToGame(targetGame: string) {
-  try {
-    const updatedClip = await moveClipToGame(props.clip.id, targetGame);
-    emit('updated', updatedClip);
-    toastStore.success(`Moved to ${targetGame}`, 'Clip Moved');
-    
-    // Refresh games list in case it's a new game
-    await gamesStore.fetchGames();
-  } catch (error) {
-    console.error('Failed to move clip:', error);
-    toastStore.error('Failed to move clip', 'Move Failed');
-  }
-}
-
-async function onRemoveFromCollection() {
-  if (!props.collectionId) return;
-  
-  try {
-    await collectionsStore.removeClipFromCollection(props.collectionId, props.clip.id);
-    toastStore.success('Clip removed from collection');
-  } catch (error) {
-    console.error('Failed to remove clip from collection:', error);
-    toastStore.error('Failed to remove clip from collection');
   }
 }
 </script>
@@ -166,24 +121,9 @@ async function onRemoveFromCollection() {
     >
       <ClipActionsMenu
         :clip="clip"
-        :is-publishing="isPublishing"
         :collection-id="collectionId"
-        @trim="onTrim"
-        @advanced-edit="onAdvancedEdit"
-        @reveal="onReveal"
-        @copy-url="onCopyUrl"
-        @publish="onPublish"
-        @unpublish="onUnpublish"
-        @delete="onDelete"
-        @remove-from-collection="onRemoveFromCollection"
-        @move-to-game="showMoveDialog = true"
-      />
-
-      <!-- Move Clip Dialog -->
-      <MoveClipDialog
-        v-model:open="showMoveDialog"
-        :clip="clip"
-        @move="onMoveToGame"
+        @updated="emit('updated', $event)"
+        @deleted="emit('deleted')"
       />
     </div>
 

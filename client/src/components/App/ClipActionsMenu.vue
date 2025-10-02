@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import {
   MenubarContent,
@@ -13,28 +14,53 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from 'radix-vue';
+import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
+import MoveClipDialog from './MoveClipDialog.vue';
 import type { Clip } from '../../types/clip';
 
 interface Props {
   clip: Clip;
-  isPublishing: boolean;
   collectionId?: number;
 }
 
 interface Emits {
-  (e: 'trim'): void;
-  (e: 'advanced-edit'): void;
-  (e: 'reveal'): void;
-  (e: 'copy-url'): void;
-  (e: 'publish'): void;
-  (e: 'unpublish'): void;
-  (e: 'delete'): void;
-  (e: 'remove-from-collection'): void;
-  (e: 'move-to-game'): void;
+  (e: 'updated', clip: Clip): void;
+  (e: 'deleted'): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const router = useRouter();
+
+const isPublishing = ref(false);
+const isExportingAudio = ref(false);
+const showMoveDialog = ref(false);
+
+const {
+  onPublish,
+  onUnpublish,
+  onCopyUrl,
+  onReveal,
+  onTrim,
+  onDelete,
+  onAdvancedEdit,
+  onMoveToGame,
+  onRemoveFromCollection,
+  onExportAudio,
+} = createClipActionHandlers({
+  clip: computed(() => props.clip),
+  isPublishing,
+  isExportingAudio,
+  emitUpdated: (clip) => emit('updated', clip),
+  emitDeleted: () => emit('deleted'),
+  router,
+  collectionId: props.collectionId,
+});
+
+async function handleMoveToGame(targetGame: string) {
+  await onMoveToGame(targetGame);
+  showMoveDialog.value = false;
+}
 </script>
 
 <template>
@@ -68,14 +94,14 @@ const emit = defineEmits<Emits>();
               >
                 <MenubarItem
                   class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
-                  @click="emit('trim')"
+                  @click="onTrim"
                 >
                   <Icon icon="material-symbols:content-cut" class="text-base" />
                   <span>Trim</span>
                 </MenubarItem>
                 <MenubarItem
                   class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
-                  @click="emit('advanced-edit')"
+                  @click="onAdvancedEdit"
                 >
                   <Icon icon="material-symbols:video-settings" class="text-base" />
                   <span>Advanced Edit</span>
@@ -89,16 +115,30 @@ const emit = defineEmits<Emits>();
           <!-- Reveal in Explorer -->
           <MenubarItem
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
-            @click="emit('reveal')"
+            @click="onReveal"
           >
             <Icon icon="material-symbols:folder-open" class="text-base" />
             <span>Reveal in Explorer</span>
           </MenubarItem>
 
+          <!-- Export Audio -->
+          <MenubarItem
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            :class="{ 'opacity-50 pointer-events-none': isExportingAudio }"
+            @click="onExportAudio"
+          >
+            <Icon 
+              :icon="isExportingAudio ? 'material-symbols:progress-activity' : 'material-symbols:audio-file'" 
+              class="text-base"
+              :class="{ 'animate-spin': isExportingAudio }"
+            />
+            <span>{{ isExportingAudio ? 'Exporting Audio...' : 'Export Audio' }}</span>
+          </MenubarItem>
+
           <!-- Move to Game -->
           <MenubarItem
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
-            @click="emit('move-to-game')"
+            @click="showMoveDialog = true"
           >
             <Icon icon="material-symbols:drive-file-move" class="text-base" />
             <span>Move to Game</span>
@@ -108,7 +148,7 @@ const emit = defineEmits<Emits>();
           <MenubarItem
             v-if="clip.published && clip.publishedUrl"
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
-            @click="emit('copy-url')"
+            @click="onCopyUrl"
           >
             <Icon icon="material-symbols:link" class="text-base" />
             <span>Copy URL</span>
@@ -120,7 +160,7 @@ const emit = defineEmits<Emits>();
           <MenubarItem
             v-if="collectionId"
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-50 text-orange-600 outline-none cursor-pointer select-none"
-            @click="emit('remove-from-collection')"
+            @click="onRemoveFromCollection"
           >
             <Icon icon="material-symbols:folder-delete" class="text-base" />
             <span>Remove from Collection</span>
@@ -133,7 +173,7 @@ const emit = defineEmits<Emits>();
             v-if="clip.published"
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-50 text-red-600 outline-none cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
-            @click="emit('unpublish')"
+            @click="onUnpublish"
           >
             <Icon icon="material-symbols:cloud-off" class="text-base" />
             <span>{{ isPublishing ? 'Unpublishing…' : 'Unpublish' }}</span>
@@ -142,7 +182,7 @@ const emit = defineEmits<Emits>();
             v-else
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
-            @click="emit('publish')"
+            @click="onPublish"
           >
             <Icon icon="material-symbols:cloud-upload" class="text-base" />
             <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
@@ -154,7 +194,7 @@ const emit = defineEmits<Emits>();
           <MenubarItem
             class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-50 text-red-600 outline-none cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
-            @click="emit('delete')"
+            @click="onDelete"
           >
             <Icon icon="material-symbols:delete" class="text-base" />
             <span>Delete</span>
@@ -163,5 +203,12 @@ const emit = defineEmits<Emits>();
       </MenubarPortal>
     </MenubarMenu>
   </MenubarRoot>
+
+  <!-- Move to Game Dialog -->
+  <MoveClipDialog
+    v-model:open="showMoveDialog"
+    :clip="clip"
+    @move="handleMoveToGame"
+  />
 </template>
 

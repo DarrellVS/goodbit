@@ -1,19 +1,25 @@
 import type { Router } from 'vue-router';
 import { toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import type { Clip } from '../types/clip';
-import { publishClip, unpublishClip, openClip, deleteClip } from '../services/clips';
+import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer } from '../services/clips';
 import { useToastStore } from '../stores/toast';
 import { useConfiguration } from '../composables/useConfiguration';
+import { useGamesStore } from '../stores/games';
+import { useCollectionsStore } from '../stores/collections';
 
 export function createClipActionHandlers(params: {
   clip: MaybeRefOrGetter<Clip>;
   isPublishing: Ref<boolean>;
+  isExportingAudio?: Ref<boolean>;
   emitUpdated: (clip: Clip) => void;
   emitDeleted: () => void;
   router: Router;
+  collectionId?: number;
 }) {
   const toastStore = useToastStore();
   const config = useConfiguration();
+  const gamesStore = useGamesStore();
+  const collectionsStore = useCollectionsStore();
   
   // Helper to always get the current clip value
   const getClip = () => toValue(params.clip);
@@ -92,7 +98,81 @@ export function createClipActionHandlers(params: {
     }
   }
 
-  return { onPublish, onUnpublish, onCopyUrl, onReveal, onTrim, onDelete };
+  function onAdvancedEdit() {
+    const clip = getClip();
+    params.router.push(`/editor?clip=${clip.id}`);
+  }
+
+  async function onMoveToGame(targetGame: string) {
+    try {
+      const clip = getClip();
+      const updatedClip = await moveClipToGame(clip.id, targetGame);
+      params.emitUpdated(updatedClip);
+      toastStore.success(`Moved to ${targetGame}`, 'Clip Moved');
+      
+      // Refresh games list in case it's a new game
+      await gamesStore.fetchGames();
+    } catch (error) {
+      console.error('Failed to move clip:', error);
+      toastStore.error('Failed to move clip', 'Move Failed');
+    }
+  }
+
+  async function onRemoveFromCollection() {
+    if (!params.collectionId) return;
+    
+    try {
+      const clip = getClip();
+      await collectionsStore.removeClipFromCollection(params.collectionId, clip.id);
+      toastStore.success('Clip removed from collection');
+    } catch (error) {
+      console.error('Failed to remove clip from collection:', error);
+      toastStore.error('Failed to remove clip from collection');
+    }
+  }
+
+  async function onExportAudio() {
+    if (params.isExportingAudio?.value) return;
+    
+    if (params.isExportingAudio) params.isExportingAudio.value = true;
+    try {
+      const clip = getClip();
+      const result = await exportAudio(clip.id);
+      toastStore.success(
+        `Audio exported to ${result.filename}`, 
+        'Export Complete',
+        {
+          label: 'Show in Folder',
+          onClick: async () => {
+            try {
+              await revealFileInExplorer(result.audioPath);
+            } catch (error) {
+              console.error('Failed to reveal file:', error);
+              toastStore.error('Failed to open file location');
+            }
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Failed to export audio:', error);
+      toastStore.error('Failed to export audio. Make sure ffmpeg is installed.');
+    } finally {
+      if (params.isExportingAudio) params.isExportingAudio.value = false;
+    }
+  }
+
+  return { 
+    onPublish, 
+    onUnpublish, 
+    onCopyUrl, 
+    onReveal, 
+    onTrim, 
+    onDelete, 
+    onAdvancedEdit,
+    onMoveToGame,
+    onRemoveFromCollection,
+    onExportAudio,
+  };
 }
 
 

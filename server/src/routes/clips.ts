@@ -17,6 +17,9 @@ import {
 } from '../actions/BatchOperationsAction.js';
 import { ImportFilesAction } from '../actions/ImportFilesAction.js';
 import { MoveClipToGameAction } from '../actions/MoveClipToGameAction.js';
+import { ExportAudioAction } from '../actions/ExportAudioAction.js';
+import { GetClipCollectionsAction } from '../actions/GetClipCollectionsAction.js';
+import { OpenFileInExplorerAction } from '../actions/OpenFileInExplorerAction.js';
 import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -178,6 +181,32 @@ clipsRouter.post('/batch/delete', asyncHandler(async (req, res) => {
 clipsRouter.post('/:id/open', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   await videoService.openClip(id);
+  res.json({ ok: true });
+}));
+
+clipsRouter.post('/:id/export-audio', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const action = new ExportAudioAction();
+  const result = await action.execute({ clipId: id });
+  res.json(result);
+}));
+
+clipsRouter.get('/:id/collections', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const action = new GetClipCollectionsAction();
+  const result = await action.execute({ clipId: id });
+  res.json(result);
+}));
+
+clipsRouter.post('/reveal-file', asyncHandler(async (req, res) => {
+  const { filePath } = req.body as { filePath: string };
+  
+  if (!filePath || typeof filePath !== 'string') {
+    return res.status(400).json({ error: 'filePath is required' });
+  }
+  
+  const action = new OpenFileInExplorerAction();
+  await action.execute({ filePath });
   res.json({ ok: true });
 }));
 
