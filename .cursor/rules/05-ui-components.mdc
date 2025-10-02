@@ -1,0 +1,1344 @@
+---
+description: Any frontend work
+alwaysApply: false
+---
+# UI Components - Complete Reference
+
+## Component Organization
+
+### App Components (`components/App/`)
+Application-specific components used in main views
+
+### Base Components (`components/Base/`)
+Reusable base UI components (buttons, inputs, dialogs, etc.)
+
+### ClipDetail Components (`components/ClipDetail/`)
+Components specific to clip detail page
+
+### Editor Components (`components/Editor/`)
+Advanced editor specific components
+
+### Stats Components (`components/Stats/`)
+Statistics page components
+
+### Trim Components (`components/Trim/`)
+Trim page specific components
+
+## Base Components
+
+### BaseButton
+**Purpose**: Styled button with variants
+**Props**:
+- `variant`: 'primary' | 'secondary' | 'danger' | 'ghost'
+- `size`: 'sm' | 'md' | 'lg'
+- `disabled`: boolean
+- `loading`: boolean
+
+### BaseInput
+**Purpose**: Styled text input
+**Props**:
+- `modelValue`: string
+- `placeholder`: string
+- `disabled`: boolean
+- `type`: 'text' | 'email' | 'password'
+**Events**: `update:modelValue`
+
+### BaseDialog
+**Purpose**: Modal dialog wrapper
+**Props**:
+- `open`: boolean
+- `title`: string
+- `size`: 'sm' | 'md' | 'lg' | 'xl'
+**Events**: `update:open`
+**Slots**: `header`, `default`, `footer`
+
+### BaseCard
+**Purpose**: Content card container
+**Props**:
+- `padding`: boolean (default: true)
+- `hoverable`: boolean
+**Slots**: `default`
+
+### BaseEmptyState
+**Purpose**: Empty state with icon and message
+**Props**:
+- `icon`: string (Iconify icon name)
+- `title`: string
+- `description`: string
+
+### BasePagination
+**Purpose**: Pagination controls
+**Props**:
+- `currentPage`: number
+- `totalPages`: number
+- `hasNext`: boolean
+- `hasPrevious`: boolean
+**Events**: `next`, `previous`, `goto`
+
+### BaseToast
+**Purpose**: Toast notification component
+**Props**:
+- `toast`: Toast object
+**Events**: `close`, `action-click`
+
+### BaseBadge
+**Purpose**: Small label/badge
+**Props**:
+- `variant`: 'default' | 'success' | 'warning' | 'danger'
+- `size`: 'sm' | 'md'
+
+### BasePill
+**Purpose**: Pill-shaped tag
+**Props**:
+- `removable`: boolean
+**Events**: `remove`
+**Slots**: `default`
+
+### BasePopover
+**Purpose**: Popover container (uses Floating Vue)
+**Props**:
+- `placement`: 'top' | 'bottom' | 'left' | 'right' | etc.
+**Slots**: `trigger`, `content`
+
+### BasePopoverActions
+**Purpose**: Action menu in popover
+**Props**:
+- `actions`: Array of action items
+**Events**: Action click events
+
+### MarkdownEditor
+**Purpose**: Markdown editor with toolbar
+**Props**:
+- `modelValue`: string
+**Events**: `update:modelValue`
+**Features**:
+- Toolbar with formatting buttons
+- Live preview toggle
+- Keyboard shortcuts
+
+### MarkdownPreview
+**Purpose**: Render markdown to HTML
+**Props**:
+- `content`: string
+**Features**: Uses `marked` library
+
+### MarkdownTextarea
+**Purpose**: Textarea for markdown input
+**Props**:
+- `modelValue`: string
+**Events**: `update:modelValue`
+
+### MarkdownToolbar
+**Purpose**: Formatting toolbar for markdown
+**Events**: `insert` (text to insert at cursor)
+
+### NotesDisplay
+**Purpose**: Display markdown notes with edit button
+**Props**:
+- `notes`: string | null
+**Events**: `edit`
+
+## App Components
+
+### AppClipCard
+**Purpose**: Individual clip card in grid/list view
+**Props**:
+- `clip`: Clip object
+- `videoUrl`: string
+- `thumbUrl`: string
+- `isSelectionMode`: boolean
+- `isSelected`: boolean
+- `collectionId`: number (optional)
+**Events**: 
+- `updated`, `deleted`, `toggle-selection`, `shift-click`
+
+**Features**:
+- Hover video preview (if autoPlayOnHover enabled)
+- Star button
+- Published badge
+- Context menu with all actions
+- Drag to reorder/add to collection
+- Selection checkbox (in selection mode)
+- Click to view details
+
+### AppHeader
+**Purpose**: Main application header
+**Slots**: `left`, `center`, `right`
+**Features**:
+- Logo and branding
+- Page title
+- Search bar
+- User menu
+
+### AppSidebar
+**Purpose**: Navigation and filters sidebar
+**Features**:
+- Navigation links
+- Games list with counts
+- Collections list
+- Create/edit/delete collections
+- Collapsible sections
+
+### ClipFilters
+**Purpose**: Filter controls for clips page
+**Props**:
+- `activeFilter`: string
+- `viewMode`: 'grid' | 'grouped'
+- `totalCount`: number
+**Events**: `update:activeFilter`, `update:viewMode`
+**Slots**: `actions`
+
+**Filters**:
+- All clips
+- Published
+- Unpublished
+- Starred
+
+### ClipsDisplay
+**Purpose**: Display clips in grid or grouped mode
+**Props**:
+- `clips`: Clip[]
+- `viewMode`: 'grid' | 'grouped'
+- `isEmpty`: boolean
+- `isSelectionMode`: boolean
+- `collectionId`: number (optional)
+- `getVideoUrl`: function
+- `getThumbUrl`: function
+- `emptyIcon`, `emptyTitle`, `emptyDescription`: string
+**Events**: `clip-updated`, `clip-deleted`
+
+### ClipsGrid
+**Purpose**: Grid layout for clips
+**Props**: Same as ClipsDisplay
+**Layout**: Responsive grid (1-5 columns based on screen width)
+
+### ClipsGrouped
+**Purpose**: Clips grouped by date
+**Props**: Same as ClipsDisplay
+**Grouping**: Today, Yesterday, This Week, This Month, Earlier
+
+### ClipMetadata
+**Purpose**: Display clip metadata (size, date, resolution)
+**Props**:
+- `clip`: Clip object
+- `format`: 'compact' | 'full'
+
+### ClipTags
+**Purpose**: Display and manage clip tags
+**Props**:
+- `clip`: Clip object
+- `editable`: boolean
+**Events**: `updated`
+**Features**:
+- Autocomplete from existing tags
+- Smart tag suggestions
+- Add/remove tags
+- Click tag to filter
+
+### ClipCollections
+**Purpose**: Show collections clip belongs to
+**Props**:
+- `clipId`: number
+**Features**:
+- List of collections
+- Add to collection
+- Remove from collection
+
+### ClipActionsMenu
+**Purpose**: Context menu with all clip actions
+**Props**:
+- `clip`: Clip object
+- `collectionId`: number (optional)
+**Events**: Various action events
+**Actions**:
+- Rename
+- Star/Unstar
+- Publish/Unpublish
+- Open/Reveal
+- Trim
+- Advanced Edit
+- Export Audio
+- Move to Game
+- Delete
+- Remove from Collection (if in collection)
+
+### ClipNameInput
+**Purpose**: Inline editable clip name
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`
+**Features**:
+- Click to edit
+- Save on blur/enter
+- Cancel on escape
+
+### ClipPublishedBadge
+**Purpose**: Badge showing published status
+**Props**:
+- `published`: boolean
+- `publishedUrl`: string | null
+**Features**:
+- Click to copy URL
+- Visual indicator
+
+### ClipStarButton
+**Purpose**: Star/unstar toggle button
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`
+
+### FileDropZone
+**Purpose**: Drag and drop file import area
+**Events**: `files-dropped`
+**Features**:
+- Drag over highlight
+- Multiple file support
+- Shows file count during drag
+
+### ViewModeToggle
+**Purpose**: Toggle between grid and grouped view
+**Props**:
+- `modelValue`: 'grid' | 'grouped'
+**Events**: `update:modelValue`
+
+### ClipsPaginationControls
+**Purpose**: Load more button and loading state
+**Props**:
+- `loading`: boolean
+- `hasMore`: boolean
+- `hasClips`: boolean
+**Events**: `load-more`
+
+### SidebarCollectionItem
+**Purpose**: Single collection in sidebar
+**Props**:
+- `collection`: Collection object
+**Events**: `edit`, `delete`
+**Features**:
+- Click to navigate
+- Edit button (shows dialog)
+- Delete button (confirmation)
+- Drag and drop target
+
+### SidebarCollections
+**Purpose**: Collections section in sidebar
+**Features**:
+- List of collections
+- Create new collection
+- Show more/less toggle
+
+### SidebarCreateInput
+**Purpose**: Inline input for creating collections
+**Events**: `create`
+
+### SidebarEmptyState
+**Purpose**: Empty state for sidebar sections
+**Props**:
+- `message`: string
+
+### SidebarGames
+**Purpose**: Games section in sidebar
+**Features**:
+- List with clip counts
+- Click to filter
+- Show more/less toggle
+
+### SidebarSectionHeader
+**Purpose**: Section header with show more toggle
+**Props**:
+- `title`: string
+- `count`: number
+- `expanded`: boolean
+**Events**: `toggle`
+
+### SidebarShowMore
+**Purpose**: Show more/less button
+**Props**:
+- `expanded`: boolean
+- `count`: number
+**Events**: `toggle`
+
+### BatchOperationsToolbar
+**Purpose**: Floating toolbar for batch operations
+**Props**:
+- `selectedCount`: number
+- `selectedClips`: Clip[]
+**Events**: All batch operation events
+**Actions**:
+- Deselect all
+- Star/Unstar
+- Publish/Unpublish
+- Add tags
+- Add to collection
+- Delete
+
+### BatchTagDialog
+**Purpose**: Dialog for adding tags to multiple clips
+**Props**:
+- `open`: boolean
+- `selectedCount`: number
+**Events**: `update:open`, `add-tags`
+
+### BatchCollectionDialog
+**Purpose**: Dialog for adding clips to collection
+**Props**:
+- `open`: boolean
+- `selectedCount`: number
+**Events**: `update:open`, `add-to-collection`
+
+### MoveClipDialog
+**Purpose**: Dialog for moving clip to different game
+**Props**:
+- `open`: boolean
+- `clip`: Clip object
+**Events**: `update:open`, `move`
+
+### CarouselSlide
+**Purpose**: Single slide in carousel (Today's Clips)
+**Props**:
+- `clip`: Clip object
+- `videoUrl`: string
+- `posterUrl`: string
+- `isActive`: boolean
+**Events**: `rename`, `delete`
+
+### CarouselNavigation
+**Purpose**: Previous/Next buttons for carousel
+**Props**:
+- `canPrev`: boolean
+- `canNext`: boolean
+- `showControls`: boolean
+**Events**: `previous`, `next`
+
+### ThumbnailStrip
+**Purpose**: Horizontal thumbnail strip for carousel
+**Props**:
+- `clips`: Clip[]
+- `selectedIndex`: number
+- `getThumbUrl`: function
+**Events**: `select`
+
+## ClipDetail Components
+
+### ClipVideoPlayer
+**Purpose**: Video player with controls
+**Props**:
+- `videoUrl`: string
+**Features**:
+- Custom controls
+- Fullscreen support
+- Keyboard shortcuts
+
+### ClipVideoInfo
+**Purpose**: Display video technical info
+**Props**:
+- `clipId`: number
+**Features**:
+- Duration, resolution, codec, fps
+- Loads from metadata API
+
+### ClipFileInfo
+**Purpose**: Display file info
+**Props**:
+- `clip`: Clip object
+**Features**:
+- File size, date, path
+- Reveal in Explorer button
+
+### ClipNotesSection
+**Purpose**: Notes display/edit section
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`
+
+### ClipNotesEditor
+**Purpose**: Markdown editor for notes
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`, `cancel`
+
+### ClipPublishedInfo
+**Purpose**: Published status and URL display
+**Props**:
+- `clip`: Clip object
+
+## Editor Components
+
+### Timeline
+**Purpose**: Timeline track for multiple clips
+**Props**:
+- `clips`: TimelineClip[]
+- `currentTime`: number
+- `duration`: number
+- `zoom`: number
+**Events**: `seek`, `select-clip`, `remove-clip`, `trim-clip`, `move-clip`
+
+**Features**:
+- Drag clips to reorder
+- Resize clips to trim
+- Click to seek
+- Visual playhead
+- Zoom controls
+- Snap to grid
+
+### TimelineTrack
+**Purpose**: Single track in timeline
+**Props**: Same as Timeline
+**Visual**: Horizontal strip with clip blocks
+
+### ClipLibrary
+**Purpose**: Clip selector panel in editor
+**Props**:
+- `clips`: Clip[]
+- `getThumbUrl`: function
+**Events**: `add-to-timeline`
+**Features**:
+- Scrollable list
+- Click to add to timeline
+- Thumbnail previews
+
+### ClipProperties
+**Purpose**: Selected clip properties panel
+**Props**:
+- `clip`: TimelineClip | null
+**Events**: `update`
+**Properties**:
+- Volume slider
+- Mute toggle
+- Trim times
+- Delete button
+
+### EditorControls
+**Purpose**: Playback and export controls
+**Props**:
+- `playing`: boolean
+- `currentTime`: number
+- `duration`: number
+- `zoom`: number
+- `canUndo`, `canRedo`: boolean
+- `exporting`: boolean
+- `exportProgress`: number
+**Events**: All control events
+**Controls**:
+- Play/Pause
+- Skip forward/backward
+- Timeline slider
+- Zoom in/out
+- Undo/Redo (not implemented)
+- Export button with progress
+
+## Stats Components
+
+### StatCard
+**Purpose**: Single statistic card
+**Props**:
+- `title`: string
+- `value`: string | number
+- `subtitle`: string
+- `icon`: string
+- `iconColor`: string
+- `iconBg`: string
+- `clickable`: boolean
+**Events**: `click`
+
+### GamesList
+**Purpose**: List of games with statistics
+**Props**:
+- `games`: GameStat[]
+**Features**:
+- Clip count per game
+- Storage used
+- Published/starred counts
+- Click to filter
+
+### TagsList
+**Purpose**: List of most used tags
+**Props**:
+- `tags`: Array<{tag: string, count: number}>
+
+### InfoPanel
+**Purpose**: Info items panel
+**Props**:
+- `items`: Array<{label: string, value: string}>
+
+### ActivityChart
+**Purpose**: Last 14 days activity chart
+**Props**:
+- `days`: Array<{date: string, count: number}>
+**Features**:
+- Bar chart visualization
+- Hover for details
+- Date labels
+
+## Trim Components
+
+### TrimHeader
+**Purpose**: Header for trim page
+**Features**:
+- Back button
+- Page title
+
+### VideoPreview
+**Purpose**: Video player with trim preview
+**Props**:
+- `videoSource`: string
+**Features**:
+- Shows selected range
+- Loop selected range
+- Keyboard controls
+
+### TimelineEditor
+**Purpose**: Timeline with trim controls
+**Props**:
+- `modelValue`: [number, number] (range)
+- `maxDuration`: number
+- `duration`: string
+- `startTime`: string
+- `endTime`: string
+- `length`: string
+- `startPercentage`: number
+- `endPercentage`: number
+- `frameStripSource`: string
+- `isValid`: boolean
+- `isSaving`: boolean
+**Events**: `update:modelValue`, `save`
+**Features**:
+- Drag handles for start/end
+- Frame strip background
+- Time indicators
+- Save button
+
+### TimeIndicator
+**Purpose**: Time display for timeline
+**Props**:
+- `time`: string
+- `label`: string
+
+### RangeTrimSlider
+**Purpose**: Dual-handle slider for trim range
+**Props**:
+- `modelValue`: [number, number]
+- `max`: number
+**Events**: `update:modelValue`
+**Features**:
+- Dual handles
+- Visual range highlight
+- Percentage-based positioning
+
+## Design System
+
+### Colors
+- **Primary**: Orange (#f97316)
+- **Success**: Green
+- **Danger**: Red
+- **Muted**: Gray tones
+- **Background**: Light gray (#fafafa)
+
+### Typography
+- **Font**: System font stack
+- **Sizes**: xs, sm, base, lg, xl, 2xl, etc.
+- **Weights**: normal, medium, semibold, bold
+
+### Spacing
+- Consistent padding/margin scale: 1-6 (0.25rem increments)
+- Larger spacing: 8, 12, 16, 20, 24
+
+### Shadows
+- sm: Small shadow for cards
+- md: Medium shadow for elevated elements
+- lg: Large shadow for modals
+- xl: Extra large shadow for popovers
+
+### Borders
+- Radius: 0.375rem (rounded), 0.5rem (rounded-lg), 9999px (rounded-full)
+- Width: 1px default
+- Colors: Gray-200 for dividers, theme colors for emphasis
+
+### Animations
+- Transitions: 150ms-300ms for UI changes
+- Easing: ease-in-out
+- Hover effects: Scale, opacity, background color
+- Loading states: Spin animation
+
+### Icons
+- **Library**: Iconify
+- **Common icons**: material-symbols family
+- **Size**: Text-base to text-4xl
+
+### Responsive Breakpoints
+- sm: 640px
+- md: 768px
+- lg: 1024px
+- xl: 1280px
+- 2xl: 1536px
+
+# UI Components - Complete Reference
+
+## Component Organization
+
+### App Components (`components/App/`)
+Application-specific components used in main views
+
+### Base Components (`components/Base/`)
+Reusable base UI components (buttons, inputs, dialogs, etc.)
+
+### ClipDetail Components (`components/ClipDetail/`)
+Components specific to clip detail page
+
+### Editor Components (`components/Editor/`)
+Advanced editor specific components
+
+### Stats Components (`components/Stats/`)
+Statistics page components
+
+### Trim Components (`components/Trim/`)
+Trim page specific components
+
+## Base Components
+
+### BaseButton
+**Purpose**: Styled button with variants
+**Props**:
+- `variant`: 'primary' | 'secondary' | 'danger' | 'ghost'
+- `size`: 'sm' | 'md' | 'lg'
+- `disabled`: boolean
+- `loading`: boolean
+
+### BaseInput
+**Purpose**: Styled text input
+**Props**:
+- `modelValue`: string
+- `placeholder`: string
+- `disabled`: boolean
+- `type`: 'text' | 'email' | 'password'
+**Events**: `update:modelValue`
+
+### BaseDialog
+**Purpose**: Modal dialog wrapper
+**Props**:
+- `open`: boolean
+- `title`: string
+- `size`: 'sm' | 'md' | 'lg' | 'xl'
+**Events**: `update:open`
+**Slots**: `header`, `default`, `footer`
+
+### BaseCard
+**Purpose**: Content card container
+**Props**:
+- `padding`: boolean (default: true)
+- `hoverable`: boolean
+**Slots**: `default`
+
+### BaseEmptyState
+**Purpose**: Empty state with icon and message
+**Props**:
+- `icon`: string (Iconify icon name)
+- `title`: string
+- `description`: string
+
+### BasePagination
+**Purpose**: Pagination controls
+**Props**:
+- `currentPage`: number
+- `totalPages`: number
+- `hasNext`: boolean
+- `hasPrevious`: boolean
+**Events**: `next`, `previous`, `goto`
+
+### BaseToast
+**Purpose**: Toast notification component
+**Props**:
+- `toast`: Toast object
+**Events**: `close`, `action-click`
+
+### BaseBadge
+**Purpose**: Small label/badge
+**Props**:
+- `variant`: 'default' | 'success' | 'warning' | 'danger'
+- `size`: 'sm' | 'md'
+
+### BasePill
+**Purpose**: Pill-shaped tag
+**Props**:
+- `removable`: boolean
+**Events**: `remove`
+**Slots**: `default`
+
+### BasePopover
+**Purpose**: Popover container (uses Floating Vue)
+**Props**:
+- `placement`: 'top' | 'bottom' | 'left' | 'right' | etc.
+**Slots**: `trigger`, `content`
+
+### BasePopoverActions
+**Purpose**: Action menu in popover
+**Props**:
+- `actions`: Array of action items
+**Events**: Action click events
+
+### MarkdownEditor
+**Purpose**: Markdown editor with toolbar
+**Props**:
+- `modelValue`: string
+**Events**: `update:modelValue`
+**Features**:
+- Toolbar with formatting buttons
+- Live preview toggle
+- Keyboard shortcuts
+
+### MarkdownPreview
+**Purpose**: Render markdown to HTML
+**Props**:
+- `content`: string
+**Features**: Uses `marked` library
+
+### MarkdownTextarea
+**Purpose**: Textarea for markdown input
+**Props**:
+- `modelValue`: string
+**Events**: `update:modelValue`
+
+### MarkdownToolbar
+**Purpose**: Formatting toolbar for markdown
+**Events**: `insert` (text to insert at cursor)
+
+### NotesDisplay
+**Purpose**: Display markdown notes with edit button
+**Props**:
+- `notes`: string | null
+**Events**: `edit`
+
+## App Components
+
+### AppClipCard
+**Purpose**: Individual clip card in grid/list view
+**Props**:
+- `clip`: Clip object
+- `videoUrl`: string
+- `thumbUrl`: string
+- `isSelectionMode`: boolean
+- `isSelected`: boolean
+- `collectionId`: number (optional)
+**Events**: 
+- `updated`, `deleted`, `toggle-selection`, `shift-click`
+
+**Features**:
+- Hover video preview (if autoPlayOnHover enabled)
+- Star button
+- Published badge
+- Context menu with all actions
+- Drag to reorder/add to collection
+- Selection checkbox (in selection mode)
+- Click to view details
+
+### AppHeader
+**Purpose**: Main application header
+**Slots**: `left`, `center`, `right`
+**Features**:
+- Logo and branding
+- Page title
+- Search bar
+- User menu
+
+### AppSidebar
+**Purpose**: Navigation and filters sidebar
+**Features**:
+- Navigation links
+- Games list with counts
+- Collections list
+- Create/edit/delete collections
+- Collapsible sections
+
+### ClipFilters
+**Purpose**: Filter controls for clips page
+**Props**:
+- `activeFilter`: string
+- `viewMode`: 'grid' | 'grouped'
+- `totalCount`: number
+**Events**: `update:activeFilter`, `update:viewMode`
+**Slots**: `actions`
+
+**Filters**:
+- All clips
+- Published
+- Unpublished
+- Starred
+
+### ClipsDisplay
+**Purpose**: Display clips in grid or grouped mode
+**Props**:
+- `clips`: Clip[]
+- `viewMode`: 'grid' | 'grouped'
+- `isEmpty`: boolean
+- `isSelectionMode`: boolean
+- `collectionId`: number (optional)
+- `getVideoUrl`: function
+- `getThumbUrl`: function
+- `emptyIcon`, `emptyTitle`, `emptyDescription`: string
+**Events**: `clip-updated`, `clip-deleted`
+
+### ClipsGrid
+**Purpose**: Grid layout for clips
+**Props**: Same as ClipsDisplay
+**Layout**: Responsive grid (1-5 columns based on screen width)
+
+### ClipsGrouped
+**Purpose**: Clips grouped by date
+**Props**: Same as ClipsDisplay
+**Grouping**: Today, Yesterday, This Week, This Month, Earlier
+
+### ClipMetadata
+**Purpose**: Display clip metadata (size, date, resolution)
+**Props**:
+- `clip`: Clip object
+- `format`: 'compact' | 'full'
+
+### ClipTags
+**Purpose**: Display and manage clip tags
+**Props**:
+- `clip`: Clip object
+- `editable`: boolean
+**Events**: `updated`
+**Features**:
+- Autocomplete from existing tags
+- Smart tag suggestions
+- Add/remove tags
+- Click tag to filter
+
+### ClipCollections
+**Purpose**: Show collections clip belongs to
+**Props**:
+- `clipId`: number
+**Features**:
+- List of collections
+- Add to collection
+- Remove from collection
+
+### ClipActionsMenu
+**Purpose**: Context menu with all clip actions
+**Props**:
+- `clip`: Clip object
+- `collectionId`: number (optional)
+**Events**: Various action events
+**Actions**:
+- Rename
+- Star/Unstar
+- Publish/Unpublish
+- Open/Reveal
+- Trim
+- Advanced Edit
+- Export Audio
+- Move to Game
+- Delete
+- Remove from Collection (if in collection)
+
+### ClipNameInput
+**Purpose**: Inline editable clip name
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`
+**Features**:
+- Click to edit
+- Save on blur/enter
+- Cancel on escape
+
+### ClipPublishedBadge
+**Purpose**: Badge showing published status
+**Props**:
+- `published`: boolean
+- `publishedUrl`: string | null
+**Features**:
+- Click to copy URL
+- Visual indicator
+
+### ClipStarButton
+**Purpose**: Star/unstar toggle button
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`
+
+### FileDropZone
+**Purpose**: Drag and drop file import area
+**Events**: `files-dropped`
+**Features**:
+- Drag over highlight
+- Multiple file support
+- Shows file count during drag
+
+### ViewModeToggle
+**Purpose**: Toggle between grid and grouped view
+**Props**:
+- `modelValue`: 'grid' | 'grouped'
+**Events**: `update:modelValue`
+
+### ClipsPaginationControls
+**Purpose**: Load more button and loading state
+**Props**:
+- `loading`: boolean
+- `hasMore`: boolean
+- `hasClips`: boolean
+**Events**: `load-more`
+
+### SidebarCollectionItem
+**Purpose**: Single collection in sidebar
+**Props**:
+- `collection`: Collection object
+**Events**: `edit`, `delete`
+**Features**:
+- Click to navigate
+- Edit button (shows dialog)
+- Delete button (confirmation)
+- Drag and drop target
+
+### SidebarCollections
+**Purpose**: Collections section in sidebar
+**Features**:
+- List of collections
+- Create new collection
+- Show more/less toggle
+
+### SidebarCreateInput
+**Purpose**: Inline input for creating collections
+**Events**: `create`
+
+### SidebarEmptyState
+**Purpose**: Empty state for sidebar sections
+**Props**:
+- `message`: string
+
+### SidebarGames
+**Purpose**: Games section in sidebar
+**Features**:
+- List with clip counts
+- Click to filter
+- Show more/less toggle
+
+### SidebarSectionHeader
+**Purpose**: Section header with show more toggle
+**Props**:
+- `title`: string
+- `count`: number
+- `expanded`: boolean
+**Events**: `toggle`
+
+### SidebarShowMore
+**Purpose**: Show more/less button
+**Props**:
+- `expanded`: boolean
+- `count`: number
+**Events**: `toggle`
+
+### BatchOperationsToolbar
+**Purpose**: Floating toolbar for batch operations
+**Props**:
+- `selectedCount`: number
+- `selectedClips`: Clip[]
+**Events**: All batch operation events
+**Actions**:
+- Deselect all
+- Star/Unstar
+- Publish/Unpublish
+- Add tags
+- Add to collection
+- Delete
+
+### BatchTagDialog
+**Purpose**: Dialog for adding tags to multiple clips
+**Props**:
+- `open`: boolean
+- `selectedCount`: number
+**Events**: `update:open`, `add-tags`
+
+### BatchCollectionDialog
+**Purpose**: Dialog for adding clips to collection
+**Props**:
+- `open`: boolean
+- `selectedCount`: number
+**Events**: `update:open`, `add-to-collection`
+
+### MoveClipDialog
+**Purpose**: Dialog for moving clip to different game
+**Props**:
+- `open`: boolean
+- `clip`: Clip object
+**Events**: `update:open`, `move`
+
+### CarouselSlide
+**Purpose**: Single slide in carousel (Today's Clips)
+**Props**:
+- `clip`: Clip object
+- `videoUrl`: string
+- `posterUrl`: string
+- `isActive`: boolean
+**Events**: `rename`, `delete`
+
+### CarouselNavigation
+**Purpose**: Previous/Next buttons for carousel
+**Props**:
+- `canPrev`: boolean
+- `canNext`: boolean
+- `showControls`: boolean
+**Events**: `previous`, `next`
+
+### ThumbnailStrip
+**Purpose**: Horizontal thumbnail strip for carousel
+**Props**:
+- `clips`: Clip[]
+- `selectedIndex`: number
+- `getThumbUrl`: function
+**Events**: `select`
+
+## ClipDetail Components
+
+### ClipVideoPlayer
+**Purpose**: Video player with controls
+**Props**:
+- `videoUrl`: string
+**Features**:
+- Custom controls
+- Fullscreen support
+- Keyboard shortcuts
+
+### ClipVideoInfo
+**Purpose**: Display video technical info
+**Props**:
+- `clipId`: number
+**Features**:
+- Duration, resolution, codec, fps
+- Loads from metadata API
+
+### ClipFileInfo
+**Purpose**: Display file info
+**Props**:
+- `clip`: Clip object
+**Features**:
+- File size, date, path
+- Reveal in Explorer button
+
+### ClipNotesSection
+**Purpose**: Notes display/edit section
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`
+
+### ClipNotesEditor
+**Purpose**: Markdown editor for notes
+**Props**:
+- `clip`: Clip object
+**Events**: `updated`, `cancel`
+
+### ClipPublishedInfo
+**Purpose**: Published status and URL display
+**Props**:
+- `clip`: Clip object
+
+## Editor Components
+
+### Timeline
+**Purpose**: Timeline track for multiple clips
+**Props**:
+- `clips`: TimelineClip[]
+- `currentTime`: number
+- `duration`: number
+- `zoom`: number
+**Events**: `seek`, `select-clip`, `remove-clip`, `trim-clip`, `move-clip`
+
+**Features**:
+- Drag clips to reorder
+- Resize clips to trim
+- Click to seek
+- Visual playhead
+- Zoom controls
+- Snap to grid
+
+### TimelineTrack
+**Purpose**: Single track in timeline
+**Props**: Same as Timeline
+**Visual**: Horizontal strip with clip blocks
+
+### ClipLibrary
+**Purpose**: Clip selector panel in editor
+**Props**:
+- `clips`: Clip[]
+- `getThumbUrl`: function
+**Events**: `add-to-timeline`
+**Features**:
+- Scrollable list
+- Click to add to timeline
+- Thumbnail previews
+
+### ClipProperties
+**Purpose**: Selected clip properties panel
+**Props**:
+- `clip`: TimelineClip | null
+**Events**: `update`
+**Properties**:
+- Volume slider
+- Mute toggle
+- Trim times
+- Delete button
+
+### EditorControls
+**Purpose**: Playback and export controls
+**Props**:
+- `playing`: boolean
+- `currentTime`: number
+- `duration`: number
+- `zoom`: number
+- `canUndo`, `canRedo`: boolean
+- `exporting`: boolean
+- `exportProgress`: number
+**Events**: All control events
+**Controls**:
+- Play/Pause
+- Skip forward/backward
+- Timeline slider
+- Zoom in/out
+- Undo/Redo (not implemented)
+- Export button with progress
+
+## Stats Components
+
+### StatCard
+**Purpose**: Single statistic card
+**Props**:
+- `title`: string
+- `value`: string | number
+- `subtitle`: string
+- `icon`: string
+- `iconColor`: string
+- `iconBg`: string
+- `clickable`: boolean
+**Events**: `click`
+
+### GamesList
+**Purpose**: List of games with statistics
+**Props**:
+- `games`: GameStat[]
+**Features**:
+- Clip count per game
+- Storage used
+- Published/starred counts
+- Click to filter
+
+### TagsList
+**Purpose**: List of most used tags
+**Props**:
+- `tags`: Array<{tag: string, count: number}>
+
+### InfoPanel
+**Purpose**: Info items panel
+**Props**:
+- `items`: Array<{label: string, value: string}>
+
+### ActivityChart
+**Purpose**: Last 14 days activity chart
+**Props**:
+- `days`: Array<{date: string, count: number}>
+**Features**:
+- Bar chart visualization
+- Hover for details
+- Date labels
+
+## Trim Components
+
+### TrimHeader
+**Purpose**: Header for trim page
+**Features**:
+- Back button
+- Page title
+
+### VideoPreview
+**Purpose**: Video player with trim preview
+**Props**:
+- `videoSource`: string
+**Features**:
+- Shows selected range
+- Loop selected range
+- Keyboard controls
+
+### TimelineEditor
+**Purpose**: Timeline with trim controls
+**Props**:
+- `modelValue`: [number, number] (range)
+- `maxDuration`: number
+- `duration`: string
+- `startTime`: string
+- `endTime`: string
+- `length`: string
+- `startPercentage`: number
+- `endPercentage`: number
+- `frameStripSource`: string
+- `isValid`: boolean
+- `isSaving`: boolean
+**Events**: `update:modelValue`, `save`
+**Features**:
+- Drag handles for start/end
+- Frame strip background
+- Time indicators
+- Save button
+
+### TimeIndicator
+**Purpose**: Time display for timeline
+**Props**:
+- `time`: string
+- `label`: string
+
+### RangeTrimSlider
+**Purpose**: Dual-handle slider for trim range
+**Props**:
+- `modelValue`: [number, number]
+- `max`: number
+**Events**: `update:modelValue`
+**Features**:
+- Dual handles
+- Visual range highlight
+- Percentage-based positioning
+
+## Design System
+
+### Colors
+- **Primary**: Orange (#f97316)
+- **Success**: Green
+- **Danger**: Red
+- **Muted**: Gray tones
+- **Background**: Light gray (#fafafa)
+
+### Typography
+- **Font**: System font stack
+- **Sizes**: xs, sm, base, lg, xl, 2xl, etc.
+- **Weights**: normal, medium, semibold, bold
+
+### Spacing
+- Consistent padding/margin scale: 1-6 (0.25rem increments)
+- Larger spacing: 8, 12, 16, 20, 24
+
+### Shadows
+- sm: Small shadow for cards
+- md: Medium shadow for elevated elements
+- lg: Large shadow for modals
+- xl: Extra large shadow for popovers
+
+### Borders
+- Radius: 0.375rem (rounded), 0.5rem (rounded-lg), 9999px (rounded-full)
+- Width: 1px default
+- Colors: Gray-200 for dividers, theme colors for emphasis
+
+### Animations
+- Transitions: 150ms-300ms for UI changes
+- Easing: ease-in-out
+- Hover effects: Scale, opacity, background color
+- Loading states: Spin animation
+
+### Icons
+- **Library**: Iconify
+- **Common icons**: material-symbols family
+- **Size**: Text-base to text-4xl
+
+### Responsive Breakpoints
+- sm: 640px
+- md: 768px
+- lg: 1024px
+- xl: 1280px
+- 2xl: 1536px
+

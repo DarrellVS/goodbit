@@ -1,0 +1,372 @@
+---
+alwaysApply: true
+---
+
+# Filmpje - Complete Documentation
+
+This directory contains comprehensive documentation for the Filmpje application. These rules files are designed to be used with Cursor AI for context-aware assistance during development and refactoring.
+
+## Documentation Structure
+
+### 00-application-overview.mdc
+- **Purpose**: High-level application overview
+- **Contents**: Architecture, tech stack, core concepts, folder structure
+- **Use when**: Starting a new feature, onboarding, understanding the big picture
+
+### 01-client-features.mdc
+- **Purpose**: Complete client-side feature reference
+- **Contents**: All pages, routes, features, keyboard shortcuts, PWA
+- **Use when**: Adding/modifying UI features, understanding user workflows
+
+### 02-clip-operations.mdc
+- **Purpose**: All clip-related operations
+- **Contents**: Individual actions, batch operations, file import, streaming
+- **Use when**: Working with clip functionality, debugging operations
+
+### 03-state-management.mdc
+- **Purpose**: State management patterns
+- **Contents**: All Pinia stores, configuration, patterns
+- **Use when**: Adding store, managing state, debugging reactivity
+
+### 04-server-architecture.mdc
+- **Purpose**: Backend architecture and services
+- **Contents**: Database, services, routes, actions, FFmpeg operations
+- **Use when**: Working on API, database, video processing
+
+### 05-ui-components.mdc
+- **Purpose**: Complete UI component reference
+- **Contents**: All components, props, events, design system
+- **Use when**: Building/modifying UI, understanding component hierarchy
+
+### 06-composables.mdc
+- **Purpose**: All Vue composables
+- **Contents**: Composable APIs, patterns, usage examples
+- **Use when**: Creating reusable logic, refactoring components
+
+### 07-api-reference.mdc
+- **Purpose**: Complete API endpoint documentation
+- **Contents**: All endpoints, request/response formats, error handling
+- **Use when**: Integrating API, debugging network issues
+
+### 08-coding-guidelines.mdc
+- **Purpose**: Code standards and best practices
+- **Contents**: Vue patterns, TypeScript usage, styling, common patterns
+- **Use when**: Writing new code, code review, refactoring
+
+## Quick Reference
+
+### Finding Information
+
+**Working on a specific page?**
+→ Check `01-client-features.mdc` for page features
+→ Check `05-ui-components.mdc` for component details
+
+**Adding a new feature?**
+→ Start with `00-application-overview.mdc` for architecture
+→ Check `08-coding-guidelines.mdc` for patterns
+
+**Working with API?**
+→ Check `07-api-reference.mdc` for endpoints
+→ Check `04-server-architecture.mdc` for implementation
+
+**Need reusable logic?**
+→ Check `06-composables.mdc` for existing composables
+→ Check `03-state-management.mdc` for state patterns
+
+**Debugging an issue?**
+→ Find the feature in `01-client-features.mdc` or `02-clip-operations.mdc`
+→ Check implementation in respective component/service docs
+
+## Using with Cursor
+
+### During Development
+1. Reference the relevant doc file for context
+2. Ask Cursor to "follow the patterns in .cursor/rules/[file]"
+3. Cursor will use these docs for better suggestions
+
+### During Refactoring
+1. Ask Cursor to "review against .cursor/rules/[file]"
+2. Ensure changes maintain consistency with documented patterns
+3. Update docs if patterns change
+
+### For Code Review
+1. Reference coding guidelines: `.cursor/rules/08-coding-guidelines.mdc`
+2. Check feature completeness: `.cursor/rules/01-client-features.mdc`
+3. Verify API contracts: `.cursor/rules/07-api-reference.mdc`
+
+## Key Features Summary
+
+### Video Management
+- Browse clips by game
+- Search and filter
+- Star favorites
+- Add custom names and notes
+- Tag with smart suggestions
+- Organize in collections
+
+### Video Editing
+- Trim clips
+- Multi-clip editor with timeline
+- Export compiled videos
+- Extract audio
+
+### Publishing
+- Publish to public URL
+- Cloudflare integration
+- Batch publish/unpublish
+
+### Batch Operations
+- Select multiple clips
+- Bulk star/publish/tag/delete
+- Add to collections in bulk
+
+### Smart Features
+- Auto tag suggestions based on filename patterns
+- Thumbnail and frame strip generation
+- Today's clips carousel view
+- Statistics and analytics
+- Drag and drop import
+- Keyboard shortcuts
+
+### Technical Features
+- PWA (installable)
+- HTTP range streaming for video seeking
+- Firebase authentication
+- SQLite database
+- FFmpeg video processing
+- Responsive design
+- Dark mode ready (structure in place)
+
+## Architecture Highlights
+
+### Three-Tier Architecture
+1. **Client**: Vue 3 SPA with Pinia state management
+2. **Server**: Express API with TypeORM and SQLite
+3. **Publisher**: Separate microservice for public file hosting
+
+### Data Flow
+```
+User Action → Vue Component → Composable/Store → API Service → Server Route → Action → Database/File System
+```
+
+### Key Patterns
+- **Action Pattern**: Business logic encapsulated in action classes
+- **Composables**: Reusable reactive logic
+- **Service Layer**: API calls abstracted from components
+- **Store Pattern**: Global state with Pinia
+- **TypeScript**: Full type safety across stack
+
+## Maintenance
+
+### Keeping Docs Updated
+- Update docs when adding features
+- Review docs during refactoring
+- Keep API reference in sync with endpoints
+- Update component docs when props change
+
+### Validation
+These docs were validated 5 times for:
+1. Completeness of features
+2. Accuracy of technical details
+3. Consistency across files
+4. Usefulness for AI assistance
+5. Coverage of all major components
+
+## Questions?
+
+If these docs don't answer your question:
+1. Check the actual source code
+2. Look at recent git history
+3. Test the feature in the running app
+4. Update docs with your findings!
+
+---
+
+**Last Updated**: 2024 (based on comprehensive codebase analysis)
+**Maintainer**: Development team
+**Purpose**: Cursor AI context and developer reference
+
+# Filmpje - Complete Documentation
+
+This directory contains comprehensive documentation for the Filmpje application. These rules files are designed to be used with Cursor AI for context-aware assistance during development and refactoring.
+
+## Documentation Structure
+
+### 00-application-overview.mdc
+- **Purpose**: High-level application overview
+- **Contents**: Architecture, tech stack, core concepts, folder structure
+- **Use when**: Starting a new feature, onboarding, understanding the big picture
+
+### 01-client-features.mdc
+- **Purpose**: Complete client-side feature reference
+- **Contents**: All pages, routes, features, keyboard shortcuts, PWA
+- **Use when**: Adding/modifying UI features, understanding user workflows
+
+### 02-clip-operations.mdc
+- **Purpose**: All clip-related operations
+- **Contents**: Individual actions, batch operations, file import, streaming
+- **Use when**: Working with clip functionality, debugging operations
+
+### 03-state-management.mdc
+- **Purpose**: State management patterns
+- **Contents**: All Pinia stores, configuration, patterns
+- **Use when**: Adding store, managing state, debugging reactivity
+
+### 04-server-architecture.mdc
+- **Purpose**: Backend architecture and services
+- **Contents**: Database, services, routes, actions, FFmpeg operations
+- **Use when**: Working on API, database, video processing
+
+### 05-ui-components.mdc
+- **Purpose**: Complete UI component reference
+- **Contents**: All components, props, events, design system
+- **Use when**: Building/modifying UI, understanding component hierarchy
+
+### 06-composables.mdc
+- **Purpose**: All Vue composables
+- **Contents**: Composable APIs, patterns, usage examples
+- **Use when**: Creating reusable logic, refactoring components
+
+### 07-api-reference.mdc
+- **Purpose**: Complete API endpoint documentation
+- **Contents**: All endpoints, request/response formats, error handling
+- **Use when**: Integrating API, debugging network issues
+
+### 08-coding-guidelines.mdc
+- **Purpose**: Code standards and best practices
+- **Contents**: Vue patterns, TypeScript usage, styling, common patterns
+- **Use when**: Writing new code, code review, refactoring
+
+## Quick Reference
+
+### Finding Information
+
+**Working on a specific page?**
+→ Check `01-client-features.mdc` for page features
+→ Check `05-ui-components.mdc` for component details
+
+**Adding a new feature?**
+→ Start with `00-application-overview.mdc` for architecture
+→ Check `08-coding-guidelines.mdc` for patterns
+
+**Working with API?**
+→ Check `07-api-reference.mdc` for endpoints
+→ Check `04-server-architecture.mdc` for implementation
+
+**Need reusable logic?**
+→ Check `06-composables.mdc` for existing composables
+→ Check `03-state-management.mdc` for state patterns
+
+**Debugging an issue?**
+→ Find the feature in `01-client-features.mdc` or `02-clip-operations.mdc`
+→ Check implementation in respective component/service docs
+
+## Using with Cursor
+
+### During Development
+1. Reference the relevant doc file for context
+2. Ask Cursor to "follow the patterns in .cursor/rules/[file]"
+3. Cursor will use these docs for better suggestions
+
+### During Refactoring
+1. Ask Cursor to "review against .cursor/rules/[file]"
+2. Ensure changes maintain consistency with documented patterns
+3. Update docs if patterns change
+
+### For Code Review
+1. Reference coding guidelines: `.cursor/rules/08-coding-guidelines.mdc`
+2. Check feature completeness: `.cursor/rules/01-client-features.mdc`
+3. Verify API contracts: `.cursor/rules/07-api-reference.mdc`
+
+## Key Features Summary
+
+### Video Management
+- Browse clips by game
+- Search and filter
+- Star favorites
+- Add custom names and notes
+- Tag with smart suggestions
+- Organize in collections
+
+### Video Editing
+- Trim clips
+- Multi-clip editor with timeline
+- Export compiled videos
+- Extract audio
+
+### Publishing
+- Publish to public URL
+- Cloudflare integration
+- Batch publish/unpublish
+
+### Batch Operations
+- Select multiple clips
+- Bulk star/publish/tag/delete
+- Add to collections in bulk
+
+### Smart Features
+- Auto tag suggestions based on filename patterns
+- Thumbnail and frame strip generation
+- Today's clips carousel view
+- Statistics and analytics
+- Drag and drop import
+- Keyboard shortcuts
+
+### Technical Features
+- PWA (installable)
+- HTTP range streaming for video seeking
+- Firebase authentication
+- SQLite database
+- FFmpeg video processing
+- Responsive design
+- Dark mode ready (structure in place)
+
+## Architecture Highlights
+
+### Three-Tier Architecture
+1. **Client**: Vue 3 SPA with Pinia state management
+2. **Server**: Express API with TypeORM and SQLite
+3. **Publisher**: Separate microservice for public file hosting
+
+### Data Flow
+```
+User Action → Vue Component → Composable/Store → API Service → Server Route → Action → Database/File System
+```
+
+### Key Patterns
+- **Action Pattern**: Business logic encapsulated in action classes
+- **Composables**: Reusable reactive logic
+- **Service Layer**: API calls abstracted from components
+- **Store Pattern**: Global state with Pinia
+- **TypeScript**: Full type safety across stack
+
+## Maintenance
+
+### Keeping Docs Updated
+- Update docs when adding features
+- Review docs during refactoring
+- Keep API reference in sync with endpoints
+- Update component docs when props change
+
+### Validation
+These docs were validated 5 times for:
+1. Completeness of features
+2. Accuracy of technical details
+3. Consistency across files
+4. Usefulness for AI assistance
+5. Coverage of all major components
+
+## Questions?
+
+If these docs don't answer your question:
+1. Check the actual source code
+2. Look at recent git history
+3. Test the feature in the running app
+4. Update docs with your findings!
+
+---
+
+**Last Updated**: 2024 (based on comprehensive codebase analysis)
+**Maintainer**: Development team
+**Purpose**: Cursor AI context and developer reference
+

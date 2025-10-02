@@ -1,0 +1,524 @@
+---
+description: When working with clips
+alwaysApply: false
+---
+# Clip Operations - Complete Reference
+
+## Individual Clip Actions
+
+All clip actions are available through context menus on clip cards and the clip detail page.
+
+### 1. Rename / Set Display Name
+- **Location**: Clip card, clip detail page
+- **Action**: Update `displayName` field
+- **API**: `PATCH /api/clips/:id { displayName }`
+- **Notes**: 
+  - File is never renamed on disk
+  - Empty string clears display name (falls back to filename)
+  - Updates reflected immediately in UI
+
+### 2. Star / Unstar
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Toggle `starred` boolean
+- **API**: 
+  - `POST /api/clips/:id/star`
+  - `POST /api/clips/:id/unstar`
+- **UI Indicator**: Gold star icon
+- **Filter**: Can filter by starred in main library
+
+### 3. Publish
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Upload clip to publisher service and get public URL
+- **API**: `POST /api/clips/:id/publish`
+- **Process**:
+  1. Uploads video file to publisher service
+  2. Publisher saves to `UPLOAD_DIR`
+  3. Returns public URL
+  4. Optionally purges Cloudflare cache
+  5. Updates clip record with `published: true` and `publishedUrl`
+- **UI Features**:
+  - Shows loading state during upload
+  - Auto-copies URL to clipboard on success
+  - Shows published badge on clip
+  - Can view/copy URL anytime
+
+### 4. Unpublish
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Remove clip from public access
+- **API**: `POST /api/clips/:id/unpublish`
+- **Process**:
+  1. Deletes file from publisher service
+  2. Purges Cloudflare cache
+  3. Updates clip record: `published: false`, `publishedUrl: null`
+- **Automatic**: Runs before deleting a published clip
+
+### 5. Delete
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Move file to Recycle Bin and remove from database
+- **API**: `DELETE /api/clips/:id`
+- **Process**:
+  1. If published, unpublish first
+  2. Remove cached thumbnails/frame strips
+  3. Move video file to Windows Recycle Bin (via `trash` package)
+  4. Delete database record
+  5. Clean up empty game folders
+- **Confirmation**: Optional confirmation dialog (configurable in settings)
+- **Safety**: Uses Recycle Bin, not permanent deletion
+
+### 6. Open / Reveal
+- **Location**: Clip card, clip detail page
+- **Action**: Open clip in default video player
+- **API**: `POST /api/clips/:id/open`
+- **Platform**: Uses Windows `start` command
+- **Variation**: "Reveal in Explorer" opens file location
+
+### 7. Trim
+- **Location**: Clip card, clip detail page
+- **Action**: Navigate to trim page
+- **Route**: `/trim/:id`
+- **Process**:
+  1. Shows trim interface with frame strip
+  2. User selects start/end time
+  3. FFmpeg processes video (re-encodes trimmed section)
+  4. Original file replaced with trimmed version
+  5. Database and caches updated
+- **API**: `POST /api/clips/:id/trim { startSec, endSec }`
+
+### 8. Advanced Edit
+- **Location**: Clip card, clip detail page
+- **Action**: Add clip to advanced editor
+- **Route**: `/editor?clip=:id`
+- **Features**: Multi-clip editing, see Editor page section
+
+### 9. Export Audio
+- **Location**: Clip detail page, action menu
+- **Action**: Extract audio track to separate file
+- **API**: `POST /api/clips/:id/export-audio`
+- **Process**:
+  1. FFmpeg extracts audio track
+  2. Saves to same folder as video with `.mp3` extension
+  3. Returns file path and name
+- **Toast Action**: "Show in Folder" button to reveal file
+
+### 10. Move to Game
+- **Location**: Clip card menu
+- **Action**: Move clip to different game folder
+- **API**: `POST /api/clips/:id/move-to-game { targetGame }`
+- **Process**:
+  1. Creates target game folder if doesn't exist
+  2. Moves file to new location
+  3. Updates database: `game`, `filePath`, `relPath`
+  4. Invalidates thumbnail/frame strip caches
+  5. Refreshes games list
+- **UI**: Shows list of existing games + "Create new game" option
+
+### 11. Manage Tags
+- **Location**: Clip card, clip detail page
+- **Action**: Add/remove tags
+- **API**: `PATCH /api/clips/:id { tags: string[] }`
+- **Features**:
+  - Autocomplete from existing tags
+  - Tag pattern suggestions (smart tags)
+  - Multiple tags per clip
+  - Tag filtering in main library
+- **Smart Tags**: Automatically suggest tags based on filename patterns
+
+### 12. Manage Notes
+- **Location**: Clip detail page
+- **Action**: Add/edit markdown notes
+- **API**: `PATCH /api/clips/:id { notes: string | null }`
+- **Features**:
+  - Markdown editor with toolbar
+  - Live preview
+  - Supports all markdown syntax
+  - Auto-save on blur
+
+### 13. Manage Collections
+- **Location**: Clip detail page, batch operations
+- **Actions**: Add to collection, remove from collection
+- **API**: 
+  - `POST /api/collections/:collectionId/clips/:clipId`
+  - `DELETE /api/collections/:collectionId/clips/:clipId`
+- **UI**: Multi-select checkbox list of collections
+
+## Batch Operations
+
+**Activation**: Click "Select" button or press Ctrl+A
+
+### Batch Selection Features
+- Click clip to toggle selection
+- Shift+Click for range selection
+- Ctrl+A to select all visible clips
+- Selection persists across page changes
+- Shows floating toolbar with actions
+
+### Available Batch Actions
+
+#### 1. Batch Star/Unstar
+- Star or unstar multiple clips at once
+- API: `POST /api/clips/batch/star { clipIds: number[], starred: boolean }`
+- Shows success count and errors
+
+#### 2. Batch Publish/Unpublish
+- Publish or unpublish multiple clips
+- API: `POST /api/clips/batch/publish { clipIds: number[], publish: boolean }`
+- Sequential processing with progress
+- Shows success count and errors
+
+#### 3. Batch Add Tags
+- Add tags to multiple clips (doesn't remove existing tags)
+- API: `POST /api/clips/batch/add-tags { clipIds: number[], tags: string[] }`
+- Dialog with tag input
+- Shows success count and errors
+
+#### 4. Batch Delete
+- Delete multiple clips at once
+- API: `POST /api/clips/batch/delete { clipIds: number[] }`
+- Confirmation dialog
+- Each clip follows full delete process
+- Shows success count and errors
+
+#### 5. Batch Add to Collection
+- Add multiple clips to a collection
+- Dialog with collection selector
+- Shows success count and errors
+
+### Batch Operation Results
+All batch operations return:
+```typescript
+{
+  success: number;  // Number of successful operations
+  failed: number;   // Number of failed operations
+  errors?: string[]; // Error messages for failed operations
+}
+```
+
+## File Import
+
+### Drag and Drop Import
+- **Location**: File drop zone in main library
+- **API**: `POST /api/clips/import` (multipart/form-data)
+- **Process**:
+  1. Files received as FormData
+  2. Saved to first game folder in VIDEOS_ROOT (or creates "Imported" folder)
+  3. Database records created
+  4. Thumbnails generated
+  5. Returns list of imported clips
+- **Result**: Shows success count and errors
+- **Supported Formats**: MP4, MOV
+
+### Import Results
+```typescript
+{
+  imported: number;  // Number of successfully imported files
+  failed: number;    // Number of failed imports
+  clips: Clip[];     // Array of imported clip objects
+  errors?: string[]; // Error messages for failed imports
+}
+```
+
+## Video Streaming
+
+### Stream Endpoint
+- **API**: `GET /api/clips/:id/stream`
+- **Features**:
+  - HTTP Range requests support (partial content)
+  - Proper content type (video/mp4 or video/quicktime)
+  - No caching (always fresh)
+  - Optimized for seeking
+
+### Thumbnail Generation
+- **API**: `GET /api/clips/:id/thumbnail`
+- **Process**: 
+  1. Checks cache in `.thumbnails` folder
+  2. If not exists, generates with FFmpeg (first frame)
+  3. Returns JPEG image
+- **Cache**: Long cache duration (1 week)
+
+### Frame Strip Generation
+- **API**: `GET /api/clips/:id/frame-strip`
+- **Process**:
+  1. Checks cache in `.frame-strips` folder
+  2. If not exists, extracts 10 frames evenly spaced
+  3. Combines into horizontal strip
+  4. Returns JPEG image
+- **Usage**: Trim page timeline preview
+- **Cache**: Long cache duration (1 week)
+
+## Metadata Extraction
+
+### Get Clip Metadata
+- **API**: `GET /api/clips/:id/meta`
+- **Returns**:
+```typescript
+{
+  durationSec: number;
+  width: number | null;
+  height: number | null;
+  codec: string | null;
+  fps: string | null;
+}
+```
+- **Tool**: FFprobe via ffprobe-static
+- **Usage**: Trim page, editor, clip details
+
+# Clip Operations - Complete Reference
+
+## Individual Clip Actions
+
+All clip actions are available through context menus on clip cards and the clip detail page.
+
+### 1. Rename / Set Display Name
+- **Location**: Clip card, clip detail page
+- **Action**: Update `displayName` field
+- **API**: `PATCH /api/clips/:id { displayName }`
+- **Notes**: 
+  - File is never renamed on disk
+  - Empty string clears display name (falls back to filename)
+  - Updates reflected immediately in UI
+
+### 2. Star / Unstar
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Toggle `starred` boolean
+- **API**: 
+  - `POST /api/clips/:id/star`
+  - `POST /api/clips/:id/unstar`
+- **UI Indicator**: Gold star icon
+- **Filter**: Can filter by starred in main library
+
+### 3. Publish
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Upload clip to publisher service and get public URL
+- **API**: `POST /api/clips/:id/publish`
+- **Process**:
+  1. Uploads video file to publisher service
+  2. Publisher saves to `UPLOAD_DIR`
+  3. Returns public URL
+  4. Optionally purges Cloudflare cache
+  5. Updates clip record with `published: true` and `publishedUrl`
+- **UI Features**:
+  - Shows loading state during upload
+  - Auto-copies URL to clipboard on success
+  - Shows published badge on clip
+  - Can view/copy URL anytime
+
+### 4. Unpublish
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Remove clip from public access
+- **API**: `POST /api/clips/:id/unpublish`
+- **Process**:
+  1. Deletes file from publisher service
+  2. Purges Cloudflare cache
+  3. Updates clip record: `published: false`, `publishedUrl: null`
+- **Automatic**: Runs before deleting a published clip
+
+### 5. Delete
+- **Location**: Clip card, clip detail page, batch operations
+- **Action**: Move file to Recycle Bin and remove from database
+- **API**: `DELETE /api/clips/:id`
+- **Process**:
+  1. If published, unpublish first
+  2. Remove cached thumbnails/frame strips
+  3. Move video file to Windows Recycle Bin (via `trash` package)
+  4. Delete database record
+  5. Clean up empty game folders
+- **Confirmation**: Optional confirmation dialog (configurable in settings)
+- **Safety**: Uses Recycle Bin, not permanent deletion
+
+### 6. Open / Reveal
+- **Location**: Clip card, clip detail page
+- **Action**: Open clip in default video player
+- **API**: `POST /api/clips/:id/open`
+- **Platform**: Uses Windows `start` command
+- **Variation**: "Reveal in Explorer" opens file location
+
+### 7. Trim
+- **Location**: Clip card, clip detail page
+- **Action**: Navigate to trim page
+- **Route**: `/trim/:id`
+- **Process**:
+  1. Shows trim interface with frame strip
+  2. User selects start/end time
+  3. FFmpeg processes video (re-encodes trimmed section)
+  4. Original file replaced with trimmed version
+  5. Database and caches updated
+- **API**: `POST /api/clips/:id/trim { startSec, endSec }`
+
+### 8. Advanced Edit
+- **Location**: Clip card, clip detail page
+- **Action**: Add clip to advanced editor
+- **Route**: `/editor?clip=:id`
+- **Features**: Multi-clip editing, see Editor page section
+
+### 9. Export Audio
+- **Location**: Clip detail page, action menu
+- **Action**: Extract audio track to separate file
+- **API**: `POST /api/clips/:id/export-audio`
+- **Process**:
+  1. FFmpeg extracts audio track
+  2. Saves to same folder as video with `.mp3` extension
+  3. Returns file path and name
+- **Toast Action**: "Show in Folder" button to reveal file
+
+### 10. Move to Game
+- **Location**: Clip card menu
+- **Action**: Move clip to different game folder
+- **API**: `POST /api/clips/:id/move-to-game { targetGame }`
+- **Process**:
+  1. Creates target game folder if doesn't exist
+  2. Moves file to new location
+  3. Updates database: `game`, `filePath`, `relPath`
+  4. Invalidates thumbnail/frame strip caches
+  5. Refreshes games list
+- **UI**: Shows list of existing games + "Create new game" option
+
+### 11. Manage Tags
+- **Location**: Clip card, clip detail page
+- **Action**: Add/remove tags
+- **API**: `PATCH /api/clips/:id { tags: string[] }`
+- **Features**:
+  - Autocomplete from existing tags
+  - Tag pattern suggestions (smart tags)
+  - Multiple tags per clip
+  - Tag filtering in main library
+- **Smart Tags**: Automatically suggest tags based on filename patterns
+
+### 12. Manage Notes
+- **Location**: Clip detail page
+- **Action**: Add/edit markdown notes
+- **API**: `PATCH /api/clips/:id { notes: string | null }`
+- **Features**:
+  - Markdown editor with toolbar
+  - Live preview
+  - Supports all markdown syntax
+  - Auto-save on blur
+
+### 13. Manage Collections
+- **Location**: Clip detail page, batch operations
+- **Actions**: Add to collection, remove from collection
+- **API**: 
+  - `POST /api/collections/:collectionId/clips/:clipId`
+  - `DELETE /api/collections/:collectionId/clips/:clipId`
+- **UI**: Multi-select checkbox list of collections
+
+## Batch Operations
+
+**Activation**: Click "Select" button or press Ctrl+A
+
+### Batch Selection Features
+- Click clip to toggle selection
+- Shift+Click for range selection
+- Ctrl+A to select all visible clips
+- Selection persists across page changes
+- Shows floating toolbar with actions
+
+### Available Batch Actions
+
+#### 1. Batch Star/Unstar
+- Star or unstar multiple clips at once
+- API: `POST /api/clips/batch/star { clipIds: number[], starred: boolean }`
+- Shows success count and errors
+
+#### 2. Batch Publish/Unpublish
+- Publish or unpublish multiple clips
+- API: `POST /api/clips/batch/publish { clipIds: number[], publish: boolean }`
+- Sequential processing with progress
+- Shows success count and errors
+
+#### 3. Batch Add Tags
+- Add tags to multiple clips (doesn't remove existing tags)
+- API: `POST /api/clips/batch/add-tags { clipIds: number[], tags: string[] }`
+- Dialog with tag input
+- Shows success count and errors
+
+#### 4. Batch Delete
+- Delete multiple clips at once
+- API: `POST /api/clips/batch/delete { clipIds: number[] }`
+- Confirmation dialog
+- Each clip follows full delete process
+- Shows success count and errors
+
+#### 5. Batch Add to Collection
+- Add multiple clips to a collection
+- Dialog with collection selector
+- Shows success count and errors
+
+### Batch Operation Results
+All batch operations return:
+```typescript
+{
+  success: number;  // Number of successful operations
+  failed: number;   // Number of failed operations
+  errors?: string[]; // Error messages for failed operations
+}
+```
+
+## File Import
+
+### Drag and Drop Import
+- **Location**: File drop zone in main library
+- **API**: `POST /api/clips/import` (multipart/form-data)
+- **Process**:
+  1. Files received as FormData
+  2. Saved to first game folder in VIDEOS_ROOT (or creates "Imported" folder)
+  3. Database records created
+  4. Thumbnails generated
+  5. Returns list of imported clips
+- **Result**: Shows success count and errors
+- **Supported Formats**: MP4, MOV
+
+### Import Results
+```typescript
+{
+  imported: number;  // Number of successfully imported files
+  failed: number;    // Number of failed imports
+  clips: Clip[];     // Array of imported clip objects
+  errors?: string[]; // Error messages for failed imports
+}
+```
+
+## Video Streaming
+
+### Stream Endpoint
+- **API**: `GET /api/clips/:id/stream`
+- **Features**:
+  - HTTP Range requests support (partial content)
+  - Proper content type (video/mp4 or video/quicktime)
+  - No caching (always fresh)
+  - Optimized for seeking
+
+### Thumbnail Generation
+- **API**: `GET /api/clips/:id/thumbnail`
+- **Process**: 
+  1. Checks cache in `.thumbnails` folder
+  2. If not exists, generates with FFmpeg (first frame)
+  3. Returns JPEG image
+- **Cache**: Long cache duration (1 week)
+
+### Frame Strip Generation
+- **API**: `GET /api/clips/:id/frame-strip`
+- **Process**:
+  1. Checks cache in `.frame-strips` folder
+  2. If not exists, extracts 10 frames evenly spaced
+  3. Combines into horizontal strip
+  4. Returns JPEG image
+- **Usage**: Trim page timeline preview
+- **Cache**: Long cache duration (1 week)
+
+## Metadata Extraction
+
+### Get Clip Metadata
+- **API**: `GET /api/clips/:id/meta`
+- **Returns**:
+```typescript
+{
+  durationSec: number;
+  width: number | null;
+  height: number | null;
+  codec: string | null;
+  fps: string | null;
+}
+```
+- **Tool**: FFprobe via ffprobe-static
+- **Usage**: Trim page, editor, clip details
+
