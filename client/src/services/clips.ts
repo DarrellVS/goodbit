@@ -129,3 +129,30 @@ export async function batchDelete(clipIds: number[]): Promise<BatchOperationResu
   return data;
 }
 
+export interface ImportFilesResult {
+  imported: number;
+  failed: number;
+  clips: Clip[];
+  errors?: string[];
+}
+
+export async function importFiles(files: File[]): Promise<ImportFilesResult> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append('files', file);
+  }
+  
+  const { data } = await axios.post<ImportFilesResult>('/api/clips/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  return data;
+}
+
+export async function moveClipToGame(id: number, targetGame: string): Promise<Clip> {
+  const { data } = await axios.post<Clip>(`/api/clips/${id}/move-to-game`, { targetGame });
+  return data;
+}
+

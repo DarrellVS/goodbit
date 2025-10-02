@@ -30,6 +30,7 @@ interface Emits {
   (e: 'unpublish'): void;
   (e: 'delete'): void;
   (e: 'remove-from-collection'): void;
+  (e: 'move-to-game'): void;
 }
 
 const props = defineProps<Props>();
@@ -92,6 +93,15 @@ const emit = defineEmits<Emits>();
           >
             <Icon icon="material-symbols:folder-open" class="text-base" />
             <span>Reveal in Explorer</span>
+          </MenubarItem>
+
+          <!-- Move to Game -->
+          <MenubarItem
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            @click="emit('move-to-game')"
+          >
+            <Icon icon="material-symbols:drive-file-move" class="text-base" />
+            <span>Move to Game</span>
           </MenubarItem>
 
           <!-- Copy URL (conditional) -->

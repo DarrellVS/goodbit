@@ -1,0 +1,173 @@
+import { ref } from 'vue';
+import { useToastStore } from '../stores/toast';
+import { useClipsStore } from '../stores/clips';
+import { useGamesStore } from '../stores/games';
+import { importFiles } from '../services/clips';
+
+const VALID_VIDEO_TYPES = [
+  'video/mp4',
+  'video/quicktime', // .mov
+  'video/x-msvideo', // .avi
+  'video/x-matroska', // .mkv
+  'video/webm',
+];
+
+const VALID_VIDEO_EXTENSIONS = [
+  '.mp4',
+  '.mov',
+  '.avi',
+  '.mkv',
+  '.webm',
+  '.MP4',
+  '.MOV',
+  '.AVI',
+  '.MKV',
+  '.WEBM',
+];
+
+export function useFileImport() {
+  const toastStore = useToastStore();
+  const clipsStore = useClipsStore();
+  const gamesStore = useGamesStore();
+
+  const isDragging = ref(false);
+  const isUploading = ref(false);
+  const uploadProgress = ref(0);
+  const dragCounter = ref(0);
+
+  function isValidVideoFile(file: File): boolean {
+    // Check MIME type first
+    if (VALID_VIDEO_TYPES.includes(file.type)) {
+      return true;
+    }
+
+    // Fallback to extension check (some browsers don't set MIME type correctly)
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+    return VALID_VIDEO_EXTENSIONS.some(ext => ext.toLowerCase() === extension);
+  }
+
+  function handleDragEnter(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    dragCounter.value++;
+    
+    if (e.dataTransfer?.types.includes('Files')) {
+      isDragging.value = true;
+    }
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    dragCounter.value--;
+    
+    if (dragCounter.value === 0) {
+      isDragging.value = false;
+    }
+  }
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  async function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    isDragging.value = false;
+    dragCounter.value = 0;
+
+    const files = Array.from(e.dataTransfer?.files || []);
+    
+    if (files.length === 0) {
+      return;
+    }
+
+    // Filter valid video files
+    const videoFiles = files.filter(isValidVideoFile);
+    const invalidCount = files.length - videoFiles.length;
+
+    if (videoFiles.length === 0) {
+      toastStore.error('No valid video files found', 'Invalid Files');
+      return;
+    }
+
+    if (invalidCount > 0) {
+      toastStore.warning(
+        `${invalidCount} file${invalidCount === 1 ? '' : 's'} skipped (not video format)`,
+        'Some files skipped'
+      );
+    }
+
+    await uploadFiles(videoFiles);
+  }
+
+  async function uploadFiles(files: File[]) {
+    isUploading.value = true;
+    uploadProgress.value = 0;
+
+    try {
+      // Simulate progress for better UX (actual upload happens in one request)
+      const progressInterval = setInterval(() => {
+        if (uploadProgress.value < 90) {
+          uploadProgress.value += 10;
+        }
+      }, 200);
+
+      const result = await importFiles(files);
+
+      clearInterval(progressInterval);
+      uploadProgress.value = 100;
+
+      // Show results
+      if (result.imported > 0) {
+        toastStore.success(
+          `${result.imported} file${result.imported === 1 ? '' : 's'} imported successfully`,
+          'Import Complete'
+        );
+      }
+
+      if (result.failed > 0 && result.errors) {
+        console.error('Import errors:', result.errors);
+        toastStore.error(
+          `${result.failed} file${result.failed === 1 ? '' : 's'} failed to import`,
+          'Import Errors'
+        );
+      }
+
+      // Refresh clips and games list
+      clipsStore.resetPagination();
+      await Promise.all([
+        clipsStore.fetchClips(false),
+        gamesStore.fetchGames(),
+      ]);
+
+      // Set filter to Import game to show newly imported files
+      clipsStore.setGame('Import');
+    } catch (error) {
+      console.error('Import failed:', error);
+      toastStore.error('Failed to import files', 'Import Error');
+    } finally {
+      isUploading.value = false;
+      uploadProgress.value = 0;
+    }
+  }
+
+  return {
+    isDragging,
+    isUploading,
+    uploadProgress,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+  };
+}
+

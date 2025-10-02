@@ -1,5 +1,6 @@
 import express from 'express';
 import fs from 'node:fs';
+import multer from 'multer';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
@@ -14,6 +15,10 @@ import {
   BatchAddTagsAction, 
   BatchDeleteAction 
 } from '../actions/BatchOperationsAction.js';
+import { ImportFilesAction } from '../actions/ImportFilesAction.js';
+import { MoveClipToGameAction } from '../actions/MoveClipToGameAction.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 export const clipsRouter = express.Router();
 
@@ -159,6 +164,28 @@ clipsRouter.post('/:id/open', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const { targetGame } = req.body as { targetGame: string };
+  
+  if (!targetGame || targetGame.trim().length === 0) {
+    return res.status(400).json({ error: 'targetGame is required' });
+  }
+
+  const action = new MoveClipToGameAction();
+  const { clip } = await action.execute({ clipId: id, targetGame: targetGame.trim() });
+  
+  // Invalidate caches after move
+  await videoService.removeClipCaches(clip.filePath);
+  
+  const withTags = await AppDataSource.getRepository(Clip).findOne({ 
+    where: { id: clip.id }, 
+    relations: ['tags'] 
+  });
+  const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t: Tag) => t.name) } : clip;
+  res.json(normalized);
+}));
+
 clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const { displayName, tags } = req.body as { displayName?: string | null; tags?: string[] };
@@ -226,6 +253,25 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
   const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
   res.json(normalized);
+}));
+
+clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res) => {
+  const files = req.files as Express.Multer.File[];
+  
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: 'No files provided' });
+  }
+
+  const action = new ImportFilesAction();
+  const result = await action.execute({
+    files: files.map(f => ({
+      name: f.originalname,
+      size: f.size,
+      data: f.buffer,
+    })),
+  });
+
+  res.json(result);
 }));
 
 clipsRouter.post('/export', asyncHandler(async (req, res) => {

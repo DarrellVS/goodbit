@@ -1,5 +1,11 @@
 <template>
-  <div class="h-full grid grid-cols-[256px_1fr] grid-rows-1">
+  <div 
+    class="h-full grid grid-cols-[256px_1fr] grid-rows-1"
+    @dragenter="fileImport.handleDragEnter"
+    @dragleave="fileImport.handleDragLeave"
+    @dragover="fileImport.handleDragOver"
+    @drop="fileImport.handleDrop"
+  >
     <AppSidebar 
       :active-game="selectedGame" 
       :disable-games-filter="disableGamesFilter"
@@ -50,6 +56,13 @@
         <RouterView />
       </main>
     </div>
+
+    <!-- File Drop Zone Overlay -->
+    <FileDropZone
+      :is-dragging="fileImport.isDragging.value"
+      :is-uploading="fileImport.isUploading.value"
+      :upload-progress="fileImport.uploadProgress.value"
+    />
   </div>
 </template>
 
@@ -63,8 +76,10 @@ import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
 import { useToastStore } from '../stores/toast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
+import { useFileImport } from '../composables/useFileImport';
 import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
+import FileDropZone from '../components/App/FileDropZone.vue';
 import { deleteTag } from '../services/clips';
 import { Icon } from '@iconify/vue';
 
@@ -72,6 +87,7 @@ const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
 const toastStore = useToastStore();
 const clipsStore = useClipsStore();
+const fileImport = useFileImport();
 const selectedGame = ref('');
 const searchText = ref('');
 const isRescanLoading = ref(false);

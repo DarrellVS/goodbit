@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
@@ -8,6 +8,8 @@ import { useClipActionsHandlers } from '../../composables/useClipActionsHandlers
 import { useBatchOperationsStore } from '../../stores/batchOperations';
 import { useCollectionsStore } from '../../stores/collections';
 import { useToastStore } from '../../stores/toast';
+import { useGamesStore } from '../../stores/games';
+import { moveClipToGame } from '../../services/clips';
 import type { Clip } from '../../types/clip';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
@@ -15,6 +17,7 @@ import ClipPublishedBadge from './ClipPublishedBadge.vue';
 import ClipNameInput from './ClipNameInput.vue';
 import ClipMetadata from './ClipMetadata.vue';
 import ClipTags from './ClipTags.vue';
+import MoveClipDialog from './MoveClipDialog.vue';
 
 interface Props {
   clip: Clip;
@@ -42,9 +45,11 @@ const config = useConfiguration();
 const batchStore = useBatchOperationsStore();
 const collectionsStore = useCollectionsStore();
 const toastStore = useToastStore();
+const gamesStore = useGamesStore();
 const { startDrag, endDrag } = useDragAndDrop();
 
 const isSelected = computed(() => batchStore.isSelected(props.clip.id));
+const showMoveDialog = ref(false);
 
 function handleDragStart(event: DragEvent) {
   startDrag({ type: 'clip', clipId: props.clip.id }, event);
@@ -72,6 +77,20 @@ const {
 
 function onAdvancedEdit() {
   router.push(`/editor?clip=${props.clip.id}`);
+}
+
+async function onMoveToGame(targetGame: string) {
+  try {
+    const updatedClip = await moveClipToGame(props.clip.id, targetGame);
+    emit('updated', updatedClip);
+    toastStore.success(`Moved to ${targetGame}`, 'Clip Moved');
+    
+    // Refresh games list in case it's a new game
+    await gamesStore.fetchGames();
+  } catch (error) {
+    console.error('Failed to move clip:', error);
+    toastStore.error('Failed to move clip', 'Move Failed');
+  }
 }
 
 async function onRemoveFromCollection() {
@@ -142,6 +161,14 @@ async function onRemoveFromCollection() {
         @unpublish="onUnpublish"
         @delete="onDelete"
         @remove-from-collection="onRemoveFromCollection"
+        @move-to-game="showMoveDialog = true"
+      />
+
+      <!-- Move Clip Dialog -->
+      <MoveClipDialog
+        v-model:open="showMoveDialog"
+        :clip="clip"
+        @move="onMoveToGame"
       />
     </div>
 
