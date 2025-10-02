@@ -79,6 +79,20 @@ function onAdvancedEdit() {
   router.push(`/editor?clip=${props.clip.id}`);
 }
 
+function handleCardClick(event: MouseEvent) {
+  // Don't navigate if clicking on interactive elements
+  const target = event.target as HTMLElement;
+  const isInteractiveElement = 
+    target.closest('button') ||
+    target.closest('video') ||
+    target.closest('input') ||
+    target.closest('a');
+  
+  if (!isInteractiveElement && !props.isSelectionMode) {
+    router.push(`/clips/${props.clip.id}`);
+  }
+}
+
 async function onMoveToGame(targetGame: string) {
   try {
     const updatedClip = await moveClipToGame(props.clip.id, targetGame);
@@ -110,15 +124,16 @@ async function onRemoveFromCollection() {
   <article 
     draggable="true"
     :class="[
-      'clip-card shadow group relative bg-white/5 rounded-xl overflow-hidden border transition-all hover:shadow-lg',
+      'clip-card shadow group relative bg-white/5 rounded-xl overflow-hidden border transition-all hover:shadow-lg cursor-pointer',
       isSelected 
-        ? 'border-orange-500 border-2 ring-2 ring-orange-500/30' 
+        ? 'border-orange-500 border-2 ring-2 ring-2 ring-orange-500/30' 
         : 'border-gray-300 hover:border-orange-500/50'
     ]"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
     @dragstart="handleDragStart"
     @dragend="endDrag"
+    @click="handleCardClick"
   >
     <!-- Selection Checkbox -->
     <div 

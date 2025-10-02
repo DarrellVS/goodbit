@@ -30,7 +30,7 @@ export function useTagPatterns() {
     try {
       const pattern: TagPattern = {
         tag,
-        patterns: patternStrings.map(p => new RegExp(p, 'i')),
+        patterns: patternStrings.map(p => createOptimizedRegex(p)),
         category,
       };
       
@@ -40,6 +40,24 @@ export function useTagPatterns() {
       console.error('Failed to add pattern:', err);
       throw err;
     }
+  }
+
+  function createOptimizedRegex(patternString: string): RegExp {
+    // If pattern already has regex special chars or word boundaries, use as-is
+    const hasRegexSyntax = /[\\^$*+?.()|[\]{}]/.test(patternString);
+    
+    if (hasRegexSyntax) {
+      // User provided a regex pattern, use it directly
+      return new RegExp(patternString, 'i');
+    }
+    
+    // Simple word pattern - add word boundaries to avoid false matches
+    // This prevents "ar" from matching "start", "car", etc.
+    return new RegExp(`\\b${escapeRegex(patternString)}\\b`, 'i');
+  }
+
+  function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   async function updatePattern(

@@ -144,14 +144,17 @@ async function saveNew(): Promise<void> {
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Patterns (comma-separated regex)</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Patterns (comma-separated)</label>
           <input
             v-model="newPatterns"
             type="text"
-            placeholder="e.g., headshot, \\bhs\\b"
+            placeholder="e.g., headshot, ace, clutch"
             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
           />
-          <p class="text-xs text-gray-500 mt-1">Use regex patterns like: \b5k\b, ace, clutch</p>
+          <div class="text-xs text-gray-600 mt-2 space-y-1">
+            <p><strong>Simple words</strong> (e.g., "clutch", "ace") will match whole words only.</p>
+            <p><strong>Advanced regex</strong> (e.g., "\\b5k\\b", "1v[2-5]") will be used as-is.</p>
+          </div>
         </div>
         
         <div>

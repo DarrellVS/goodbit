@@ -84,6 +84,16 @@ export const router = createRouter({
             subtitle: 'View collection clips'
           }
         },
+        { 
+          path: 'clips/:id', 
+          name: 'clip-detail', 
+          component: ClipDetailPage, 
+          props: true,
+          meta: { 
+            title: 'Clip Details',
+            subtitle: 'View clip information'
+          }
+        },
       ],
     },
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true, meta: { requiresAuth: true } },

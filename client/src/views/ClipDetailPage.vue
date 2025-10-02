@@ -8,7 +8,7 @@ import { useClipTags } from '../composables/useClipTags';
 import { useFormat } from '../composables/useFormat';
 import { withAuthToken } from '../utils/withAuthToken';
 import { formatRelativeTime, formatExactDate } from '../helpers/dateFormat';
-import { formatDuration } from '../utils/formatters';
+import { formatTimeSimple } from '../utils/timeFormat';
 import type { Clip } from '../types/clip';
 import ClipNameInput from '../components/App/ClipNameInput.vue';
 import ClipTags from '../components/App/ClipTags.vue';
@@ -47,7 +47,7 @@ const displayDate = computed(() => {
 
 const durationFormatted = computed(() => {
   if (!metadata.value?.durationSec) return 'Unknown';
-  return formatDuration(metadata.value.durationSec);
+  return formatTimeSimple(metadata.value.durationSec);
 });
 
 const resolution = computed(() => {
