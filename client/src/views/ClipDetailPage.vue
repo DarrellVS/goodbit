@@ -14,9 +14,10 @@ import type { Clip } from '../types/clip';
 import ClipNameInput from '../components/App/ClipNameInput.vue';
 import ClipTags from '../components/App/ClipTags.vue';
 import ClipStarButton from '../components/App/ClipStarButton.vue';
-import ClipPublishedBadge from '../components/App/ClipPublishedBadge.vue';
 import BasePopover from '../components/Base/BasePopover.vue';
+import BaseDialog from '../components/Base/BaseDialog.vue';
 import MarkdownEditor from '../components/Base/MarkdownEditor.vue';
+import NotesDisplay from '../components/Base/NotesDisplay.vue';
 
 interface Props {
   id: string;
@@ -35,6 +36,7 @@ const showExactDate = ref(false);
 const notes = ref<string>('');
 const savingNotes = ref(false);
 const videoElement = ref<HTMLVideoElement | null>(null);
+const showNotesDialog = ref(false);
 
 const videoUrl = computed(() => 
   clip.value ? withAuthToken(`/api/clips/${clip.value.id}/stream`) : ''
@@ -116,7 +118,8 @@ async function saveNotes() {
   savingNotes.value = true;
   try {
     const updatedClip = await updateClipNotes(clip.value.id, notes.value || null);
-    clip.value = updatedClip;
+    clip.value = { ...updatedClip }; // Force reactivity with new object reference
+    showNotesDialog.value = false;
     toastStore.success('Notes saved successfully');
   } catch (err) {
     console.error('Failed to save notes:', err);
@@ -124,6 +127,10 @@ async function saveNotes() {
   } finally {
     savingNotes.value = false;
   }
+}
+
+function openNotesEditor() {
+  showNotesDialog.value = true;
 }
 
 function handleTimestampClick(seconds: number) {
@@ -143,92 +150,92 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto bg-gradient-to-br from-gray-50 to-white">
+  <div class="h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-orange-50/30">
     <!-- Header -->
-    <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
       <div class="max-w-7xl mx-auto px-6 py-4">
         <div class="flex items-center justify-between">
           <button
-            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 transition-all group"
             @click="goBack"
           >
-            <Icon icon="material-symbols:arrow-back" class="text-xl" />
-            <span class="font-medium">Back</span>
+            <Icon icon="material-symbols:arrow-back-rounded" class="text-xl group-hover:-translate-x-1 transition-transform" />
+            <span class="font-semibold">Back</span>
           </button>
           
-          <div v-if="clip" class="flex items-center gap-2">
+          <div v-if="clip" class="flex items-center gap-3">
             <ClipStarButton :clip="clip" @updated="clip = $event" />
             
             <button
               v-if="!clip.published"
-              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 font-medium border border-orange-700"
               :disabled="isPublishing"
               @click="onPublish"
             >
-              <Icon icon="material-symbols:cloud-upload" class="text-lg" />
+              <Icon icon="material-symbols:cloud-upload-rounded" class="text-xl" />
               <span>{{ isPublishing ? 'Publishing...' : 'Publish' }}</span>
             </button>
             
             <button
               v-else
-              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 transition-all font-medium border border-gray-700"
               @click="onUnpublish"
             >
-              <Icon icon="material-symbols:cloud-off" class="text-lg" />
+              <Icon icon="material-symbols:cloud-off-rounded" class="text-xl" />
               <span>Unpublish</span>
             </button>
             
             <BasePopover side="bottom" :side-offset="8">
               <template #trigger>
                 <button
-                  class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors"
+                  class="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-gradient-to-br hover:from-gray-100 hover:to-gray-50 transition-all"
                 >
-                  <Icon icon="material-symbols:more-vert" class="text-xl" />
+                  <Icon icon="material-symbols:more-vert-rounded" class="text-2xl text-gray-700" />
                 </button>
               </template>
               
-              <div class="flex flex-col gap-1 min-w-[180px]">
+              <div class="flex flex-col gap-0.5 min-w-[180px]">
                 <button
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
                   @click="onTrim"
                 >
-                  <Icon icon="material-symbols:content-cut" class="text-lg" />
-                  <span>Trim Clip</span>
+                  <Icon icon="material-symbols:content-cut-rounded" class="text-lg text-orange-600" />
+                  <span class="text-sm font-medium">Trim Clip</span>
                 </button>
                 
                 <button
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
                   @click="onAdvancedEdit"
                 >
-                  <Icon icon="material-symbols:video-library" class="text-lg" />
-                  <span>Advanced Edit</span>
+                  <Icon icon="material-symbols:video-library-rounded" class="text-lg text-orange-600" />
+                  <span class="text-sm font-medium">Advanced Edit</span>
                 </button>
                 
                 <button
                   v-if="clip.publishedUrl"
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
                   @click="onCopyUrl"
                 >
-                  <Icon icon="material-symbols:link" class="text-lg" />
-                  <span>Copy URL</span>
+                  <Icon icon="material-symbols:link-rounded" class="text-lg text-orange-600" />
+                  <span class="text-sm font-medium">Copy URL</span>
                 </button>
                 
                 <button
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50 transition-all text-left group"
                   @click="onReveal"
                 >
-                  <Icon icon="material-symbols:folder-open" class="text-lg" />
-                  <span>Reveal in Folder</span>
+                  <Icon icon="material-symbols:folder-open-rounded" class="text-lg text-orange-600" />
+                  <span class="text-sm font-medium">Reveal in Folder</span>
                 </button>
                 
-                <div class="h-px bg-gray-200 my-1" />
+                <div class="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent my-1" />
                 
                 <button
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors text-left"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition-all text-left group"
                   @click="onDelete"
                 >
-                  <Icon icon="material-symbols:delete" class="text-lg" />
-                  <span>Delete Clip</span>
+                  <Icon icon="material-symbols:delete-rounded" class="text-lg" />
+                  <span class="text-sm font-medium">Delete Clip</span>
                 </button>
               </div>
             </BasePopover>
@@ -265,82 +272,93 @@ onMounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Video Player Section -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Published Badge -->
-          <ClipPublishedBadge v-if="clip.published" :published="clip.published" class="mb-4" />
-          
           <!-- Video Player -->
-          <div class="relative rounded-2xl overflow-hidden shadow-2xl bg-black">
-            <video 
-              ref="videoElement"
-              :src="videoUrl" 
-              :poster="posterUrl"
-              class="w-full object-contain" 
-              controls
-              autoplay
-            />
+          <div class="relative group">
+            <div v-if="clip.published" class="absolute top-4 left-4 z-10">
+              <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium border border-emerald-700">
+                <Icon icon="material-symbols:cloud-done-rounded" class="text-xl" />
+                <span>Published</span>
+              </div>
+            </div>
+            
+            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-gray-300">
+              <video 
+                ref="videoElement"
+                :src="videoUrl" 
+                :poster="posterUrl"
+                class="w-full object-contain" 
+                controls
+                autoplay
+              />
+            </div>
           </div>
 
           <!-- Clip Title & Game -->
-          <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div class="bg-white rounded-2xl p-6 border border-gray-300">
             <ClipNameInput :clip="clip" @updated="clip = $event" />
           </div>
 
           <!-- Tags Section -->
-          <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div class="bg-white rounded-2xl p-6 border border-gray-300 group">
             <div class="flex items-center gap-2 mb-4">
-              <Icon icon="material-symbols:label" class="text-xl text-orange-500" />
-              <h2 class="text-lg font-semibold">Tags</h2>
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
+                <Icon icon="material-symbols:label-rounded" class="text-xl text-orange-600" />
+              </div>
+              <h2 class="text-lg font-bold text-gray-900">Tags</h2>
             </div>
             <ClipTags :clip="clip" @updated="clip = $event" />
           </div>
 
           <!-- Notes Section -->
-          <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <Icon icon="material-symbols:note" class="text-xl text-orange-500" />
-                <h2 class="text-lg font-semibold">Notes & Annotations</h2>
+          <div class="bg-gradient-to-br from-white to-orange-50/30 rounded-2xl p-6 border border-gray-300">
+            <div class="flex items-center gap-2 mb-6">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                <Icon icon="material-symbols:note-rounded" class="text-xl text-white" />
               </div>
-              <button
-                class="px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                :disabled="savingNotes"
-                @click="saveNotes"
-              >
-                <Icon 
-                  :icon="savingNotes ? 'material-symbols:progress-activity' : 'material-symbols:save'" 
-                  class="text-lg"
-                  :class="{ 'animate-spin': savingNotes }"
-                />
-                <span>{{ savingNotes ? 'Saving...' : 'Save Notes' }}</span>
-              </button>
+              <h2 class="text-lg font-bold text-gray-900">Notes & Annotations</h2>
             </div>
             
-            <MarkdownEditor
-              v-model="notes"
-              placeholder="Add notes, context, or annotations about this clip... Markdown is supported for rich formatting."
+            <NotesDisplay
+              :notes="clip.notes || null"
+              @edit="openNotesEditor"
               @timestamp-click="handleTimestampClick"
             />
-            
-            <div class="mt-3 text-xs text-gray-500 flex items-center gap-4">
-              <span class="flex items-center gap-1">
-                <Icon icon="material-symbols:info" />
-                Supports Markdown formatting
-              </span>
-              <span class="flex items-center gap-1">
-                <Icon icon="material-symbols:auto-awesome" />
-                Use timestamps like 0:30 to mark specific moments
-              </span>
-            </div>
           </div>
         </div>
 
         <!-- Metadata Sidebar -->
         <div class="space-y-6">
-          <!-- File Information -->
-          <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <!-- Publishing Information -->
+          <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 border border-gray-300">
             <div class="flex items-center gap-2 mb-4">
-              <Icon icon="material-symbols:info" class="text-xl text-orange-500" />
-              <h2 class="text-lg font-semibold">File Information</h2>
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
+                <Icon icon="material-symbols:cloud-done-rounded" class="text-xl text-white" />
+              </div>
+              <h2 class="text-lg font-bold text-emerald-900">Published</h2>
+            </div>
+            
+            <div class="space-y-3">
+              <p class="text-sm text-emerald-800">
+                This clip has been published and is publicly accessible.
+              </p>
+              
+              <button
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-medium transition-all"
+                @click="onCopyUrl"
+              >
+                <Icon icon="material-symbols:link-rounded" class="text-xl" />
+                <span>Copy Public URL</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- File Information -->
+          <div class="bg-white rounded-2xl p-6 border border-gray-300">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                <Icon icon="material-symbols:folder-rounded" class="text-xl text-blue-600" />
+              </div>
+              <h2 class="text-lg font-bold text-gray-900">File Information</h2>
             </div>
             
             <div class="space-y-4">
@@ -378,10 +396,12 @@ onMounted(() => {
           </div>
 
           <!-- Video Information -->
-          <div v-if="metadata" class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div v-if="metadata" class="bg-white rounded-2xl p-6 border border-gray-300">
             <div class="flex items-center gap-2 mb-4">
-              <Icon icon="material-symbols:play-circle" class="text-xl text-orange-500" />
-              <h2 class="text-lg font-semibold">Video Information</h2>
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                <Icon icon="material-symbols:play-circle-rounded" class="text-xl text-purple-600" />
+              </div>
+              <h2 class="text-lg font-bold text-gray-900">Video Information</h2>
             </div>
             
             <div class="space-y-4">
@@ -406,31 +426,55 @@ onMounted(() => {
               </div>
             </div>
           </div>
-
-          <!-- Publishing Information -->
-          <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 shadow-sm border border-orange-200">
-            <div class="flex items-center gap-2 mb-4">
-              <Icon icon="material-symbols:cloud-done" class="text-xl text-orange-600" />
-              <h2 class="text-lg font-semibold text-orange-900">Published</h2>
-            </div>
-            
-            <div class="space-y-3">
-              <p class="text-sm text-orange-800">
-                This clip has been published and is publicly accessible.
-              </p>
-              
-              <button
-                class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-gray-50 border border-orange-200 transition-colors text-orange-900 font-medium"
-                @click="onCopyUrl"
-              >
-                <Icon icon="material-symbols:link" class="text-lg" />
-                <span>Copy Public URL</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </main>
+
+    <!-- Notes Editor Dialog -->
+    <BaseDialog
+      v-model:open="showNotesDialog"
+      title="Edit Notes & Annotations"
+      max-width="xl"
+    >
+      <div class="p-6">
+        <MarkdownEditor
+          v-model="notes"
+          placeholder="Add notes, context, or annotations about this clip... Markdown is supported for rich formatting."
+          @timestamp-click="handleTimestampClick"
+        />
+        
+        <div class="mt-4 flex items-center gap-3 text-xs text-gray-600 bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-200">
+          <Icon icon="material-symbols:info-rounded" class="text-orange-600 text-lg flex-shrink-0" />
+          <div class="space-y-1">
+            <p class="font-medium">Use Markdown for rich formatting and add timestamps like <code class="px-1.5 py-0.5 bg-white rounded">1:30</code> to mark specific moments.</p>
+            <p>Click timestamps in preview mode to jump to that moment in the video!</p>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <button
+            class="px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+            @click="showNotesDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium border border-orange-700 flex items-center gap-2"
+            :disabled="savingNotes"
+            @click="saveNotes"
+          >
+            <Icon 
+              :icon="savingNotes ? 'material-symbols:progress-activity' : 'material-symbols:save-rounded'" 
+              class="text-xl"
+              :class="{ 'animate-spin': savingNotes }"
+            />
+            <span>{{ savingNotes ? 'Saving...' : 'Save Notes' }}</span>
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
   </div>
 </template>
 

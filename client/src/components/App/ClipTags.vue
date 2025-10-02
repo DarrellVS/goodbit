@@ -34,11 +34,11 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
 <template>
   <div>
     <!-- Visible Tags -->
-    <div v-if="clip.tags?.length" class="flex items-center gap-1 flex-wrap mt-2">
+    <div v-if="clip.tags?.length" class="flex items-center gap-1 gap-x-2 flex-wrap mt-2">
       <span 
         v-for="tag in visibleTags" 
         :key="tag" 
-        class="text-xs bg-white/10 px-2 py-0.5 rounded"
+        class="text-xs bg-white/10 py-0.5 rounded"
       >
         #{{ tag }}
       </span>
