@@ -12,14 +12,17 @@ export function createClipActionHandlers(params: {
   emitDeleted: () => void;
   router: Router;
 }) {
-  const clip = toValue(params.clip);
   const toastStore = useToastStore();
   const config = useConfiguration();
+  
+  // Helper to always get the current clip value
+  const getClip = () => toValue(params.clip);
   
   async function onPublish() {
     if (params.isPublishing.value) return;
     params.isPublishing.value = true;
     try {
+      const clip = getClip();
       const updated = await publishClip(clip.id);
       params.emitUpdated(updated);
       if (updated.publishedUrl) {
@@ -40,6 +43,7 @@ export function createClipActionHandlers(params: {
     if (params.isPublishing.value) return;
     params.isPublishing.value = true;
     try {
+      const clip = getClip();
       const updated = await unpublishClip(clip.id);
       params.emitUpdated(updated);
       toastStore.success('Clip unpublished successfully');
@@ -52,20 +56,25 @@ export function createClipActionHandlers(params: {
   }
 
   async function onCopyUrl() {
+    const clip = getClip();
     const url = clip.publishedUrl;
     if (!url) return;
     await navigator.clipboard.writeText(url).catch(() => {});
+    toastStore.success('URL copied to clipboard');
   }
 
   async function onReveal() {
+    const clip = getClip();
     await openClip(clip.id);
   }
 
   function onTrim() {
+    const clip = getClip();
     void params.router.push(`/trim/${clip.id}`);
   }
 
   async function onDelete() {
+    const clip = getClip();
     const performDelete = async () => {
       await deleteClip(clip.id);
       params.emitDeleted();

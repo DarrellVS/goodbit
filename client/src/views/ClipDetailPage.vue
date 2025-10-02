@@ -239,7 +239,7 @@ onMounted(() => {
             <video 
               :src="videoUrl" 
               :poster="posterUrl"
-              class="w-full aspect-video object-contain" 
+              class="w-full object-contain" 
               controls
               autoplay
             />

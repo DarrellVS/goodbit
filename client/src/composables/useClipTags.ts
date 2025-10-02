@@ -36,25 +36,10 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
       
       const matchesPattern = pattern.patterns.some(regex => regex.test(normalizedName));
       if (matchesPattern) {
+        console.log(pattern.tag, matchesPattern);
         suggestions.add(pattern.tag);
         if (suggestions.size >= 3) break;
       }
-    }
-    
-    if (suggestions.size < 3) {
-      const frequency = new Map<string, number>();
-      allClipTags.value.forEach(tag => {
-        if (!existingTags.includes(tag)) {
-          frequency.set(tag, (frequency.get(tag) || 0) + 1);
-        }
-      });
-      
-      const frequentTags = Array.from(frequency.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([tag]) => tag)
-        .slice(0, 3 - suggestions.size);
-      
-      frequentTags.forEach(tag => suggestions.add(tag));
     }
     
     return Array.from(suggestions).slice(0, 3);

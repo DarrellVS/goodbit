@@ -1,9 +1,5 @@
-Detail page for clips
-
 Clip Notes & Annotations
 Why: Users may want to remember context about clips
 Add text notes/descriptions to clips
 Timestamp-based annotations (notes at specific times)
-Searchable notes field
 Markdown support for rich text
-Impact: Better context preservation for memorable moments
