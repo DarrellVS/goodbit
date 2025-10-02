@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
 
 export default defineConfig({
   plugins: [
@@ -24,6 +25,11 @@ export default defineConfig({
       strategies: 'injectManifest',
     }),
   ],
+  resolve: {
+    alias: {
+      '@filmpje/shared': path.resolve(__dirname, '../shared'),
+    },
+  },
   server: {
     port: 5173,
     strictPort: true,

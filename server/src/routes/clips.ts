@@ -1,6 +1,7 @@
 import express from 'express';
 import fs from 'node:fs';
 import multer from 'multer';
+import { In } from 'typeorm';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
@@ -21,6 +22,7 @@ import { ExportAudioAction } from '../actions/ExportAudioAction.js';
 import { GetClipCollectionsAction } from '../actions/GetClipCollectionsAction.js';
 import { OpenFileInExplorerAction } from '../actions/OpenFileInExplorerAction.js';
 import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
+import { ClipDTO, UpdateClipRequestDTO } from '../../../shared/index.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -62,8 +64,8 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   }
 
   const [items, total] = await qb.skip((pageNum - 1) * pageSz).take(pageSz).getManyAndCount();
-  const normalized = items.map((c) => ({ ...c, tags: (c.tags || []).map((t) => t.name) }));
-  res.json({ items: normalized, total, page: pageNum, pageSize: pageSz });
+  const dtos = items.map((c) => ClipDTO.fromEntity(c));
+  res.json({ items: dtos, total, page: pageNum, pageSize: pageSz });
 }));
 
 clipsRouter.get('/:id/stream', asyncHandler(async (req, res) => {
@@ -141,8 +143,8 @@ clipsRouter.get('/:id', asyncHandler(async (req, res) => {
     return res.status(404).json({ error: 'Clip not found' });
   }
   
-  const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
-  res.json(normalized);
+  const dto = ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 
 // Batch operations (must be before /:id routes to avoid matching "batch" as an id)
@@ -228,48 +230,65 @@ clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
     where: { id: clip.id }, 
     relations: ['tags'] 
   });
-  const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t: Tag) => t.name) } : clip;
-  res.json(normalized);
+  const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 
 clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { displayName, tags, notes } = req.body as { displayName?: string | null; tags?: string[]; notes?: string | null };
+  const updateDto = Object.assign(new UpdateClipRequestDTO(), req.body);
+  
+  // Validate request
+  const validation = updateDto.validate();
+  if (!validation.isValid) {
+    return res.status(400).json({ error: 'Validation failed', details: validation.errors });
+  }
+  
   const repo = AppDataSource.getRepository(Clip);
   const tagRepo = AppDataSource.getRepository(Tag);
   const clip = await repo.findOne({ where: { id }, relations: ['tags'] }) as Clip | null;
   if (!clip) return res.status(404).json({ error: 'Not found' });
 
-  clip.displayName = displayName === undefined ? clip.displayName : (displayName && displayName.trim().length > 0 ? displayName.trim() : null);
-
-  if (notes !== undefined) {
-    clip.notes = notes && notes.trim().length > 0 ? notes.trim() : null;
+  // Apply updates from DTO
+  if (updateDto.displayName !== undefined) {
+    clip.displayName = updateDto.displayName && updateDto.displayName.trim().length > 0 
+      ? updateDto.displayName.trim() 
+      : null;
   }
 
-  if (tags !== undefined) {
-    const normalized = Array.isArray(tags)
-      ? Array.from(new Set(tags.map((t) => t.trim()).filter((t) => t.length > 0)))
+  if (updateDto.notes !== undefined) {
+    clip.notes = updateDto.notes && updateDto.notes.trim().length > 0 ? updateDto.notes.trim() : null;
+  }
+
+  if (updateDto.starred !== undefined) {
+    clip.starred = updateDto.starred;
+  }
+
+  if (updateDto.tags !== undefined) {
+    const tags: string[] = updateDto.tags;
+    const normalized: string[] = Array.isArray(tags)
+      ? Array.from(new Set(tags.map(t => t.trim()).filter(t => t.length > 0)))
       : [];
 
     if (normalized.length === 0) {
       clip.tags = [];
     } else {
-      const existing = await tagRepo.find({ where: normalized.map((name) => ({ name })) });
+      const existing = await tagRepo.find({ where: { name: In(normalized) } });
       const existingNames = new Set(existing.map((t) => t.name));
-      const toCreateNames = normalized.filter((n) => !existingNames.has(n));
-      const toCreate = toCreateNames.map((name) => tagRepo.create({ name }));
+      const toCreateNames = normalized.filter((n: string) => !existingNames.has(n)) as string[];
+      const toCreate = toCreateNames.map((name: string) => tagRepo.create({ name }));
 
       if (toCreate.length) await tagRepo.save(toCreate);
 
-      const all = await tagRepo.find({ where: normalized.map((name) => ({ name })) });
+      const all = await tagRepo.find({ where: { name: In(normalized) } });
       clip.tags = all;
     }
   }
 
   const saved = await repo.save(clip);
-  const normalizedSaved = { ...saved, tags: (saved.tags || []).map((t: Tag) => t.name) } as any;
+  const dto = ClipDTO.fromEntity(saved);
   
-  res.json(normalizedSaved);
+  res.json(dto);
 }));
 
 clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
@@ -314,8 +333,8 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const { clip } = await action.execute({ id });
   const repo = AppDataSource.getRepository(Clip);
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
-  const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
-  res.json(normalized);
+  const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 
 clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res) => {
@@ -334,14 +353,17 @@ clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res)
     })),
   });
 
-  res.json(result);
+  // Convert clips to DTOs
+  const dtos = result.clips.map(clip => ClipDTO.fromEntity(clip));
+  res.json({ ...result, clips: dtos });
 }));
 
 clipsRouter.post('/export', asyncHandler(async (req, res) => {
   const { clips, outputName, exportId } = req.body;
   const action = new ExportTimelineAction();
   const { clip } = await action.execute({ clips, outputName, exportId });
-  res.json(clip);
+  const dto = ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 
 clipsRouter.get('/export/:exportId/progress', asyncHandler(async (req, res) => {
@@ -356,8 +378,8 @@ clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
   const { clip } = await action.execute({ id });
   const repo = AppDataSource.getRepository(Clip);
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
-  const normalized = withTags ? { ...withTags, tags: (withTags.tags || []).map((t) => t.name) } : clip;
-  res.json(normalized);
+  const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 
 clipsRouter.post('/:id/star', asyncHandler(async (req, res) => {
@@ -366,8 +388,8 @@ clipsRouter.post('/:id/star', asyncHandler(async (req, res) => {
   const clip = await repo.findOneOrFail({ where: { id }, relations: ['tags'] });
   clip.starred = true;
   await repo.save(clip);
-  const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
-  res.json(normalized);
+  const dto = ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 
 clipsRouter.post('/:id/unstar', asyncHandler(async (req, res) => {
@@ -376,7 +398,7 @@ clipsRouter.post('/:id/unstar', asyncHandler(async (req, res) => {
   const clip = await repo.findOneOrFail({ where: { id }, relations: ['tags'] });
   clip.starred = false;
   await repo.save(clip);
-  const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
-  res.json(normalized);
+  const dto = ClipDTO.fromEntity(clip);
+  res.json(dto);
 }));
 

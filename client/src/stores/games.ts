@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia';
 import { fetchGames as fetchGamesService } from '../services/games';
+import type { GameDTO } from '../../../shared';
 
-export interface GameRow {
-  game: string;
-  count: number;
-}
+export type GameRow = GameDTO;
 
 interface GamesState {
-  items: GameRow[];
+  items: GameDTO[];
   loading: boolean;
 }
 

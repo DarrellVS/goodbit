@@ -30,10 +30,10 @@ const inputValue = ref('');
 const selectedTags = ref<Set<string>>(new Set());
 
 const availableTags = computed(() => {
-  if (!inputValue.value) return tagsStore.items;
+  if (!inputValue.value) return tagsStore.tagNames;
   
   const search = inputValue.value.toLowerCase();
-  return tagsStore.items.filter(tag => tag.toLowerCase().includes(search));
+  return tagsStore.tagNames.filter(tag => tag.toLowerCase().includes(search));
 });
 
 const selectedTagsList = computed(() => Array.from(selectedTags.value));

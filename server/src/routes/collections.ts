@@ -7,28 +7,46 @@ import { GetCollectionsAction } from '../actions/GetCollectionsAction.js';
 import { GetCollectionClipsAction } from '../actions/GetCollectionClipsAction.js';
 import { AddClipToCollectionAction } from '../actions/AddClipToCollectionAction.js';
 import { RemoveClipFromCollectionAction } from '../actions/RemoveClipFromCollectionAction.js';
+import { CollectionDTO, CreateCollectionRequestDTO, UpdateCollectionRequestDTO, ClipDTO } from '../../../shared/index.js';
 
 export const collectionsRouter = express.Router();
 
 collectionsRouter.get('/', asyncHandler(async (req, res) => {
   const action = new GetCollectionsAction();
   const result = await action.execute();
-  res.json(result.collections);
+  const dtos = result.collections.map(c => CollectionDTO.fromEntity(c));
+  res.json(dtos);
 }));
 
 collectionsRouter.post('/', asyncHandler(async (req, res) => {
-  const { name } = req.body;
+  const createDto = Object.assign(new CreateCollectionRequestDTO(), req.body);
+  
+  // Validate request
+  const validation = createDto.validate();
+  if (!validation.isValid) {
+    return res.status(400).json({ error: 'Validation failed', details: validation.errors });
+  }
+  
   const action = new CreateCollectionAction();
-  const result = await action.execute({ name });
-  res.json(result.collection);
+  const result = await action.execute({ name: createDto.name });
+  const dto = CollectionDTO.fromEntity(result.collection);
+  res.json(dto);
 }));
 
 collectionsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { name } = req.body;
+  const updateDto = Object.assign(new UpdateCollectionRequestDTO(), req.body);
+  
+  // Validate request
+  const validation = updateDto.validate();
+  if (!validation.isValid) {
+    return res.status(400).json({ error: 'Validation failed', details: validation.errors });
+  }
+  
   const action = new UpdateCollectionAction();
-  const result = await action.execute({ id, name });
-  res.json(result.collection);
+  const result = await action.execute({ id, name: updateDto.name });
+  const dto = CollectionDTO.fromEntity(result.collection);
+  res.json(dto);
 }));
 
 collectionsRouter.delete('/:id', asyncHandler(async (req, res) => {
@@ -54,7 +72,9 @@ collectionsRouter.get('/:id/clips', asyncHandler(async (req, res) => {
     pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
   });
   
-  res.json(result);
+  // Convert clips to DTOs
+  const dtos = result.items.map(clip => ClipDTO.fromEntity(clip));
+  res.json({ ...result, items: dtos });
 }));
 
 collectionsRouter.post('/:id/clips/:clipId', asyncHandler(async (req, res) => {
@@ -62,7 +82,8 @@ collectionsRouter.post('/:id/clips/:clipId', asyncHandler(async (req, res) => {
   const clipId = Number(req.params.clipId);
   const action = new AddClipToCollectionAction();
   const result = await action.execute({ collectionId, clipId });
-  res.json(result.collection);
+  const dto = CollectionDTO.fromEntity(result.collection);
+  res.json(dto);
 }));
 
 collectionsRouter.delete('/:id/clips/:clipId', asyncHandler(async (req, res) => {
@@ -70,6 +91,7 @@ collectionsRouter.delete('/:id/clips/:clipId', asyncHandler(async (req, res) => 
   const clipId = Number(req.params.clipId);
   const action = new RemoveClipFromCollectionAction();
   const result = await action.execute({ collectionId, clipId });
-  res.json(result.collection);
+  const dto = CollectionDTO.fromEntity(result.collection);
+  res.json(dto);
 }));
 

@@ -79,8 +79,9 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
     const updated = await updateClipTags(clip.id, Array.from(currentTags));
     onUpdate(updated);
 
-    if (!tagsStore.items.includes(name)) {
-      tagsStore.items.push(name);
+    // Add to tags store if not exists
+    if (!tagsStore.tagNames.includes(name)) {
+      tagsStore.items.push({ id: Date.now(), name }); // Temporary ID, will be updated on next fetch
     }
 
     newTagName.value = '';
@@ -98,7 +99,7 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
           await deleteTagService(tagName);
 
           // Remove from tags store
-          const tagIndex = tagsStore.items.indexOf(tagName);
+          const tagIndex = tagsStore.items.findIndex(t => t.name === tagName);
           if (tagIndex >= 0) {
             tagsStore.items.splice(tagIndex, 1);
           }
@@ -127,7 +128,7 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
 
   return {
     newTagName,
-    availableTags: computed(() => tagsStore.items),
+    availableTags: computed(() => tagsStore.tagNames),
     suggestedTags,
     toggleTag,
     addTag,

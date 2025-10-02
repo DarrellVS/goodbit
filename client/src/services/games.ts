@@ -1,9 +1,10 @@
 import axios from '../axios';
+import type { GameDTO } from '../../../shared';
 
-export type GameRow = { game: string; count: number };
+export type GameRow = GameDTO;
 
-export async function fetchGames(): Promise<GameRow[]> {
-  const { data } = await axios.get<GameRow[]>('/api/games');
+export async function fetchGames(): Promise<GameDTO[]> {
+  const { data } = await axios.get<GameDTO[]>('/api/games');
   return data;
 }
 

@@ -27,21 +27,21 @@
             <div v-if="tagsStore.items.length === 0" class="text-muted-400 text-sm py-4 text-center">No tags yet</div>
             <div v-else class="space-y-1">
               <div
-                v-for="t in tagsStore.items"
-                :key="t"
+                v-for="tag in tagsStore.items"
+                :key="tag.id"
                 class="flex items-center gap-2"
               >
                 <button
                   class="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
-                  :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': clipsStore.selectedTags.includes(t) }"
-                  @click="clipsStore.setTags(clipsStore.selectedTags.includes(t) ? clipsStore.selectedTags.filter(x => x !== t) : [...clipsStore.selectedTags, t])"
+                  :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': clipsStore.selectedTags.includes(tag.name) }"
+                  @click="clipsStore.setTags(clipsStore.selectedTags.includes(tag.name) ? clipsStore.selectedTags.filter(x => x !== tag.name) : [...clipsStore.selectedTags, tag.name])"
                 >
-                  <span class="text-sm">#{{ t }}</span>
-                  <span v-if="clipsStore.selectedTags.includes(t)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
+                  <span class="text-sm">#{{ tag.name }}</span>
+                  <span v-if="clipsStore.selectedTags.includes(tag.name)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
                 </button>
                 <button
                   class="p-2 rounded-lg border border-gray-200 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
-                  @click.stop="removeTagFromHeader(t)"
+                  @click.stop="removeTagFromHeader(tag.name)"
                   title="Delete tag"
                 >
                   <Icon icon="material-symbols:delete" class="text-muted-400 group-hover:text-red-500 transition-colors" />
@@ -153,7 +153,7 @@ async function removeTagFromHeader(tagName: string) {
       try {
         await deleteTag(tagName);
         
-        const idx = tagsStore.items.indexOf(tagName);
+        const idx = tagsStore.items.findIndex(t => t.name === tagName);
         if (idx >= 0) tagsStore.items.splice(idx, 1);
         
         if (clipsStore.selectedTags.includes(tagName)) {

@@ -8,7 +8,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "useDefineForClassFields": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@filmpje/shared": ["../shared"],
+      "@filmpje/shared/*": ["../shared/*"]
+    }
   },
   "include": ["src"]
 }
