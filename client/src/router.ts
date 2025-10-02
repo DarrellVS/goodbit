@@ -8,6 +8,7 @@ import SettingsPage from './views/SettingsPage.vue';
 import TrimPage from './views/TrimPage.vue';
 import EditorPage from './views/EditorPage.vue';
 import LoginPage from './views/LoginPage.vue';
+import ClipDetailPage from './views/ClipDetailPage.vue';
 import { useAuthStore } from './stores/auth';
 import ShellLayout from './layouts/ShellLayout.vue';
 

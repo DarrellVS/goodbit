@@ -156,3 +156,8 @@ export async function moveClipToGame(id: number, targetGame: string): Promise<Cl
   return data;
 }
 
+export async function getClip(id: number): Promise<Clip> {
+  const { data } = await axios.get<Clip>(`/api/clips/${id}`);
+  return data;
+}
+

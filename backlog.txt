@@ -1,5 +1,3 @@
-Allow to move clip to different game (in case of import / editor export and want to move to new game, including its location on the Videos folder for the server side.)
-
 Detail page for clips
 
 Clip Notes & Annotations

@@ -126,6 +126,22 @@ clipsRouter.get('/:id/meta', asyncHandler(async (req, res) => {
   res.json(meta);
 }));
 
+clipsRouter.get('/:id', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const repo = AppDataSource.getRepository(Clip);
+  const clip = await repo.findOne({ 
+    where: { id }, 
+    relations: ['tags'] 
+  });
+  
+  if (!clip) {
+    return res.status(404).json({ error: 'Clip not found' });
+  }
+  
+  const normalized = { ...clip, tags: (clip.tags || []).map((t) => t.name) };
+  res.json(normalized);
+}));
+
 // Batch operations (must be before /:id routes to avoid matching "batch" as an id)
 clipsRouter.post('/batch/star', asyncHandler(async (req, res) => {
   console.log('Batch star request:', req.body);
