@@ -13,7 +13,7 @@ gamesRouter.get('/', asyncHandler(async (_req, res) => {
     .select('clip.game', 'game')
     .addSelect('COUNT(*)', 'clipCount')
     .groupBy('clip.game')
-    .orderBy('clip.game', 'ASC')
+    .orderBy('clipCount', 'DESC')
     .getRawMany();
   const dtos = rows.map(row => GameDTO.fromQueryResult(row));
   res.json(dtos);

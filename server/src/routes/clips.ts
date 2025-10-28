@@ -37,7 +37,7 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   let qb = repo
     .createQueryBuilder('clip')
     .leftJoinAndSelect('clip.tags', 'tag')
-    .orderBy('clip.fileModifiedAt', 'DESC');
+    .orderBy('clip.createdAt', 'DESC');
     
   if (game && game.length > 0) qb = qb.andWhere('clip.game = :game', { game });
 
