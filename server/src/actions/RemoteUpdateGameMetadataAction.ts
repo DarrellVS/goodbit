@@ -9,6 +9,7 @@ export interface RemoteUpdateGameMetadataInput {
 export interface RemoteUpdateGameMetadataOutput {
   updated: number;
   failed: number;
+  cachePurged?: boolean;
 }
 
 export class RemoteUpdateGameMetadataAction extends BaseAction<RemoteUpdateGameMetadataInput, RemoteUpdateGameMetadataOutput> {
@@ -30,10 +31,11 @@ export class RemoteUpdateGameMetadataAction extends BaseAction<RemoteUpdateGameM
         newGame: input.newGame,
       }, { headers });
       
-      return res.data as RemoteUpdateGameMetadataOutput;
+      const result = res.data as RemoteUpdateGameMetadataOutput;
+      return result;
     } catch (err) {
       console.error('Failed to update publisher metadata:', err);
-      return { updated: 0, failed: input.filenames.length };
+      return { updated: 0, failed: input.filenames.length, cachePurged: false };
     }
   }
 }

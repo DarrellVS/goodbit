@@ -44,6 +44,8 @@ async function start() {
   } catch (err) {
     console.error('Initial scan failed:', err);
   }
+
+  console.log('Syncing publisher:', process.env.PUBLISHER_BASE_URL);
   
   try {
     const syncResult = await new SyncPublisherAction().execute();

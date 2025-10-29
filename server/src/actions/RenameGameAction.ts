@@ -103,6 +103,11 @@ export class RenameGameAction extends BaseAction<RenameGameInput, RenameGameOutp
       const result = await action.execute({ filenames, newGame: newGameName });
       
       console.log(`Publisher metadata update: ${result.updated} succeeded, ${result.failed} failed`);
+      if (result.cachePurged) {
+        console.log('Cloudflare cache purged successfully');
+      } else {
+        console.log('Cloudflare cache not purged (may not be configured)');
+      }
     } catch (err) {
       console.error('Failed to update publisher metadata:', err);
     }
