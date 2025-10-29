@@ -30,6 +30,12 @@ const gamesStore = useGamesStore();
 const selectedGame = ref('');
 const searchQuery = ref('');
 
+const currentGameDisplayName = computed(() => {
+  if (!props.clip) return '';
+  const game = gamesStore.items.find(g => g.game === props.clip?.game);
+  return game?.displayName || props.clip.game;
+});
+
 const availableGames = computed(() => {
   if (!props.clip) return gamesStore.items;
   
@@ -39,7 +45,10 @@ const availableGames = computed(() => {
   // Filter by search query
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim();
-    games = games.filter((game) => game.game.toLowerCase().includes(query));
+    games = games.filter((game) => {
+      const displayName = game.displayName || game.game;
+      return displayName.toLowerCase().includes(query) || game.game.toLowerCase().includes(query);
+    });
   }
   
   return games;
@@ -99,7 +108,7 @@ onMounted(() => {
           <!-- Current Game Info -->
           <div v-if="clip" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div class="text-xs text-gray-500 mb-1">Current Game</div>
-            <div class="font-medium text-gray-900">{{ clip.game }}</div>
+            <div class="font-medium text-gray-900">{{ currentGameDisplayName }}</div>
             <div class="text-xs text-gray-500 mt-2">{{ clip.filename }}</div>
           </div>
 
@@ -169,9 +178,9 @@ onMounted(() => {
                       'text-orange-700': selectedGame === game.game,
                       'text-gray-900': selectedGame !== game.game,
                     }"
-                    :title="game.game"
+                    :title="game.displayName || game.game"
                   >
-                    {{ game.game }}
+                    {{ game.displayName || game.game }}
                   </span>
                 </div>
                 <span 
@@ -181,7 +190,7 @@ onMounted(() => {
                     'text-gray-400': selectedGame !== game.game,
                   }"
                 >
-                  {{ game.count }}
+                  {{ game.clipCount }}
                 </span>
               </button>
             </div>
