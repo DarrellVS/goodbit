@@ -101,52 +101,237 @@ app.get('/:filename', (req, res) => {
     <title>${escapeHtml(title)}</title>
     
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
+      * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+      }
+      
+      @keyframes float1 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -30px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+      }
+      
+      @keyframes float2 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(-40px, 30px) scale(0.9); }
+        66% { transform: translate(30px, -20px) scale(1.1); }
+      }
+      
+      @keyframes float3 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(20px, 40px) scale(1.05); }
+        66% { transform: translate(-30px, -30px) scale(0.95); }
+      }
+      
+      @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 60px rgba(139, 92, 246, 0.1); }
+        50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 0 80px rgba(139, 92, 246, 0.2); }
+      }
+      
       body {
         background: #0a0a0a;
         color: #fff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
         padding: 20px;
+        overflow: hidden;
+        position: relative;
       }
-      .container {
-        max-width: 1200px;
+      
+      .background {
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 0;
       }
-      h1 {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
+      
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.3;
+        mix-blend-mode: screen;
+      }
+      
+      .blob1 {
+        width: 500px;
+        height: 500px;
+        background: #8b5cf6;
+        top: -200px;
+        right: -100px;
+        animation: float1 20s ease-in-out infinite;
+      }
+      
+      .blob2 {
+        width: 400px;
+        height: 400px;
+        background: #6366f1;
+        bottom: -150px;
+        left: -100px;
+        animation: float2 18s ease-in-out infinite;
+      }
+      
+      .blob3 {
+        width: 350px;
+        height: 350px;
+        background: #a78bfa;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation: float3 22s ease-in-out infinite;
+      }
+      
+      .container {
+        max-width: 1400px;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .header {
         text-align: center;
+        margin-bottom: 2rem;
       }
+      
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #fff, #a78bfa, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.2;
+      }
+      
+      .game-tag {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 20px;
+        font-size: 0.9rem;
+        color: #c4b5fd;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+      }
+      
+      .video-wrapper {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        animation: glow 3s ease-in-out infinite;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+      }
+      
       video {
         width: 100%;
-        max-width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        display: block;
+        background: #000;
       }
-      .info {
-        margin-top: 1rem;
+      
+      video::-webkit-media-controls-panel {
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+      }
+      
+      .controls-hint {
+        margin-top: 1.5rem;
         text-align: center;
-        color: #888;
+        color: rgba(255, 255, 255, 0.5);
         font-size: 0.9rem;
+      }
+      
+      .controls-hint kbd {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin: 0 0.25rem;
+      }
+      
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 1.75rem;
+        }
+        
+        .game-tag {
+          font-size: 0.8rem;
+          padding: 0.4rem 0.8rem;
+        }
+        
+        .blob1, .blob2, .blob3 {
+          width: 300px;
+          height: 300px;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="background">
+      <div class="blob blob1"></div>
+      <div class="blob blob2"></div>
+      <div class="blob blob3"></div>
+    </div>
+    
     <div class="container">
-      <h1>${escapeHtml(title)}</h1>
-      <video controls autoplay muted poster="${thumbnailUrl}">
-        <source src="${videoUrl}" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-      <div class="info">
-        Powered by Filmpje
+      <div class="header">
+        <h1>${escapeHtml(displayName)}</h1>
+        ${game ? `<div class="game-tag">${escapeHtml(game)}</div>` : ''}
+      </div>
+      
+      <div class="video-wrapper">
+        <video id="video" controls poster="${thumbnailUrl}">
+          <source src="${videoUrl}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      
+      <div class="controls-hint">
+        <kbd>Space</kbd> to play/pause • <kbd>F</kbd> for fullscreen
       </div>
     </div>
+    
+    <script>
+      const video = document.getElementById('video');
+      
+      document.addEventListener('keydown', (e) => {
+        // Space for play/pause
+        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          if (video.paused) {
+            video.play();
+          } else {
+            video.pause();
+          }
+        }
+        
+        // F for fullscreen
+        if (e.code === 'KeyF' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          if (!document.fullscreenElement) {
+            video.requestFullscreen().catch(err => {
+              console.log('Fullscreen error:', err);
+            });
+          } else {
+            document.exitFullscreen();
+          }
+        }
+      });
+    </script>
   </body>
 </html>`);
 });
