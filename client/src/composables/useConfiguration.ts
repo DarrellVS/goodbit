@@ -15,7 +15,7 @@ export interface PublicConfig {
 
 const publicConfig = useLocalStorage<PublicConfig>('filmpje-public-config', {
   viewMode: 'grouped',
-  pageSize: 25,
+  pageSize: 15,
   autoPlayOnHover: true,
   showMetadata: true,
   dateFormat: 'relative',

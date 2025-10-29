@@ -21,7 +21,7 @@ const sections: SettingSection[] = [
   { id: 'advanced', label: 'Advanced', icon: 'material-symbols:tune', description: 'Advanced configuration' },
 ];
 
-const pageSizeOptions = [10, 25, 50, 100, 200];
+const pageSizeOptions = [10, 15, 25, 50, 100, 200];
 
 function resetToDefaults() {
   if (confirm('Are you sure you want to reset all settings to their default values?')) {

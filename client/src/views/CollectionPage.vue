@@ -5,7 +5,6 @@ import { useCollectionsStore } from '../stores/collections';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useConfiguration } from '../composables/useConfiguration';
-import { useInfiniteScroll } from '../composables/useInfiniteScroll';
 import { useClipHandlers } from '../composables/useClipHandlers';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import type { Clip } from '../types/clip';
@@ -25,15 +24,20 @@ const clips = computed(() => collectionsStore.clipsState.items);
 const total = computed(() => collectionsStore.clipsState.total);
 const loading = computed(() => collectionsStore.clipsState.loading);
 const isEmpty = computed(() => !loading.value && !clips.value.length);
-const hasMore = computed(() => collectionsStore.hasNextPage);
+const currentPage = computed(() => collectionsStore.clipsState.page);
+const totalPages = computed(() => collectionsStore.totalPages);
 const collection = computed(() => 
   collectionsStore.items.find(c => c.id === collectionId.value)
 );
 
-useInfiniteScroll({
-  onLoadMore: () => collectionsStore.loadMoreCollectionClips(),
-  enabled: () => hasMore.value && !loading.value,
-});
+function handlePageChange(page: number): void {
+  collectionsStore.gotoPage(page);
+  // Scroll to top when page changes
+  const mainElement = document.querySelector('main');
+  if (mainElement) {
+    mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 
 function handleClipUpdated(updatedClip: Clip): void {
   const index = collectionsStore.clipsState.items.findIndex(c => c.id === updatedClip.id);
@@ -83,10 +87,16 @@ useKeyboardShortcuts({
     KeyL: () => {
       config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
     },
-    Space: (event) => {
-      if (hasMore.value && !loading.value) {
+    ArrowRight: (event: KeyboardEvent) => {
+      if (collectionsStore.hasNextPage && !loading.value) {
         event.preventDefault();
-        collectionsStore.loadMoreCollectionClips();
+        handlePageChange(currentPage.value + 1);
+      }
+    },
+    ArrowLeft: (event: KeyboardEvent) => {
+      if (collectionsStore.hasPreviousPage && !loading.value) {
+        event.preventDefault();
+        handlePageChange(currentPage.value - 1);
       }
     },
     ArrowDown: () => {
@@ -135,9 +145,11 @@ useKeyboardShortcuts({
 
       <ClipsPaginationControls
         :loading="loading"
-        :has-more="hasMore"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="total"
         :has-clips="clips.length > 0"
-        @load-more="collectionsStore.loadMoreCollectionClips()"
+        @page-change="handlePageChange"
       />
     </div>
   </div>

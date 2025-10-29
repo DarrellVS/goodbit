@@ -115,14 +115,6 @@ export const useCollectionsStore = defineStore('collections', () => {
     }
   }
 
-  async function loadMoreCollectionClips(): Promise<void> {
-    if (clipsState.value.loading || !hasNextPage.value) return;
-    clipsState.value.page++;
-    if (clipsState.value.currentCollectionId !== null) {
-      await fetchCollectionClips(clipsState.value.currentCollectionId, true);
-    }
-  }
-
   function resetCollectionClips(): void {
     clipsState.value.currentCollectionId = null;
     clipsState.value.page = 1;
@@ -138,6 +130,31 @@ export const useCollectionsStore = defineStore('collections', () => {
   const hasPreviousPage = computed(() => {
     return clipsState.value.page > 1;
   });
+
+  const totalPages = computed(() => {
+    return Math.ceil(clipsState.value.total / config.public.value.pageSize);
+  });
+
+  function gotoPage(page: number): void {
+    if (clipsState.value.currentCollectionId !== null) {
+      clipsState.value.page = page;
+      void fetchCollectionClips(clipsState.value.currentCollectionId, false);
+    }
+  }
+
+  function nextPage(): void {
+    if (hasNextPage.value && clipsState.value.currentCollectionId !== null) {
+      clipsState.value.page++;
+      void fetchCollectionClips(clipsState.value.currentCollectionId, false);
+    }
+  }
+
+  function previousPage(): void {
+    if (hasPreviousPage.value && clipsState.value.currentCollectionId !== null) {
+      clipsState.value.page--;
+      void fetchCollectionClips(clipsState.value.currentCollectionId, false);
+    }
+  }
 
   async function addClipToCollection(collectionId: number, clipId: number): Promise<void> {
     const updated = await collectionsService.addClipToCollection(collectionId, clipId);
@@ -165,13 +182,16 @@ export const useCollectionsStore = defineStore('collections', () => {
     clipsState,
     hasNextPage,
     hasPreviousPage,
+    totalPages,
     fetchCollections,
     createCollection,
     updateCollection,
     deleteCollection,
     fetchCollectionClips,
-    loadMoreCollectionClips,
     resetCollectionClips,
+    gotoPage,
+    nextPage,
+    previousPage,
     addClipToCollection,
     removeClipFromCollection,
   };

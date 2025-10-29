@@ -4,7 +4,6 @@ import { Icon } from '@iconify/vue';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
-import { useInfiniteScroll } from '../composables/useInfiniteScroll';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useClipHandlers } from '../composables/useClipHandlers';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
@@ -34,7 +33,8 @@ const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
 const loading = computed(() => clipsStore.loading);
 const isEmpty = computed(() => !loading.value && !clips.value.length);
-const hasMore = computed(() => clipsStore.hasNextPage);
+const currentPage = computed(() => clipsStore.page);
+const totalPages = computed(() => clipsStore.totalPages);
 
 // Batch operations
 const {
@@ -66,10 +66,14 @@ const {
   },
 });
 
-useInfiniteScroll({
-  onLoadMore: () => clipsStore.loadMore(),
-  enabled: () => hasMore.value && !loading.value,
-});
+function handlePageChange(page: number): void {
+  clipsStore.goto(page);
+  // Scroll to top when page changes
+  const mainElement = document.querySelector('main');
+  if (mainElement) {
+    mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 
 function handleClipUpdated(updatedClip: Clip): void {
   clipsStore.updateClip(updatedClip);
@@ -97,10 +101,16 @@ useKeyboardShortcuts({
         exitSelectionMode();
       }
     },
-    Space: (event: KeyboardEvent) => {
-      if (hasMore.value && !loading.value && !isSelectionMode.value) {
+    ArrowRight: (event: KeyboardEvent) => {
+      if (!isSelectionMode.value && clipsStore.hasNextPage && !loading.value) {
         event.preventDefault();
-        clipsStore.loadMore();
+        handlePageChange(currentPage.value + 1);
+      }
+    },
+    ArrowLeft: (event: KeyboardEvent) => {
+      if (!isSelectionMode.value && clipsStore.hasPreviousPage && !loading.value) {
+        event.preventDefault();
+        handlePageChange(currentPage.value - 1);
       }
     },
     ArrowDown: () => {
@@ -179,9 +189,11 @@ window.addEventListener('keydown', (event: KeyboardEvent) => {
 
       <ClipsPaginationControls
         :loading="loading"
-        :has-more="hasMore"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="total"
         :has-clips="clips.length > 0"
-        @load-more="clipsStore.loadMore()"
+        @page-change="handlePageChange"
       />
     </div>
 

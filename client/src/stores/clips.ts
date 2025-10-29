@@ -108,12 +108,6 @@ export const useClipsStore = defineStore('clips', {
       }
     },
 
-    async loadMore(): Promise<void> {
-      if (this.loading || !this.hasNextPage) return;
-      this.page++;
-      await this.fetchClips(true);
-    },
-
     updateClip(updatedClip: Clip): void {
       const index = this.items.findIndex(clip => clip.id === updatedClip.id);
       if (index !== -1) {
