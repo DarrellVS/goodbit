@@ -13,8 +13,12 @@ export class RemoteUnpublishAction extends BaseAction<RemoteUnpublishInput, Remo
   async execute(input: RemoteUnpublishInput): Promise<RemoteUnpublishOutput> {
     const baseUrl = (process.env.PUBLISHER_BASE_URL || '').replace(/\/$/, '');
     if (!baseUrl) throw new Error('PUBLISHER_BASE_URL is not set');
+    
+    const apiKey = process.env.PUBLISHER_API_KEY || '';
     const url = `${baseUrl}/api/publish/${encodeURIComponent(input.filename)}`;
-    const res = await axios.delete(url);
+    const headers = apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {};
+    
+    const res = await axios.delete(url, { headers });
     return res.data as RemoteUnpublishOutput;
   }
 }

@@ -11,6 +11,11 @@ function toRelPath(absolutePath: string): string {
   return path.relative(VIDEOS_ROOT, absolutePath);
 }
 
+function normalizePath(p: string): string {
+  // Normalize path separators and resolve to canonical form
+  return path.normalize(path.resolve(p));
+}
+
 export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
   async execute(): Promise<ScanResult> {
     const repo = AppDataSource.getRepository(Clip);
@@ -30,17 +35,18 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     let updated = 0;
 
     for (const absPath of entries) {
-      nowOnDisk.add(absPath);
+      const normalizedPath = normalizePath(absPath);
+      nowOnDisk.add(normalizedPath);
       const rel = toRelPath(absPath);
       const game = rel.split(path.sep)[0] || '';
       const filename = path.basename(absPath);
       const extension = path.extname(filename).slice(1);
       const stat = await fs.stat(absPath);
 
-      const existing = await repo.findOne({ where: { filePath: absPath } });
+      const existing = await repo.findOne({ where: { filePath: normalizedPath } });
       if (!existing) {
         const clip = repo.create({
-          filePath: absPath,
+          filePath: normalizedPath,
           relPath: rel,
           game,
           filename,
@@ -52,21 +58,27 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
         await repo.save(clip);
         added += 1;
       } else {
-        if (
+        // Check if file system metadata needs updating
+        const needsUpdate = 
           existing.sizeBytes !== stat.size ||
           new Date(existing.fileModifiedAt).getTime() !== stat.mtime.getTime() ||
           existing.relPath !== rel ||
           existing.filename !== filename ||
           existing.extension !== extension ||
-          existing.game !== game
-        ) {
-          existing.sizeBytes = stat.size;
-          existing.fileModifiedAt = stat.mtime;
-          existing.relPath = rel;
-          existing.filename = filename;
-          existing.extension = extension;
-          existing.game = game;
-          await repo.save(existing);
+          existing.game !== game;
+        
+        if (needsUpdate) {
+          // Use update() to only modify file system columns, preserving all user-set fields
+          // (displayName, notes, starred, tags, published, publishedUrl)
+          await repo.update(existing.id, {
+            filePath: normalizedPath,
+            sizeBytes: stat.size,
+            fileModifiedAt: stat.mtime,
+            relPath: rel,
+            filename: filename,
+            extension: extension,
+            game: game,
+          });
           updated += 1;
         }
       }
@@ -75,7 +87,8 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     const allClips = await repo.find();
     let removed = 0;
     for (const clip of allClips) {
-      if (!nowOnDisk.has(clip.filePath)) {
+      const normalizedClipPath = normalizePath(clip.filePath);
+      if (!nowOnDisk.has(normalizedClipPath)) {
         await repo.remove(clip);
         removed += 1;
       }
