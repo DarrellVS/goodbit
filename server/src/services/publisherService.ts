@@ -4,10 +4,10 @@ import { RemoteUnpublishAction } from '../actions/RemoteUnpublishAction.js';
 import { RemoteListPublishedAction } from '../actions/RemoteListPublishedAction.js';
 
 class PublisherService {
-  async publish(filePath: string, displayName?: string): Promise<{ filename: string; url: string; }>
+  async publish(filePath: string, displayName?: string, game?: string): Promise<{ filename: string; url: string; }>
   {
     const action = new RemotePublishAction();
-    return await action.execute({ filePath, displayName });
+    return await action.execute({ filePath, displayName, game });
   }
 
   async unpublish(filename: string): Promise<{ removed: boolean; }>

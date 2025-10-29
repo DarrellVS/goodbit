@@ -23,7 +23,8 @@ publishRouter.get('/', asyncHandler(async (_req, res) => {
 publishRouter.post('/', upload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Missing file' });
   const displayName = (req.body?.displayName as string | undefined) || req.file.originalname;
-  const result = await clipsService.publish(req.file.path, req.file.originalname, displayName);
+  const game = (req.body?.game as string | undefined) || '';
+  const result = await clipsService.publish(req.file.path, req.file.originalname, displayName, game);
   res.json(result);
 }));
 

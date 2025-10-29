@@ -7,6 +7,7 @@ import { BaseAction } from './BaseAction.js';
 export interface RemotePublishInput {
   filePath: string;
   displayName?: string;
+  game?: string;
 }
 
 export interface RemotePublishOutput {
@@ -22,6 +23,7 @@ export class RemotePublishAction extends BaseAction<RemotePublishInput, RemotePu
     const form = new FormData();
     form.append('file', fs.createReadStream(input.filePath), filename);
     if (input.displayName) form.append('displayName', input.displayName);
+    if (input.game) form.append('game', input.game);
     const url = `${baseUrl}/api/publish`;
     const res = await axios.post(url, form, { headers: form.getHeaders() });
     return res.data as RemotePublishOutput;

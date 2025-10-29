@@ -4,10 +4,10 @@ import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 
 class ClipsService {
-  async publish(filePath: string, originalName: string, displayName?: string): Promise<{ filename: string; url: string; }>
+  async publish(filePath: string, originalName: string, displayName?: string, game?: string): Promise<{ filename: string; url: string; }>
   {
     const action = new PublishClipAction();
-    return await action.execute({ filePath, originalName, displayName });
+    return await action.execute({ filePath, originalName, displayName, game });
   }
 
   async unpublish(filePath: string): Promise<{ removed: boolean; }>
