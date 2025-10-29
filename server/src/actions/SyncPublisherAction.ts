@@ -1,6 +1,7 @@
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
+import { Game } from '../entity/Game.js';
 import { publisherService } from '../services/publisherService.js';
 
 export interface SyncPublisherOutput {
@@ -11,9 +12,15 @@ export interface SyncPublisherOutput {
 
 export class SyncPublisherAction extends BaseAction<void, SyncPublisherOutput> {
   async execute(): Promise<SyncPublisherOutput> {
-    const repo = AppDataSource.getRepository(Clip);
-    const allClips = await repo.find();
+    const clipRepo = AppDataSource.getRepository(Clip);
+    const gameRepo = AppDataSource.getRepository(Game);
+    
+    const allClips = await clipRepo.find();
     const remoteFiles = new Set(await publisherService.listPublished());
+
+    // Get all games for display name lookup
+    const games = await gameRepo.find();
+    const gameDisplayNameMap = new Map(games.map(g => [g.name, g.displayName || g.name]));
 
     let uploaded = 0;
     let removed = 0;
@@ -23,10 +30,15 @@ export class SyncPublisherAction extends BaseAction<void, SyncPublisherOutput> {
 
     // Upload any clips marked published but missing remotely
     for (const clip of allClips.filter(c => c.published && !remoteFiles.has(c.filename))) {
-      const result = await publisherService.publish(clip.filePath, clip.displayName || clip.filename);
+      const gameDisplayName = gameDisplayNameMap.get(clip.game) || clip.game;
+      const result = await publisherService.publish(
+        clip.filePath, 
+        clip.displayName || clip.filename,
+        gameDisplayName
+      );
       clip.published = true;
       clip.publishedUrl = result.url || (publicBase ? `${publicBase}/${encodeURIComponent(clip.filename)}` : null);
-      await repo.save(clip);
+      await clipRepo.save(clip);
       uploaded += 1;
     }
 
@@ -39,7 +51,7 @@ export class SyncPublisherAction extends BaseAction<void, SyncPublisherOutput> {
     // Ensure publishedUrl is set for items present remotely
     for (const clip of allClips.filter(c => c.published && remoteFiles.has(c.filename) && !c.publishedUrl)) {
       clip.publishedUrl = publicBase ? `${publicBase}/${encodeURIComponent(clip.filename)}` : null;
-      await repo.save(clip);
+      await clipRepo.save(clip);
       updatedFlags += 1;
     }
 

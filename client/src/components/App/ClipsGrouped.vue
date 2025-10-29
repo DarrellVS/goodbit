@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import type { Clip } from '../../types/clip';
 import { useClipHover } from '../../composables/useClipHover';
 import { useConfiguration } from '../../composables/useConfiguration';
+import { useGamesStore } from '../../stores/games';
 import AppClipCard from './AppClipCard.vue';
 
 interface Props {
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const config = useConfiguration();
+const gamesStore = useGamesStore();
 const { handleClipHover } = useClipHover();
 
 
@@ -49,7 +51,7 @@ const groupedClips = computed(() => {
   const groupOrder: string[] = [];
 
   props.clips.forEach((clip, globalIndex) => {
-    const date = new Date(clip.fileModifiedAt);
+    const date = new Date(clip.createdAt ?? new Date());
     const dateKey = date.toISOString().split('T')[0];
     const groupKey = `${dateKey}-${clip.game}`;
 
@@ -68,6 +70,11 @@ const groupedClips = computed(() => {
 
   return groupOrder.map(key => groups.get(key)!);
 });
+
+function getGameDisplayName(gameFolderName: string): string {
+  const game = gamesStore.items.find(g => g.game === gameFolderName);
+  return game?.displayName || gameFolderName;
+}
 
 function formatDate(date: Date): string {
   const today = new Date();
@@ -110,7 +117,7 @@ function handleClipDeleted(): void {
         <div class="flex-1">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-semibold text-gray-900">
-              {{ group.game }}
+              {{ getGameDisplayName(group.game) }}
             </h3>
             <span class="text-xs text-gray-500">•</span>
             <span class="text-xs text-gray-500">{{ group.displayDate }}</span>

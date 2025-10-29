@@ -6,6 +6,7 @@ import { BaseDTO } from '../BaseDTO.js';
  */
 export class GameDTO extends BaseDTO<GameDTO> {
   game!: string;
+  displayName!: string | null;
   clipCount!: number;
 
   /**
@@ -14,6 +15,7 @@ export class GameDTO extends BaseDTO<GameDTO> {
   static fromQueryResult(result: any): GameDTO {
     const dto = new GameDTO();
     dto.game = result.game;
+    dto.displayName = result.displayName ?? null;
     dto.clipCount = parseInt(result.clipCount, 10) || 0;
     return dto;
   }

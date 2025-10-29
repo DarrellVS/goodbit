@@ -4,6 +4,7 @@ import fg from 'fast-glob';
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
+import { Game } from '../entity/Game.js';
 
 export type ScanResult = { added: number; updated: number; removed: number; total: number };
 
@@ -13,7 +14,8 @@ function toRelPath(absolutePath: string): string {
 
 export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
   async execute(): Promise<ScanResult> {
-    const repo = AppDataSource.getRepository(Clip);
+    const clipRepo = AppDataSource.getRepository(Clip);
+    const gameRepo = AppDataSource.getRepository(Game);
 
     const patterns = ['*/*.mp4', '*/*.mov', '*/*.MP4', '*/*.MOV'];
     const entries = await fg(patterns, {
@@ -26,6 +28,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     });
 
     const nowOnDisk = new Set<string>();
+    const gamesFound = new Set<string>();
     let added = 0;
     let updated = 0;
 
@@ -33,13 +36,14 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       nowOnDisk.add(absPath);
       const rel = toRelPath(absPath);
       const game = rel.split(path.sep)[0] || '';
+      gamesFound.add(game);
       const filename = path.basename(absPath);
       const extension = path.extname(filename).slice(1);
       const stat = await fs.stat(absPath);
 
-      const existing = await repo.findOne({ where: { filePath: absPath } });
+      const existing = await clipRepo.findOne({ where: { filePath: absPath } });
       if (!existing) {
-        const clip = repo.create({
+        const clip = clipRepo.create({
           filePath: absPath,
           relPath: rel,
           game,
@@ -49,7 +53,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           fileModifiedAt: stat.mtime,
           displayName: null,
         });
-        await repo.save(clip);
+        await clipRepo.save(clip);
         added += 1;
       } else {
         if (
@@ -66,22 +70,36 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           existing.filename = filename;
           existing.extension = extension;
           existing.game = game;
-          await repo.save(existing);
+          await clipRepo.save(existing);
           updated += 1;
         }
       }
     }
 
-    const allClips = await repo.find();
+    const allClips = await clipRepo.find();
     let removed = 0;
     for (const clip of allClips) {
       if (!nowOnDisk.has(clip.filePath)) {
-        await repo.remove(clip);
+        await clipRepo.remove(clip);
         removed += 1;
       }
     }
 
-    const total = await repo.count();
+    // Sync games table - create Game entries for any new games found
+    for (const gameName of gamesFound) {
+      if (gameName) {
+        const existingGame = await gameRepo.findOne({ where: { name: gameName } });
+        if (!existingGame) {
+          const newGame = gameRepo.create({
+            name: gameName,
+            displayName: null,
+          });
+          await gameRepo.save(newGame);
+        }
+      }
+    }
+
+    const total = await clipRepo.count();
     return { added, updated, removed, total };
   }
 }

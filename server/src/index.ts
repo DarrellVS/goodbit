@@ -6,6 +6,7 @@ import { AppDataSource, VIDEOS_ROOT } from './data-source.js';
 import { apiRouter } from './routes/index.js';
 import { videoService } from './services/videoService.js';
 import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
+import { SyncGamesAction } from './actions/SyncGamesAction.js';
 import { verifyFirebaseToken } from './auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
@@ -43,6 +44,14 @@ async function start() {
     console.log('Initial scan completed');
   } catch (err) {
     console.error('Initial scan failed:', err);
+  }
+  
+  // Sync games table with clips (ensures backward compatibility)
+  try {
+    const syncGamesResult = await new SyncGamesAction().execute();
+    console.log('Games sync completed', syncGamesResult);
+  } catch (err) {
+    console.error('Games sync failed:', err);
   }
   
   try {

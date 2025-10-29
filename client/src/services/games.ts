@@ -12,4 +12,8 @@ export async function rescanGames(): Promise<void> {
   await axios.post('/api/scan');
 }
 
+export async function updateGameName(gameName: string, displayName: string | null): Promise<void> {
+  await axios.patch(`/api/games/${encodeURIComponent(gameName)}`, { displayName });
+}
+
 

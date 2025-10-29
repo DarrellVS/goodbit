@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { Clip } from './entity/Clip.js';
 import { Tag } from './entity/Tag.js';
 import { Collection } from './entity/Collection.js';
+import { Game } from './entity/Game.js';
 
 const DEFAULT_VIDEOS_ROOT = 'C:\\Users\\darre\\Videos';
 export const VIDEOS_ROOT = process.env.VIDEOS_ROOT || DEFAULT_VIDEOS_ROOT;
@@ -22,7 +23,7 @@ const dbPath = process.env.DB_PATH || path.join(VIDEOS_ROOT, 'filmpje.db');
 export const AppDataSource = new DataSource({
   type: 'sqlite',
   database: dbPath,
-  entities: [Clip, Tag, Collection],
+  entities: [Clip, Tag, Collection, Game],
   synchronize: true,
   logging: false,
 });
