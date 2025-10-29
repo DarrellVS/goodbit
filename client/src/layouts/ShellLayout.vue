@@ -172,18 +172,18 @@ async function removeTagFromHeader(tagName: string) {
 
 // Global keyboard shortcuts
 useKeyboardShortcuts({
-  shortcuts: {
-    KeyG: () => {
+  actions: {
+    'nav-library': () => {
       if (router.currentRoute.value.name !== 'clips') {
         router.push('/');
       }
     },
-    KeyS: () => {
+    'nav-settings': () => {
       if (router.currentRoute.value.name !== 'settings') {
         router.push('/settings');
       }
     },
-    Slash: (event) => {
+    'focus-search': (event) => {
       event.preventDefault();
       const searchInput = document.getElementById('global-search-input') as HTMLInputElement;
       if (searchInput) {

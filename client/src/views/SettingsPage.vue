@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, nextTick, onBeforeUnmount, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useToastStore } from '../stores/toast';
+import { useShortcutCustomization } from '../composables/useShortcutCustomization';
+import { ALL_KEYS, getKeyDisplayName, SHORTCUT_ACTIONS, type ShortcutKey } from '../constants/shortcuts';
 
 const config = useConfiguration();
 const toastStore = useToastStore();
 const activeSection = ref<string>('general');
+const shortcuts = useShortcutCustomization();
+
+// Keyboard shortcut customization state
+const editingActionId = ref<string | null>(null);
+const conflicts = computed(() => shortcuts.getConflicts());
+const actionsByCategory = computed(() => shortcuts.actionsByCategory.value);
 
 interface SettingSection {
   id: string;
@@ -27,7 +35,7 @@ function resetToDefaults() {
   if (confirm('Are you sure you want to reset all settings to their default values?')) {
         config.public.value = {
           viewMode: 'grouped',
-          pageSize: 50,
+          pageSize: 15,
           autoPlayOnHover: true,
           showMetadata: true,
           dateFormat: 'relative',
@@ -35,6 +43,7 @@ function resetToDefaults() {
           confirmBeforeDelete: true,
           compactMode: false,
           muteVideosByDefault: false,
+          customShortcuts: undefined,
         };
     toastStore.success('Settings reset to defaults');
   }
@@ -70,6 +79,100 @@ function importSettings() {
     }
   };
   input.click();
+}
+
+// Keyboard shortcut customization functions
+function startEditing(actionId: string): void {
+  editingActionId.value = actionId;
+  // Focus the div after DOM update to capture keyboard events
+  nextTick(() => {
+    const div = document.querySelector(`[data-action-id="${actionId}"]`) as HTMLElement;
+    if (div) {
+      div.focus();
+    }
+  });
+}
+
+function cancelEditing(): void {
+  editingActionId.value = null;
+}
+
+// Global keydown listener for when editing shortcuts
+function handleGlobalKeyDown(event: KeyboardEvent): void {
+  if (!editingActionId.value) return;
+  
+  // Don't capture if typing in an input/textarea
+  const target = event.target as HTMLElement;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+    return;
+  }
+  
+  // If Escape is pressed, cancel editing
+  if (event.code === 'Escape') {
+    cancelEditing();
+    return;
+  }
+  
+  // Handle the key press for the current editing action
+  handleKeyPress(event, editingActionId.value);
+}
+
+// Set up global keydown listener when editing
+watch(editingActionId, (newValue) => {
+  if (newValue) {
+    document.addEventListener('keydown', handleGlobalKeyDown);
+  } else {
+    document.removeEventListener('keydown', handleGlobalKeyDown);
+  }
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleGlobalKeyDown);
+});
+
+function assignKey(actionId: string, key: ShortcutKey | null): void {
+  const currentKey = shortcuts.getActionKey(actionId);
+  const conflictAction = key ? shortcuts.getActionForKey(key, actionId) : undefined;
+  
+  if (conflictAction) {
+    const conflictActionLabel = SHORTCUT_ACTIONS.find(a => a.id === conflictAction)?.label;
+    toastStore.warning(`This key is already assigned to "${conflictActionLabel}" in the same context. It will be reassigned.`);
+  }
+  
+  shortcuts.setShortcut(actionId, key);
+  editingActionId.value = null;
+  
+  if (key) {
+    toastStore.success(`Shortcut assigned: ${getKeyDisplayName(key)}`);
+  } else {
+    toastStore.success('Shortcut reset to default');
+  }
+}
+
+function handleKeyPress(event: KeyboardEvent, actionId: string): void {
+  // Only handle key press when editing this specific action
+  if (editingActionId.value !== actionId) {
+    return;
+  }
+  
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Don't assign if typing in an input
+  const target = event.target as HTMLElement;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    return;
+  }
+  
+  const key = event.code as ShortcutKey;
+  if (ALL_KEYS.includes(key)) {
+    assignKey(actionId, key);
+  }
+}
+
+
+function getActionLabel(actionId: string): string {
+  return SHORTCUT_ACTIONS.find(a => a.id === actionId)?.label || actionId;
 }
 </script>
 
@@ -305,29 +408,81 @@ function importSettings() {
               </button>
             </div>
 
-            <!-- Keyboard Shortcuts Reference -->
-            <div v-if="config.public.value.enableKeyboardShortcuts" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div class="flex gap-3">
-                <Icon icon="material-symbols:keyboard" class="text-blue-500 text-xl flex-shrink-0 mt-0.5" />
-                <div class="flex-1">
-                  <h3 class="font-medium text-blue-900 mb-2">Available Keyboard Shortcuts</h3>
-                  <div class="space-y-3 text-sm text-blue-800">
-                    <div>
-                      <div class="font-semibold mb-1">Global Navigation</div>
-                      <ul class="space-y-1 ml-2">
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">G</kbd> - Go to Library</li>
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">S</kbd> - Go to Settings</li>
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">/</kbd> - Focus Search</li>
-                      </ul>
+            <!-- Keyboard Shortcut Customization -->
+            <div v-if="config.public.value.enableKeyboardShortcuts" class="space-y-4 pt-8">
+              <div>
+                <h3 class="font-medium text-gray-900">Keyboard Shortcut Customization</h3>
+                <p class="text-sm text-muted-500 mt-1">Customize keyboard shortcuts to match your workflow</p>
+              </div>
+
+              <!-- Conflicts Warning -->
+              <div v-if="Object.keys(conflicts).length > 0" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex gap-3">
+                  <Icon icon="material-symbols:warning" class="text-yellow-600 text-xl flex-shrink-0 mt-0.5" />
+                  <div class="flex-1">
+                    <h4 class="font-medium text-yellow-900 mb-2">Shortcut Conflicts Detected</h4>
+                    <div class="space-y-1 text-sm text-yellow-800">
+                      <div v-for="(actionIds, key) in conflicts" :key="key" class="flex items-center gap-2">
+                        <kbd class="px-2 py-0.5 bg-white rounded border border-yellow-300 font-mono text-xs">{{ getKeyDisplayName(key as ShortcutKey) }}</kbd>
+                        <span>is assigned to:</span>
+                        <span class="font-medium">{{ actionIds.map(id => getActionLabel(id)).join(', ') }}</span>
+                      </div>
                     </div>
-                    <div>
-                      <div class="font-semibold mb-1">Clip Pages</div>
-                      <ul class="space-y-1 ml-2">
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">L</kbd> - Toggle View Mode (Grid/List)</li>
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">Space</kbd> - Load More Clips</li>
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">↑</kbd> - Scroll Up</li>
-                        <li><kbd class="px-2 py-0.5 bg-white rounded border border-blue-300 font-mono text-xs">↓</kbd> - Scroll Down</li>
-                      </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Shortcuts by Category -->
+              <div class="space-y-6">
+                <div v-for="categoryGroup in actionsByCategory" :key="categoryGroup.category" class="space-y-3">
+                  <h4 class="font-semibold text-gray-900 capitalize">{{ categoryGroup.category }} Shortcuts</h4>
+                  <div class="space-y-2">
+                    <div
+                      v-for="action in categoryGroup.actions"
+                      :key="action.id"
+                      :data-action-id="action.id"
+                      class="flex items-center justify-between p-4 bg-white rounded-lg border"
+                      :class="editingActionId === action.id ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-gray-200'"
+                      tabindex="0"
+                    >
+                      <div class="flex-1">
+                        <div class="font-medium text-gray-900">{{ action.label }}</div>
+                        <p class="text-sm text-muted-500 mt-0.5">{{ action.description }}</p>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <div v-if="editingActionId === action.id" class="flex items-center gap-2">
+                          <span class="text-sm text-orange-600 font-medium">Press a key...</span>
+                          <button
+                            class="px-2 py-1 text-sm text-gray-600 hover:text-gray-900"
+                            @click="cancelEditing"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        <div v-else class="flex items-center gap-2">
+                          <kbd
+                            v-if="shortcuts.getActionKey(action.id)"
+                            class="px-3 py-1.5 rounded border font-mono text-sm min-w-[60px] text-center"
+                            :class="shortcuts.isKeyAssigned(shortcuts.getActionKey(action.id)!, action.id) ? 'bg-yellow-50 border-yellow-300 text-yellow-800' : 'bg-gray-50 border-gray-300 text-gray-700'"
+                          >
+                            {{ getKeyDisplayName(shortcuts.getActionKey(action.id)!) }}
+                          </kbd>
+                          <button
+                            class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors text-sm"
+                            @click="startEditing(action.id)"
+                          >
+                            Change
+                          </button>
+                          <button
+                            v-if="shortcuts.customShortcuts.value[action.id]"
+                            class="px-2 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors text-sm"
+                            @click="assignKey(action.id, null)"
+                            title="Reset to default"
+                          >
+                            <Icon icon="material-symbols:restart-alt" class="text-base" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -92,34 +92,34 @@ onMounted(() => {
 });
 
 useKeyboardShortcuts({
-  shortcuts: {
-    KeyL: () => {
+  actions: {
+    'toggle-view-mode': () => {
       viewMode.value = viewMode.value === 'grid' ? 'grouped' : 'grid';
     },
-    Escape: () => {
+    'exit-selection': () => {
       if (isSelectionMode.value) {
         exitSelectionMode();
       }
     },
-    ArrowRight: (event: KeyboardEvent) => {
+    'page-next': (event: KeyboardEvent) => {
       if (!isSelectionMode.value && clipsStore.hasNextPage && !loading.value) {
         event.preventDefault();
         handlePageChange(currentPage.value + 1);
       }
     },
-    ArrowLeft: (event: KeyboardEvent) => {
+    'page-previous': (event: KeyboardEvent) => {
       if (!isSelectionMode.value && clipsStore.hasPreviousPage && !loading.value) {
         event.preventDefault();
         handlePageChange(currentPage.value - 1);
       }
     },
-    ArrowDown: () => {
+    'scroll-down': () => {
       const mainElement = document.querySelector('main');
       if (mainElement) {
         mainElement.scrollBy({ top: 300, behavior: 'smooth' });
       }
     },
-    ArrowUp: () => {
+    'scroll-up': () => {
       const mainElement = document.querySelector('main');
       if (mainElement) {
         mainElement.scrollBy({ top: -300, behavior: 'smooth' });

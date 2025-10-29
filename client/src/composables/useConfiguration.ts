@@ -1,5 +1,6 @@
 import { useLocalStorage } from '@vueuse/core';
 import { computed, reactive } from 'vue';
+import type { ShortcutKey } from '../constants/shortcuts';
 
 export interface PublicConfig {
   viewMode: 'grid' | 'grouped';
@@ -11,6 +12,7 @@ export interface PublicConfig {
   confirmBeforeDelete: boolean;
   compactMode: boolean;
   muteVideosByDefault: boolean;
+  customShortcuts?: Record<string, ShortcutKey>;
 }
 
 const publicConfig = useLocalStorage<PublicConfig>('filmpje-public-config', {

@@ -143,10 +143,12 @@ async function loadClipFromQuery(clipId: string): Promise<void> {
 }
 
 useKeyboardShortcuts({
-  Space: togglePlayback,
-  ArrowLeft: () => skipBackward(),
-  ArrowRight: () => skipForward(),
-  Delete: handleDeleteClip,
+  actions: {
+    'editor-play-pause': togglePlayback,
+    'editor-skip-backward': () => skipBackward(),
+    'editor-skip-forward': () => skipForward(),
+    'editor-delete-clip': handleDeleteClip,
+  },
 });
 
 onMounted(async () => {

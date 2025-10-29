@@ -1,7 +1,9 @@
-import { onMounted, onBeforeUnmount } from 'vue';
+import { onMounted, onBeforeUnmount, computed } from 'vue';
 import { useConfiguration } from './useConfiguration';
+import { useShortcutCustomization } from './useShortcutCustomization';
+import type { ShortcutKey } from '../constants/shortcuts';
 
-export type ShortcutKey = 
+export type ShortcutKeyLegacy = 
   | 'Space' 
   | 'ArrowLeft' 
   | 'ArrowRight' 
@@ -18,7 +20,8 @@ export type ShortcutKey =
 type ShortcutHandler = (event: KeyboardEvent) => void;
 
 export interface KeyboardShortcutsOptions {
-  shortcuts: Partial<Record<ShortcutKey, ShortcutHandler>>;
+  shortcuts?: Partial<Record<ShortcutKey, ShortcutHandler>>;
+  actions?: Partial<Record<string, ShortcutHandler>>;
   /**
    * If true, shortcuts will work even when the setting is disabled.
    * Use this for critical shortcuts like Escape to close modals.
@@ -26,13 +29,42 @@ export interface KeyboardShortcutsOptions {
   ignoreSettings?: boolean;
 }
 
-export function useKeyboardShortcuts(options: KeyboardShortcutsOptions | Partial<Record<ShortcutKey, ShortcutHandler>>) {
+export function useKeyboardShortcuts(
+  options: KeyboardShortcutsOptions | Partial<Record<ShortcutKeyLegacy, ShortcutHandler>>
+) {
   const config = useConfiguration();
+  const shortcutCustomization = useShortcutCustomization();
   
   // Support both old and new API
-  const opts = typeof options === 'function' || !('shortcuts' in options)
-    ? { shortcuts: options as Partial<Record<ShortcutKey, ShortcutHandler>>, ignoreSettings: false }
-    : options;
+  let opts: KeyboardShortcutsOptions;
+  if (typeof options === 'function' || (!('shortcuts' in options) && !('actions' in options))) {
+    // Legacy API: direct object of key -> handler
+    opts = { shortcuts: options as Partial<Record<ShortcutKey, ShortcutHandler>>, ignoreSettings: false };
+  } else {
+    opts = options;
+  }
+
+  // Build effective shortcuts map from actions
+  const actionBasedShortcuts = computed(() => {
+    if (!opts.actions) return {};
+    
+    const keyMap: Partial<Record<ShortcutKey, ShortcutHandler>> = {};
+    Object.entries(opts.actions).forEach(([actionId, handler]) => {
+      const key = shortcutCustomization.getActionKey(actionId);
+      if (key) {
+        keyMap[key] = handler;
+      }
+    });
+    return keyMap;
+  });
+
+  // Merge action-based shortcuts with direct shortcuts (direct shortcuts take precedence)
+  const effectiveShortcuts = computed(() => {
+    return {
+      ...actionBasedShortcuts.value,
+      ...opts.shortcuts,
+    };
+  });
 
   function handleKeyDown(event: KeyboardEvent): void {
     // Check if shortcuts are enabled (unless explicitly ignored)
@@ -43,7 +75,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions | Partial
     // Ignore if typing in an input field
     if (shouldIgnoreEvent(event)) return;
 
-    const handler = opts.shortcuts[event.code as ShortcutKey];
+    const handler = effectiveShortcuts.value[event.code as ShortcutKey];
     if (!handler) return;
 
     // Prevent default for certain keys

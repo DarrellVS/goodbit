@@ -83,29 +83,29 @@ watch([
 });
 
 useKeyboardShortcuts({
-  shortcuts: {
-    KeyL: () => {
+  actions: {
+    'toggle-view-mode': () => {
       config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
     },
-    ArrowRight: (event: KeyboardEvent) => {
+    'page-next': (event: KeyboardEvent) => {
       if (collectionsStore.hasNextPage && !loading.value) {
         event.preventDefault();
         handlePageChange(currentPage.value + 1);
       }
     },
-    ArrowLeft: (event: KeyboardEvent) => {
+    'page-previous': (event: KeyboardEvent) => {
       if (collectionsStore.hasPreviousPage && !loading.value) {
         event.preventDefault();
         handlePageChange(currentPage.value - 1);
       }
     },
-    ArrowDown: () => {
+    'scroll-down': () => {
       const mainElement = document.querySelector('main');
       if (mainElement) {
         mainElement.scrollBy({ top: 300, behavior: 'smooth' });
       }
     },
-    ArrowUp: () => {
+    'scroll-up': () => {
       const mainElement = document.querySelector('main');
       if (mainElement) {
         mainElement.scrollBy({ top: -300, behavior: 'smooth' });
