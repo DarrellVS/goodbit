@@ -19,22 +19,13 @@ export class RemotePublishAction extends BaseAction<RemotePublishInput, RemotePu
   async execute(input: RemotePublishInput): Promise<RemotePublishOutput> {
     const baseUrl = (process.env.PUBLISHER_BASE_URL || '').replace(/\/$/, '');
     if (!baseUrl) throw new Error('PUBLISHER_BASE_URL is not set');
-    
-    const apiKey = process.env.PUBLISHER_API_KEY || '';
-    
     const filename = path.basename(input.filePath);
     const form = new FormData();
     form.append('file', fs.createReadStream(input.filePath), filename);
     if (input.displayName) form.append('displayName', input.displayName);
     if (input.game) form.append('game', input.game);
-    
     const url = `${baseUrl}/api/publish`;
-    const headers = {
-      ...form.getHeaders(),
-      ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
-    };
-    
-    const res = await axios.post(url, form, { headers });
+    const res = await axios.post(url, form, { headers: form.getHeaders() });
     return res.data as RemotePublishOutput;
   }
 }

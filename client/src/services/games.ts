@@ -12,12 +12,4 @@ export async function rescanGames(): Promise<void> {
   await axios.post('/api/scan');
 }
 
-export async function renameGame(oldName: string, newName: string): Promise<{ success: boolean; clipsUpdated: number }> {
-  const { data } = await axios.post<{ success: boolean; clipsUpdated: number }>('/api/games/rename', {
-    oldName,
-    newName,
-  });
-  return data;
-}
-
 
