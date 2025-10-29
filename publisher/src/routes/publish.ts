@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { clipsService } from '../services/clipsService.js';
+import { UpdateMetadataAction } from '../actions/UpdateMetadataAction.js';
 
 const uploadDest = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'public');
 const storage = multer.diskStorage({
@@ -25,6 +26,19 @@ publishRouter.post('/', upload.single('file'), asyncHandler(async (req, res) => 
   const displayName = (req.body?.displayName as string | undefined) || req.file.originalname;
   const game = (req.body?.game as string | undefined) || '';
   const result = await clipsService.publish(req.file.path, req.file.originalname, displayName, game);
+  res.json(result);
+}));
+
+publishRouter.patch('/:filename/metadata', asyncHandler(async (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const { displayName, game } = req.body;
+  
+  if (!displayName || !game) {
+    return res.status(400).json({ error: 'displayName and game are required' });
+  }
+  
+  const action = new UpdateMetadataAction();
+  const result = await action.execute({ filename, displayName, game });
   res.json(result);
 }));
 

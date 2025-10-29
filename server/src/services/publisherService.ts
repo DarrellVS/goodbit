@@ -2,6 +2,7 @@ import path from 'node:path';
 import { RemotePublishAction } from '../actions/RemotePublishAction.js';
 import { RemoteUnpublishAction } from '../actions/RemoteUnpublishAction.js';
 import { RemoteListPublishedAction } from '../actions/RemoteListPublishedAction.js';
+import { RemoteUpdateMetadataAction } from '../actions/RemoteUpdateMetadataAction.js';
 
 class PublisherService {
   async publish(filePath: string, displayName?: string, game?: string): Promise<{ filename: string; url: string; }>
@@ -20,6 +21,12 @@ class PublisherService {
     const action = new RemoteListPublishedAction();
     const { files } = await action.execute();
     return files;
+  }
+
+  async updateMetadata(filename: string, displayName: string, game: string): Promise<{ success: boolean; }>
+  {
+    const action = new RemoteUpdateMetadataAction();
+    return await action.execute({ filename, displayName, game });
   }
 }
 

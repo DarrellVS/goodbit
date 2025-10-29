@@ -7,6 +7,8 @@ import { apiRouter } from './routes/index.js';
 import { videoService } from './services/videoService.js';
 import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { SyncGamesAction } from './actions/SyncGamesAction.js';
+import { SyncClipCreationDatesAction } from './actions/SyncClipCreationDatesAction.js';
+import { SyncPublishedClipsMetadataAction } from './actions/SyncPublishedClipsMetadataAction.js';
 import { verifyFirebaseToken } from './auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
@@ -52,6 +54,22 @@ async function start() {
     console.log('Games sync completed', syncGamesResult);
   } catch (err) {
     console.error('Games sync failed:', err);
+  }
+  
+  // Sync clip creation dates from file birth time
+  try {
+    const syncDatesResult = await new SyncClipCreationDatesAction().execute();
+    console.log('Clip creation dates sync completed', syncDatesResult);
+  } catch (err) {
+    console.error('Clip creation dates sync failed:', err);
+  }
+  
+  // Sync published clips metadata with current game display names
+  try {
+    const syncMetadataResult = await new SyncPublishedClipsMetadataAction().execute();
+    console.log('Published clips metadata sync completed', syncMetadataResult);
+  } catch (err) {
+    console.error('Published clips metadata sync failed:', err);
   }
   
   try {

@@ -5,16 +5,18 @@ import { In } from 'typeorm';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
+import { Game } from '../entity/Game.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
+import { publisherService } from '../services/publisherService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction, exportProgress } from '../actions/ExportTimelineAction.js';
-import { 
-  BatchStarAction, 
-  BatchPublishAction, 
-  BatchAddTagsAction, 
-  BatchDeleteAction 
+import {
+  BatchStarAction,
+  BatchPublishAction,
+  BatchAddTagsAction,
+  BatchDeleteAction
 } from '../actions/BatchOperationsAction.js';
 import { ImportFilesAction } from '../actions/ImportFilesAction.js';
 import { MoveClipToGameAction } from '../actions/MoveClipToGameAction.js';
@@ -38,12 +40,12 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
     .createQueryBuilder('clip')
     .leftJoinAndSelect('clip.tags', 'tag')
     .orderBy('clip.createdAt', 'DESC');
-    
+
   if (game && game.length > 0) qb = qb.andWhere('clip.game = :game', { game });
 
   if (published === 'true') qb = qb.andWhere('clip.published = :published', { published: true });
   if (published === 'false') qb = qb.andWhere('clip.published = :published', { published: false });
-  
+
   if (starred === 'true') qb = qb.andWhere('(clip.starred = :starred)', { starred: true });
 
   if (q && q.length > 0) {
@@ -51,15 +53,15 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
       'clip.filename LIKE :q OR ' +
       'clip.displayName LIKE :q OR ' +
       'tag.name LIKE :q' +
-    ')', { q: `%${q}%` });
+      ')', { q: `%${q}%` });
   }
 
   if (tags && tags.length > 0) {
     const tagList = tags.split(',').map((s) => s.trim()).filter(Boolean);
     if (tagList.length > 0) {
       qb = qb.andWhere('tag.name IN (:...names)', { names: tagList })
-             .groupBy('clip.id')
-             .having('COUNT(DISTINCT tag.name) >= :required', { required: tagList.length });
+        .groupBy('clip.id')
+        .having('COUNT(DISTINCT tag.name) >= :required', { required: tagList.length });
     }
   }
 
@@ -134,15 +136,15 @@ clipsRouter.get('/:id/meta', asyncHandler(async (req, res) => {
 clipsRouter.get('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOne({ 
-    where: { id }, 
-    relations: ['tags'] 
+  const clip = await repo.findOne({
+    where: { id },
+    relations: ['tags']
   });
-  
+
   if (!clip) {
     return res.status(404).json({ error: 'Clip not found' });
   }
-  
+
   const dto = ClipDTO.fromEntity(clip);
   res.json(dto);
 }));
@@ -202,11 +204,11 @@ clipsRouter.get('/:id/collections', asyncHandler(async (req, res) => {
 
 clipsRouter.post('/reveal-file', asyncHandler(async (req, res) => {
   const { filePath } = req.body as { filePath: string };
-  
+
   if (!filePath || typeof filePath !== 'string') {
     return res.status(400).json({ error: 'filePath is required' });
   }
-  
+
   const action = new OpenFileInExplorerAction();
   await action.execute({ filePath });
   res.json({ ok: true });
@@ -215,20 +217,20 @@ clipsRouter.post('/reveal-file', asyncHandler(async (req, res) => {
 clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const { targetGame } = req.body as { targetGame: string };
-  
+
   if (!targetGame || targetGame.trim().length === 0) {
     return res.status(400).json({ error: 'targetGame is required' });
   }
 
   const action = new MoveClipToGameAction();
   const { clip } = await action.execute({ clipId: id, targetGame: targetGame.trim() });
-  
+
   // Invalidate caches after move
   await videoService.removeClipCaches(clip.filePath);
-  
-  const withTags = await AppDataSource.getRepository(Clip).findOne({ 
-    where: { id: clip.id }, 
-    relations: ['tags'] 
+
+  const withTags = await AppDataSource.getRepository(Clip).findOne({
+    where: { id: clip.id },
+    relations: ['tags']
   });
   const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
   res.json(dto);
@@ -237,22 +239,27 @@ clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
 clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const updateDto = Object.assign(new UpdateClipRequestDTO(), req.body);
-  
+
   // Validate request
   const validation = updateDto.validate();
   if (!validation.isValid) {
     return res.status(400).json({ error: 'Validation failed', details: validation.errors });
   }
-  
+
   const repo = AppDataSource.getRepository(Clip);
+  const gameRepo = AppDataSource.getRepository(Game);
   const tagRepo = AppDataSource.getRepository(Tag);
   const clip = await repo.findOne({ where: { id }, relations: ['tags'] }) as Clip | null;
   if (!clip) return res.status(404).json({ error: 'Not found' });
 
+  const wasPublished = clip.published;
+  const displayNameChanged = updateDto.displayName !== undefined && 
+    updateDto.displayName !== clip.displayName;
+
   // Apply updates from DTO
   if (updateDto.displayName !== undefined) {
-    clip.displayName = updateDto.displayName && updateDto.displayName.trim().length > 0 
-      ? updateDto.displayName.trim() 
+    clip.displayName = updateDto.displayName && updateDto.displayName.trim().length > 0
+      ? updateDto.displayName.trim()
       : null;
   }
 
@@ -286,8 +293,24 @@ clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   }
 
   const saved = await repo.save(clip);
-  const dto = ClipDTO.fromEntity(saved);
   
+  // Update metadata on publisher if clip is published and displayName changed
+  if (wasPublished && displayNameChanged) {
+    try {
+      const game = await gameRepo.findOne({ where: { name: saved.game } });
+      const gameDisplayName = game?.displayName || saved.game;
+      await publisherService.updateMetadata(
+        saved.filename,
+        saved.displayName || saved.filename,
+        gameDisplayName
+      );
+    } catch (error) {
+      console.error('Failed to update published clip metadata:', error);
+    }
+  }
+  
+  const dto = ClipDTO.fromEntity(saved);
+
   res.json(dto);
 }));
 
@@ -308,12 +331,12 @@ clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
   await videoService.removeClipCaches(clip.filePath);
   await videoService.moveClipFileToTrash(clip.filePath);
   await repo.remove(clip);
-  
+
   // Clean up empty folders after delete (async, don't wait)
   cleanupEmptyFolders(VIDEOS_ROOT).catch((err) => {
     console.error('Failed to cleanup empty folders after delete:', err);
   });
-  
+
   res.json({ ok: true });
 }));
 
@@ -339,7 +362,7 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
 
 clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res) => {
   const files = req.files as Express.Multer.File[];
-  
+
   if (!files || files.length === 0) {
     return res.status(400).json({ error: 'No files provided' });
   }
