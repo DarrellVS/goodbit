@@ -108,21 +108,26 @@ app.get('/:filename', (req, res) => {
       }
       
       @keyframes float1 {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(30px, -30px) scale(1.1); }
-        66% { transform: translate(-20px, 20px) scale(0.9); }
+        0% { cx: 80%; cy: 20%; }
+        25% { cx: 75%; cy: 35%; }
+        50% { cx: 85%; cy: 60%; }
+        75% { cx: 70%; cy: 45%; }
+        100% { cx: 80%; cy: 20%; }
       }
       
       @keyframes float2 {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(-40px, 30px) scale(0.9); }
-        66% { transform: translate(30px, -20px) scale(1.1); }
+        0% { cx: 20%; cy: 70%; }
+        25% { cx: 25%; cy: 50%; }
+        50% { cx: 15%; cy: 30%; }
+        75% { cx: 30%; cy: 60%; }
+        100% { cx: 20%; cy: 70%; }
       }
       
       @keyframes float3 {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(20px, 40px) scale(1.05); }
-        66% { transform: translate(-30px, -30px) scale(0.95); }
+        0% { cx: 50%; cy: 15%; }
+        33% { cx: 65%; cy: 70%; }
+        66% { cx: 35%; cy: 75%; }
+        100% { cx: 50%; cy: 15%; }
       }
       
       @keyframes glow {
@@ -131,7 +136,7 @@ app.get('/:filename', (req, res) => {
       }
       
       body {
-        background: #0a0a0a;
+        background: linear-gradient(135deg, #0f0f1e 0%, #1a0f2e 100%);
         color: #fff;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         display: flex;
@@ -154,39 +159,24 @@ app.get('/:filename', (req, res) => {
         z-index: 0;
       }
       
-      .blob {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(80px);
-        opacity: 0.3;
-        mix-blend-mode: screen;
+      .background svg {
+        width: 100%;
+        height: 100%;
+        filter: blur(60px);
       }
       
       .blob1 {
-        width: 500px;
-        height: 500px;
-        background: #8b5cf6;
-        top: -200px;
-        right: -100px;
+        fill: #8b5cf6;
         animation: float1 20s ease-in-out infinite;
       }
       
       .blob2 {
-        width: 400px;
-        height: 400px;
-        background: #6366f1;
-        bottom: -150px;
-        left: -100px;
+        fill: #6366f1;
         animation: float2 18s ease-in-out infinite;
       }
       
       .blob3 {
-        width: 350px;
-        height: 350px;
-        background: #a78bfa;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        fill: #a78bfa;
         animation: float3 22s ease-in-out infinite;
       }
       
@@ -272,19 +262,30 @@ app.get('/:filename', (req, res) => {
           font-size: 0.8rem;
           padding: 0.4rem 0.8rem;
         }
-        
-        .blob1, .blob2, .blob3 {
-          width: 300px;
-          height: 300px;
-        }
       }
     </style>
   </head>
   <body>
     <div class="background">
-      <div class="blob blob1"></div>
-      <div class="blob blob2"></div>
-      <div class="blob blob3"></div>
+      <svg xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="gooey">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="25" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="
+              1 0 0 0 0
+              0 1 0 0 0
+              0 0 1 0 0
+              0 0 0 35 -15
+            " result="gooey" />
+            <feComposite in="SourceGraphic" in2="gooey" operator="atop"/>
+          </filter>
+        </defs>
+        <g filter="url(#gooey)" opacity="0.6">
+          <circle class="blob1" cx="80%" cy="20%" r="250" />
+          <circle class="blob2" cx="20%" cy="70%" r="220" />
+          <circle class="blob3" cx="50%" cy="30%" r="200" />
+        </g>
+      </svg>
     </div>
     
     <div class="container">
