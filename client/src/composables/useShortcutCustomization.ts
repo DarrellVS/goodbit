@@ -68,9 +68,8 @@ export function useShortcutCustomization() {
   }
   
   // Get conflicts - actions that share the same key within the same category
-  function getConflicts(): Record<ShortcutKey, string[]> {
-    // Group actions by category, then by key
-    const categoryKeyToActions: Record<string, Record<ShortcutKey, string[]>> = {};
+  function getConflicts(): Partial<Record<ShortcutKey, string[]>> {
+    const categoryKeyToActions: Record<string, Partial<Record<ShortcutKey, string[]>>> = {};
     
     Object.entries(effectiveShortcuts.value).forEach(([actionId, key]) => {
       const action = SHORTCUT_ACTIONS.find(a => a.id === actionId);
@@ -83,17 +82,15 @@ export function useShortcutCustomization() {
       if (!categoryKeyToActions[category][key]) {
         categoryKeyToActions[category][key] = [];
       }
-      categoryKeyToActions[category][key].push(actionId);
+      categoryKeyToActions[category][key]!.push(actionId);
     });
     
-    // Find conflicts within each category
-    const conflicts: Record<ShortcutKey, string[]> = {};
+    const conflicts: Partial<Record<ShortcutKey, string[]>> = {};
     Object.values(categoryKeyToActions).forEach((keyToActions) => {
       Object.entries(keyToActions).forEach(([key, actionIds]) => {
-        if (actionIds.length > 1) {
-          // If this key already has conflicts from another category, merge them
+        if (actionIds && actionIds.length > 1) {
           if (conflicts[key as ShortcutKey]) {
-            conflicts[key as ShortcutKey].push(...actionIds);
+            conflicts[key as ShortcutKey]!.push(...actionIds);
           } else {
             conflicts[key as ShortcutKey] = [...actionIds];
           }
