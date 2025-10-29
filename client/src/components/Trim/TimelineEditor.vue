@@ -26,7 +26,7 @@
         draggable="false"
       />
       
-      <RangeTrimSlider 
+      <BaseRangeSlider 
         v-model="model" 
         :max="maxDuration" 
         :step="0.1" 
@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import RangeTrimSlider from '../RangeTrimSlider.vue';
+import BaseRangeSlider from '../Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
 import type { TimeRange } from '../../composables/useTrimRange';
 

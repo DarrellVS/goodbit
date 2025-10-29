@@ -81,7 +81,7 @@ export function useShortcutEditor() {
     } else {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     }
-  });
+  }, { immediate: true });
 
   onBeforeUnmount(() => {
     document.removeEventListener('keydown', handleGlobalKeyDown);

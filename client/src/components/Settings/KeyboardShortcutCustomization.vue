@@ -9,6 +9,7 @@ const shortcuts = useShortcutCustomization();
 const editor = useShortcutEditor();
 const actionsByCategory = computed(() => shortcuts.actionsByCategory.value);
 const conflicts = computed(() => shortcuts.getConflicts());
+const editingActionId = computed(() => editor.editingActionId.value);
 
 function getActionLabel(actionId: string): string {
   return SHORTCUT_ACTIONS.find(a => a.id === actionId)?.label || actionId;
@@ -33,7 +34,7 @@ function getActionLabel(actionId: string): string {
                 {{ getKeyDisplayName(key as ShortcutKey) }}
               </kbd>
               <span>is assigned to:</span>
-              <span class="font-medium">{{ actionIds.map(id => getActionLabel(id)).join(', ') }}</span>
+              <span class="font-medium">{{ actionIds?.map(id => getActionLabel(id)).join(', ') }}</span>
             </div>
           </div>
         </div>
@@ -49,7 +50,7 @@ function getActionLabel(actionId: string): string {
             :key="action.id"
             :data-action-id="action.id"
             class="flex items-center justify-between p-4 bg-white rounded-lg border"
-            :class="editor.editingActionId === action.id ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-gray-200'"
+            :class="editingActionId === action.id ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-gray-200'"
             tabindex="0"
           >
             <div class="flex-1">
@@ -57,7 +58,7 @@ function getActionLabel(actionId: string): string {
               <p class="text-sm text-muted-500 mt-0.5">{{ action.description }}</p>
             </div>
             <div class="flex items-center gap-2">
-              <div v-if="editor.editingActionId === action.id" class="flex items-center gap-2">
+              <div v-if="editingActionId === action.id" class="flex items-center gap-2">
                 <span class="text-sm text-orange-600 font-medium">Press a key...</span>
                 <button
                   class="px-2 py-1 text-sm text-gray-600 hover:text-gray-900"

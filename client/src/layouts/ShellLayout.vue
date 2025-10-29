@@ -17,38 +17,16 @@
       <AppHeader 
         v-model:search="searchText" 
         :rescan-loading="isRescanLoading"
-        :title="router.currentRoute.value.meta.title as string"
-        :subtitle="router.currentRoute.value.meta.subtitle as string"
+        :title="(router.currentRoute.value.meta.title as string)"
+        :subtitle="(router.currentRoute.value.meta.subtitle as string)"
         @rescan="rescan"
       >
         <template #tags-filter>
-          <div class="flex flex-col gap-3 max-h-72 overflow-auto min-w-[280px]">
-            <div class="text-sm font-semibold">Filter by Tags</div>
-            <div v-if="tagsStore.items.length === 0" class="text-muted-400 text-sm py-4 text-center">No tags yet</div>
-            <div v-else class="space-y-1">
-              <div
-                v-for="tag in tagsStore.items"
-                :key="tag.id"
-                class="flex items-center gap-2"
-              >
-                <button
-                  class="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
-                  :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': clipsStore.selectedTags.includes(tag.name) }"
-                  @click="clipsStore.setTags(clipsStore.selectedTags.includes(tag.name) ? clipsStore.selectedTags.filter(x => x !== tag.name) : [...clipsStore.selectedTags, tag.name])"
-                >
-                  <span class="text-sm">#{{ tag.name }}</span>
-                  <span v-if="clipsStore.selectedTags.includes(tag.name)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
-                </button>
-                <button
-                  class="p-2 rounded-lg border border-gray-200 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
-                  @click.stop="removeTagFromHeader(tag.name)"
-                  title="Delete tag"
-                >
-                  <Icon icon="material-symbols:delete" class="text-muted-400 group-hover:text-red-500 transition-colors" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <AppTagsFilter
+            :tags="tagsStore.items"
+            :selected-tags="clipsStore.selectedTags"
+            @update:selected-tags="clipsStore.setTags"
+          />
         </template>
       </AppHeader>
 
@@ -57,7 +35,6 @@
       </main>
     </div>
 
-    <!-- File Drop Zone Overlay -->
     <FileDropZone
       :is-dragging="fileImport.isDragging.value"
       :is-uploading="fileImport.isUploading.value"
@@ -69,23 +46,20 @@
 <script lang="ts" setup>
 import { onMounted, ref, watch, computed } from 'vue';
 import { rescanGames } from '../services/games';
-import { RouterLink, RouterView, useRouter } from 'vue-router';
+import { RouterView, useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import { useAuthStore } from '../stores/auth';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
-import { useToastStore } from '../stores/toast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useFileImport } from '../composables/useFileImport';
 import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
 import FileDropZone from '../components/App/FileDropZone.vue';
-import { deleteTag } from '../services/clips';
-import { Icon } from '@iconify/vue';
+import AppTagsFilter from '../components/App/AppTagsFilter.vue';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
-const toastStore = useToastStore();
 const clipsStore = useClipsStore();
 const fileImport = useFileImport();
 const selectedGame = ref('');
@@ -95,17 +69,16 @@ const auth = useAuthStore();
 const user = computed(() => auth.user);
 const router = useRouter();
 
-// Disable games filter on pages where it doesn't make sense
 const disableGamesFilter = computed(() => {
   const routeName = router.currentRoute.value.name;
   return !(routeName === 'clips' || routeName === 'today' || routeName === 'collection');
 });
 
-function selectGame(g: string) {
+function selectGame(g: string): void {
   selectedGame.value = g;
 }
 
-async function rescan() {
+async function rescan(): Promise<void> {
   isRescanLoading.value = true;
   try {
     await rescanGames();
@@ -116,7 +89,7 @@ async function rescan() {
   }
 }
 
-async function logout() {
+async function logout(): Promise<void> {
   await auth.logout();
   await router.push('/login');
 }
@@ -138,7 +111,6 @@ watch(searchText, (q) => {
   clipsStore.setSearch(q);
 });
 
-// Clear game filter when navigating to pages that don't support it
 watch(disableGamesFilter, (isDisabled) => {
   if (isDisabled && selectedGame.value) {
     selectedGame.value = '';
@@ -146,31 +118,6 @@ watch(disableGamesFilter, (isDisabled) => {
   }
 });
 
-async function removeTagFromHeader(tagName: string) {
-  toastStore.confirm(
-    `This will remove "${tagName}" from all clips.`,
-    async () => {
-      try {
-        await deleteTag(tagName);
-        
-        const idx = tagsStore.items.findIndex(t => t.name === tagName);
-        if (idx >= 0) tagsStore.items.splice(idx, 1);
-        
-        if (clipsStore.selectedTags.includes(tagName)) {
-          clipsStore.setTags(clipsStore.selectedTags.filter(t => t !== tagName));
-        }
-        
-        toastStore.success(`Tag "${tagName}" deleted successfully`);
-      } catch (error) {
-        console.error('Failed to delete tag:', error);
-        toastStore.error('Please try again.', 'Failed to delete tag');
-      }
-    },
-    'Delete tag?'
-  );
-}
-
-// Global keyboard shortcuts
 useKeyboardShortcuts({
   actions: {
     'nav-library': () => {

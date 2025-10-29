@@ -6,9 +6,12 @@ import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useClipHandlers } from '../composables/useClipHandlers';
-import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
+import { useClipListKeyboardShortcuts } from '../composables/useClipListKeyboardShortcuts';
+import { useClipListHandlers } from '../composables/useClipListHandlers';
+import { scrollToTop } from '../utils/scroll';
+import { pluralize } from '../utils/pluralize';
 import type { Clip } from '../types/clip';
-import ViewModeToggle from '../components/App/ViewModeToggle.vue';
+import ViewModeToggle from '../components/Base/BaseViewModeToggle.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
 import ClipsPaginationControls from '../components/App/ClipsPaginationControls.vue';
 
@@ -30,47 +33,45 @@ const collection = computed(() =>
   collectionsStore.items.find(c => c.id === collectionId.value)
 );
 
-function handlePageChange(page: number): void {
-  collectionsStore.gotoPage(page);
-  // Scroll to top when page changes
-  const mainElement = document.querySelector('main');
-  if (mainElement) {
-    mainElement.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
+const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHandlers({
+  clips,
+  onPageChange: (page: number) => collectionsStore.gotoPage(page),
+  onClipUpdated: (updatedClip: Clip) => {
+    const index = collectionsStore.clipsState.items.findIndex(c => c.id === updatedClip.id);
+    if (index !== -1) {
+      collectionsStore.clipsState.items[index] = updatedClip;
+    }
+  },
+  onClipDeleted: async () => {
+    collectionsStore.resetCollectionClips();
+    await Promise.all([
+      collectionsStore.fetchCollectionClips(collectionId.value),
+      gamesStore.fetchGames()
+    ]);
+  },
+});
 
-function handleClipUpdated(updatedClip: Clip): void {
-  const index = collectionsStore.clipsState.items.findIndex(c => c.id === updatedClip.id);
-  if (index !== -1) {
-    collectionsStore.clipsState.items[index] = updatedClip;
-  }
-}
-
-async function handleClipDeleted(): Promise<void> {
-  collectionsStore.resetCollectionClips();
-  await Promise.all([
-    collectionsStore.fetchCollectionClips(collectionId.value),
-    gamesStore.fetchGames()
-  ]);
-}
+useClipListKeyboardShortcuts({
+  toggleViewMode: () => {
+    config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
+  },
+  onPageNext: () => handlePageChange(currentPage.value + 1),
+  onPagePrevious: () => handlePageChange(currentPage.value - 1),
+  canGoNext: computed(() => collectionsStore.hasNextPage),
+  canGoPrevious: computed(() => collectionsStore.hasPreviousPage),
+  isLoading: loading,
+});
 
 onMounted(() => {
   void collectionsStore.fetchCollectionClips(collectionId.value);
 });
 
-// Watch for collection ID changes (navigating between collections)
 watch(collectionId, (newId) => {
   collectionsStore.resetCollectionClips();
   void collectionsStore.fetchCollectionClips(newId);
-  
-  // Scroll to top when switching collections
-  const mainElement = document.querySelector('main');
-  if (mainElement) {
-    mainElement.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  scrollToTop();
 });
 
-// Watch for filter changes
 watch([
   () => clipsStore.selectedGame,
   () => clipsStore.searchText,
@@ -81,38 +82,6 @@ watch([
   collectionsStore.resetCollectionClips();
   void collectionsStore.fetchCollectionClips(collectionId.value);
 });
-
-useKeyboardShortcuts({
-  actions: {
-    'toggle-view-mode': () => {
-      config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
-    },
-    'page-next': (event: KeyboardEvent) => {
-      if (collectionsStore.hasNextPage && !loading.value) {
-        event.preventDefault();
-        handlePageChange(currentPage.value + 1);
-      }
-    },
-    'page-previous': (event: KeyboardEvent) => {
-      if (collectionsStore.hasPreviousPage && !loading.value) {
-        event.preventDefault();
-        handlePageChange(currentPage.value - 1);
-      }
-    },
-    'scroll-down': () => {
-      const mainElement = document.querySelector('main');
-      if (mainElement) {
-        mainElement.scrollBy({ top: 300, behavior: 'smooth' });
-      }
-    },
-    'scroll-up': () => {
-      const mainElement = document.querySelector('main');
-      if (mainElement) {
-        mainElement.scrollBy({ top: -300, behavior: 'smooth' });
-      }
-    },
-  },
-});
 </script>
 
 <template>
@@ -121,7 +90,7 @@ useKeyboardShortcuts({
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold">{{ collection?.name || 'Collection' }}</h1>
-          <p class="text-sm text-muted-500 mt-1">{{ total }} clip{{ total === 1 ? '' : 's' }}</p>
+          <p class="text-sm text-muted-500 mt-1">{{ total }} {{ pluralize(total, 'clip') }}</p>
         </div>
         
         <ViewModeToggle v-model="config.public.value.viewMode" />

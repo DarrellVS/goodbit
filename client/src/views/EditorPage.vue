@@ -8,9 +8,11 @@ import { useTimeline } from '../composables/useTimeline';
 import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { loadVideoMetadata } from '../composables/useVideoMetadata';
-import { exportTimeline, getExportProgress } from '../services/clips';
 import { EDITOR_CONSTANTS } from '../constants/editor';
-import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
+import { videoUrl as videoUrlFor } from '../utils/mediaUrl';
+import { useClipExport } from '../composables/useClipExport';
+import { useEditorLayout } from '../composables/useEditorLayout';
+import { useClipHandlers } from '../composables/useClipHandlers';
 import type { Clip } from '../types/clip';
 import type { TimelineClip } from '../types/editor';
 import Timeline from '../components/Editor/Timeline.vue';
@@ -22,6 +24,7 @@ const router = useRouter();
 const route = useRoute();
 const clipsStore = useClipsStore();
 const toastStore = useToastStore();
+const { getThumbUrl } = useClipHandlers();
 
 const {
   clips: timelineClips,
@@ -47,19 +50,18 @@ const { videoElement, togglePlayback, skipForward, skipBackward } = useEditorVid
   duration
 );
 
-const selectedClipId = ref<string | null>(null);
-const showLibrary = ref(true);
-const showProperties = ref(true);
-const isExporting = ref(false);
-const exportProgress = ref(0);
+const { showLibrary, showProperties, toggleLibrary, toggleProperties } = useEditorLayout();
 
+const selectedClipId = ref<string | null>(null);
 const selectedClip = computed(() => 
   timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
 );
 
+const { isExporting, exportProgress, exportClip } = useClipExport(timelineClips);
+
 async function handleAddToTimeline(clip: Clip): Promise<void> {
   const videoUrl = videoUrlFor(clip.id, clip.fileModifiedAt);
-  const thumbnailUrl = thumbUrlFor(clip.id, clip.fileModifiedAt);
+  const thumbnailUrl = getThumbUrl(clip);
   
   try {
     const videoDuration = await loadVideoMetadata(videoUrl);
@@ -93,44 +95,6 @@ function handleZoomIn(): void {
 
 function handleZoomOut(): void {
   setZoom(zoom.value * 1.25);
-}
-
-async function handleExport(): Promise<void> {
-  if (timelineClips.value.length === 0) {
-    toastStore.warning('Add clips to the timeline before exporting');
-    return;
-  }
-
-  isExporting.value = true;
-  exportProgress.value = 0;
-  const exportId = `export-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
-  const progressInterval = setInterval(async () => {
-    try {
-      const progress = await getExportProgress(exportId);
-      if (progress !== null) {
-        exportProgress.value = progress;
-      }
-    } catch (error) {
-      console.error('Failed to fetch progress:', error);
-    }
-  }, 500);
-  
-  try {
-    const outputName = `Edited_${new Date().toISOString().split('T')[0]}`;
-    const newClip = await exportTimeline(timelineClips.value, outputName, exportId);
-    
-    exportProgress.value = 100;
-    toastStore.success('Your edited clip has been saved!', 'Export successful');
-    router.push('/');
-  } catch (error) {
-    console.error('Export failed:', error);
-    toastStore.error('Please try again.', 'Export failed');
-  } finally {
-    clearInterval(progressInterval);
-    isExporting.value = false;
-    exportProgress.value = 0;
-  }
 }
 
 function goBack(): void {
@@ -193,7 +157,7 @@ watch(() => route.query.clip, async (clipId) => {
         <button
           class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
           :class="showLibrary ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' : 'bg-black/5 hover:bg-black/10 border border-transparent text-gray-700'"
-          @click="showLibrary = !showLibrary"
+          @click="toggleLibrary"
         >
           <Icon icon="material-symbols:video-library" />
           Library
@@ -202,7 +166,7 @@ watch(() => route.query.clip, async (clipId) => {
         <button
           class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
           :class="showProperties ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' : 'bg-black/5 hover:bg-black/10 border border-transparent text-gray-700'"
-          @click="showProperties = !showProperties"
+          @click="toggleProperties"
         >
           <Icon icon="material-symbols:tune" />
           Properties
@@ -214,7 +178,7 @@ watch(() => route.query.clip, async (clipId) => {
       <aside v-if="showLibrary" class="w-64 flex-shrink-0">
         <ClipLibrary
           :clips="clipsStore.items"
-          :get-thumb-url="(clip: Clip) => thumbUrlFor(clip.id, clip.fileModifiedAt)"
+          :get-thumb-url="(clip: Clip) => getThumbUrl(clip)"
           @add-to-timeline="handleAddToTimeline"
         />
       </aside>
@@ -280,7 +244,7 @@ watch(() => route.query.clip, async (clipId) => {
       @zoom-out="handleZoomOut"
       @undo="() => {}"
       @redo="() => {}"
-      @export="handleExport"
+      @export="exportClip"
     />
   </div>
 </template>

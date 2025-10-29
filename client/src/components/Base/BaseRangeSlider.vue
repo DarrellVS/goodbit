@@ -15,7 +15,6 @@
       :aria-label="i === 0 ? 'Start time' : 'End time'"
       class="relative block h-full w-[1px] bg-orange-500 cursor-ew-resize rounded-md outline-none ring-2 ring-orange-500 pointer-events-auto touch-none"
     >
-      <!-- Timestamp label positioned relative to thumb -->
       <div 
         :class="[
           'absolute left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
@@ -42,8 +41,4 @@ withDefaults(defineProps<{
 
 const model = defineModel<number[]>({ required: true });
 </script>
-
-<style scoped>
-</style>
-
 

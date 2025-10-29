@@ -8,6 +8,8 @@ import { useConfiguration } from '../composables/useConfiguration';
 import { useClipHandlers } from '../composables/useClipHandlers';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useBatchOperations } from '../composables/useBatchOperations';
+import { useClipListKeyboardShortcuts } from '../composables/useClipListKeyboardShortcuts';
+import { useClipListHandlers } from '../composables/useClipListHandlers';
 import type { Clip } from '../types/clip';
 import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
@@ -36,13 +38,11 @@ const isEmpty = computed(() => !loading.value && !clips.value.length);
 const currentPage = computed(() => clipsStore.page);
 const totalPages = computed(() => clipsStore.totalPages);
 
-// Batch operations
 const {
   isSelectionMode,
   selectedCount,
   hasSelection,
   selectedClips,
-  isProcessing,
   showTagDialog,
   showCollectionDialog,
   enterSelectionMode,
@@ -66,73 +66,44 @@ const {
   },
 });
 
-function handlePageChange(page: number): void {
-  clipsStore.goto(page);
-  // Scroll to top when page changes
-  const mainElement = document.querySelector('main');
-  if (mainElement) {
-    mainElement.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
+const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHandlers({
+  clips,
+  onPageChange: (page: number) => clipsStore.goto(page),
+  onClipUpdated: (clip: Clip) => clipsStore.updateClip(clip),
+  onClipDeleted: async () => {
+    clipsStore.resetPagination();
+    await Promise.all([
+      clipsStore.fetchClips(false),
+      gamesStore.fetchGames()
+    ]);
+  },
+});
 
-function handleClipUpdated(updatedClip: Clip): void {
-  clipsStore.updateClip(updatedClip);
-}
-
-async function handleClipDeleted(): Promise<void> {
-  clipsStore.resetPagination();
-  await Promise.all([
-    clipsStore.fetchClips(false),
-    gamesStore.fetchGames()
-  ]);
-}
-
-onMounted(() => {
-  void clipsStore.fetchClips(false);
+useClipListKeyboardShortcuts({
+  toggleViewMode: () => {
+    viewMode.value = viewMode.value === 'grid' ? 'grouped' : 'grid';
+  },
+  onPageNext: () => handlePageChange(currentPage.value + 1),
+  onPagePrevious: () => handlePageChange(currentPage.value - 1),
+  canGoNext: computed(() => clipsStore.hasNextPage),
+  canGoPrevious: computed(() => clipsStore.hasPreviousPage),
+  isLoading: loading,
+  isSelectionMode,
 });
 
 useKeyboardShortcuts({
   actions: {
-    'toggle-view-mode': () => {
-      viewMode.value = viewMode.value === 'grid' ? 'grouped' : 'grid';
-    },
     'exit-selection': () => {
       if (isSelectionMode.value) {
         exitSelectionMode();
       }
     },
-    'page-next': (event: KeyboardEvent) => {
-      if (!isSelectionMode.value && clipsStore.hasNextPage && !loading.value) {
-        event.preventDefault();
-        handlePageChange(currentPage.value + 1);
-      }
-    },
-    'page-previous': (event: KeyboardEvent) => {
-      if (!isSelectionMode.value && clipsStore.hasPreviousPage && !loading.value) {
-        event.preventDefault();
-        handlePageChange(currentPage.value - 1);
-      }
-    },
-    'scroll-down': () => {
-      const mainElement = document.querySelector('main');
-      if (mainElement) {
-        mainElement.scrollBy({ top: 300, behavior: 'smooth' });
-      }
-    },
-    'scroll-up': () => {
-      const mainElement = document.querySelector('main');
-      if (mainElement) {
-        mainElement.scrollBy({ top: -300, behavior: 'smooth' });
-      }
-    },
   },
 });
 
-// Add Ctrl+A handler separately
 window.addEventListener('keydown', (event: KeyboardEvent) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'a' && clips.value.length > 0) {
     const activeElement = document.activeElement;
-    // Don't interfere with text input selection
     if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
       return;
     }
@@ -143,6 +114,10 @@ window.addEventListener('keydown', (event: KeyboardEvent) => {
     }
     handleSelectAll();
   }
+});
+
+onMounted(() => {
+  void clipsStore.fetchClips(false);
 });
 </script>
 

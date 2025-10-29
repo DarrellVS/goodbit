@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { getClip, getClipMeta, type ClipMeta } from '../services/clips';
 import { useToastStore } from '../stores/toast';
 import { useCollectionsStore } from '../stores/collections';
+import { useClipLoader } from '../composables/useClipLoader';
 import type { Clip } from '../types/clip';
 import ClipNameInput from '../components/App/ClipNameInput.vue';
 import ClipTags from '../components/App/ClipTags.vue';
@@ -27,54 +27,36 @@ const router = useRouter();
 const toastStore = useToastStore();
 const collectionsStore = useCollectionsStore();
 
-const clip = ref<Clip | null>(null);
-const metadata = ref<ClipMeta | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
 const showExactDate = ref(false);
 const showNotesDialog = ref(false);
 const videoPlayerRef = ref<InstanceType<typeof ClipVideoPlayer> | null>(null);
 
-function goBack() {
+const clipId = computed(() => Number(props.id));
+const { clip, metadata, loading, error, loadClip, handleClipUpdated } = useClipLoader(clipId);
+
+watch(() => props.id, () => {
+  void loadClip();
+});
+
+function goBack(): void {
   router.back();
 }
 
-function handleClipUpdated(updatedClip: Clip | null) {
-  if (updatedClip) clip.value = updatedClip;
-}
-
-function handleClipDeleted() {
+function handleClipDeleted(): void {
   router.push('/');
 }
 
-async function loadClip() {
-  loading.value = true;
-  error.value = null;
-  
-  try {
-    clip.value = await getClip(Number(props.id));
-    metadata.value = await getClipMeta(Number(props.id));
-  } catch (err: any) {
-    console.error('Failed to load clip:', err);
-    error.value = err?.response?.data?.error || 'Failed to load clip';
-  } finally {
-    loading.value = false;
-  }
-}
-
-function handleTimestampClick(seconds: number) {
+function handleTimestampClick(seconds: number): void {
   const videoEl = videoPlayerRef.value?.videoElement;
   if (!videoEl) return;
   
   videoEl.currentTime = seconds;
   videoEl.play();
-  
-  // Scroll to video
   videoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   toastStore.success(`Jumped to ${seconds}s`);
 }
 
-function toggleDateDisplay() {
+function toggleDateDisplay(): void {
   showExactDate.value = !showExactDate.value;
 }
 

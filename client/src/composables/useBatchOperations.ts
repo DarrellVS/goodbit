@@ -3,6 +3,7 @@ import { useBatchOperationsStore } from '../stores/batchOperations';
 import { useToastStore } from '../stores/toast';
 import { useCollectionsStore } from '../stores/collections';
 import { useTagsStore } from '../stores/tags';
+import { pluralize } from '../utils/pluralize';
 import * as clipsService from '../services/clips';
 import type { Clip } from '../types/clip';
 import type { BatchOperationResult } from '../services/clips';
@@ -13,29 +14,21 @@ interface UseBatchOperationsOptions {
   collectionId?: number;
 }
 
-// Helper to get valid clip IDs
 function getValidClipIds(clips: Clip[]): number[] {
   return clips
     .map(clip => clip.id)
     .filter(id => Number.isFinite(id) && id > 0);
 }
 
-// Helper to pluralize clip/clips
-function pluralize(count: number, singular: string = 'clip', plural?: string): string {
-  return count === 1 ? singular : (plural || `${singular}s`);
-}
-
-// Helper to exit selection mode and cleanup
 function exitAndCleanup(batchStore: ReturnType<typeof useBatchOperationsStore>) {
   batchStore.deselectAll();
   batchStore.exitSelectionMode();
 }
 
-// Helper to handle batch operation results
 function handleBatchResult(
   result: BatchOperationResult,
   toastStore: ReturnType<typeof useToastStore>,
-  actionPastTense: string, // e.g., "starred", "published", "deleted"
+  actionPastTense: string,
 ) {
   if (result.failed > 0) {
     toastStore.warning(
@@ -47,7 +40,7 @@ function handleBatchResult(
     }
   } else {
     toastStore.success(
-      `${result.success} ${pluralize(result.success)} ${actionPastTense} successfully`
+      `${result.success} ${pluralize(result.success, 'clip')} ${actionPastTense} successfully`
     );
   }
 }
@@ -82,11 +75,10 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     }
   }
 
-  // Generic batch operation executor
   async function executeBatchOperation<T extends BatchOperationResult>(
     operation: () => Promise<T>,
-    actionName: string, // e.g., "star", "delete"
-    actionPastTense: string, // e.g., "starred", "deleted"
+    actionName: string,
+    actionPastTense: string,
     operationOptions: {
       refreshNeeded?: boolean;
       validateIds?: boolean;
@@ -113,12 +105,12 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     }
   }
 
-  async function handleBatchDelete(): Promise<void> {
-    const count = selectedClips.value.length;
-    
-    if (!confirm(`Are you sure you want to delete ${count} ${pluralize(count)}? They will be moved to the Recycle Bin.`)) {
-      return;
-    }
+async function handleBatchDelete(): Promise<void> {
+  const count = selectedClips.value.length;
+  
+  if (!confirm(`Are you sure you want to delete ${count} ${pluralize(count, 'clip')}? They will be moved to the Recycle Bin.`)) {
+    return;
+  }
 
     const clipIds = getValidClipIds(selectedClips.value);
     await executeBatchOperation(
@@ -223,8 +215,6 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
       const result = await clipsService.batchAddTags(clipIds, tags);
       handleBatchResult(result, toastStore, 'tagged');
       
-      // Refresh tags store BEFORE cleanup and clips refresh
-      // This ensures new tags are available immediately when popovers reopen
       await tagsStore.fetchTags();
       
       exitAndCleanup(batchStore);
@@ -248,7 +238,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
       await Promise.all(promises);
       
       const count = selectedClips.value.length;
-      toastStore.success(`${count} ${pluralize(count)} added to collection`);
+      toastStore.success(`${count} ${pluralize(count, 'clip')} added to collection`);
       exitAndCleanup(batchStore);
     } catch (error) {
       console.error('Batch add to collection failed:', error);
@@ -258,14 +248,14 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     }
   }
 
-  async function handleBatchRemoveFromCollection(): Promise<void> {
-    if (!options.collectionId) return;
+async function handleBatchRemoveFromCollection(): Promise<void> {
+  if (!options.collectionId) return;
 
-    const count = selectedClips.value.length;
-    
-    if (!confirm(`Remove ${count} ${pluralize(count)} from this collection?`)) {
-      return;
-    }
+  const count = selectedClips.value.length;
+  
+  if (!confirm(`Remove ${count} ${pluralize(count, 'clip')} from this collection?`)) {
+    return;
+  }
 
     isProcessing.value = true;
     
@@ -276,7 +266,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
       
       await Promise.all(promises);
       
-      toastStore.success(`${count} ${pluralize(count)} removed from collection`);
+      toastStore.success(`${count} ${pluralize(count, 'clip')} removed from collection`);
       exitAndCleanup(batchStore);
       await options.onClipsUpdated();
     } catch (error) {
@@ -288,7 +278,6 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
   }
 
   return {
-    // State
     isSelectionMode: computed(() => batchStore.isSelectionMode),
     selectedCount: computed(() => batchStore.selectedCount),
     hasSelection: computed(() => batchStore.hasSelection),
@@ -296,8 +285,6 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     isProcessing,
     showTagDialog,
     showCollectionDialog,
-
-    // Methods
     isSelected: batchStore.isSelected,
     toggleClip: batchStore.toggleClip,
     enterSelectionMode: batchStore.enterSelectionMode,
@@ -305,8 +292,6 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     deselectAll: batchStore.deselectAll,
     handleCheckboxClick,
     handleSelectAll,
-    
-    // Actions
     handleBatchDelete,
     handleBatchPublish,
     handleBatchUnpublish,

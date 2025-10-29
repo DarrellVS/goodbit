@@ -4,7 +4,7 @@ import { Icon } from '@iconify/vue';
 import type { Clip } from '../../types/clip';
 import { useClipHover } from '../../composables/useClipHover';
 import { useConfiguration } from '../../composables/useConfiguration';
-import { useGamesStore } from '../../stores/games';
+import { useClipGrouping } from '../../composables/useClipGrouping';
 import AppClipCard from './AppClipCard.vue';
 
 interface Props {
@@ -26,75 +26,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const config = useConfiguration();
-const gamesStore = useGamesStore();
 const { handleClipHover } = useClipHover();
 
-
-interface ClipGroup {
-  date: string;
-  game: string;
-  clips: Clip[];
-  displayDate: string;
-}
-
-interface ClipWithIndex {
-  clip: Clip;
-  globalIndex: number;
-}
-
-interface ClipGroupWithIndices extends Omit<ClipGroup, 'clips'> {
-  clips: ClipWithIndex[];
-}
-
-const groupedClips = computed(() => {
-  const groups = new Map<string, ClipGroupWithIndices>();
-  const groupOrder: string[] = [];
-
-  props.clips.forEach((clip, globalIndex) => {
-    const date = new Date(clip.createdAt ?? new Date());
-    const dateKey = date.toISOString().split('T')[0];
-    const groupKey = `${dateKey}-${clip.game}`;
-
-    if (!groups.has(groupKey)) {
-      groupOrder.push(groupKey);
-      groups.set(groupKey, {
-        date: dateKey,
-        game: clip.game,
-        clips: [],
-        displayDate: formatDate(date),
-      });
-    }
-
-    groups.get(groupKey)!.clips.push({ clip, globalIndex });
-  });
-
-  return groupOrder.map(key => groups.get(key)!);
-});
-
-function getGameDisplayName(gameFolderName: string): string {
-  const game = gamesStore.items.find(g => g.game === gameFolderName);
-  return game?.displayName || gameFolderName;
-}
-
-function formatDate(date: Date): string {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const dateStr = date.toISOString().split('T')[0];
-  const todayStr = today.toISOString().split('T')[0];
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-  if (dateStr === todayStr) return 'Today';
-  if (dateStr === yesterdayStr) return 'Yesterday';
-
-  return date.toLocaleDateString('en-US', { 
-    weekday: 'short', 
-    month: 'short', 
-    day: 'numeric',
-    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-  });
-}
+const { groupedClips, getGameDisplayName } = useClipGrouping(computed(() => props.clips));
 
 function handleClipUpdated(clip: Clip): void {
   emit('clip-updated', clip);

@@ -2,10 +2,10 @@
 import { watch, nextTick } from 'vue';
 import emblaCarouselVue from 'embla-carousel-vue';
 import { updateClipName, deleteClip } from '../services/clips';
-import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../utils/mediaUrl';
 import { useTodayClips } from '../composables/useTodayClips';
 import { useCarousel } from '../composables/useCarousel';
 import { useVideoPlayback } from '../composables/useVideoPlayback';
+import { useClipHandlers } from '../composables/useClipHandlers';
 import type { Clip } from '../types/clip';
 import CarouselSlide from '../components/App/CarouselSlide.vue';
 import CarouselNavigation from '../components/App/CarouselNavigation.vue';
@@ -13,6 +13,7 @@ import ThumbnailStrip from '../components/App/ThumbnailStrip.vue';
 import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
 
 const { todayClips, clipsStore } = useTodayClips();
+const { getVideoUrl, getThumbUrl } = useClipHandlers();
 
 const [emblaRef, emblaApi] = emblaCarouselVue(
   { loop: false, duration: 24 },
@@ -51,14 +52,6 @@ async function handleClipDelete(clipId: number): Promise<void> {
   await deleteClip(clipId);
   clipsStore.resetPagination();
   await clipsStore.fetchClips(false);
-}
-
-function getVideoUrl(clip: Clip): string {
-  return videoUrlFor(clip.id, clip.fileModifiedAt);
-}
-
-function getThumbUrl(clip: Clip): string {
-  return thumbUrlFor(clip.id, clip.fileModifiedAt);
 }
 
 watch(todayClips, async () => {
