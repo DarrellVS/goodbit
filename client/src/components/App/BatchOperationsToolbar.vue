@@ -51,14 +51,14 @@ const someStarred = computed(() =>
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-2xl border border-gray-700 px-4 py-3 flex items-center gap-4 min-w-[500px] animate-in fade-in slide-in-from-bottom-4 duration-300"
+    class="bg-white rounded-xl shadow-2xl border border-gray-300 px-4 py-3 flex items-center gap-4 min-w-[500px]"
   >
     <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm">
+      <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm text-white">
         {{ selectedCount }}
       </div>
-      <span class="font-medium">
-        {{ selectedCount === 1 ? '1 clip selected' : `${selectedCount} clips selected` }}
+      <span class="font-medium text-gray-900">
+        {{ selectedCount === 1 ? 'clip selected' : `clips selected` }}
       </span>
     </div>
 
@@ -66,7 +66,7 @@ const someStarred = computed(() =>
       <!-- Star/Unstar -->
       <button
         v-if="!allStarred"
-        class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-2 text-sm font-medium"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
         @click="emit('star')"
         title="Star selected clips"
       >
@@ -75,7 +75,7 @@ const someStarred = computed(() =>
       </button>
       <button
         v-else
-        class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-2 text-sm font-medium"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
         @click="emit('unstar')"
         title="Unstar selected clips"
       >
@@ -85,7 +85,7 @@ const someStarred = computed(() =>
 
       <!-- Add Tags -->
       <button
-        class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-2 text-sm font-medium"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
         @click="emit('add-tags')"
         title="Add tags to selected clips"
       >
@@ -96,7 +96,7 @@ const someStarred = computed(() =>
       <!-- More Actions Dropdown -->
       <DropdownMenuRoot>
         <DropdownMenuTrigger
-          class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-2 text-sm font-medium outline-none"
+          class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium outline-none text-gray-700"
         >
           <Icon icon="material-symbols:more-horiz" class="text-base" />
           <span>More</span>
@@ -159,11 +159,11 @@ const someStarred = computed(() =>
         </DropdownMenuPortal>
       </DropdownMenuRoot>
 
-      <div class="w-px h-6 bg-gray-700"></div>
+      <div class="w-px h-6 bg-gray-300"></div>
 
       <!-- Clear Selection -->
       <button
-        class="px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2 text-sm font-medium"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
         @click="emit('deselect-all')"
         title="Clear selection"
       >

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import BaseViewModeToggle from '../Base/BaseViewModeToggle.vue';
 
 export type FilterType = 'videos' | 'starred' | 'published' | 'not-published';
 export type ViewMode = 'grid' | 'grouped';
@@ -53,11 +52,6 @@ const filters: FilterOption[] = [
       <div class="text-sm text-muted-400" role="status">
         {{ totalCount }} Videos
       </div>
-      
-      <BaseViewModeToggle :model-value="viewMode" @update:model-value="emit('update:view-mode', $event)" />
-
-      <!-- Custom actions slot -->
-      <slot name="actions" />
     </div>
   </nav>
 </template>

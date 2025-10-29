@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue';
-import { Icon } from '@iconify/vue';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
@@ -14,7 +13,7 @@ import type { Clip } from '../types/clip';
 import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
 import ClipsPaginationControls from '../components/App/ClipsPaginationControls.vue';
-import BatchOperationsToolbar from '../components/App/BatchOperationsToolbar.vue';
+import FloatingControlsBar from '../components/App/FloatingControlsBar.vue';
 import BatchTagDialog from '../components/App/BatchTagDialog.vue';
 import BatchCollectionDialog from '../components/App/BatchCollectionDialog.vue';
 
@@ -127,28 +126,7 @@ onMounted(() => {
       v-model:active-filter="activeFilter"
       v-model:view-mode="viewMode"
       :total-count="total"
-    >
-      <template #actions>
-        <button
-          v-if="!isSelectionMode && clips.length > 0"
-          class="px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors flex items-center gap-2 text-sm font-medium"
-          @click="enterSelectionMode"
-          title="Select clips (Ctrl+A to select all)"
-        >
-          <Icon icon="material-symbols:check-box-outline-blank" class="text-base" />
-          <span>Select</span>
-        </button>
-        <button
-          v-else-if="isSelectionMode"
-          class="px-3 py-1.5 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm font-medium"
-          @click="exitSelectionMode"
-          title="Exit selection mode (Esc)"
-        >
-          <Icon icon="material-symbols:close" class="text-base" />
-          <span>Cancel</span>
-        </button>
-      </template>
-    </ClipFilters>
+    />
 
     <div class="p-6 space-y-6">
       <ClipsDisplay
@@ -172,11 +150,17 @@ onMounted(() => {
       />
     </div>
 
-    <!-- Batch Operations Toolbar -->
-    <BatchOperationsToolbar
-      v-if="hasSelection"
+    <!-- Floating Controls Bar -->
+    <FloatingControlsBar
+      :view-mode="viewMode"
+      :is-selection-mode="isSelectionMode"
+      :has-selection="hasSelection"
+      :clips-count="clips.length"
       :selected-count="selectedCount"
       :selected-clips="selectedClips"
+      @update:view-mode="viewMode = $event"
+      @enter-selection="enterSelectionMode"
+      @exit-selection="exitSelectionMode"
       @deselect-all="deselectAll"
       @delete="handleBatchDelete"
       @add-to-collection="showCollectionDialog = true"
