@@ -1,7 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
-import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 
 export interface UpdateGameMetadataInput {
   filenames: string[];
@@ -11,7 +10,6 @@ export interface UpdateGameMetadataInput {
 export interface UpdateGameMetadataOutput {
   updated: number;
   failed: number;
-  cachePurged: boolean;
 }
 
 export class UpdateGameMetadataAction extends BaseAction<UpdateGameMetadataInput, UpdateGameMetadataOutput> {
@@ -49,23 +47,7 @@ export class UpdateGameMetadataAction extends BaseAction<UpdateGameMetadataInput
       }
     }
 
-    // Purge Cloudflare cache for all updated metadata files
-    let cachePurged = false;
-    const baseUrl = process.env.PUBLIC_BASE_URL || '';
-    if (baseUrl && updated > 0) {
-      try {
-        const urls = filenames.map(filename => 
-          `${baseUrl.replace(/\/$/, '')}/media/${encodeURIComponent(filename)}`
-        );
-        await new PurgeCloudflareCacheAction().execute({ urls });
-        cachePurged = true;
-        console.log(`Purged Cloudflare cache for ${urls.length} metadata files`);
-      } catch (err) {
-        console.error('Failed to purge Cloudflare cache:', err);
-      }
-    }
-
-    return { updated, failed, cachePurged };
+    return { updated, failed };
   }
 
   private async fileExists(filePath: string): Promise<boolean> {

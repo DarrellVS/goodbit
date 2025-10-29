@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=.env.development src/index.ts",
-    "dev:publisher": "tsx watch src/index.ts",
-    "build": "rimraf dist && tsc -p tsconfig.json",
-    "start": "node dist/server/src/index.js"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@types/multer": "^2.0.0",
@@ -34,7 +33,6 @@
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/form-data": "^2.5.1",
     "@types/node": "^22.5.4",
-    "rimraf": "^6.0.1",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.3"
