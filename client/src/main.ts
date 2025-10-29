@@ -4,6 +4,7 @@ import FloatingVue from 'floating-vue';
 import 'floating-vue/dist/style.css';
 import App from './App.vue';
 import './styles.css';
+import './animations.css';
 import './tooltip.css';
 import { router } from './router';
 import { useAuthStore } from './stores/auth';

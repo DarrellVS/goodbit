@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue';
+import { computed, toRef, TransitionGroup } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useClipTags } from '../../composables/useClipTags';
 import type { Clip } from '../../types/clip';
@@ -34,18 +34,23 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
 <template>
   <div>
     <!-- Visible Tags -->
-    <div v-if="clip.tags?.length" class="flex items-center gap-1 gap-x-2 flex-wrap mt-2">
+    <TransitionGroup
+      v-if="clip.tags?.length"
+      name="tag"
+      tag="div"
+      class="flex items-center gap-1 gap-x-2 flex-wrap mt-2"
+    >
       <span 
         v-for="tag in visibleTags" 
         :key="tag" 
-        class="text-xs bg-white/10 py-0.5 rounded"
+        class="text-xs bg-white/10 py-0.5 rounded tag-enter-active"
       >
         #{{ tag }}
       </span>
       
-      <BasePopover v-if="hiddenTagsCount > 0" side="bottom" :side-offset="8">
+      <BasePopover v-if="hiddenTagsCount > 0" key="more-tags" side="bottom" :side-offset="8">
         <template #trigger>
-          <button class="text-xs text-muted-400 hover:text-foreground">
+          <button class="text-xs text-muted-400 hover:text-foreground transform-transition">
             +{{ hiddenTagsCount }}
           </button>
         </template>
@@ -53,12 +58,12 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
           <span v-for="tag in clip.tags" :key="tag" class="text-xs">#{{ tag }}</span>
         </div>
       </BasePopover>
-    </div>
+    </TransitionGroup>
 
     <!-- Manage Tags Popover -->
     <BasePopover side="bottom" :side-offset="8">
       <template #trigger>
-        <button class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity text-left">
+        <button class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 opacity-transition text-left transform-transition">
           Manage tags
         </button>
       </template>
@@ -78,11 +83,11 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
             <button
               v-for="tag in suggestedTags"
               :key="tag"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/20 transition-all text-xs font-medium group"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/20 transition-all text-xs font-medium group scale-on-hover"
               :title="`Category: ${getCategoryForTag(tag)}`"
               @click="applySuggestedTag(tag)"
             >
-              <Icon icon="material-symbols:add" class="text-orange-500 text-sm group-hover:scale-110 transition-transform" />
+              <Icon icon="material-symbols:add" class="text-orange-500 text-sm transform-transition group-hover:scale-110" />
               <span class="text-gray-900">#{{ tag }}</span>
             </button>
           </div>

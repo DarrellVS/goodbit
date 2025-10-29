@@ -28,15 +28,15 @@ async function handleToggleStar(): Promise<void> {
 
 <template>
   <button 
-    class="absolute top-3 left-3 z-10 rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 px-2 py-2 outline-none size-8 hover:bg-black/80 transition"
-    :class="{ 'opacity-100': clip.starred, 'opacity-0 group-hover:opacity-100': !clip.starred }"
+    class="absolute top-3 left-3 z-10 rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 px-2 py-2 outline-none size-8 hover:bg-black/80 star-button"
+    :class="{ 'opacity-100': clip.starred, 'opacity-0 group-hover:opacity-100 opacity-transition': !clip.starred }"
     :title="clip.starred ? 'Unstar' : 'Star'"
     @click.stop="handleToggleStar"
   >
     <Icon 
       icon="material-symbols:star" 
-      class="text-lg" 
-      :class="clip.starred ? 'text-orange-400' : 'text-white'" 
+      class="text-lg transform-transition"
+      :class="clip.starred ? 'text-orange-400 scale-110' : 'text-white'" 
     />
   </button>
 </template>

@@ -63,11 +63,11 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
         <div class="w-px h-6 bg-gray-300"></div>
         
         <button
-          class="px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors flex items-center gap-2 text-sm font-medium"
+          class="px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors flex items-center gap-2 text-sm font-medium scale-on-hover"
           @click="emit('enter-selection')"
           title="Select clips (Ctrl+A to select all)"
         >
-          <Icon icon="material-symbols:check-box-outline-blank" class="text-base" />
+          <Icon icon="material-symbols:check-box-outline-blank" class="text-base transform-transition" />
           <span>Select</span>
         </button>
       </div>
@@ -99,11 +99,11 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
         <span class="text-sm text-gray-500">Select clips to perform actions</span>
         <div class="flex-1"></div>
         <button
-          class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700"
+          class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover"
           @click="emit('exit-selection')"
           title="Exit selection mode (Esc)"
         >
-          <Icon icon="material-symbols:close" class="text-base" />
+          <Icon icon="material-symbols:close" class="text-base transform-transition" />
           <span>Cancel</span>
         </button>
       </div>

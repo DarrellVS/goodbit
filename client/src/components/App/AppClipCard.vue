@@ -96,7 +96,7 @@ function handleCardClick(event: MouseEvent) {
       class="absolute top-3 left-3 z-20"
     >
       <button
-        class="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+        class="w-8 h-8 rounded-lg flex items-center justify-center checkbox-animate"
         :class="[
           isSelected 
             ? 'bg-orange-500 text-white hover:bg-orange-600' 
@@ -106,7 +106,8 @@ function handleCardClick(event: MouseEvent) {
       >
         <Icon 
           :icon="isSelected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'" 
-          class="text-xl"
+          class="text-xl transform-transition"
+          :class="{ 'scale-110': isSelected }"
         />
       </button>
     </div>
@@ -117,7 +118,7 @@ function handleCardClick(event: MouseEvent) {
     
     <div 
       v-if="!isSelectionMode"
-      class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+      class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 opacity-transition"
     >
       <ClipActionsMenu
         :clip="clip"

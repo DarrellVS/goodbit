@@ -51,27 +51,13 @@ watch(() => props.open, (isOpen) => {
 
 <template>
   <Teleport to="body">
-    <Transition
-      enter-active-class="transition-opacity duration-200"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition-opacity duration-200"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
+    <Transition name="modal-backdrop">
       <div
         v-if="open"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         @click="handleBackdropClick"
       >
-        <Transition
-          enter-active-class="transition-all duration-200"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-active-class="transition-all duration-200"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
-        >
+        <Transition name="modal-content">
           <div
             v-if="open"
             class="bg-white rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
@@ -84,10 +70,10 @@ watch(() => props.open, (isOpen) => {
                 {{ title }}
               </h2>
               <button
-                class="p-2 rounded-lg hover:bg-white/50 transition-colors"
+                class="p-2 rounded-lg hover:bg-white/50 transition-colors scale-on-hover"
                 @click="close"
               >
-                <Icon icon="material-symbols:close" class="text-2xl text-gray-600" />
+                <Icon icon="material-symbols:close" class="text-2xl text-gray-600 transform-transition" />
               </button>
             </div>
 
