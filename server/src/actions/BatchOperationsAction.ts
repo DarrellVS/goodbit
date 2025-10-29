@@ -205,7 +205,7 @@ export class BatchDeleteAction extends BaseBatchAction<BatchDeleteInput, BatchOp
 
     // Clean up empty folders after batch delete (async, don't wait)
     cleanupEmptyFolders(VIDEOS_ROOT).catch((err) => {
-      console.error('Failed to cleanup empty folders after batch delete:', err);
+      console.error('Failed to cleanup empty folders after batch delete:', err instanceof Error ? err.message : String(err));
     });
 
     return result;

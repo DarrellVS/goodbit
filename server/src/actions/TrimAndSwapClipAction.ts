@@ -24,7 +24,7 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, void> {
         console.log('Unpublishing', clip.filename);
         await publisherService.unpublish(clip.filename);
       } catch (err) {
-        console.error('Error unpublishing', clip.filename, err);
+        console.error('Error unpublishing', clip.filename, ':', err instanceof Error ? err.message : String(err));
       }
     }
 
@@ -49,7 +49,7 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, void> {
         clip.publishedUrl = result.url;
         await repo.save(clip);
       } catch (err) {
-        console.error('Error re-publishing', clip.filename, err);
+        console.error('Error re-publishing', clip.filename, ':', err instanceof Error ? err.message : String(err));
       }
     }
   }

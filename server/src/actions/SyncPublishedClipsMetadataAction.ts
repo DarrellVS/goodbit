@@ -43,7 +43,7 @@ export class SyncPublishedClipsMetadataAction extends BaseAction<void, SyncPubli
         
         synced++;
       } catch (error) {
-        console.error(`Failed to sync metadata for clip ${clip.id}:`, error);
+        console.error(`Failed to sync metadata for clip ${clip.id}:`, error instanceof Error ? error.message : String(error));
         errors++;
       }
     }

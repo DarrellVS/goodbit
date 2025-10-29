@@ -66,7 +66,7 @@ export class MoveClipToGameAction extends BaseAction<MoveClipToGameInput, MoveCl
 
     // Clean up empty folders in the old directory (async, don't wait)
     cleanupEmptyFolders(VIDEOS_ROOT).catch((err) => {
-      console.error('Failed to cleanup empty folders after move:', err);
+      console.error('Failed to cleanup empty folders after move:', err instanceof Error ? err.message : String(err));
     });
 
     return { clip: savedClip };

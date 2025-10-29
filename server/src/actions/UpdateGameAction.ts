@@ -56,7 +56,7 @@ export class UpdateGameAction extends BaseAction<UpdateGameInput, UpdateGameOutp
         );
         publishedClipsUpdated++;
       } catch (error) {
-        console.error(`Failed to update metadata for clip ${clip.id}:`, error);
+        console.error(`Failed to update metadata for clip ${clip.id}:`, error instanceof Error ? error.message : String(error));
       }
     }
 

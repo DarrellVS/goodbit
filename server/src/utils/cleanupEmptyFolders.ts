@@ -13,7 +13,7 @@ async function removeEmptyDirectory(dirPath: string): Promise<boolean> {
     // If directory has no entries, it's empty - remove it
     if (entries.length === 0) {
       await fs.rmdir(dirPath);
-      console.log(`[Cleanup] Removed empty directory: ${path.basename(dirPath)}`);
+      console.log(`   🗑️  Removed: ${path.basename(dirPath)}`);
       return true;
     }
     
@@ -34,7 +34,7 @@ async function removeEmptyDirectory(dirPath: string): Promise<boolean> {
       const newEntries = await fs.readdir(dirPath);
       if (newEntries.length === 0) {
         await fs.rmdir(dirPath);
-        console.log(`[Cleanup] Removed empty directory: ${path.basename(dirPath)}`);
+        console.log(`   🗑️  Removed: ${path.basename(dirPath)}`);
         return true;
       }
     }
@@ -52,7 +52,7 @@ async function removeEmptyDirectory(dirPath: string): Promise<boolean> {
  */
 export async function cleanupEmptyFolders(videosRoot: string): Promise<void> {
   try {
-    console.log('[Cleanup] Scanning for empty folders in Videos directory...');
+    console.log('🧹 Scanning for empty folders...');
     
     const entries = await fs.readdir(videosRoot, { withFileTypes: true });
     let removedCount = 0;
@@ -67,13 +67,10 @@ export async function cleanupEmptyFolders(videosRoot: string): Promise<void> {
       }
     }
     
-    if (removedCount > 0) {
-      console.log(`[Cleanup] ✓ Removed ${removedCount} empty folder(s)`);
-    } else {
-      console.log('[Cleanup] ✓ No empty folders found');
-    }
+    console.log('🧹 Cleanup completed');
+    console.log(`   removed: ${removedCount}\n`);
   } catch (error) {
-    console.error('[Cleanup] Failed to clean up empty folders:', error);
+    console.error('❌ Cleanup failed:', error instanceof Error ? error.message : String(error));
   }
 }
 

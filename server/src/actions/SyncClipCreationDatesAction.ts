@@ -48,7 +48,7 @@ export class SyncClipCreationDatesAction extends BaseAction<void, SyncClipCreati
           skipped++;
         }
       } catch (error) {
-        console.error(`Failed to sync creation date for clip ${clip.id}:`, error);
+        console.error(`Failed to sync creation date for clip ${clip.id}:`, error instanceof Error ? error.message : String(error));
         errors++;
       }
     }
