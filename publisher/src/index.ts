@@ -162,7 +162,7 @@ app.get('/:filename', (req, res) => {
       .background svg {
         width: 100%;
         height: 100%;
-        filter: blur(60px);
+        filter: blur(100px);
       }
       
       .blob1 {
