@@ -19,8 +19,59 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Public health endpoint
+// Helper to get client IP
+function getClientIp(req: express.Request): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ips = (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',');
+    return ips[0].trim();
+  }
+  return req.socket.remoteAddress || '';
+}
+
+// Public endpoints (no auth required)
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+app.get('/api/clips/today/count', async (_req, res) => {
+  try {
+    const { Clip } = await import('./entity/Clip.js');
+    const repo = AppDataSource.getRepository(Clip);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const count = await repo
+      .createQueryBuilder('clip')
+      .where('clip.createdAt >= :today', { today: today.toISOString() })
+      .getCount();
+    
+    res.json({ count, date: today.toISOString() });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/rescan', async (req, res) => {
+  console.log(req);
+  
+  const clientIp = getClientIp(req);
+  const allowedIp = '::1';
+  
+  // Check if request is from allowed IP
+  if (clientIp !== allowedIp) {
+    console.log(`❌ Unauthorized rescan attempt from IP: ${clientIp}`);
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  
+  try {
+    console.log(`🔄 Manual rescan triggered from IP: ${clientIp}`);
+    const scanResult = await videoService.scanAndSyncClips();
+    console.log(`📂 Manual scan completed: +${scanResult.added} ~${scanResult.updated} -${scanResult.removed} (total: ${scanResult.total})`);
+    res.json(scanResult);
+  } catch (error) {
+    console.error('❌ Manual rescan failed:', error instanceof Error ? error.message : String(error));
+    res.status(500).json({ error: 'Rescan failed' });
+  }
+});
 
 // Protect the rest of the API
 app.use('/api', verifyFirebaseToken, apiRouter);
