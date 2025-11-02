@@ -70,21 +70,6 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   res.json({ items: dtos, total, page: pageNum, pageSize: pageSz });
 }));
 
-clipsRouter.get('/latest', asyncHandler(async (req, res) => {
-  const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOne({
-    order: { createdAt: 'DESC' },
-    relations: ['tags']
-  });
-
-  if (!clip) {
-    return res.status(404).json({ error: 'No clips found' });
-  }
-
-  const dto = ClipDTO.fromEntity(clip);
-  res.json(dto);
-}));
-
 clipsRouter.get('/:id/stream', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const repo = AppDataSource.getRepository(Clip);

@@ -12,6 +12,9 @@ import { SyncPublishedClipsMetadataAction } from './actions/SyncPublishedClipsMe
 import { verifyFirebaseToken } from './auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
+import { asyncHandler } from './utils/asyncHandler.js';
+import { ClipDTO } from '../../shared/index.js';
+import { Clip } from './entity/Clip.js';
 
 dotenv.config();
 
@@ -50,9 +53,33 @@ app.get('/api/clips/today/count', async (_req, res) => {
   }
 });
 
-app.post('/api/rescan', async (req, res) => {
-  console.log(req);
+app.get('/api/clips/latest', asyncHandler(async (req, res) => {
+  const clientIp = getClientIp(req);
+  const allowedIp = '::1';
   
+  // Check if request is from allowed IP
+  if (clientIp !== allowedIp) {
+    console.log(`❌ Unauthorized rescan attempt from IP: ${clientIp}`);
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const repo = AppDataSource.getRepository(Clip);
+  const clip = await repo
+    .createQueryBuilder('clip')
+    .leftJoinAndSelect('clip.tags', 'tag')
+    .orderBy('clip.createdAt', 'DESC')
+    .limit(1)
+    .getOne();
+
+  if (!clip) {
+    return res.status(404).json({ error: 'No clips found' });
+  }
+
+  const dto = ClipDTO.fromEntity(clip);
+  res.json(dto);
+}));
+
+app.post('/api/rescan', async (req, res) => {
   const clientIp = getClientIp(req);
   const allowedIp = '::1';
   
