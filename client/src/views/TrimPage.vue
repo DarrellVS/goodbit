@@ -32,6 +32,7 @@ import { useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import { getClipMeta, trimClip } from '../services/clips';
 import { withAuthToken } from '../utils/withAuthToken';
+import { restoreScrollPosition } from '../utils/scroll';
 import { useTrimRange } from '../composables/useTrimRange';
 import { useVideoPlayer } from '../composables/useVideoPlayer';
 import TrimHeader from '../components/Trim/TrimHeader.vue';
@@ -97,6 +98,7 @@ async function handleSave(): Promise<void> {
     clipsStore.resetPagination();
     await clipsStore.fetchClips(false);
     await router.push('/');
+    restoreScrollPosition();
   } catch (error) {
     console.error('Failed to trim clip:', error);
   } finally {

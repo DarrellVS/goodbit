@@ -1,3 +1,18 @@
+let _savedScrollPosition: number | null = null;
+
+export function saveScrollPosition(): void {
+  const target = document.querySelector('main');
+  _savedScrollPosition = target?.scrollTop ?? 0;
+}
+
+export function restoreScrollPosition(): void {
+  const target = document.querySelector('main');
+  if (target !== null && _savedScrollPosition !== null) {
+    target.scrollTop = _savedScrollPosition;
+    _savedScrollPosition = null;
+  }
+}
+
 export async function preserveScrollPosition(callback: () => Promise<void>): Promise<void> {
   const target = document.querySelector('main');
   const scrollTop = target?.scrollTop ?? 0;

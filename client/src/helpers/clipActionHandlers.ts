@@ -1,6 +1,7 @@
 import type { Router } from 'vue-router';
 import { toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import type { Clip } from '../types/clip';
+import { saveScrollPosition } from '../utils/scroll';
 import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer } from '../services/clips';
 import { useToastStore } from '../stores/toast';
 import { useConfiguration } from '../composables/useConfiguration';
@@ -76,6 +77,7 @@ export function createClipActionHandlers(params: {
 
   function onTrim() {
     const clip = getClip();
+    saveScrollPosition();
     void params.router.push(`/trim/${clip.id}`);
   }
 
