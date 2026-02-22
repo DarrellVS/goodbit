@@ -130,7 +130,7 @@ onMounted(() => {
       :total-count="total"
     />
 
-    <div class="p-6 space-y-6">
+    <div class="p-6 pb-16 space-y-6">
       <ClipsDisplay
         :clips="clips"
         :view-mode="config.public.value.viewMode"

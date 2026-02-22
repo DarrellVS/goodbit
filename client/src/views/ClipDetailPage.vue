@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { restoreScrollPosition } from '../utils/scroll';
 import { Icon } from '@iconify/vue';
 import { useToastStore } from '../stores/toast';
 import { useCollectionsStore } from '../stores/collections';
@@ -38,12 +39,14 @@ watch(() => props.id, () => {
   void loadClip();
 });
 
-function goBack(): void {
-  router.back();
+async function goBack(): Promise<void> {
+  await router.back();
+  restoreScrollPosition();
 }
 
-function handleClipDeleted(): void {
-  router.push('/');
+async function handleClipDeleted(): Promise<void> {
+  await router.push('/');
+  restoreScrollPosition();
 }
 
 function handleTimestampClick(seconds: number): void {

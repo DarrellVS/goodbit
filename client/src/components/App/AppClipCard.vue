@@ -10,6 +10,7 @@ import { useCollectionsStore } from '../../stores/collections';
 import { useToastStore } from '../../stores/toast';
 import { useGamesStore } from '../../stores/games';
 import { moveClipToGame } from '../../services/clips';
+import { saveScrollPosition } from '../../utils/scroll';
 import type { Clip } from '../../types/clip';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
@@ -70,6 +71,7 @@ function handleCardClick(event: MouseEvent) {
     target.closest('a');
   
   if (!isInteractiveElement && !props.isSelectionMode) {
+    saveScrollPosition();
     router.push(`/clips/${props.clip.id}`);
   }
 }
