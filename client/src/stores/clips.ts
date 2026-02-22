@@ -169,7 +169,6 @@ export const useClipsStore = defineStore('clips', {
 
     resetPagination(): void {
       this.page = 1;
-      this.items = [];
     },
 
     goto(page: number): void {

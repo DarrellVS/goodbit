@@ -5,6 +5,7 @@ import { useGamesStore } from '../stores/games';
 import { useClipFilters } from '../composables/useClipFilters';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useClipHandlers } from '../composables/useClipHandlers';
+import { preserveScrollPosition } from '../utils/scroll';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useBatchOperations } from '../composables/useBatchOperations';
 import { useClipListKeyboardShortcuts } from '../composables/useClipListKeyboardShortcuts';
@@ -57,24 +58,25 @@ const {
   handleBatchAddToCollection,
 } = useBatchOperations({
   clips,
-  onClipsUpdated: async () => {
+  onClipsUpdated: () => preserveScrollPosition(async () => {
     await Promise.all([
       clipsStore.fetchClips(false),
       gamesStore.fetchGames()
     ]);
-  },
+  }),
 });
 
 const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHandlers({
   clips,
   onPageChange: (page: number) => clipsStore.goto(page),
   onClipUpdated: (clip: Clip) => clipsStore.updateClip(clip),
-  onClipDeleted: async () => {
-    clipsStore.resetPagination();
-    await Promise.all([
-      clipsStore.fetchClips(false),
-      gamesStore.fetchGames()
-    ]);
+  onClipDeleted: () => {
+    return preserveScrollPosition(async () => {
+      await Promise.all([
+        clipsStore.fetchClips(false),
+        gamesStore.fetchGames()
+      ]);
+    });
   },
 });
 
