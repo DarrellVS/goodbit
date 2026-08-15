@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { withAuthToken } from '../../utils/withAuthToken';
+import { streamUrl, thumbnailUrl } from '../../utils/mediaUrl';
 import type { Clip } from '../../types/clip';
 
 interface Props {
@@ -11,13 +11,9 @@ interface Props {
 const props = defineProps<Props>();
 const videoElement = ref<HTMLVideoElement | null>(null);
 
-const videoUrl = computed(() => 
-  withAuthToken(`/api/clips/${props.clip.id}/stream`)
-);
+const videoUrl = computed(() => streamUrl(props.clip.id));
 
-const posterUrl = computed(() => 
-  withAuthToken(`/api/clips/${props.clip.id}/thumbnail`)
-);
+const posterUrl = computed(() => thumbnailUrl(props.clip.id));
 
 defineExpose({
   videoElement,

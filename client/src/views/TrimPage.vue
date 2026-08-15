@@ -31,7 +31,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import { getClipMeta, trimClip } from '../services/clips';
-import { withAuthToken } from '../utils/withAuthToken';
+import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
 import { restoreScrollPosition } from '../utils/scroll';
 import { useTrimRange } from '../composables/useTrimRange';
 import { useVideoPlayer } from '../composables/useVideoPlayer';
@@ -61,13 +61,9 @@ const {
 const videoPreviewRef = ref<InstanceType<typeof VideoPreview> | null>(null);
 const isSaving = ref(false);
 
-const videoSource = computed(() => 
-  withAuthToken(`/api/clips/${props.id}/stream`)
-);
+const videoSource = computed(() => streamUrl(Number(props.id)));
 
-const frameStripSource = computed(() => 
-  withAuthToken(`/api/clips/${props.id}/frame-strip`)
-);
+const frameStripSource = computed(() => frameStripUrl(Number(props.id)));
 
 const videoElement = computed(() => 
   videoPreviewRef.value?.videoElement ?? null

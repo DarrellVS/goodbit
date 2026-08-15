@@ -10,7 +10,6 @@ import EditorPage from './views/EditorPage.vue';
 import LoginPage from './views/LoginPage.vue';
 import ClipDetailPage from './views/ClipDetailPage.vue';
 import { useAuthStore } from './stores/auth';
-import { LOCAL_MODE_PARAMS } from './composables/useLocalMode';
 import ShellLayout from './layouts/ShellLayout.vue';
 
 declare module 'vue-router' {
@@ -103,14 +102,6 @@ export const router = createRouter({
 });
 
 router.beforeEach((to) => {
-  // Local-mode handoff params are read once at startup by initLocalMode; drop
-  // them from the URL so they are not carried around or bookmarked.
-  if (LOCAL_MODE_PARAMS.some((param) => to.query[param] !== undefined)) {
-    const query = { ...to.query };
-    for (const param of LOCAL_MODE_PARAMS) delete query[param];
-    return { path: to.path, query, hash: to.hash, replace: true };
-  }
-
   const auth = useAuthStore();
   if (auth.loading) return true;
   if (to.meta?.requiresAuth && !auth.user) {

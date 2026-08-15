@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS: PublicConfig = {
   confirmBeforeDelete: true,
   compactMode: false,
   muteVideosByDefault: false,
-  preferLocalNetwork: false,
+  preferLocalNetwork: true,
   customShortcuts: undefined,
 };
 

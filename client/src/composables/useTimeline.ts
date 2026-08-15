@@ -108,25 +108,36 @@ export function useTimeline() {
     const newDuration = clampedEnd - clampedStart;
     const oldDuration = clip.duration;
     const durationChange = newDuration - oldDuration;
-    
-    if (durationChange === 0) return;
-    
+    const headDelta = clampedStart - clip.trimStart;
+
+    if (durationChange === 0 && headDelta === 0) return;
+
     const index = clips.value.indexOf(clip);
     const newClips = [...clips.value];
-    
-    newClips[index] = { 
-      ...clip, 
-      trimStart: clampedStart, 
-      trimEnd: clampedEnd, 
-      duration: newDuration 
+
+    // Trimming the head slides the clip's left edge and pins its right edge, so
+    // the handle tracks the cursor. Pinning the left edge instead (the obvious
+    // reading of a gapless timeline) makes the *opposite* edge move, which
+    // reads as dragging the wrong thing. The gap this opens before the clip is
+    // closed by reflowClips() when the drag ends.
+    const startTime = headDelta !== 0 ? Math.max(0, clip.startTime + headDelta) : clip.startTime;
+
+    newClips[index] = {
+      ...clip,
+      trimStart: clampedStart,
+      trimEnd: clampedEnd,
+      duration: newDuration,
+      startTime,
     };
-    
-    if (index + 1 >= newClips.length) {
+
+    // A head trim leaves the right edge where it was, so nothing downstream
+    // needs to move. Only tail changes ripple.
+    if (headDelta !== 0 || index + 1 >= newClips.length) {
       clips.value = newClips;
       clipMap.set(clipId, newClips[index]);
       return;
     }
-    
+
     const nextClip = newClips[index + 1];
     const oldClipEnd = clip.startTime + oldDuration;
     const currentGap = nextClip.startTime - oldClipEnd;
@@ -149,6 +160,32 @@ export function useTimeline() {
     
     clips.value = newClips;
     clipMap.set(clipId, newClips[index]);
+  }
+
+  /**
+   * Lay every clip end to end from zero.
+   *
+   * Export concatenates clips in array order using only trimStart/trimEnd and
+   * ignores startTime, so a gap on the timeline never reaches the output — it
+   * is purely a lie about the result. Dragging is allowed to open gaps for the
+   * sake of feedback; this is called when the drag ends to put the timeline
+   * back to what will actually be rendered.
+   */
+  function reflowClips(): void {
+    let cursor = 0;
+    let changed = false;
+
+    const newClips = clips.value.map((clip) => {
+      const next = clip.startTime === cursor ? clip : { ...clip, startTime: cursor };
+      if (next !== clip) changed = true;
+      cursor += clip.duration;
+      return next;
+    });
+
+    if (!changed) return;
+
+    clips.value = newClips;
+    for (const clip of newClips) clipMap.set(clip.id, clip);
   }
 
   function seekTo(time: number): void {
@@ -189,6 +226,7 @@ export function useTimeline() {
     updateClipProperties,
     moveClip,
     trimClip,
+    reflowClips,
     seekTo,
     setZoom,
     play,

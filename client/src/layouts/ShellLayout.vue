@@ -30,8 +30,6 @@
         </template>
       </AppHeader>
 
-      <LocalModeBanner />
-
       <main class="flex-1 overflow-y-auto">
         <RouterView />
       </main>
@@ -59,7 +57,7 @@ import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
 import FileDropZone from '../components/App/FileDropZone.vue';
 import AppTagsFilter from '../components/App/AppTagsFilter.vue';
-import LocalModeBanner from '../components/App/LocalModeBanner.vue';
+import { useLocalMode } from '../composables/useLocalMode';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
@@ -97,7 +95,12 @@ async function logout(): Promise<void> {
   await router.push('/login');
 }
 
+const { detectLocalMedia } = useLocalMode();
+
 onMounted(async () => {
+  // Point media at the LAN address before the first clips render, so thumbnails
+  // and video do not take the long way round the internet.
+  await detectLocalMedia();
   await Promise.all([gamesStore.fetchGames(), tagsStore.fetchTags()]);
   selectedGame.value = clipsStore.selectedGame;
 });

@@ -18,6 +18,7 @@ interface Emits {
   (e: 'remove-clip', clipId: string): void;
   (e: 'trim-clip', clipId: string, trimStart: number, trimEnd: number): void;
   (e: 'move-clip', clipId: string, newStartTime: number): void;
+  (e: 'drag-end'): void;
 }
 
 const props = defineProps<Props>();
@@ -130,6 +131,7 @@ function handleClipSelect(clipId: string): void {
             @remove="emit('remove-clip', $event)"
             @trim="(id, start, end) => emit('trim-clip', id, start, end)"
             @move="(id, time) => emit('move-clip', id, time)"
+            @drag-end="emit('drag-end')"
           />
         </div>
 

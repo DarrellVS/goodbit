@@ -15,6 +15,7 @@ interface Emits {
   (e: 'remove', clipId: string): void;
   (e: 'trim', clipId: string, trimStart: number, trimEnd: number): void;
   (e: 'move', clipId: string, newStartTime: number): void;
+  (e: 'drag-end'): void;
 }
 
 const enum DragMode {
@@ -36,9 +37,11 @@ const style = computed(() => ({
   width: `${props.clip.duration * props.pixelsPerSecond}px`,
 }));
 
-const cursorClass = computed(() => 
+const cursorClass = computed(() =>
   dragMode.value === DragMode.Move ? 'cursor-grabbing' : 'cursor-grab'
 );
+
+const isDragging = computed(() => dragMode.value !== DragMode.None);
 
 function startDrag(mode: DragMode, initialValue: number, event: MouseEvent): void {
   event.stopPropagation();
@@ -69,10 +72,18 @@ function handleDrag(event: MouseEvent): void {
   }
 }
 
-function endDrag(): void {
+function stopDrag(): void {
   dragMode.value = DragMode.None;
   document.removeEventListener('mousemove', handleDrag);
   document.removeEventListener('mouseup', endDrag);
+}
+
+function endDrag(): void {
+  const wasDragging = dragMode.value !== DragMode.None;
+  stopDrag();
+
+  // Lets the timeline close any gap the drag opened, once the gesture is over.
+  if (wasDragging) emit('drag-end');
 }
 
 function handleMouseDown(event: MouseEvent): void {
@@ -80,7 +91,7 @@ function handleMouseDown(event: MouseEvent): void {
   startDrag(DragMode.Move, props.clip.startTime, event);
 }
 
-onBeforeUnmount(endDrag);
+onBeforeUnmount(stopDrag);
 </script>
 
 <template>
@@ -88,7 +99,9 @@ onBeforeUnmount(endDrag);
     class="absolute top-0 h-16 rounded-lg overflow-hidden group select-none"
     :class="[
       selected ? 'ring-2 ring-orange-500 shadow-lg shadow-orange-500/30' : 'hover:ring-2 hover:ring-orange-400/50',
-      cursorClass
+      cursorClass,
+      // Follow the cursor 1:1 while dragging; glide when the timeline reflows on release.
+      isDragging ? '' : 'transition-[left,width] duration-150 ease-out'
     ]"
     :style="style"
     @mousedown="handleMouseDown"

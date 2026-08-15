@@ -22,6 +22,21 @@ import { Clip } from './entity/Clip.js';
 dotenv.config();
 
 const app = express();
+
+// Private Network Access: a page served over the internet fetching this server
+// on the LAN is a public -> private request. Chrome is rolling out a preflight
+// for those, which fails unless the target opts in with this header. Without
+// it, local streaming would silently stop working when that ships.
+//
+// Must run before cors(), which answers preflights itself and would otherwise
+// end the chain before this is reached.
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
+
 app.use(cors());
 app.use(express.json());
 

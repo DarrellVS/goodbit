@@ -40,13 +40,14 @@ const {
   updateClipProperties,
   moveClip,
   trimClip,
+  reflowClips,
   seekTo,
   setZoom,
   play,
   pause,
 } = useTimeline();
 
-const { videoElement, togglePlayback, skipForward, skipBackward } = useEditorVideoPlayback(
+const { videoA, videoB, activeSlot, isBuffering, togglePlayback, skipForward, skipBackward } = useEditorVideoPlayback(
   timelineClips,
   currentTime,
   playing,
@@ -233,11 +234,36 @@ watch(
       <main class="flex-1 flex flex-col gap-3 min-w-0">
         <div class="flex-1 relative bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
           <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
-            <video
-              ref="videoElement"
-              class="max-w-full max-h-full shadow-2xl rounded-lg border border-gray-300"
-              preload="metadata"
-            />
+            <!--
+              Two stacked players: one is on screen while the other preloads and
+              pre-seeks the next clip, so switching clips does not blank the
+              frame. Black backdrop so any residual gap reads as black, not white.
+            -->
+            <div class="relative max-w-full max-h-full bg-black shadow-2xl rounded-lg border border-gray-300 overflow-hidden">
+              <video
+                ref="videoA"
+                class="max-w-full max-h-full block"
+                :class="activeSlot === 0 ? 'relative opacity-100' : 'absolute inset-0 opacity-0 pointer-events-none'"
+                preload="auto"
+                playsinline
+              />
+              <video
+                ref="videoB"
+                class="max-w-full max-h-full block"
+                :class="activeSlot === 1 ? 'relative opacity-100' : 'absolute inset-0 opacity-0 pointer-events-none'"
+                preload="auto"
+                playsinline
+              />
+
+              <div
+                v-if="isBuffering"
+                class="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <div class="bg-black/60 backdrop-blur-sm rounded-full p-3">
+                  <Icon icon="material-symbols:progress-activity" class="text-2xl text-white animate-spin" />
+                </div>
+              </div>
+            </div>
           </div>
           
           <div v-else class="absolute inset-0 flex items-center justify-center">
@@ -262,6 +288,7 @@ watch(
             @remove-clip="removeClip"
             @trim-clip="trimClip"
             @move-clip="moveClip"
+            @drag-end="reflowClips"
           />
         </div>
       </main>

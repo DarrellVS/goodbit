@@ -1,21 +1,21 @@
 import { computed, ref } from 'vue';
-import { useLocalStorage } from '@vueuse/core';
 import axios from '../axios';
 import { useConfiguration } from './useConfiguration';
 
 /**
- * Local network mode.
+ * Local network streaming.
  *
- * When the app is reached over the internet, every thumbnail and video byte
- * travels browser -> ISP -> Cloudflare -> NAS -> LAN -> PC and all the way back.
- * The PC server also serves this bundle, so loading the app straight from its
- * LAN address keeps the whole lot on the local network instead.
+ * Served over the internet, every thumbnail and video byte travels
+ * browser -> ISP -> Cloudflare -> NAS -> LAN -> PC and all the way back, even
+ * when the browser is on the same switch as the server. The same server is
+ * reachable directly on the LAN, so media URLs are pointed at that address
+ * instead whenever it answers.
  *
- * It has to be an origin switch rather than just pointing media URLs at the LAN
- * IP: browsers block plain-HTTP subresources on an HTTPS page (mixed content),
- * so an HTTPS page can neither fetch nor even probe http://192.168.x.x. A
- * top-level navigation is not subresource loading, so it is allowed — which is
- * why switching means moving the whole page to the local origin.
+ * This works from an HTTPS page: browsers permit requests to private-network
+ * and loopback addresses, verified here with fetch, <img> and <video> from
+ * https://filmpje.darrellvs.nl to http://192.168.178.28:4000. A browser that
+ * does block it simply fails the probe below and falls back to the internet
+ * path, so the feature degrades quietly rather than breaking playback.
  */
 
 export interface LanEndpoint {
@@ -30,35 +30,22 @@ export interface LocalInfo {
   endpoints: LanEndpoint[];
 }
 
-/** Query param carrying the remote origin across the origin switch. */
-export const HANDOFF_PARAM = 'filmpjeFrom';
-/** Query param asking the remote origin not to bounce straight back to local. */
-export const STAY_PARAM = 'filmpjeStay';
-/** Params consumed on arrival; the router strips them from the visible URL. */
-export const LOCAL_MODE_PARAMS = [HANDOFF_PARAM, STAY_PARAM] as const;
-/** Marks that we just tried to reach the LAN, so a Back press can self-heal. */
-const ATTEMPT_KEY = 'filmpje-local-attempt';
-/** Suppresses auto-switch for this tab after an explicit "use the internet". */
-const STAY_KEY = 'filmpje-stay-remote';
-/**
- * A failed switch is followed by a Back press within seconds. A marker older
- * than this is left over from a switch that actually worked, so it must not be
- * read as a failure.
- */
-const ATTEMPT_TTL_MS = 60_000;
+/** How long a LAN address gets to answer before we give up on it. */
+const PROBE_TIMEOUT_MS = 1500;
 
 const localInfo = ref<LocalInfo | null>(null);
 const infoError = ref(false);
-let infoPromise: Promise<void> | null = null;
-
-/** Remote (internet) origin, remembered so local mode can offer a way back. */
-const remoteOrigin = useLocalStorage<string>('filmpje-remote-origin', '');
-/** Endpoint URL the user dismissed the suggestion for. */
-const dismissedEndpoint = useLocalStorage<string>('filmpje-local-dismissed', '');
-/** An auto-switch attempt did not reach the LAN; worth telling the user about. */
-const switchFailed = ref(false);
-/** Do not auto-switch again this tab, whether from a failure or a deliberate choice. */
-const autoSwitchSuppressed = ref(false);
+/**
+ * Origin to load media from. Empty string means "same origin as the page".
+ *
+ * Deliberately not persisted: a remembered LAN address would be wrong the
+ * moment the same browser opens the app from somewhere else, and would point
+ * media at an unreachable host. Probing costs a few milliseconds on the LAN,
+ * and the result is reused for the lifetime of the tab.
+ */
+const mediaBase = ref<string>('');
+const detecting = ref(false);
+let detectPromise: Promise<void> | null = null;
 
 function isPrivateHost(host: string): boolean {
   if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1') return true;
@@ -73,145 +60,101 @@ function isPrivateHost(host: string): boolean {
   return false;
 }
 
-/**
- * Runs before the router so the handoff param never reaches route state.
- * Records where we came from, and detects a failed auto-switch (the user
- * pressed Back after the LAN address did not resolve).
- */
-export function initLocalMode(): void {
-  const params = new URL(window.location.href).searchParams;
+/** True when the address answers quickly. Any failure counts as unreachable. */
+async function isReachable(base: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
 
-  const from = params.get(HANDOFF_PARAM);
-  if (from) {
-    try {
-      remoteOrigin.value = new URL(from).origin;
-    } catch {
-      // Malformed handoff, ignore.
-    }
-  }
-
-  // Arrived here because the user deliberately chose the internet connection.
-  if (params.get(STAY_PARAM)) {
-    window.sessionStorage.setItem(STAY_KEY, '1');
-  }
-
-  // These params are consumed here, but removing them from the URL is the
-  // router's job: it captures window.location when its module is evaluated,
-  // which import hoisting puts *before* this function runs, so a replaceState
-  // here would just be overwritten by the router's first navigation.
-
-  // We are back on the origin that launched an auto-switch. If that was moments
-  // ago the LAN address did not resolve; an older marker is from a switch that
-  // succeeded and the user simply came back later.
-  const attempt = window.sessionStorage.getItem(ATTEMPT_KEY);
-  if (attempt) {
-    window.sessionStorage.removeItem(ATTEMPT_KEY);
-    if (Date.now() - Number(attempt) < ATTEMPT_TTL_MS) {
-      switchFailed.value = true;
-      autoSwitchSuppressed.value = true;
-    }
-  }
-
-  if (window.sessionStorage.getItem(STAY_KEY)) {
-    autoSwitchSuppressed.value = true;
+  try {
+    const response = await fetch(`${base}/api/health`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timer);
   }
 }
 
 export function useLocalMode() {
   const config = useConfiguration();
 
+  /** The page itself is already being served from the LAN. */
   const isLocalOrigin = computed(() => isPrivateHost(window.location.hostname));
 
-  async function loadInfo(): Promise<void> {
-    if (infoPromise) return infoPromise;
-    infoPromise = axios
-      .get<LocalInfo>('/api/local-info')
-      .then(({ data }) => {
-        localInfo.value = data;
-      })
-      .catch(() => {
-        infoError.value = true;
-      });
-    return infoPromise;
-  }
+  const localStreaming = computed(() => isLocalOrigin.value || mediaBase.value !== '');
 
-  /** Best LAN address to offer, or null when none is usable. */
-  const localUrl = computed<string | null>(() => {
-    const info = localInfo.value;
-    if (!info || !info.servesClient) return null;
-    return info.endpoints[0]?.url ?? null;
-  });
-
-  const canSwitchToLocal = computed(() => !isLocalOrigin.value && localUrl.value !== null);
-
-  const canSwitchToRemote = computed(() => isLocalOrigin.value && remoteOrigin.value !== '');
-
-  const showSuggestion = computed(
-    () => canSwitchToLocal.value && dismissedEndpoint.value !== localUrl.value
+  const activeMediaOrigin = computed(() =>
+    mediaBase.value !== '' ? mediaBase.value : window.location.origin
   );
 
-  function buildTarget(base: string, includeHandoff: boolean): string {
-    const target = new URL(
-      window.location.pathname + window.location.search + window.location.hash,
-      base
-    );
-    if (includeHandoff) target.searchParams.set(HANDOFF_PARAM, window.location.origin);
-    return target.toString();
-  }
-
-  function switchToLocal(auto = false): void {
-    const base = localUrl.value;
-    if (!base) return;
-    // Breadcrumb so a Back press after an unreachable LAN address turns
-    // auto-switching off instead of looping.
-    if (auto) window.sessionStorage.setItem(ATTEMPT_KEY, String(Date.now()));
-    window.location.assign(buildTarget(base, true));
-  }
-
-  function switchToRemote(): void {
-    if (!remoteOrigin.value) return;
-    // Tell the remote origin this was deliberate, so it does not immediately
-    // bounce back here when "prefer local" is on.
-    const target = new URL(buildTarget(remoteOrigin.value, false));
-    target.searchParams.set(STAY_PARAM, '1');
-    window.location.assign(target.toString());
-  }
-
-  function dismissSuggestion(): void {
-    dismissedEndpoint.value = localUrl.value ?? '';
-  }
-
   /**
-   * Called once the app shell is up. Fetches LAN info and, if the user opted
-   * in, moves to the local origin automatically.
+   * Find a LAN address for media, if there is one. Safe to call repeatedly;
+   * the work happens once per tab.
    */
-  async function activate(): Promise<void> {
-    await loadInfo();
+  async function detectLocalMedia(): Promise<void> {
+    if (detectPromise) return detectPromise;
 
-    if (
-      config.public.value.preferLocalNetwork &&
-      canSwitchToLocal.value &&
-      !autoSwitchSuppressed.value
-    ) {
-      switchToLocal(true);
-    }
+    detectPromise = (async () => {
+      // Already served from the LAN, so relative URLs are local already.
+      if (isLocalOrigin.value) {
+        mediaBase.value = '';
+        return;
+      }
+
+      if (!config.public.value.preferLocalNetwork) {
+        mediaBase.value = '';
+        return;
+      }
+
+      detecting.value = true;
+      try {
+        const { data } = await axios.get<LocalInfo>('/api/local-info');
+        localInfo.value = data;
+
+        for (const endpoint of data.endpoints) {
+          if (await isReachable(endpoint.url)) {
+            mediaBase.value = endpoint.url;
+            return;
+          }
+        }
+
+        // Away from home, or the LAN address is not reachable from here.
+        mediaBase.value = '';
+      } catch {
+        infoError.value = true;
+        mediaBase.value = '';
+      } finally {
+        detecting.value = false;
+      }
+    })();
+
+    return detectPromise;
+  }
+
+  /** Re-run detection, e.g. after the setting is toggled. */
+  async function redetect(): Promise<void> {
+    detectPromise = null;
+    mediaBase.value = '';
+    await detectLocalMedia();
   }
 
   return {
     localInfo,
     infoError,
+    detecting,
+    mediaBase,
     isLocalOrigin,
-    localUrl,
-    remoteOrigin,
-    switchFailed,
-    autoSwitchSuppressed,
-    canSwitchToLocal,
-    canSwitchToRemote,
-    showSuggestion,
-    loadInfo,
-    activate,
-    switchToLocal,
-    switchToRemote,
-    dismissSuggestion,
+    localStreaming,
+    activeMediaOrigin,
+    detectLocalMedia,
+    redetect,
   };
+}
+
+/** Media origin for URL builders, outside of a component context. */
+export function currentMediaBase(): string {
+  return mediaBase.value;
 }

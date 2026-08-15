@@ -37,11 +37,15 @@ Two machines on the LAN:
 
 These hardcoded IPs are real, not placeholders. Don't "fix" them to localhost.
 
-**Local network mode.** Because the server also serves `client/dist`,
-`http://192.168.178.28:4000` is a complete same-origin app: page, API and media all stay on the LAN.
-That is the fast path at home. It has to be an origin switch rather than just LAN media URLs —
-browsers block plain-HTTP subresources on an HTTPS page, so the Cloudflare-served page cannot fetch
-or even probe a LAN address. See `LOCAL_STREAMING.md`.
+**Local network streaming.** The client probes the server's LAN address on shell mount and, when it
+answers, builds all media URLs against it — so video and thumbnails come straight off the LAN even
+though the page was served over HTTPS from the internet. Browsers permit requests to private-network
+addresses (measured, including `<img>`/`<video>`; the mixed-content console warning is not a block).
+If the probe fails, media falls back to the page's own origin. The server also serves `client/dist`,
+so `http://192.168.178.28:4000` works as a standalone app. See `LOCAL_STREAMING.md`.
+
+`client/src/utils/mediaUrl.ts` is the single place media URLs are built — always go through it, or
+the LAN routing is silently bypassed.
 
 `client/docker-compose.bat` builds `darrellvs/filmpje:arm64` (static `dist` served by `http-server`)
 for the same ARM box.

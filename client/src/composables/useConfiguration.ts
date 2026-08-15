@@ -26,9 +26,9 @@ const publicConfig = useLocalStorage<PublicConfig>('filmpje-public-config', {
   confirmBeforeDelete: true,
   compactMode: false,
   muteVideosByDefault: false,
-  // Off by default: an automatic hop to the LAN address strands you on a
-  // connection error when you are away from home. Opt in from Settings > Network.
-  preferLocalNetwork: false,
+  // On by default: falls back to the internet on its own when the PC is not
+  // reachable, so there is nothing to strand you when away from home.
+  preferLocalNetwork: true,
 });
 
 const privateConfig = reactive({
