@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import type { GameDTO } from '../../../../shared';
+import type { Game } from '../../types/game';
 import {
   DialogClose,
   DialogContent,
@@ -14,7 +14,7 @@ import {
 
 interface Props {
   open: boolean;
-  game: GameDTO | null;
+  game: Game | null;
   loading?: boolean;
 }
 

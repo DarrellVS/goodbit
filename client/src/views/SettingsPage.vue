@@ -6,16 +6,18 @@ import SettingsSidebar from '../components/Settings/SettingsSidebar.vue';
 import GeneralSettings from '../components/Settings/GeneralSettings.vue';
 import PlaybackSettings from '../components/Settings/PlaybackSettings.vue';
 import AdvancedSettings from '../components/Settings/AdvancedSettings.vue';
+import NetworkSettings from '../components/Settings/NetworkSettings.vue';
 
 const route = useRoute();
 const router = useRouter();
 
-const VALID_SECTIONS = ['general', 'playback', 'advanced'] as const;
+const VALID_SECTIONS = ['general', 'playback', 'network', 'advanced'] as const;
 type SettingSection = typeof VALID_SECTIONS[number];
 
 const sections = [
   { id: 'general', label: 'General', icon: 'material-symbols:settings', description: 'General application settings' },
   { id: 'playback', label: 'Playback', icon: 'material-symbols:play-circle', description: 'Video playback preferences' },
+  { id: 'network', label: 'Network', icon: 'material-symbols:router', description: 'Local network streaming' },
   { id: 'advanced', label: 'Advanced', icon: 'material-symbols:tune', description: 'Advanced configuration' },
 ];
 
@@ -56,6 +58,7 @@ const { resetToDefaults, exportSettings, importSettings } = useSettingsManagemen
       <div class="max-w-4xl mx-auto p-8">
         <GeneralSettings v-if="activeSection === 'general'" />
         <PlaybackSettings v-if="activeSection === 'playback'" />
+        <NetworkSettings v-if="activeSection === 'network'" />
         <AdvancedSettings v-if="activeSection === 'advanced'" />
       </div>
     </main>

@@ -1,4 +1,5 @@
 import { ref, computed, type Ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useBatchOperationsStore } from '../stores/batchOperations';
 import { useToastStore } from '../stores/toast';
 import { useCollectionsStore } from '../stores/collections';
@@ -46,6 +47,7 @@ function handleBatchResult(
 }
 
 export function useBatchOperations(options: UseBatchOperationsOptions) {
+  const router = useRouter();
   const batchStore = useBatchOperationsStore();
   const toastStore = useToastStore();
   const collectionsStore = useCollectionsStore();
@@ -277,6 +279,20 @@ async function handleBatchRemoveFromCollection(): Promise<void> {
     }
   }
 
+  function handleOpenInEditor(): void {
+    // selectedClips follows the order clips are displayed in (newest first),
+    // not the order they were clicked, so the timeline matches the library.
+    const clipIds = getValidClipIds(selectedClips.value);
+
+    if (clipIds.length === 0) {
+      toastStore.error('No valid clips selected');
+      return;
+    }
+
+    exitAndCleanup(batchStore);
+    router.push({ name: 'editor', query: { clips: clipIds.join(',') } });
+  }
+
   return {
     isSelectionMode: computed(() => batchStore.isSelectionMode),
     selectedCount: computed(() => batchStore.selectedCount),
@@ -300,5 +316,6 @@ async function handleBatchRemoveFromCollection(): Promise<void> {
     handleBatchAddTags,
     handleBatchAddToCollection,
     handleBatchRemoveFromCollection,
+    handleOpenInEditor,
   };
 }

@@ -29,6 +29,7 @@ interface Emits {
   (e: 'star'): void;
   (e: 'unstar'): void;
   (e: 'add-tags'): void;
+  (e: 'open-in-editor'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -88,6 +89,7 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
         @star="emit('star')"
         @unstar="emit('unstar')"
         @add-tags="emit('add-tags')"
+        @open-in-editor="emit('open-in-editor')"
       />
 
       <!-- Selection Mode Empty State (shows cancel button) -->

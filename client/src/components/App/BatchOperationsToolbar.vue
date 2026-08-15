@@ -27,6 +27,7 @@ interface Emits {
   (e: 'star'): void;
   (e: 'unstar'): void;
   (e: 'add-tags'): void;
+  (e: 'open-in-editor'): void;
 }
 
 const props = defineProps<Props>();
@@ -106,6 +107,17 @@ const someStarred = computed(() =>
             class="min-w-[200px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50"
             :side-offset="8"
           >
+            <!-- Open in Advanced Editor -->
+            <DropdownMenuItem
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+              @click="emit('open-in-editor')"
+            >
+              <Icon icon="material-symbols:movie-edit" class="text-base" />
+              <span>Open in Advanced Editor</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator class="h-px bg-gray-200 my-1" />
+
             <!-- Publish/Unpublish -->
             <DropdownMenuItem
               v-if="!allPublished"

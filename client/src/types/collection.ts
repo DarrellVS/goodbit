@@ -1,6 +1,13 @@
-// Re-export types from shared module
-export type { CollectionDTO as Collection } from '../../../shared';
-export type { CollectionWithClipsDTO } from '../../../shared';
-export type { CreateCollectionRequestDTO } from '../../../shared';
-export type { UpdateCollectionRequestDTO } from '../../../shared';
+// Re-export types from shared module, as plain data (see ./plain).
+import type {
+  CollectionDTO,
+  CollectionWithClipsDTO as CollectionWithClipsDTOClass,
+  CreateCollectionRequestDTO as CreateCollectionRequestDTOClass,
+  UpdateCollectionRequestDTO as UpdateCollectionRequestDTOClass,
+} from '../../../shared';
+import type { PlainData } from './plain';
 
+export type Collection = PlainData<CollectionDTO>;
+export type CollectionWithClipsDTO = PlainData<CollectionWithClipsDTOClass>;
+export type CreateCollectionRequestDTO = PlainData<CreateCollectionRequestDTOClass>;
+export type UpdateCollectionRequestDTO = PlainData<UpdateCollectionRequestDTOClass>;

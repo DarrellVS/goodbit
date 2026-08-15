@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia';
 import { listAllTags } from '../services/clips';
-import type { TagDTO } from '../../../shared';
+import type { Tag } from '../types/tag';
 
 export const useTagsStore = defineStore('tags', {
   state: () => ({
-    items: [] as TagDTO[],
+    items: [] as Tag[],
     loading: false,
   }),
   getters: {

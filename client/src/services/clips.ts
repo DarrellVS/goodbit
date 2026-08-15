@@ -1,7 +1,7 @@
 import axios from '../axios';
 import type { TimelineClip } from '../types/editor';
 import type { Clip } from '../types/clip';
-import type { TagDTO } from '../../../shared';
+import type { Tag } from '../types/tag';
 
 export type ClipMeta = {
   durationSec: number;
@@ -62,8 +62,8 @@ export async function updateClipNotes(id: number, notes: string | null): Promise
   return data;
 }
 
-export async function listAllTags(): Promise<TagDTO[]> {
-  const { data } = await axios.get<{ items: TagDTO[] }>(`/api/tags`);
+export async function listAllTags(): Promise<Tag[]> {
+  const { data } = await axios.get<{ items: Tag[] }>(`/api/tags`);
   return data.items;
 }
 

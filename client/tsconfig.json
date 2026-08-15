@@ -5,6 +5,9 @@
     "moduleResolution": "Bundler",
     "jsx": "preserve",
     "strict": true,
+    // Third-party .d.ts files (vueuse's Web Bluetooth refs, radix-vue) do not
+    // typecheck against this lib set; only our own code needs to be sound.
+    "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "useDefineForClassFields": true,
@@ -15,6 +18,9 @@
       "@filmpje/shared/*": ["../shared/*"]
     }
   },
-  "include": ["src"]
+  // The service worker runs in a WebWorker global scope, whose lib clashes with
+  // the DOM lib the app needs. It is checked separately via tsconfig.sw.json.
+  "include": ["src"],
+  "exclude": ["src/sw.ts"]
 }
 

@@ -30,6 +30,8 @@
         </template>
       </AppHeader>
 
+      <LocalModeBanner />
+
       <main class="flex-1 overflow-y-auto">
         <RouterView />
       </main>
@@ -57,6 +59,7 @@ import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
 import FileDropZone from '../components/App/FileDropZone.vue';
 import AppTagsFilter from '../components/App/AppTagsFilter.vue';
+import LocalModeBanner from '../components/App/LocalModeBanner.vue';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();

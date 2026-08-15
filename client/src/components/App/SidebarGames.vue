@@ -4,7 +4,7 @@ import { useGamesList } from '../../composables/useGamesList';
 import { useGamesStore } from '../../stores/games';
 import { useToastStore } from '../../stores/toast';
 import { updateGameName } from '../../services/games';
-import type { GameDTO } from '../../../../shared';
+import type { Game } from '../../types/game';
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
 import SidebarShowMore from './SidebarShowMore.vue';
 import GameRenameDialog from './GameRenameDialog.vue';
@@ -27,14 +27,14 @@ const gamesStore = useGamesStore();
 const toastStore = useToastStore();
 
 const renameDialogOpen = ref(false);
-const gameToRename = ref<GameDTO | null>(null);
+const gameToRename = ref<Game | null>(null);
 const isRenameLoading = ref(false);
 
 function toggleShowAll() {
   showAllGames.value = !showAllGames.value;
 }
 
-function openRenameDialog(game: GameDTO, event: Event) {
+function openRenameDialog(game: Game, event: Event) {
   event.stopPropagation();
   gameToRename.value = game;
   renameDialogOpen.value = true;

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'node:path';
 import { AppDataSource, VIDEOS_ROOT } from './data-source.js';
 import { apiRouter } from './routes/index.js';
 import { videoService } from './services/videoService.js';
@@ -12,6 +13,8 @@ import { SyncPublishedClipsMetadataAction } from './actions/SyncPublishedClipsMe
 import { verifyFirebaseToken } from './auth.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
+import { resolveClientDist } from './utils/clientDist.js';
+import { getLanEndpoints } from './utils/networkInfo.js';
 import { asyncHandler } from './utils/asyncHandler.js';
 import { ClipDTO } from '../../shared/index.js';
 import { Clip } from './entity/Clip.js';
@@ -103,6 +106,40 @@ app.post('/api/rescan', async (req, res) => {
 // Protect the rest of the API
 app.use('/api', verifyFirebaseToken, apiRouter);
 
+// Serve the built client from this origin when it is available.
+//
+// This is what enables local streaming: the browser can then load the app from
+// http://<lan-ip>:4000 and every request for a thumbnail or video stream is
+// same-origin over the LAN. Loading the app over HTTPS from the internet makes
+// that impossible, because browsers block plain-HTTP subresources on an HTTPS
+// page (mixed content) regardless of what the app tries to do.
+const CLIENT_DIST = resolveClientDist();
+
+if (CLIENT_DIST) {
+  app.use(
+    express.static(CLIENT_DIST, {
+      // Asset filenames are content-hashed by Vite, so they can be cached hard.
+      // index.html and the service worker must not be, or a new build never lands.
+      setHeaders: (res, filePath) => {
+        const name = path.basename(filePath);
+        if (name === 'index.html' || name === 'sw.js' || name === 'registerSW.js') {
+          res.setHeader('Cache-Control', 'no-cache');
+        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      },
+    })
+  );
+
+  // SPA fallback for client-side routes. Anything under /api is excluded so
+  // unknown endpoints still return a JSON 404 instead of the app shell.
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(path.join(CLIENT_DIST, 'index.html'));
+  });
+}
+
 // Global error handler (last)
 app.use(errorHandler);
 
@@ -176,7 +213,19 @@ async function start() {
   
   app.listen(PORT, () => {
     console.log(`🚀 Server listening on http://localhost:${PORT}`);
-    console.log(`📁 VIDEOS_ROOT=${VIDEOS_ROOT}\n`);
+    console.log(`📁 VIDEOS_ROOT=${VIDEOS_ROOT}`);
+
+    if (CLIENT_DIST) {
+      const endpoints = getLanEndpoints(PORT);
+      console.log(`🖥️  Serving client from ${CLIENT_DIST}`);
+      if (endpoints.length > 0) {
+        console.log('🏠 Local network access (streams stay on the LAN):');
+        for (const e of endpoints) console.log(`   ${e.url}  (${e.iface})`);
+      }
+    } else {
+      console.log('🖥️  Client bundle not found — run `npm run build` in client/ to enable local mode');
+    }
+    console.log('');
   });
 }
 

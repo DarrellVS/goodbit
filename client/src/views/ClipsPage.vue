@@ -56,6 +56,7 @@ const {
   handleBatchUnstar,
   handleBatchAddTags,
   handleBatchAddToCollection,
+  handleOpenInEditor,
 } = useBatchOperations({
   clips,
   onClipsUpdated: () => preserveScrollPosition(async () => {
@@ -171,6 +172,7 @@ onMounted(() => {
       @star="handleBatchStar"
       @unstar="handleBatchUnstar"
       @add-tags="showTagDialog = true"
+      @open-in-editor="handleOpenInEditor"
     />
 
     <!-- Batch Tag Dialog -->

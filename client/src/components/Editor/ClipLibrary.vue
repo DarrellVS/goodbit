@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useFormat } from '../../composables/useFormat';
 import type { Clip } from '../../types/clip';
@@ -6,16 +7,26 @@ import type { Clip } from '../../types/clip';
 interface Props {
   clips: Clip[];
   getThumbUrl: (clip: Clip) => string;
+  /** Clip ids currently on the timeline; shown muted here. */
+  addedClipIds?: number[];
 }
 
 interface Emits {
   (e: 'add-to-timeline', clip: Clip): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  addedClipIds: () => [],
+});
 const emit = defineEmits<Emits>();
 
 const { formatBytes } = useFormat();
+
+const addedIds = computed(() => new Set(props.addedClipIds));
+
+function isAdded(clip: Clip): boolean {
+  return addedIds.value.has(clip.id);
+}
 
 function formatDate(date: string | Date): string {
   return new Date(date).toLocaleDateString();
@@ -35,7 +46,11 @@ function formatDate(date: string | Date): string {
       <button
         v-for="clip in clips"
         :key="clip.id"
-        class="w-full group relative rounded-lg overflow-hidden bg-white/80 hover:bg-white transition-all border border-gray-300 hover:border-orange-500/50 cursor-pointer"
+        class="w-full group relative rounded-lg overflow-hidden bg-white/80 hover:bg-white transition-all border cursor-pointer"
+        :class="isAdded(clip)
+          ? 'border-gray-300 opacity-50 hover:opacity-100'
+          : 'border-gray-300 hover:border-orange-500/50'"
+        :title="isAdded(clip) ? 'Already in the timeline — click to add another copy' : undefined"
         @click="emit('add-to-timeline', clip)"
       >
         <div class="aspect-video relative">
@@ -43,13 +58,22 @@ function formatDate(date: string | Date): string {
             :src="getThumbUrl(clip)"
             :alt="clip.displayName || clip.filename"
             class="w-full h-full object-cover"
+            :class="{ 'grayscale': isAdded(clip) }"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-          
+
+          <div
+            v-if="isAdded(clip)"
+            class="absolute top-2 left-2 bg-orange-500/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-medium text-white flex items-center gap-1"
+          >
+            <Icon icon="material-symbols:check" class="text-xs" />
+            In timeline
+          </div>
+
           <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-mono text-gray-700">
             {{ formatDate(clip.fileModifiedAt) }}
           </div>
-          
+
           <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/40 backdrop-blur-sm">
             <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-full p-3 shadow-lg shadow-orange-500/30">
               <Icon icon="material-symbols:add" class="text-2xl text-white" />
@@ -57,7 +81,7 @@ function formatDate(date: string | Date): string {
           </div>
         </div>
         
-        <div class="p-2.5">
+        <div class="p-2.5" :class="{ 'text-gray-500': isAdded(clip) }">
           <div class="text-xs font-medium text-gray-900 line-clamp-1 mb-1">
             {{ clip.displayName || clip.filename }}
           </div>

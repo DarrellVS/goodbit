@@ -13,6 +13,9 @@ import { videoUrl as videoUrlFor } from '../utils/mediaUrl';
 import { useClipExport } from '../composables/useClipExport';
 import { useEditorLayout } from '../composables/useEditorLayout';
 import { useClipHandlers } from '../composables/useClipHandlers';
+import { getClip } from '../services/clips';
+import { parseClipIds } from '../utils/clipIdQuery';
+import { pluralize } from '../utils/pluralize';
 import type { Clip } from '../types/clip';
 import type { TimelineClip } from '../types/editor';
 import Timeline from '../components/Editor/Timeline.vue';
@@ -52,6 +55,9 @@ const { videoElement, togglePlayback, skipForward, skipBackward } = useEditorVid
 
 const { showLibrary, showProperties, toggleLibrary, toggleProperties } = useEditorLayout();
 
+/** Backs the "In timeline" muting in the library panel. */
+const addedClipIds = computed(() => timelineClips.value.map((c: TimelineClip) => c.clipId));
+
 const selectedClipId = ref<string | null>(null);
 const selectedClip = computed(() => 
   timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
@@ -59,17 +65,33 @@ const selectedClip = computed(() =>
 
 const { isExporting, exportProgress, exportClip } = useClipExport(timelineClips);
 
-async function handleAddToTimeline(clip: Clip): Promise<void> {
-  const videoUrl = videoUrlFor(clip.id, clip.fileModifiedAt);
-  const thumbnailUrl = getThumbUrl(clip);
-  
-  try {
-    const videoDuration = await loadVideoMetadata(videoUrl);
-    addClip(clip.id, videoUrl, thumbnailUrl, videoDuration);
-  } catch (error) {
-    console.error('Failed to load video metadata:', error);
-    addClip(clip.id, videoUrl, thumbnailUrl, EDITOR_CONSTANTS.DEFAULT_VIDEO_DURATION);
+async function addClipsToTimeline(clips: Clip[]): Promise<void> {
+  // Probe durations in parallel, then append in the given order. addClip places
+  // each clip at the current end of the timeline, so appending has to stay
+  // ordered even though the metadata loads race each other.
+  const prepared = await Promise.all(
+    clips.map(async (clip) => {
+      const videoUrl = videoUrlFor(clip.id, clip.fileModifiedAt);
+      const thumbnailUrl = getThumbUrl(clip);
+      let videoDuration: number = EDITOR_CONSTANTS.DEFAULT_VIDEO_DURATION;
+
+      try {
+        videoDuration = await loadVideoMetadata(videoUrl);
+      } catch (error) {
+        console.error(`Failed to load video metadata for clip ${clip.id}:`, error);
+      }
+
+      return { clip, videoUrl, thumbnailUrl, videoDuration };
+    })
+  );
+
+  for (const item of prepared) {
+    addClip(item.clip.id, item.videoUrl, item.thumbnailUrl, item.videoDuration);
   }
+}
+
+async function handleAddToTimeline(clip: Clip): Promise<void> {
+  await addClipsToTimeline([clip]);
 }
 
 function handleSelectClip(clipId: string): void {
@@ -101,9 +123,38 @@ function goBack(): void {
   router.push('/');
 }
 
-async function loadClipFromQuery(clipId: string): Promise<void> {
-  const clip = clipsStore.items.find((c: Clip) => c.id === Number(clipId));
-  if (clip) await handleAddToTimeline(clip);
+async function resolveClip(id: number): Promise<Clip | null> {
+  const loaded = clipsStore.items.find((c: Clip) => c.id === id);
+  if (loaded) return loaded;
+
+  // Selection survives paging, so a selected clip is not necessarily on the
+  // page the store currently holds. Fetch it directly rather than dropping it.
+  try {
+    return await getClip(id);
+  } catch (error) {
+    console.error(`Failed to load clip ${id}:`, error);
+    return null;
+  }
+}
+
+let loadedQueryKey = '';
+
+async function loadClipsFromQuery(): Promise<void> {
+  const ids = parseClipIds(route.query.clips ?? route.query.clip);
+  const key = ids.join(',');
+  if (ids.length === 0 || key === loadedQueryKey) return;
+  loadedQueryKey = key;
+
+  const resolved = (await Promise.all(ids.map(resolveClip))).filter(
+    (clip): clip is Clip => clip !== null
+  );
+
+  if (resolved.length > 0) await addClipsToTimeline(resolved);
+
+  const missing = ids.length - resolved.length;
+  if (missing > 0) {
+    toastStore.warning(`${missing} ${pluralize(missing, 'clip')} could not be loaded`);
+  }
 }
 
 useKeyboardShortcuts({
@@ -117,18 +168,13 @@ useKeyboardShortcuts({
 
 onMounted(async () => {
   await clipsStore.fetchClips(false);
-  
-  const clipId = route.query.clip;
-  if (clipId && !Array.isArray(clipId)) {
-    await loadClipFromQuery(clipId);
-  }
+  await loadClipsFromQuery();
 });
 
-watch(() => route.query.clip, async (clipId) => {
-  if (clipId && !Array.isArray(clipId)) {
-    await loadClipFromQuery(clipId);
-  }
-});
+watch(
+  () => [route.query.clip, route.query.clips],
+  () => loadClipsFromQuery()
+);
 </script>
 
 <template>
@@ -179,6 +225,7 @@ watch(() => route.query.clip, async (clipId) => {
         <ClipLibrary
           :clips="clipsStore.items"
           :get-thumb-url="(clip: Clip) => getThumbUrl(clip)"
+          :added-clip-ids="addedClipIds"
           @add-to-timeline="handleAddToTimeline"
         />
       </aside>

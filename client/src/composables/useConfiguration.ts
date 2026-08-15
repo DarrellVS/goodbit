@@ -12,6 +12,7 @@ export interface PublicConfig {
   confirmBeforeDelete: boolean;
   compactMode: boolean;
   muteVideosByDefault: boolean;
+  preferLocalNetwork: boolean;
   customShortcuts?: Record<string, ShortcutKey>;
 }
 
@@ -25,6 +26,9 @@ const publicConfig = useLocalStorage<PublicConfig>('filmpje-public-config', {
   confirmBeforeDelete: true,
   compactMode: false,
   muteVideosByDefault: false,
+  // Off by default: an automatic hop to the LAN address strands you on a
+  // connection error when you are away from home. Opt in from Settings > Network.
+  preferLocalNetwork: false,
 });
 
 const privateConfig = reactive({

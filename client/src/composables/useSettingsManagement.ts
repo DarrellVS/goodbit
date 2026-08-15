@@ -1,16 +1,18 @@
-import { useConfiguration } from './useConfiguration';
+import { useConfiguration, type PublicConfig } from './useConfiguration';
 import { useToastStore } from '../stores/toast';
 
-const DEFAULT_SETTINGS = {
-  viewMode: 'grouped' as const,
+// Typed so that adding a setting without a default here is a compile error.
+const DEFAULT_SETTINGS: PublicConfig = {
+  viewMode: 'grouped',
   pageSize: 15,
   autoPlayOnHover: true,
   showMetadata: true,
-  dateFormat: 'relative' as const,
+  dateFormat: 'relative',
   enableKeyboardShortcuts: true,
   confirmBeforeDelete: true,
   compactMode: false,
   muteVideosByDefault: false,
+  preferLocalNetwork: false,
   customShortcuts: undefined,
 };
 
@@ -20,7 +22,8 @@ export function useSettingsManagement() {
 
   function resetToDefaults(): void {
     if (confirm('Are you sure you want to reset all settings to their default values?')) {
-      config.public.value = DEFAULT_SETTINGS;
+      // Copy, or later edits would mutate the shared constant.
+      config.public.value = { ...DEFAULT_SETTINGS };
       toastStore.success('Settings reset to defaults');
     }
   }

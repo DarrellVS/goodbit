@@ -4,7 +4,7 @@ import { useToastStore } from '../stores/toast';
 import { exportTimeline, getExportProgress } from '../services/clips';
 import type { TimelineClip } from '../types/editor';
 
-export function useClipExport(timelineClips: Ref<TimelineClip[]>) {
+export function useClipExport(timelineClips: Ref<readonly TimelineClip[]>) {
   const router = useRouter();
   const toastStore = useToastStore();
   const isExporting = ref(false);

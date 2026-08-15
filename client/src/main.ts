@@ -8,6 +8,10 @@ import './animations.css';
 import './tooltip.css';
 import { router } from './router';
 import { useAuthStore } from './stores/auth';
+import { initLocalMode } from './composables/useLocalMode';
+
+// Consume the local-mode handoff param before the router reads the URL.
+initLocalMode();
 
 const app = createApp(App);
 app.use(createPinia());
