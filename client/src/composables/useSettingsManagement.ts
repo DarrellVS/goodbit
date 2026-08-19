@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS: PublicConfig = {
   viewMode: 'grouped',
   pageSize: 15,
   autoPlayOnHover: true,
+  hoverScrub: true,
   showMetadata: true,
   dateFormat: 'relative',
   enableKeyboardShortcuts: true,

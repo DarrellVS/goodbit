@@ -5,6 +5,7 @@ import { Icon } from '@iconify/vue';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
 import { useConfiguration } from '../../composables/useConfiguration';
 import { useClipActionsHandlers } from '../../composables/useClipActionsHandlers';
+import { useHoverScrub } from '../../composables/useHoverScrub';
 import { useBatchOperationsStore } from '../../stores/batchOperations';
 import { useCollectionsStore } from '../../stores/collections';
 import { useToastStore } from '../../stores/toast';
@@ -51,6 +52,20 @@ const { startDrag, endDrag } = useDragAndDrop();
 
 const isSelected = computed(() => batchStore.isSelected(props.clip.id));
 const showMoveDialog = ref(false);
+
+const videoEl = ref<HTMLVideoElement | null>(null);
+const hoverScrubEnabled = computed(() => config.public.value.hoverScrub);
+const {
+  isScrubbing,
+  scrubProgress,
+  scrubTime,
+  formatTime,
+  handleMouseMove,
+  handleMouseLeave,
+} = useHoverScrub(videoEl, hoverScrubEnabled);
+
+// Keep the time label from hanging off either edge of the card.
+const scrubLabelLeft = computed(() => `${Math.min(92, Math.max(8, scrubProgress.value * 100))}%`);
 
 function handleDragStart(event: DragEvent) {
   startDrag({ type: 'clip', clipId: props.clip.id }, event);
@@ -130,9 +145,14 @@ function handleCardClick(event: MouseEvent) {
       />
     </div>
 
-    <div class="aspect-[21/9] bg-black relative">
+    <div 
+      class="aspect-[21/9] bg-black relative"
+      @mousemove="handleMouseMove"
+      @mouseleave="handleMouseLeave"
+    >
       <video 
         :id="`preview-video-${clip.id}`"
+        ref="videoEl"
         :src="videoUrl" 
         :poster="posterUrl"
         :muted="config.public.value.muteVideosByDefault"
@@ -140,6 +160,25 @@ function handleCardClick(event: MouseEvent) {
         preload="none" 
         controls
       />
+
+      <!-- Scrub strip indicator. pointer-events-none so the native controls
+           underneath stay clickable. -->
+      <div
+        v-if="isScrubbing"
+        class="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none z-10"
+      >
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        <div
+          class="absolute top-0 bottom-0 w-0.5 bg-orange-500"
+          :style="{ left: `${scrubProgress * 100}%` }"
+        ></div>
+        <div
+          class="absolute top-1 px-1.5 py-0.5 rounded bg-black/80 text-white text-[10px] font-mono -translate-x-1/2 whitespace-nowrap"
+          :style="{ left: scrubLabelLeft }"
+        >
+          {{ formatTime(scrubTime) }}
+        </div>
+      </div>
     </div>
     
     <div :class="config.public.value.compactMode ? 'p-2' : 'p-3'">

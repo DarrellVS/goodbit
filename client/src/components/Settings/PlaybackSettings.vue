@@ -20,6 +20,12 @@ const config = useConfiguration();
       />
 
       <SettingToggle
+        v-model="config.public.value.hoverScrub"
+        label="Scrub on Hover"
+        description="Move the pointer across the bottom third of a clip to seek through it"
+      />
+
+      <SettingToggle
         v-model="config.public.value.muteVideosByDefault"
         label="Mute Videos by Default"
         description="Start videos muted (can be unmuted manually)"
