@@ -1,0 +1,5 @@
+// Re-export types from shared module, as plain data (see ./plain).
+import type { AudioTrackDTO } from '@shared/index';
+import type { PlainData } from './plain';
+
+export type AudioTrack = PlainData<AudioTrackDTO>;
