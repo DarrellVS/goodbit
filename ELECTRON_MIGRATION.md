@@ -568,17 +568,26 @@ The layering makes each step small; there are just a lot of them.
 
 ## Still to do, and why it needs you
 
-1. **Push the rewritten history.** `git push --force origin main`. It was blocked here by the
-   permission gate around destructive git operations, which is the right gate to have. Everything
-   else is committed locally. Anyone who cloned the old repo keeps the old objects, so this is
-   necessary but not sufficient — the values below have to be treated as burned.
-2. **Rotate the Cloudflare API token.** `publisher/.env.development` was committed with a live
-   Cloudflare token and zone id. The file is gone from the rewritten history, but the token existed
-   in the pushed repository and should be rolled in the Cloudflare dashboard.
-3. **Rename the GitHub repository `filmpje` → `goodbit`.** `electron-builder.yml` already publishes
-   its update feed to `DarrellVS/goodbit`, and the Pages site is written for
-   `https://darrellvs.github.io/goodbit/`. GitHub redirects the old name, so nothing breaks.
-4. **Enable Pages** (Settings → Pages → Source: GitHub Actions). `.github/workflows/pages.yml`
-   publishes `site/` on every push to `main` that touches it.
-5. **Choose a licence.** A public repository with no licence is "all rights reserved" by default,
-   which is a legitimate choice but probably not the intended one. ApexCut ships MIT.
+Everything else is done and pushed. `main` carries the rewritten history, the
+repository is now `DarrellVS/goodbit`, and **1.0.0 is released** with an
+installer and a portable build attached.
+
+1. **Rotate the Cloudflare API token.** `publisher/.env.development` was
+   committed with a live Cloudflare token and zone id. The file is gone from the
+   rewritten history, but that history was pushed once, so the value has to be
+   treated as burned. Roll it in the Cloudflare dashboard.
+2. **Make the repository public when you are ready.** That is the one step left
+   that discloses anything, so it is yours rather than mine — and it should
+   happen after the token above is rotated. Doing it also fixes the next item.
+3. **The Pages site is built and committed but not published.** GitHub refuses
+   to create a Pages site for a private repository on a free plan, which is why
+   the Pages workflow's first run failed. It now has `enablement: true`, so the
+   first push to `site/**` after the repository goes public creates the site at
+   `https://darrellvs.github.io/goodbit/` on its own. To see it before then:
+   `cd site && python -m http.server` and open <http://localhost:8000>.
+4. **Choose a licence.** A public repository with no licence is "all rights
+   reserved" by default, which is a legitimate choice but probably not the
+   intended one. ApexCut ships MIT.
+5. **A backup of the pre-rewrite repository** is in
+   `~/Downloads/filmpje-repo-backup-2026-09-13.git`. Keep it until you are
+   satisfied nothing was lost, then delete it — it still contains the secrets.
