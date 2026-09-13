@@ -341,8 +341,10 @@ Do Phase 0 item 3 before anything else in this document.
 Shipped visibly wrong and **deliberately not fixed in the web app**, since the UI is rebuilt here
 anyway. Recorded so the rewrite fixes the cause rather than the screen.
 
-The Settings sidebar renders dark text on a dark ground, unreadable. Two systematic gaps in the pass
-that added `dark:` variants, both invisible to typecheck and to the build:
+The Settings sidebar renders dark text on a dark ground. The Advanced Editor is worse: every panel is
+a washed light slab on a dark shell, with filenames, game headings and the Discard button close to
+invisible. Two systematic gaps in the pass that added `dark:` variants, both invisible to typecheck
+and to the build:
 
 1. **Opacity-modified utilities were not in the map** — `bg-white/10`, `bg-gray-50/50`,
    `border-gray-200/80`. The map held `bg-white` and `bg-gray-50` but Tailwind treats
@@ -352,6 +354,13 @@ that added `dark:` variants, both invisible to typecheck and to the build:
    holds colours inside a JavaScript expression. The pass deliberately left these alone after an
    earlier attempt appended Tailwind tokens into the expressions and broke the parse in six files —
    correct to skip, but it means every conditional style stayed light-only. **11 files.**
+
+**In places the partial pass made things worse rather than merely incomplete.** Where an element had
+`text-gray-900` on `bg-white/85` — as the editor's timeline labels do — the text gained a
+`dark:text-slate-100` while the background stayed light, turning readable dark-on-light into
+light-on-light. `components/Editor` holds 30 of the opacity-modified classes and
+`components/App` 46, which is why those two areas look the most broken. Anywhere the light styling
+survived intact is fine; it is the half-converted elements that are unreadable.
 
 **The fix in the rewrite is not another find-and-replace.** Both gaps come from colours being spelled
 literally at 600-odd call sites, where a mechanical pass can only ever approximate. `styles.css`
@@ -366,6 +375,47 @@ like.
 `vue-tsc` was clean, the build succeeded, the CSS contained the right rules. Nothing that existed
 could see the result. The Electron suite gets, at minimum, a light and dark screenshot of every top
 level screen, so a palette regression is a failing test rather than something spotted in use.
+
+### The styling pass, once the rebuild is done
+
+Not "fix the Settings sidebar". Every screen gets walked in **both palettes**, against a test library,
+after the token conversion. The full surface:
+
+| | Screens |
+|---|---|
+| Library | grouped view, grid view, empty state, a game with one clip, drag-and-drop overlay |
+| Lists | Today's clips, a collection, an empty collection, Smart Tag Patterns, Stats |
+| Clip detail | player, tags, collections, notes (rendered + editor dialog), published badge, share sheet |
+| Trim | frame strip, range handles, suggestion banner (both present and absent) |
+| Editor | clip library, music library, timeline in both lanes, clip and audio properties, resume banner, drafts dialog, export dialog mid-render |
+| Settings | all five sections, plus export/import/reset |
+| Overlays | command palette, toasts, update banner, batch toolbar, every confirm dialog |
+
+Two rules worth fixing in place of the old habits, since both produced this mess:
+
+- **No literal colour in a component.** Tokens only, so a palette is defined once rather than
+  maintained at 600 call sites. This is the rule ApexCut's `docs/design.md` states and is the reason
+  its two themes stay consistent.
+- **Contrast is checked, not eyeballed.** The Discard button in the resume banner was low-contrast in
+  *light* mode too — this is not purely a dark-mode problem, and a screenshot diff catches what
+  reading the class list does not.
+
+### Testing never touches the real library
+
+A hard requirement, not a convention: **no test run may see or write the real clips, database or
+settings.** ApexCut's arrangement, which transplants directly:
+
+- `GOODBIT_USER_DATA=<folder>` points a run at its own data directory **and its own single-instance
+  lock**, so a test can run beside the tray app without the two fighting over one SQLite file or the
+  lock rejecting the launch.
+- Each Playwright test gets a throw-away directory (`tests/e2e/app.ts`), with its own videos root,
+  output folder and database. Nothing is shared between tests.
+- A seeded fixture library — a handful of short clips generated with the bundled ffmpeg, plus one
+  deliberately unreadable file — so tests do not depend on what happens to be in anyone's Videos
+  folder. Tests needing a real recording take a path from an env var and **skip** without one, rather
+  than reaching for the real library.
+- The same applies to me: any manual verification runs against a temporary root and database, the way
+  the ApexCut port was tested, never against `C:\Users\darre\Videos`.
 
 ---
 
