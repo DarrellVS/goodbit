@@ -92,7 +92,7 @@ const { canUndo, canRedo, record, undo, redo, clearHistory } = useEditorHistory(
 /** The ruler spans whichever lane runs longest; the export still cuts at the video. */
 const totalDuration = computed(() => Math.max(duration.value, audioDuration.value));
 
-const { videoA, videoB, activeSlot, isBuffering, togglePlayback, skipForward, skipBackward } = useEditorVideoPlayback(
+const { videoA, videoB, activeSlot, isBuffering, togglePlayback, skipForward, skipBackward, seekTo } = useEditorVideoPlayback(
   timelineClips,
   currentTime,
   playing,
@@ -104,7 +104,10 @@ useEditorAudioPlayback(timelineAudio, timelineClips, currentTime, playing, total
 // useTimeline clamps to the video lane alone, which would pin the playhead at
 // zero on a music-only timeline. Both of these span whichever lane is longer.
 function handleSeek(time: number): void {
-  currentTime.value = Math.max(0, Math.min(time, totalDuration.value));
+  // Through the player, so the picture follows even mid-playback. Writing
+  // currentTime alone is overwritten by the next playback frame, which is why
+  // dragging the playhead while playing used to spring back.
+  seekTo(Math.max(0, Math.min(time, totalDuration.value)));
 }
 
 function handlePlay(): void {
@@ -418,6 +421,12 @@ function handleMoveAudio(audioId: string, newStartTime: number): void {
   }, { duration: item?.duration });
 
   moveAudio(audioId, time);
+}
+
+/** The empty music lane is the obvious place to click when you want music. */
+function openMusicPanel(): void {
+  libraryTab.value = 'music';
+  showLibrary.value = true;
 }
 
 function handleZoomIn(): void {
@@ -738,6 +747,7 @@ watch(
             @remove-audio="handleRemoveAudio"
             @trim-audio="trimAudio"
             @move-audio="handleMoveAudio"
+            @open-music="openMusicPanel"
           />
         </div>
       </main>

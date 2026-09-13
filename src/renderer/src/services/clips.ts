@@ -290,19 +290,23 @@ export interface ImportFilesResult {
   errors?: string[];
 }
 
-export async function importFiles(files: File[]): Promise<ImportFilesResult> {
-  const formData = new FormData();
-  for (const file of files) {
-    formData.append('files', file);
-  }
-  
-  const { data } = await axios.post<ImportFilesResult>('/api/clips/import', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
-  return data;
+/**
+ * Import clips by path.
+ *
+ * Multipart form data cannot cross the contextBridge, so this arrived with no
+ * body once the transport moved to IPC. Main is handed the paths and reads the
+ * files itself — which is the right shape for a desktop app regardless, since
+ * nothing has to pass through the renderer's memory.
+ */
+export async function importFiles(paths: string[]): Promise<ImportFilesResult> {
+  const bridge = window.goodbit;
+  if (!bridge) throw new Error('The GoodBit bridge is unavailable');
+  return (await bridge.importClips(paths)) as ImportFilesResult;
+}
+
+/** Open the OS picker for video files. Returns an empty list if cancelled. */
+export async function pickClipFiles(): Promise<string[]> {
+  return (await window.goodbit?.pickFiles('video')) ?? [];
 }
 
 export async function moveClipToGame(id: number, targetGame: string): Promise<Clip> {

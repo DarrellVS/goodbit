@@ -2,7 +2,8 @@ import { ref } from 'vue';
 import { useToastStore } from '../stores/toast';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
-import { importFiles } from '../services/clips';
+import { importFiles, pickClipFiles } from '../services/clips';
+import { pathForFile } from '../services/audio';
 
 const VALID_VIDEO_TYPES = [
   'video/mp4',
@@ -106,24 +107,41 @@ export function useFileImport() {
       );
     }
 
-    await uploadFiles(videoFiles);
+    // A dropped File has no usable path of its own in Electron 32+; the bridge
+    // resolves one through webUtils.
+    const paths = videoFiles.map((file) => pathForFile(file)).filter(Boolean);
+
+    if (paths.length === 0) {
+      toastStore.error('Those files could not be read from disk', 'Import failed');
+      return;
+    }
+
+    await uploadFiles(paths);
   }
 
-  async function uploadFiles(files: File[]) {
+  /** The OS picker, for the "choose files" path rather than drag and drop. */
+  async function browseForFiles(): Promise<void> {
+    await uploadFiles(await pickClipFiles());
+  }
+
+  /**
+   * Import by path.
+   *
+   * Files used to be posted as multipart form data, which cannot cross the
+   * contextBridge — the request arrived empty and the server answered "No files
+   * provided". Main is handed the paths and reads them off the same disk.
+   */
+  async function uploadFiles(paths: string[]) {
+    if (paths.length === 0) return;
+
     isUploading.value = true;
+    // Copying is quick and local, so there is no real progress to report; the
+    // bar this used to fake was counting to ninety and waiting.
     uploadProgress.value = 0;
 
     try {
-      // Simulate progress for better UX (actual upload happens in one request)
-      const progressInterval = setInterval(() => {
-        if (uploadProgress.value < 90) {
-          uploadProgress.value += 10;
-        }
-      }, 200);
+      const result = await importFiles(paths);
 
-      const result = await importFiles(files);
-
-      clearInterval(progressInterval);
       uploadProgress.value = 100;
 
       // Show results
@@ -168,6 +186,7 @@ export function useFileImport() {
     handleDragLeave,
     handleDragOver,
     handleDrop,
+    browseForFiles,
   };
 }
 

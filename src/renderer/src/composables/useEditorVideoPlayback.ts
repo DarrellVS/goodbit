@@ -254,9 +254,17 @@ export function useEditorVideoPlayback(
     animationFrameId = requestAnimationFrame(handlePlaybackFrame);
   }
 
-  /** Scrubbing while paused. Playback drives currentTime itself. */
-  function handleSeek(): void {
-    if (playing.value || transitioning) return;
+  /**
+   * Move the picture to wherever the playhead now is.
+   *
+   * `force` marks a seek the user asked for. Without it this bails out during
+   * playback — the frame loop writes `currentTime` from the video element on
+   * every frame, so reacting to those writes would fight itself. That guard
+   * also meant dragging the playhead mid-playback did nothing: the drag set
+   * `currentTime`, the next frame overwrote it, and the playhead sprang back.
+   */
+  function handleSeek(force = false): void {
+    if ((playing.value && !force) || transitioning) return;
 
     const clip = findClipAtTime(currentTime.value);
     if (!clip) return;
@@ -310,7 +318,10 @@ export function useEditorVideoPlayback(
     }
   });
 
-  watch(currentTime, handleSeek);
+  // Wrapped, not passed directly: watch hands the new value as the first
+  // argument, which would arrive as `force` and make every change look like a
+  // deliberate seek.
+  watch(currentTime, () => handleSeek());
 
   watch(
     clips,
@@ -363,6 +374,18 @@ export function useEditorVideoPlayback(
     resetSlot(1);
   });
 
+  /**
+   * Jump to a point on the timeline, playing or not.
+   *
+   * The UI calls this rather than writing `currentTime` and hoping: only an
+   * explicit call can be told apart from the frame loop's own writes, which is
+   * what makes scrubbing during playback work.
+   */
+  function seekTo(time: number): void {
+    currentTime.value = Math.max(0, Math.min(time, duration.value));
+    handleSeek(true);
+  }
+
   return {
     videoA,
     videoB,
@@ -372,5 +395,6 @@ export function useEditorVideoPlayback(
     togglePlayback,
     skipForward,
     skipBackward,
+    seekTo,
   };
 }

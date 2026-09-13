@@ -19,6 +19,10 @@ interface GoodBitBridge {
   saveSettings: (patch: Partial<AppSettingsWire>) => Promise<AppSettingsWire>;
   pickFolder: (title: string) => Promise<string | null>;
   rescan: () => Promise<{ ok: boolean }>;
+  pickFiles: (kind: 'video' | 'audio') => Promise<string[]>;
+  importAudio: (paths: string[]) => Promise<{ imported: number; failed: number; tracks: unknown[]; errors?: string[] }>;
+  importClips: (paths: string[]) => Promise<{ imported: number; failed: number; clips: unknown[]; errors?: string[] }>;
+  pathForFile: (file: File) => string;
   showInFolder: (filePath: string) => Promise<void>;
   openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
   app: { version: () => Promise<string> };

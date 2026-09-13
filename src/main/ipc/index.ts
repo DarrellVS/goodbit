@@ -1,4 +1,6 @@
 import { app, dialog, ipcMain, shell, BrowserWindow } from 'electron';
+import { readFile } from 'node:fs/promises';
+import { basename } from 'node:path';
 import { loadSettings, saveSettings } from '../settings.js';
 import { refreshRoots } from '../data-source.js';
 import { onServiceEvent, reconcile, restartServices } from '../startup.js';
@@ -11,6 +13,21 @@ import { TITLEBAR_HEIGHT } from '@shared/index.js';
  * shell integration, service events. The library's own data still travels over
  * the loopback HTTP server until `services/*.ts` in the renderer moves across.
  */
+/** Read the chosen files, skipping any that vanished between picking and now. */
+async function readAll(paths: string[]): Promise<Array<{ name: string; data: Buffer }>> {
+  const files: Array<{ name: string; data: Buffer }> = [];
+
+  for (const path of paths ?? []) {
+    try {
+      files.push({ name: basename(path), data: await readFile(path) });
+    } catch (error) {
+      console.error(`[import] could not read ${path}:`, error);
+    }
+  }
+
+  return files;
+}
+
 export function registerIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('settings:get', () => loadSettings());
 
@@ -45,6 +62,51 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('library:rescan', async () => {
     await reconcile();
     return { ok: true };
+  });
+
+  /**
+   * Importing takes paths, not bytes.
+   *
+   * The web app posted files as multipart form data, which cannot cross the
+   * contextBridge — uploads failed with "No files provided" once the transport
+   * moved to IPC. It was the wrong shape for a desktop app anyway: the files
+   * are already on this disk, so main reads them directly instead of streaming
+   * them through the renderer's memory.
+   */
+  ipcMain.handle('files:pick', async (_event, kind: 'video' | 'audio') => {
+    const window = getWindow();
+    const filters =
+      kind === 'audio'
+        ? [{ name: 'Audio', extensions: ['mp3', 'wav', 'flac', 'm4a', 'ogg', 'aac'] }]
+        : [{ name: 'Video', extensions: ['mp4', 'mov', 'mkv'] }];
+
+    const options = {
+      title: kind === 'audio' ? 'Choose music' : 'Choose clips',
+      properties: ['openFile' as const, 'multiSelections' as const],
+      filters,
+    };
+
+    const result = window
+      ? await dialog.showOpenDialog(window, options)
+      : await dialog.showOpenDialog(options);
+
+    return result.canceled ? [] : result.filePaths;
+  });
+
+  ipcMain.handle('audio:import', async (_event, paths: string[]) => {
+    const files = await readAll(paths);
+    const { ImportAudioFilesAction } = await import('../actions/ImportAudioFilesAction.js');
+    return new ImportAudioFilesAction().execute({ files });
+  });
+
+  ipcMain.handle('clips:import', async (_event, paths: string[]) => {
+    const files = await readAll(paths);
+    const { ImportFilesAction } = await import('../actions/ImportFilesAction.js');
+    const { ClipDTO } = await import('@shared/index.js');
+    const result = await new ImportFilesAction().execute({
+      files: files.map((f) => ({ ...f, size: f.data.byteLength })),
+    });
+    return { ...result, clips: result.clips.map((c) => ClipDTO.fromEntity(c)) };
   });
 
   // `trash`, `explorer.exe` and `start` were Windows-only shell-outs; these do

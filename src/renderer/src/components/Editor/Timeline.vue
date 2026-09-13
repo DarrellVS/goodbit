@@ -33,6 +33,8 @@ interface Emits {
   (e: 'remove-audio', audioId: string): void;
   (e: 'trim-audio', audioId: string, trimStart: number, trimEnd: number): void;
   (e: 'move-audio', audioId: string, newStartTime: number): void;
+  /** The empty lane is the obvious place to click when you want music. */
+  (e: 'open-music'): void;
 }
 
 const props = defineProps<Props>();
@@ -176,13 +178,15 @@ function handleRulerMouseUp(): void {
             @drag-start="emit('drag-start')"
           />
 
-          <div
+          <button
             v-if="audio.length === 0"
-            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-muted-400 pointer-events-none"
+            type="button"
+            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-muted-400 hover:text-orange-500 transition-colors"
+            @click="emit('open-music')"
           >
             <Icon icon="material-symbols:music-note" class="text-sm" />
-            Music lane — add a track from the Music panel
-          </div>
+            Music lane — click to add a track
+          </button>
         </div>
 
         <div

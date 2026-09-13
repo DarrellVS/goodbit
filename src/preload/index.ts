@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 /**
  * The only way the renderer reaches main.
@@ -16,6 +16,16 @@ const api = {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:save', patch),
   pickFolder: (title: string) => ipcRenderer.invoke('settings:pickFolder', title),
+
+  /**
+   * Importing hands over paths, not bytes: form data cannot cross the bridge,
+   * and the files are already on this disk.
+   */
+  pickFiles: (kind: 'video' | 'audio') => ipcRenderer.invoke('files:pick', kind),
+  importAudio: (paths: string[]) => ipcRenderer.invoke('audio:import', paths),
+  importClips: (paths: string[]) => ipcRenderer.invoke('clips:import', paths),
+  /** Electron 32 removed File.path; this is the supported replacement. */
+  pathForFile: (file: File) => webUtils.getPathForFile(file),
 
   /** Library scanning. */
   rescan: () => ipcRenderer.invoke('library:rescan'),

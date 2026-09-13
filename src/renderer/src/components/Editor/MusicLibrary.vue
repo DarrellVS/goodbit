@@ -5,7 +5,7 @@ import { useFormat } from '../../composables/useFormat';
 import { formatTimeSimple } from '../../utils/timeFormat';
 import { audioUrl } from '../../utils/mediaUrl';
 import { useToastStore } from '../../stores/toast';
-import { deleteAudioTrack, uploadAudioTracks } from '../../services/audio';
+import { deleteAudioTrack, importAudioTracks, pickAudioFiles, pathForFile } from '../../services/audio';
 import type { AudioTrack } from '../../types/audio';
 
 interface Props {
@@ -29,9 +29,7 @@ const emit = defineEmits<Emits>();
 const toastStore = useToastStore();
 const { formatBytes } = useFormat();
 
-const fileInput = ref<HTMLInputElement | null>(null);
 const uploading = ref(false);
-const uploadProgress = ref(0);
 const isDragOver = ref(false);
 const previewId = ref<string | null>(null);
 
@@ -43,45 +41,55 @@ function isAdded(track: AudioTrack): boolean {
   return addedIds.value.has(track.id);
 }
 
-async function upload(files: File[]): Promise<void> {
-  if (files.length === 0) return;
+/**
+ * Import by path rather than by upload.
+ *
+ * Nothing is transferred — main reads the files off the same disk — so there is
+ * no progress to report, only a spinner while it copies them in.
+ */
+async function upload(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
 
   uploading.value = true;
-  uploadProgress.value = 0;
 
   try {
-    const result = await uploadAudioTracks(files, (percent) => {
-      uploadProgress.value = percent;
-    });
+    const result = await importAudioTracks(paths);
 
     if (result.imported > 0) {
-      toastStore.success(`${result.imported} added to your music library`, 'Upload complete');
+      toastStore.success(`${result.imported} added to your music library`, 'Music added');
       emit('changed');
     }
 
     for (const error of result.errors ?? []) {
-      toastStore.error(error, 'Upload failed');
+      toastStore.error(error, 'Could not add that music');
     }
   } catch (error) {
-    console.error('Audio upload failed:', error);
-    toastStore.error('Please try again.', 'Upload failed');
+    console.error('Audio import failed:', error);
+    toastStore.error((error as Error).message || 'Please try again.', 'Could not add that music');
   } finally {
     uploading.value = false;
-    uploadProgress.value = 0;
-  }
+    }
 }
 
-function handleFilePick(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  void upload(Array.from(input.files ?? []));
-  // Same file twice in a row would not fire change without this.
-  input.value = '';
+/** The OS picker, so the paths come from somewhere main can read. */
+async function handleBrowse(): Promise<void> {
+  await upload(await pickAudioFiles());
 }
 
 function handleDrop(event: DragEvent): void {
   isDragOver.value = false;
   const files = Array.from(event.dataTransfer?.files ?? []);
-  void upload(files.filter((file) => file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|opus|flac)$/i.test(file.name)));
+
+  void upload(
+    files
+      .filter(
+        (file) =>
+          file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|opus|flac)$/i.test(file.name),
+      )
+      // A dropped File has no usable path of its own in Electron 32+.
+      .map(pathForFile)
+      .filter(Boolean),
+  );
 }
 
 function stopPreview(): void {
@@ -145,7 +153,7 @@ onBeforeUnmount(stopPreview);
       <button
         class="w-full px-3 py-4 flex flex-col items-center gap-1 text-center"
         :disabled="uploading"
-        @click="fileInput?.click()"
+        @click="handleBrowse"
       >
         <Icon
           :icon="uploading ? 'material-symbols:progress-activity' : 'material-symbols:upload'"
@@ -153,26 +161,15 @@ onBeforeUnmount(stopPreview);
           :class="{ 'animate-spin': uploading }"
         />
         <span class="text-sm font-medium text-muted-800">
-          {{ uploading ? `Uploading… ${uploadProgress}%` : 'Upload music' }}
+          {{ uploading ? 'Adding…' : 'Add music' }}
         </span>
         <span v-if="!uploading" class="text-xs text-muted-500">Drop files or click — mp3, wav, m4a, ogg, flac</span>
       </button>
 
-      <div v-if="uploading" class="h-1 mx-3 mb-3 bg-orange-500/16 rounded-full overflow-hidden">
-        <div
-          class="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-[width] duration-150"
-          :style="{ width: `${uploadProgress}%` }"
-        />
-      </div>
-
-      <input
-        ref="fileInput"
-        type="file"
-        accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.opus,.flac"
-        multiple
-        class="hidden"
-        @change="handleFilePick"
-      />
+      <!--
+        No progress bar: nothing is transferred any more. Main copies the files
+        from the same disk, so a percentage would be inventing a number.
+      -->
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center text-muted-500 text-xs">
