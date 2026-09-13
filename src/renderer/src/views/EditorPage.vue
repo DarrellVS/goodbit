@@ -429,12 +429,15 @@ function openMusicPanel(): void {
   showLibrary.value = true;
 }
 
+// Zoom multiplies pixels-per-second, so zooming in has to raise it. These two
+// were the wrong way round, which also made the readout count down as the
+// timeline got bigger.
 function handleZoomIn(): void {
-  setZoom(zoom.value * 0.75);
+  setZoom(zoom.value * 1.25);
 }
 
 function handleZoomOut(): void {
-  setZoom(zoom.value * 1.25);
+  setZoom(zoom.value * 0.75);
 }
 
 function goBack(): void {

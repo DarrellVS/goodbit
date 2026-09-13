@@ -105,7 +105,14 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
 }
 
 /** A handful of tiny real clips, made with the bundled ffmpeg. */
-export function seedClips(videosRoot: string, game: string, count = 2): string[] {
+export function seedClips(
+  videosRoot: string,
+  game: string,
+  count = 2,
+  /** Seconds. Long enough matters for timeline tests: the lane has a 1000px
+   * floor, so short clips never reach its right edge. */
+  duration = 2,
+): string[] {
   const ffmpeg = ffmpegPath as unknown as string;
 
   const dir = join(videosRoot, game);
@@ -116,8 +123,8 @@ export function seedClips(videosRoot: string, game: string, count = 2): string[]
     const file = join(dir, `${game}_clip_${i}.mp4`);
     execFileSync(ffmpeg, [
       '-hide_banner', '-v', 'error',
-      '-f', 'lavfi', '-i', `testsrc=size=640x360:rate=30:duration=2`,
-      '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2',
+      '-f', 'lavfi', '-i', `testsrc=size=640x360:rate=30:duration=${duration}`,
+      '-f', 'lavfi', '-i', `sine=frequency=440:duration=${duration}`,
       '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
       '-c:a', 'aac', '-shortest', '-y', file,
     ]);

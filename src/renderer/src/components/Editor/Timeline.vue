@@ -45,7 +45,16 @@ const contentRef = shallowRef<HTMLElement | null>(null);
 const isDraggingRuler = shallowRef(false);
 
 const pixelsPerSecond = computed(() => EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * props.zoom);
-const timelineWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
+/** The lane itself: exactly as wide as the clips it holds. */
+const laneWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
+
+/**
+ * The scrolling container, which also has to cover the gutter either side.
+ *
+ * The lanes sit inside this with a 12px margin, so a container sized to the
+ * lane left the last clip hanging 24px past its track.
+ */
+const timelineWidth = computed(() => laneWidth.value + EDITOR_CONSTANTS.TIMELINE_OFFSET_PX * 2);
 const playheadPosition = computed(
   () => EDITOR_CONSTANTS.TIMELINE_OFFSET_PX + props.currentTime * pixelsPerSecond.value
 );

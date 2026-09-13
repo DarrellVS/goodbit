@@ -82,7 +82,8 @@ const emit = defineEmits<Emits>();
       <div class="flex items-center gap-2">
         <button
           class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40"
-          :disabled="zoom >= 3"
+          title="Zoom out"
+          :disabled="zoom <= 0.25"
           @click="emit('zoom-out')"
         >
           <Icon icon="material-symbols:zoom-out" class="text-lg text-muted-700" />
@@ -92,7 +93,8 @@ const emit = defineEmits<Emits>();
         
         <button
           class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40"
-          :disabled="zoom <= 0.25"
+          title="Zoom in"
+          :disabled="zoom >= 3"
           @click="emit('zoom-in')"
         >
           <Icon icon="material-symbols:zoom-in" class="text-lg text-muted-700" />
