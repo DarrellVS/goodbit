@@ -22,8 +22,8 @@ const { isDark } = useTheme();
 /** Each page draws its own heading; repeating it here only doubled it up. */
 const APP_NAME = 'GoodBit';
 
-/** The library is the root, so there is nowhere to go back to from it. */
-const canGoBack = computed(() => route.name !== 'clips');
+/** The library is the root, and first run has nothing behind it either. */
+const canGoBack = computed(() => route.name !== 'clips' && route.name !== 'welcome');
 
 // Windows keeps whatever colour the caption glyphs were last given, so light
 // glyphs stay light on a light page and become invisible.

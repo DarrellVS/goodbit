@@ -20,6 +20,15 @@ import { TITLEBAR_HEIGHT } from '@shared/index.js';
 
 declare const __LEGACY_IMPORT__: boolean;
 
+/**
+ * Fix the app name before anything asks for a path.
+ *
+ * userData is derived from it, and running unpackaged the default is
+ * "Electron" — so a development run would use a different profile from the
+ * installed app, and never exercise the real one.
+ */
+app.setName('GoodBit');
+
 /** Set on quit so the close handler stops hiding and lets the app go. */
 let quitting = false;
 let mainWindow: BrowserWindow | null = null;

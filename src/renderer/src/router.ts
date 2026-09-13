@@ -24,6 +24,9 @@ export const router = createRouter({
   // on a missing file.
   history: createWebHashHistory(),
   routes: [
+    // Outside the shell: with no clips folder chosen there is nothing for a
+    // sidebar to list.
+    { path: '/welcome', name: 'welcome', component: WelcomePage },
     {
       path: '/',
       component: ShellLayout,

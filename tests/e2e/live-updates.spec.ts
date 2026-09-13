@@ -64,3 +64,27 @@ test.describe('the window keeps up with the watcher', () => {
     expect(shown).toBeGreaterThan(0);
   });
 });
+
+/**
+ * First run has to land somewhere that explains itself.
+ *
+ * The guard redirected to a route that had never been added, so vue-router
+ * failed the navigation and the window came up empty — a blank app with no
+ * error, which is the worst version of broken.
+ */
+test.describe('first run', () => {
+  test('with no clips folder set, the welcome screen appears', async () => {
+    const ctx = await launchApp({ configured: false });
+
+    try {
+      await ctx.page.waitForTimeout(3000);
+
+      expect(ctx.page.url()).toContain('#/welcome');
+      await expect(ctx.page.getByText('Welcome to GoodBit')).toBeVisible();
+      // The phrase also appears on the disabled confirm button; match the row.
+      await expect(ctx.page.getByText('Required — choose a folder')).toBeVisible();
+    } finally {
+      await ctx.close();
+    }
+  });
+});
