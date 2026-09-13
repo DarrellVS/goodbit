@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, seedSwellClip, type TestApp } from './app';
 
 /**
  * The features themselves, exercised through the desktop app.
@@ -28,6 +28,8 @@ test.describe('features survive the port', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 2);
+    // A clip with nothing in it, for the refusal test below.
+    seedSwellClip(ctx.videosRoot, 'MenuGame');
     await ctx.page.waitForTimeout(9000);
   });
 
@@ -39,9 +41,10 @@ test.describe('features survive the port', () => {
     const res = await call('GET', '/clips', undefined, { pageSize: 50 });
     const items = (res.body as { items: Array<{ id: number; game: string }> }).items;
 
-    expect(items.length).toBeGreaterThanOrEqual(2);
-    // The top-level folder is the game name; that contract is what keeps OBS working.
-    expect(items.every((c) => c.game === 'TestGame')).toBe(true);
+    expect(items.length).toBeGreaterThanOrEqual(3);
+    // The top-level folder is the game name; that contract is what keeps OBS
+    // working. Both seeded folders have to come back under their own name.
+    expect(new Set(items.map((c) => c.game))).toEqual(new Set(['TestGame', 'MenuGame']));
   });
 
   test('games are derived from the folders', async () => {
@@ -88,6 +91,22 @@ test.describe('features survive the port', () => {
     // A synthetic sine tone has no dynamic range, so the honest answer is no.
     expect(body.confident).toBe(false);
     expect(body.reason).toBeTruthy();
+  });
+
+  test('a clip that swells and fades is refused, however loud it gets', async () => {
+    // The shape that used to fool it: a menu screen with music over it has tens
+    // of LU of range and nothing whatsoever standing out. Measured against real
+    // recordings, that case sits at a peak of about 1.0 against its own normal
+    // and a helicopter crash sits at 1.44, which is where the threshold went.
+    const clips = await call('GET', '/clips', undefined, { pageSize: 50, game: 'MenuGame' });
+    const id = (clips.body as { items: Array<{ id: number }> }).items[0].id;
+
+    const res = await call('GET', `/clips/${id}/suggestions`, undefined, { windowSec: 10 });
+    const body = res.body as { confident: boolean; reason: string | null; peakZ: number };
+
+    expect(body.peakZ).toBeLessThan(1.3);
+    expect(body.confident, `refused because: ${body.reason}`).toBe(false);
+    expect(body.reason).toMatch(/stands out|never really changes|flat/i);
   });
 
   test('tag patterns are stored server-side and match filenames', async () => {

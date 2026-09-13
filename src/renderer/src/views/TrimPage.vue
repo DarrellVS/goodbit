@@ -1,15 +1,22 @@
 <template>
-  <div class="h-full overflow-auto">
+  <!--
+    A column that fits the window: the preview takes what is left over after
+    the timeline and the transport, rather than the timeline being pushed off
+    the bottom by a tall clip.
+  -->
+  <div class="h-full flex flex-col overflow-hidden">
     <TrimHeader />
-    
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+    <main class="flex-1 min-h-0 w-full max-w-7xl mx-auto px-6 py-5 flex flex-col gap-4 overflow-y-auto">
       <VideoPreview
         ref="videoPreviewRef"
+        class="flex-1 min-h-[140px]"
         :video-source="videoSource"
         @toggle="togglePlayback"
       />
 
       <SuggestionBanner
+        class="flex-shrink-0"
         :suggestions="suggestions"
         :loading="suggestionsLoading"
         :applied="suggestionApplied"
@@ -18,6 +25,7 @@
       />
 
       <TimelineEditor
+        class="flex-shrink-0"
         v-model="range"
         :max-duration="duration"
         :duration="formatTime(duration)"

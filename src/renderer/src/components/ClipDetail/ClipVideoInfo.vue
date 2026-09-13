@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { formatTimeSimple } from '../../utils/timeFormat';
 import type { ClipMeta } from '../../services/clips';
@@ -8,6 +9,22 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+/**
+ * ffprobe reports the frame rate as a fraction — `30/1`, `60000/1001` — which
+ * is exact and unreadable. Divided out and rounded to one place, 29.97 stays
+ * 29.97 and 30 stays 30.
+ */
+const frameRate = computed(() => {
+  const raw = props.metadata?.fps;
+  if (!raw) return null;
+
+  const [top, bottom] = raw.split('/').map(Number);
+  const value = bottom ? top / bottom : top;
+  if (!Number.isFinite(value)) return raw;
+
+  return Math.round(value * 100) / 100;
+});
 </script>
 
 <template>
@@ -32,7 +49,7 @@ const props = defineProps<Props>();
       
       <div v-if="metadata?.fps">
         <div class="text-sm text-muted-500 mb-1">Frame Rate</div>
-        <div class="text-sm font-medium">{{ metadata.fps }} fps</div>
+        <div class="text-sm font-medium">{{ frameRate }} fps</div>
       </div>
     </div>
   </div>

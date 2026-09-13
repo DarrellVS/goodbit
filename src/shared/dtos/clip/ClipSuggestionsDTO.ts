@@ -29,7 +29,8 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
   /** Spread between the quiet and loud parts of this clip, in LU. */
   spreadLu!: number;
   /** How much better the window is than the clip's average. */
-  lift!: number;
+  /** How far the loudest moment stood above the clip's own normal. */
+  peakZ!: number;
 
   static fromAnalysis(clipId: number, a: {
     analyzed: boolean;
@@ -39,7 +40,7 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
     window: { start: number; end: number } | null;
     moments: SuggestedMoment[];
     spreadLu: number;
-    lift: number;
+    peakZ: number;
   }): ClipSuggestionsDTO {
     const dto = new ClipSuggestionsDTO();
     dto.clipId = clipId;
@@ -50,7 +51,7 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
     dto.window = a.window;
     dto.moments = a.moments;
     dto.spreadLu = a.spreadLu;
-    dto.lift = a.lift;
+    dto.peakZ = a.peakZ;
     return dto;
   }
 }

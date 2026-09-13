@@ -7,6 +7,12 @@ import { Clip } from '../entity/Clip.js';
 import { AnalyzeClipAction, type AnalyzeClipOutput } from './AnalyzeClipAction.js';
 import { cacheDir as cacheDirFor } from '../services/cachePaths.js';
 
+/**
+ * Bumped whenever the rule changes, so cached answers from an older one are
+ * ignored rather than served for ever.
+ */
+const ANALYSIS_VERSION = 2;
+
 export type EnsureClipSuggestionsInput = { clipId: number; windowSec?: number; refresh?: boolean };
 
 /**
@@ -26,9 +32,15 @@ export class EnsureClipSuggestionsAction extends BaseAction<
 
     const cacheDir = cacheDirFor('analysis');
     // The window length is part of the key: a 5 s and a 10 s answer are
-    // different answers about the same clip.
+    // different answers about the same clip. So is the version of the rule —
+    // an answer cached by an older one is not an answer to the same question,
+    // and without this a change to the analysis is invisible until every file's
+    // mtime happens to change.
     const key =
-      crypto.createHash('md5').update(`${clip.filePath}:${windowSec}`).digest('hex') + '.json';
+      crypto
+        .createHash('md5')
+        .update(`${clip.filePath}:${windowSec}:${ANALYSIS_VERSION}`)
+        .digest('hex') + '.json';
     const cachePath = path.join(cacheDir, key);
 
     if (!refresh) {

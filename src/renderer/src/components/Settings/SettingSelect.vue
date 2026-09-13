@@ -33,9 +33,10 @@ function handleChange(event: Event): void {
       <label class="font-medium text-foreground">{{ label }}</label>
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>
     </div>
+    <!-- A fixed width, so a column of these has one right edge and not four. -->
     <select
       :value="modelValue"
-      class="px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+      class="w-44 flex-shrink-0 px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
       @change="handleChange"
     >
       <option v-for="option in options" :key="String(option.value)" :value="option.value">

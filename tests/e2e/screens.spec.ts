@@ -208,11 +208,31 @@ test.describe('layout', () => {
   });
 
   test('no screen is taller than the window', async () => {
-    for (const route of ROUTES) {
+    // The two routes that need a clip id are the two most likely to overflow:
+    // both put a video on the page, and a video is as tall as it is asked to
+    // be. The trim page pushed its own timeline off the bottom this way.
+    const id = await ctx.page.evaluate(async () => {
+      const answer = await window.goodbit!.apiRequest({
+        method: 'GET',
+        path: '/clips',
+        query: { pageSize: 1 },
+      });
+      return (answer.body as { items: Array<{ id: number }> }).items[0].id;
+    });
+
+    const routes = [
+      ...ROUTES,
+      { hash: `#/clips/${id}`, name: 'clip detail' },
+      { hash: `#/trim/${id}`, name: 'trim' },
+    ];
+
+    for (const route of routes) {
       await ctx.page.evaluate((h) => {
         window.location.hash = h;
       }, route.hash);
-      await ctx.page.waitForTimeout(600);
+      // A video reports its own size only once the metadata has loaded, and
+      // the layout is not final until it has.
+      await ctx.page.waitForTimeout(route.name === 'trim' ? 3000 : 600);
 
       // The editor used h-screen, which is 100vh and ignores the title bar
       // above it — so it overflowed by exactly the bar's height.
@@ -221,6 +241,39 @@ test.describe('layout', () => {
       );
       expect(over, `${route.name} overflows the window by ${over}px`).toBeLessThanOrEqual(1);
     }
+  });
+
+  test('the trim page fits its timeline on the screen', async () => {
+    const id = await ctx.page.evaluate(async () => {
+      const answer = await window.goodbit!.apiRequest({
+        method: 'GET',
+        path: '/clips',
+        query: { pageSize: 1 },
+      });
+      return (answer.body as { items: Array<{ id: number }> }).items[0].id;
+    });
+
+    await ctx.page.evaluate((clipId) => {
+      window.location.hash = `#/trim/${clipId}`;
+    }, id);
+    await ctx.page.waitForTimeout(3000);
+
+    // Nothing overflowed the document — the page had its own scroller — so the
+    // window-height test above was blind to this. What was actually wrong is
+    // that the preview took the whole viewport and pushed the timeline, the
+    // transport and the save button below the fold.
+    const save = ctx.page.getByRole('button', { name: /save trimmed clip/i });
+    await expect(save).toBeVisible();
+
+    const room = await save.evaluate((node) => ({
+      bottom: Math.round(node.getBoundingClientRect().bottom),
+      window: window.innerHeight,
+    }));
+
+    expect(
+      room.bottom,
+      `the save button sits ${room.bottom - room.window}px below the window`
+    ).toBeLessThanOrEqual(room.window);
   });
 
   test('dark mode has no pale surfaces left over from light', async () => {

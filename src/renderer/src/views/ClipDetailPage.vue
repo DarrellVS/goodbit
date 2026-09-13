@@ -9,11 +9,9 @@ import { useClipLoader } from '../composables/useClipLoader';
 import type { Clip } from '../types/clip';
 import ClipNameInput from '../components/App/ClipNameInput.vue';
 import ClipTags from '../components/App/ClipTags.vue';
-import ClipStarButton from '../components/App/ClipStarButton.vue';
 import ClipCollections from '../components/App/ClipCollections.vue';
-import ClipActionsMenu from '../components/App/ClipActionsMenu.vue';
 import ClipVideoPlayer from '../components/ClipDetail/ClipVideoPlayer.vue';
-import ClipPublishedInfo from '../components/ClipDetail/ClipPublishedInfo.vue';
+import ClipActionsCard from '../components/ClipDetail/ClipActionsCard.vue';
 import ClipFileInfo from '../components/ClipDetail/ClipFileInfo.vue';
 import ClipVideoInfo from '../components/ClipDetail/ClipVideoInfo.vue';
 import ClipNotesSection from '../components/ClipDetail/ClipNotesSection.vue';
@@ -172,37 +170,18 @@ onMounted(() => {
 
         <!-- Metadata Sidebar -->
         <div class="space-y-6">
-          <ClipPublishedInfo :clip="clip" />
-          <ClipFileInfo 
+          <ClipActionsCard
+            :clip="clip"
+            @updated="handleClipUpdated"
+            @deleted="handleClipDeleted"
+            @share="showShareSheet = true"
+          />
+          <ClipFileInfo
             :clip="clip" 
             :show-exact-date="showExactDate" 
             @toggle-date="toggleDateDisplay"
           />
           <ClipVideoInfo :metadata="metadata" />
-
-          <!--
-            The actions were floating loose in a header strip above the page.
-            They belong with the other cards, and labelled: two unlabelled icons
-            on a dark ground were near-invisible.
-          -->
-          <div class="bg-card rounded-2xl p-4 border border-border space-y-2">
-            <button
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
-              @click="showShareSheet = true"
-            >
-              <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 flex-shrink-0" />
-              <span class="text-sm font-medium text-foreground">Send to my phone</span>
-            </button>
-
-            <div class="flex items-center gap-2">
-              <ClipStarButton :clip="clip" class="flex-1" @updated="clip = $event" />
-              <ClipActionsMenu
-                :clip="clip"
-                @updated="handleClipUpdated"
-                @deleted="handleClipDeleted"
-              />
-            </div>
-          </div>
         </div>
       </div>
     </main>

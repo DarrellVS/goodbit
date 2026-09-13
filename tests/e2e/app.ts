@@ -164,3 +164,37 @@ export function seedSpikyClip(
 
   return file;
 }
+
+/**
+ * A clip with nothing in it: a still picture and music that swells and fades.
+ *
+ * This is the shape the analysis used to be fooled by. It has plenty of dynamic
+ * range — the swell is tens of LU — but nothing stands out from the rest of the
+ * clip, which is exactly what a menu screen or a loading screen looks like to
+ * an ear.
+ */
+export function seedSwellClip(videosRoot: string, game: string, name = 'menu', duration = 26): string {
+  const ffmpeg = ffmpegPath as unknown as string;
+  const dir = join(videosRoot, game);
+  mkdirSync(dir, { recursive: true });
+
+  const file = join(dir, `${name}.mp4`);
+  execFileSync(ffmpeg, [
+    '-hide_banner', '-v', 'error',
+    '-f', 'lavfi', '-t', String(duration), '-i', 'color=c=0x101820:size=640x360:rate=30',
+    '-f', 'lavfi', '-t', String(duration), '-i', 'sine=frequency=180',
+    '-f', 'lavfi', '-t', String(duration), '-i', 'sine=frequency=270',
+    '-f', 'lavfi', '-t', String(duration), '-i', 'sine=frequency=410',
+    // Three tones under one slow rise and fall. The range this produces is
+    // around 11 LU, well past the flatness floor, so the only thing that can
+    // refuse it is the test that nothing stands out.
+    '-filter_complex',
+    '[1:a][2:a][3:a]amix=inputs=3,volume=0.3,' +
+      `volume=eval=frame:volume=0.12+0.85*abs(sin(PI*t/${Math.round(duration / 3)}))[a]`,
+    '-map', '0:v', '-map', '[a]',
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-shortest', '-y', file,
+  ]);
+
+  return file;
+}

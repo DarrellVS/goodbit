@@ -202,7 +202,7 @@ export interface ClipSuggestions {
   window: { start: number; end: number } | null;
   moments: Array<{ t: number; score: number }>;
   spreadLu: number;
-  lift: number;
+  peakZ: number;
 }
 
 export async function getClipSuggestions(

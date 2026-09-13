@@ -14,7 +14,8 @@
       <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/5">
         <Icon icon="material-symbols:timer" class="text-orange-500" />
         <span class="text-muted-400">Duration:</span>
-        <span class="font-mono font-semibold text-orange-500">{{ duration }}s</span>
+        <!-- `duration` is already formatted, seconds and all. -->
+        <span class="font-mono font-semibold text-orange-500">{{ duration }}</span>
       </div>
     </header>
     
@@ -68,9 +69,9 @@
       </button>
 
       <span class="font-mono text-sm text-muted-400">
-        <span class="text-foreground">{{ playhead }}s</span>
+        <span class="text-foreground">{{ playhead }}</span>
         <span class="mx-1">/</span>
-        <span>{{ duration }}s</span>
+        <span>{{ duration }}</span>
       </span>
 
       <span class="text-xs text-muted-400 ml-auto">Space plays the trimmed range on loop</span>
