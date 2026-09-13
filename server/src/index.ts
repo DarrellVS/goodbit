@@ -16,6 +16,7 @@ import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
 import { resolveClientDist } from './utils/clientDist.js';
 import { getLanEndpoints } from './utils/networkInfo.js';
 import { asyncHandler } from './utils/asyncHandler.js';
+import { excludeHiddenGames } from './utils/hiddenGames.js';
 import { ClipDTO } from '../../shared/index.js';
 import { Clip } from './entity/Clip.js';
 
@@ -60,10 +61,10 @@ app.get('/api/clips/today/count', async (_req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const count = await repo
-      .createQueryBuilder('clip')
-      .where('clip.createdAt >= :today', { today: today.toISOString() })
-      .getCount();
+    const qb = await excludeHiddenGames(
+      repo.createQueryBuilder('clip').where('clip.createdAt >= :today', { today: today.toISOString() })
+    );
+    const count = await qb.getCount();
     
     res.json({ count, date: today.toISOString() });
   } catch (error) {
@@ -82,12 +83,14 @@ app.get('/api/clips/latest', asyncHandler(async (req, res) => {
   }
 
   const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo
-    .createQueryBuilder('clip')
-    .leftJoinAndSelect('clip.tags', 'tag')
-    .orderBy('clip.createdAt', 'DESC')
-    .limit(1)
-    .getOne();
+  const qb = await excludeHiddenGames(
+    repo
+      .createQueryBuilder('clip')
+      .leftJoinAndSelect('clip.tags', 'tag')
+      .orderBy('clip.createdAt', 'DESC')
+      .limit(1)
+  );
+  const clip = await qb.getOne();
 
   if (!clip) {
     return res.status(404).json({ error: 'No clips found' });

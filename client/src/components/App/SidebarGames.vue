@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useGamesList } from '../../composables/useGamesList';
+import { useGameVisibility } from '../../composables/useGameVisibility';
 import { useGamesStore } from '../../stores/games';
 import { useToastStore } from '../../stores/toast';
 import { updateGameName } from '../../services/games';
 import type { Game } from '../../types/game';
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuRoot,
+  DropdownMenuTrigger,
+} from 'radix-vue';
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
 import SidebarShowMore from './SidebarShowMore.vue';
 import GameRenameDialog from './GameRenameDialog.vue';
@@ -25,6 +33,11 @@ const emit = defineEmits<Emits>();
 const { games, visibleGames, hasMoreGames, showAllGames } = useGamesList();
 const gamesStore = useGamesStore();
 const toastStore = useToastStore();
+const { setHidden } = useGameVisibility();
+
+// Which row's … menu is open. The trigger only shows on hover, so it has to
+// stay visible while the menu is open or the popover loses its anchor.
+const openMenuGame = ref<string | null>(null);
 
 const renameDialogOpen = ref(false);
 const gameToRename = ref<Game | null>(null);
@@ -34,8 +47,11 @@ function toggleShowAll() {
   showAllGames.value = !showAllGames.value;
 }
 
-function openRenameDialog(game: Game, event: Event) {
-  event.stopPropagation();
+async function hideGame(game: Game) {
+  await setHidden(game.game, true, game.displayName || game.game).catch(() => {});
+}
+
+function openRenameDialog(game: Game) {
   gameToRename.value = game;
   renameDialogOpen.value = true;
 }
@@ -103,16 +119,51 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             {{ game.displayName || game.game || 'Unknown' }}
           </span>
         </button>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <span class="text-xs text-muted-400">{{ game.clipCount }}</span>
-          <button
-            v-if="!props.disabled"
-            class="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded transition-opacity"
-            :title="`Rename ${game.displayName || game.game}`"
-            @click="openRenameDialog(game, $event)"
+        <div class="flex-shrink-0 flex items-center justify-end min-w-[24px]">
+          <!-- Count and the … menu occupy the same slot: hovering the row swaps one for the other. -->
+          <span
+            class="text-xs text-muted-400"
+            :class="{ 'group-hover:hidden': !props.disabled, 'hidden': openMenuGame === game.game }"
           >
-            <Icon icon="mdi:pencil" class="w-4 h-4" />
-          </button>
+            {{ game.clipCount }}
+          </span>
+
+          <DropdownMenuRoot
+            v-if="!props.disabled"
+            :open="openMenuGame === game.game"
+            @update:open="openMenuGame = $event ? game.game : null"
+          >
+            <DropdownMenuTrigger
+              class="p-1 rounded hover:bg-white/10 outline-none"
+              :class="openMenuGame === game.game ? 'block bg-white/10' : 'hidden group-hover:block'"
+              :title="`More actions for ${game.displayName || game.game}`"
+              @click.stop
+            >
+              <Icon icon="material-symbols:more-horiz" class="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuContent
+                class="min-w-[180px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50"
+                align="end"
+                :side-offset="4"
+              >
+                <DropdownMenuItem
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+                  @click="openRenameDialog(game)"
+                >
+                  <Icon icon="mdi:pencil" class="text-base" />
+                  <span>Rename</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+                  @click="hideGame(game)"
+                >
+                  <Icon icon="mdi:eye-off-outline" class="text-base" />
+                  <span>Hide from library</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenuPortal>
+          </DropdownMenuRoot>
         </div>
       </div>
 

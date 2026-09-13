@@ -6,7 +6,8 @@ import { publisherService } from '../services/publisherService.js';
 
 export interface UpdateGameInput {
   name: string; // The folder name (immutable)
-  displayName: string | null;
+  displayName?: string | null;
+  hidden?: boolean;
 }
 
 export interface UpdateGameOutput {
@@ -15,8 +16,11 @@ export interface UpdateGameOutput {
 }
 
 /**
- * Updates a game's display name
- * Also updates metadata for all published clips of this game
+ * Updates a game's display name and/or its hidden flag.
+ *
+ * A display name change also re-pushes metadata for every published clip of this
+ * game so Discord embeds follow. Hiding is UI-only: it never touches the files
+ * and never unpublishes anything, so it skips that work.
  */
 export class UpdateGameAction extends BaseAction<UpdateGameInput, UpdateGameOutput> {
   async execute(input: UpdateGameInput): Promise<UpdateGameOutput> {
@@ -28,12 +32,22 @@ export class UpdateGameAction extends BaseAction<UpdateGameInput, UpdateGameOutp
     if (!game) {
       game = gameRepo.create({
         name: input.name,
-        displayName: input.displayName,
+        displayName: null,
+        hidden: false,
       });
-    } else {
-      game.displayName = input.displayName;
     }
+
+    const displayNameChanged =
+      input.displayName !== undefined && input.displayName !== game.displayName;
+
+    if (input.displayName !== undefined) game.displayName = input.displayName;
+    if (input.hidden !== undefined) game.hidden = input.hidden;
+
     await gameRepo.save(game);
+
+    if (!displayNameChanged) {
+      return { game, publishedClipsUpdated: 0 };
+    }
 
     // Find all published clips for this game
     const publishedClips = await clipRepo.find({
@@ -48,7 +62,7 @@ export class UpdateGameAction extends BaseAction<UpdateGameInput, UpdateGameOutp
     for (const clip of publishedClips) {
       try {
         // Re-publish with updated metadata (uses the new display name)
-        const displayNameToUse = input.displayName || input.name;
+        const displayNameToUse = game.displayName || input.name;
         await publisherService.publish(
           clip.filePath,
           clip.displayName || clip.filename,
@@ -66,4 +80,3 @@ export class UpdateGameAction extends BaseAction<UpdateGameInput, UpdateGameOutp
     };
   }
 }
-

@@ -2,34 +2,42 @@ import express from 'express';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { getHiddenGameNames } from '../utils/hiddenGames.js';
 
 export const statsRouter = express.Router();
 
 statsRouter.get('/', asyncHandler(async (_req, res) => {
   const repo = AppDataSource.getRepository(Clip);
 
-  const totalClips = await repo.count();
-  
-  const sizeResult = await repo
-    .createQueryBuilder('clip')
+  // Stats describe the library the user actually browses, so hidden games are
+  // left out of every figure here.
+  const hiddenGames = await getHiddenGameNames();
+  const visible = () => {
+    const qb = repo.createQueryBuilder('clip');
+    return hiddenGames.length > 0
+      ? qb.where('clip.game NOT IN (:...hiddenGames)', { hiddenGames })
+      : qb;
+  };
+
+  const totalClips = await visible().getCount();
+
+  const sizeResult = await visible()
     .select('SUM(clip.sizeBytes)', 'total')
     .addSelect('AVG(clip.sizeBytes)', 'avg')
     .getRawOne();
 
-  const publishedClips = await repo.count({ where: { published: true } });
-  const starredClips = await repo.count({ where: { starred: true } });
+  const publishedClips = await visible().andWhere('clip.published = :p', { p: true }).getCount();
+  const starredClips = await visible().andWhere('clip.starred = :s', { s: true }).getCount();
 
-  const taggedClipsResult = await repo
-    .createQueryBuilder('clip')
+  const taggedClipsResult = await visible()
     .leftJoin('clip.tags', 'tag')
-    .where('tag.id IS NOT NULL')
+    .andWhere('tag.id IS NOT NULL')
     .groupBy('clip.id')
     .getMany();
   
   const taggedClips = taggedClipsResult.length;
 
-  const gameStats = await repo
-    .createQueryBuilder('clip')
+  const gameStats = await visible()
     .select('clip.game', 'game')
     .addSelect('COUNT(*)', 'count')
     .addSelect('SUM(clip.sizeBytes)', 'totalSize')
@@ -42,24 +50,21 @@ statsRouter.get('/', asyncHandler(async (_req, res) => {
 
   const gamesCount = gameStats.length;
 
-  const oldestClip = await repo
-    .createQueryBuilder('clip')
+  const oldestClip = await visible()
     .orderBy('clip.fileModifiedAt', 'ASC')
     .limit(1)
     .getOne();
 
-  const newestClip = await repo
-    .createQueryBuilder('clip')
+  const newestClip = await visible()
     .orderBy('clip.fileModifiedAt', 'DESC')
     .limit(1)
     .getOne();
 
-  const mostUsedTags = await repo
-    .createQueryBuilder('clip')
+  const mostUsedTags = await visible()
     .leftJoin('clip.tags', 'tag')
     .select('tag.name', 'tag')
     .addSelect('COUNT(DISTINCT clip.id)', 'count')
-    .where('tag.name IS NOT NULL')
+    .andWhere('tag.name IS NOT NULL')
     .groupBy('tag.name')
     .orderBy('count', 'DESC')
     .limit(20)
@@ -68,11 +73,10 @@ statsRouter.get('/', asyncHandler(async (_req, res) => {
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-  const recentClips = await repo
-    .createQueryBuilder('clip')
+  const recentClips = await visible()
     .select("DATE(clip.fileModifiedAt)", 'date')
     .addSelect('COUNT(*)', 'count')
-    .where('clip.fileModifiedAt >= :startDate', { startDate: fourteenDaysAgo.toISOString() })
+    .andWhere('clip.fileModifiedAt >= :startDate', { startDate: fourteenDaysAgo.toISOString() })
     .groupBy('date')
     .orderBy('date', 'ASC')
     .getRawMany();

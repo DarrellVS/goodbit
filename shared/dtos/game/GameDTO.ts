@@ -8,6 +8,7 @@ export class GameDTO extends BaseDTO<GameDTO> {
   game!: string;
   displayName!: string | null;
   clipCount!: number;
+  hidden!: boolean;
 
   /**
    * Create a GameDTO from query result
@@ -17,6 +18,7 @@ export class GameDTO extends BaseDTO<GameDTO> {
     dto.game = result.game;
     dto.displayName = result.displayName ?? null;
     dto.clipCount = parseInt(result.clipCount, 10) || 0;
+    dto.hidden = result.hidden === true || result.hidden === 1;
     return dto;
   }
 

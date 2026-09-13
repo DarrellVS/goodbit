@@ -26,6 +26,7 @@ import { ExportAudioAction } from '../actions/ExportAudioAction.js';
 import { GetClipCollectionsAction } from '../actions/GetClipCollectionsAction.js';
 import { OpenFileInExplorerAction } from '../actions/OpenFileInExplorerAction.js';
 import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
+import { excludeHiddenGames } from '../utils/hiddenGames.js';
 import { ClipDTO, UpdateClipRequestDTO } from '../../../shared/index.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -33,7 +34,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 export const clipsRouter = express.Router();
 
 clipsRouter.get('/', asyncHandler(async (req, res) => {
-  const { game, q, tags, published, starred, page = '1', pageSize = '50' } = req.query as Record<string, string>;
+  const { game, q, tags, published, starred, includeHidden, page = '1', pageSize = '50' } = req.query as Record<string, string>;
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
   const pageSz = Math.min(Math.max(parseInt(pageSize || '50', 10) || 50, 1), 200);
 
@@ -43,7 +44,13 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
     .leftJoinAndSelect('clip.tags', 'tag')
     .orderBy('clip.createdAt', 'DESC');
 
-  if (game && game.length > 0) qb = qb.andWhere('clip.game = :game', { game });
+  if (game && game.length > 0) {
+    // An explicit game filter is an explicit request for that folder, so it wins
+    // over hiding — a hidden game stays reachable through its own filter or a link.
+    qb = qb.andWhere('clip.game = :game', { game });
+  } else if (includeHidden !== 'true') {
+    qb = await excludeHiddenGames(qb);
+  }
 
   if (published === 'true') qb = qb.andWhere('clip.published = :published', { published: true });
   if (published === 'false') qb = qb.andWhere('clip.published = :published', { published: false });

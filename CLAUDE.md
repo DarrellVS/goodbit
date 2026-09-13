@@ -93,9 +93,14 @@ be careful with anything TypeORM auto-sync would resolve destructively on SQLite
   `sizeBytes`, `fileModifiedAt`, `published`/`publishedUrl`, `starred`, `notes` (markdown). M:N `Tag`.
 - **Tag** — `id`, unique `name`. Relation owned by `Clip` (inverse side omitted to dodge circular imports).
 - **Collection** — `id`, `name`, timestamps. M:N `Clip`.
-- **Game** — PK `name` = the on-disk folder name (immutable, keeps OBS working), nullable `displayName`.
-  Renaming a game only sets `displayName` and re-pushes metadata for that game's published clips so
-  Discord embeds update.
+- **Game** — PK `name` = the on-disk folder name (immutable, keeps OBS working), nullable `displayName`,
+  `hidden`. Renaming a game only sets `displayName` and re-pushes metadata for that game's published
+  clips so Discord embeds update. `hidden` keeps a folder out of the *browsing* surfaces — `/api/clips`,
+  `/api/games`, `/api/stats`, `/api/clips/today/count`, `/api/clips/latest` — while leaving explicit
+  access alone: a clip fetched by id, a `?game=` filter, and collection membership all still resolve.
+  Nothing on disk moves and published clips stay published. `server/src/utils/hiddenGames.ts` is the
+  single place that filter is built; `?includeHidden=true` opts out of it (the Settings → Games screen
+  is the only caller).
 
 On-disk siblings of the game folders: `.thumbnails/`, `.frame-strips/`, `filmpje.db`.
 
@@ -122,6 +127,10 @@ wrapped in try/catch so one failure doesn't block boot.
 `shared/dtos/**` exports DTO classes extending `BaseDTO` with static `fromEntity()` / `fromQueryResult()`
 and instance `validate()`. Server converts entities → DTOs at the route boundary. Changing a DTO changes
 both sides at once — that's the point.
+
+The client resolves `../../../shared` through `shared/package.json`, whose `types` points at
+**`shared/dist/`** (gitignored). So after editing a DTO, run `npm run build` in `shared/` or
+`client/npm run typecheck` still checks the stale declarations and reports phantom errors.
 
 The client must **not** use the DTO classes directly as data types: what arrives over the wire is JSON,
 with no prototype and none of `validate`/`toJSON`/`clone`. `client/src/types/plain.ts` defines

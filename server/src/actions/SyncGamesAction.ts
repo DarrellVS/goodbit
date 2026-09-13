@@ -33,6 +33,7 @@ export class SyncGamesAction extends BaseAction<void, SyncGamesOutput> {
         const newGame = gameRepo.create({
           name: game,
           displayName: null, // No display name initially
+          hidden: false,
         });
         await gameRepo.save(newGame);
         gamesCreated++;
