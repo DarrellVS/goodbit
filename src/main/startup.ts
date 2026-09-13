@@ -8,6 +8,7 @@ import { SyncClipCreationDatesAction } from './actions/SyncClipCreationDatesActi
 import { SyncPublishedClipsMetadataAction } from './actions/SyncPublishedClipsMetadataAction.js';
 import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
+import { CACHE_DIR_NAME, migrateLegacyCacheDir } from './services/cachePaths.js';
 
 /**
  * What the background service does, and keeps doing.
@@ -106,7 +107,7 @@ function startWatching(): void {
     ignoreInitial: true,
     // The derived caches and the app's own output would otherwise loop.
     ignored: (path: string) =>
-      basename(path).startsWith('.') || path.includes(`${sep}.filmpje-cache${sep}`),
+      basename(path).startsWith('.') || path.includes(`${sep}${CACHE_DIR_NAME}${sep}`),
     awaitWriteFinish: {
       stabilityThreshold: WRITE_SETTLE_MS,
       pollInterval: 500,
@@ -147,6 +148,10 @@ function startWatching(): void {
  * the publisher is still a working clip library.
  */
 export async function startServices(): Promise<void> {
+  // The app used to be called Filmpje; its cache folder is carried over rather
+  // than regenerated.
+  migrateLegacyCacheDir();
+
   const steps: Array<[string, () => Promise<unknown>]> = [
     ['folder cleanup', () => cleanupEmptyFolders(VIDEOS_ROOT)],
     ['scan', () => reconcile()],

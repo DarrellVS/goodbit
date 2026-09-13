@@ -4,6 +4,7 @@ import { useBatchOperationsStore } from '../stores/batchOperations';
 import { useToastStore } from '../stores/toast';
 import { useCollectionsStore } from '../stores/collections';
 import { useTagsStore } from '../stores/tags';
+import { useConfiguration } from './useConfiguration';
 import { pluralize } from '../utils/pluralize';
 import * as clipsService from '../services/clips';
 import type { Clip } from '../types/clip';
@@ -52,6 +53,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
   const toastStore = useToastStore();
   const collectionsStore = useCollectionsStore();
   const tagsStore = useTagsStore();
+  const config = useConfiguration();
 
   const showTagDialog = ref(false);
   const showCollectionDialog = ref(false);
@@ -107,19 +109,24 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     }
   }
 
-async function handleBatchDelete(): Promise<void> {
-  const count = selectedClips.value.length;
-  
-  if (!confirm(`Are you sure you want to delete ${count} ${pluralize(count, 'clip')}? They will be moved to the Recycle Bin.`)) {
-    return;
-  }
-
+  function handleBatchDelete(): void {
+    const count = selectedClips.value.length;
     const clipIds = getValidClipIds(selectedClips.value);
-    await executeBatchOperation(
-      () => clipsService.batchDelete(clipIds),
-      'delete',
-      'deleted'
-    );
+
+    const performDelete = () =>
+      executeBatchOperation(() => clipsService.batchDelete(clipIds), 'delete', 'deleted');
+
+    // Asked the same way a single delete is, and skipped under the same
+    // setting — a native `confirm()` blocks the whole renderer.
+    if (config.public.value.confirmBeforeDelete) {
+      toastStore.confirm(
+        `${count} ${pluralize(count, 'clip')} will be moved to the Recycle Bin.`,
+        () => void performDelete(),
+        'Move to Recycle Bin?'
+      );
+    } else {
+      void performDelete();
+    }
   }
 
   async function handleBatchPublish(): Promise<void> {
@@ -250,15 +257,19 @@ async function handleBatchDelete(): Promise<void> {
     }
   }
 
-async function handleBatchRemoveFromCollection(): Promise<void> {
-  if (!options.collectionId) return;
+  function handleBatchRemoveFromCollection(): void {
+    if (!options.collectionId) return;
 
-  const count = selectedClips.value.length;
-  
-  if (!confirm(`Remove ${count} ${pluralize(count, 'clip')} from this collection?`)) {
-    return;
+    const count = selectedClips.value.length;
+
+    toastStore.confirm(
+      `${count} ${pluralize(count, 'clip')} stay in the library; only this collection loses them.`,
+      () => void removeFromCollection(count),
+      'Remove from this collection?'
+    );
   }
 
+  async function removeFromCollection(count: number): Promise<void> {
     isProcessing.value = true;
     
     try {

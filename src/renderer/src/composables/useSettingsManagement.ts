@@ -22,11 +22,17 @@ export function useSettingsManagement() {
   const toastStore = useToastStore();
 
   function resetToDefaults(): void {
-    if (confirm('Are you sure you want to reset all settings to their default values?')) {
-      // Copy, or later edits would mutate the shared constant.
-      config.public.value = { ...DEFAULT_SETTINGS };
-      toastStore.success('Settings reset to defaults');
-    }
+    // Not `confirm()`: a native dialog blocks the whole renderer, and every
+    // other destructive action in the app asks the same way this does.
+    toastStore.confirm(
+      'Every preference goes back to how it shipped. Your clips are not touched.',
+      () => {
+        // Copy, or later edits would mutate the shared constant.
+        config.public.value = { ...DEFAULT_SETTINGS };
+        toastStore.success('Settings reset to defaults');
+      },
+      'Reset all settings?'
+    );
   }
 
   function exportSettings(): void {
@@ -35,7 +41,7 @@ export function useSettingsManagement() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `filmpje-settings-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `goodbit-settings-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toastStore.success('Settings exported successfully');

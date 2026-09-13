@@ -26,6 +26,11 @@ interface GoodBitBridge {
   showInFolder: (filePath: string) => Promise<void>;
   openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
   app: { version: () => Promise<string> };
+  backups: {
+    list: () => Promise<BackupFileWire[]>;
+    now: () => Promise<BackupResultWire>;
+    reveal: () => Promise<void>;
+  };
   share: {
     start: (clipId: number) => Promise<ShareStateWire>;
     stop: () => Promise<null>;
@@ -53,6 +58,20 @@ interface AppSettingsWire {
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   migratedFromWebApp: boolean;
+}
+
+interface BackupFileWire {
+  name: string;
+  path: string;
+  sizeBytes: number;
+  takenAt: string;
+}
+
+interface BackupResultWire {
+  taken: boolean;
+  reason: string;
+  path?: string;
+  clips?: number;
 }
 
 /** A clip being served to the local network right now. */

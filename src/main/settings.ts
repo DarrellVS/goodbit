@@ -24,6 +24,13 @@ export interface Settings {
   keepRunningInTray: boolean;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
+  /**
+   * The app version that last booted against this database.
+   *
+   * A different one means the schema is about to be compared to a new set of
+   * entities, which is when a verified backup is taken. See `backup.ts`.
+   */
+  schemaVersion?: string;
   /** Where the window was last, so it opens where you left it. */
   window?: WindowBounds;
 }

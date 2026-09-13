@@ -54,7 +54,7 @@ test.describe('every screen, in both palettes', () => {
       // Set the stored preference and reload, rather than toggling the class by
       // hand: the app applies the theme itself from that value, and a class
       // added from outside is clobbered the next time it does.
-      await ctx.page.evaluate((t) => localStorage.setItem('filmpje-theme', t), theme);
+      await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
       await ctx.page.reload();
       await ctx.page.waitForTimeout(1200);
 
@@ -224,7 +224,7 @@ test.describe('layout', () => {
   });
 
   test('dark mode has no pale surfaces left over from light', async () => {
-    await ctx.page.evaluate(() => localStorage.setItem('filmpje-theme', 'dark'));
+    await ctx.page.evaluate(() => localStorage.setItem('goodbit-theme', 'dark'));
     await ctx.page.reload();
     await ctx.page.waitForTimeout(1200);
 

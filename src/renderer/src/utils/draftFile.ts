@@ -10,9 +10,12 @@ import type { EditorDraft, EditorDraftAudio, EditorDraftClip } from '../services
  * fails.
  */
 
-const FILE_FORMAT = 'filmpje-editor-draft';
+const FILE_FORMAT = 'goodbit-editor-draft';
 const FILE_VERSION = 1;
-const FILE_SUFFIX = '.filmpje-draft.json';
+const FILE_SUFFIX = '.goodbit-draft.json';
+
+/** What drafts were called before the app was. Still readable, never written. */
+const LEGACY_FILE_FORMAT = 'filmpje-editor-draft';
 
 export interface DraftFilePayload {
   name: string;
@@ -121,12 +124,12 @@ export function parseDraftFile(text: string): DraftFilePayload {
 
   const file = (parsed ?? {}) as Record<string, unknown>;
 
-  if (file.format !== FILE_FORMAT) {
-    throw new Error('That file is not a Filmpje draft');
+  if (file.format !== FILE_FORMAT && file.format !== LEGACY_FILE_FORMAT) {
+    throw new Error('That file is not a GoodBit draft');
   }
 
   if (num(file.version, 0) > FILE_VERSION) {
-    throw new Error('That draft was written by a newer version of Filmpje');
+    throw new Error('That draft was written by a newer version of GoodBit');
   }
 
   const clips = Array.isArray(file.clips) ? file.clips : [];

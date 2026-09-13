@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core';
 import { computed, reactive } from 'vue';
 import type { ShortcutKey } from '../constants/shortcuts';
+import { carryOverKey } from '../utils/storageKey';
 
 export interface PublicConfig {
   viewMode: 'grid' | 'grouped';
@@ -17,7 +18,10 @@ export interface PublicConfig {
   customShortcuts?: Record<string, ShortcutKey>;
 }
 
-const publicConfig = useLocalStorage<PublicConfig>('filmpje-public-config', {
+const CONFIG_KEY = 'goodbit-public-config';
+carryOverKey('filmpje-public-config', CONFIG_KEY);
+
+const publicConfig = useLocalStorage<PublicConfig>(CONFIG_KEY, {
   viewMode: 'grouped',
   pageSize: 15,
   autoPlayOnHover: true,

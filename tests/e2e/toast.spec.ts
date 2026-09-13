@@ -26,9 +26,16 @@ test.describe('toasts', () => {
 
   for (const theme of ['light', 'dark'] as const) {
     test(`${theme}: a toast has a ground of its own`, async () => {
-      await ctx.page.evaluate((t) => localStorage.setItem('filmpje-theme', t), theme);
+      await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
       await ctx.page.reload();
       await ctx.page.waitForTimeout(1000);
+
+      // Without this the dark case could silently run in light and still pass,
+      // which is exactly what a stale storage key made it do.
+      expect(
+        await ctx.page.evaluate(() => document.documentElement.classList.contains('dark')),
+        `the ${theme} theme was not actually applied`
+      ).toBe(theme === 'dark');
 
       // Exporting an empty timeline is the cheapest real path to a toast.
       await ctx.page.evaluate(() => {

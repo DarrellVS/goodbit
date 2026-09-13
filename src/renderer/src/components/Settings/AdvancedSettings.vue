@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { useConfiguration } from '../../composables/useConfiguration';
 import SettingToggle from './SettingToggle.vue';
 import KeyboardShortcutCustomization from './KeyboardShortcutCustomization.vue';
+import BackupsCard from './BackupsCard.vue';
 
 const config = useConfiguration();
 const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts);
@@ -25,14 +26,16 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
 
       <KeyboardShortcutCustomization v-if="showShortcuts" />
 
+      <BackupsCard />
+
       <div class="p-4 bg-blue-500/8 border border-blue-500/30 rounded-lg">
         <div class="flex gap-3">
           <Icon icon="material-symbols:info" class="text-blue-500 text-xl flex-shrink-0" />
           <div>
             <h3 class="font-medium text-foreground">Where settings are kept</h3>
             <p class="text-sm text-muted-600 mt-1">
-              Settings are automatically saved to your browser's local storage. 
-              They will persist across sessions on this device and won't be lost when you close the app.
+              These preferences live on this computer and stay put between sessions. Where your
+              clips are, and where GoodBit publishes to, are under App.
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { BaseAction } from './BaseAction.js';
-import { VIDEOS_ROOT } from '../data-source.js';
+import { cacheDirPath } from '../services/cachePaths.js';
 
 export type RemoveClipCachesInput = { filePath: string };
 
@@ -12,8 +12,8 @@ export type RemoveClipCachesInput = { filePath: string };
  */
 export class RemoveClipCachesAction extends BaseAction<RemoveClipCachesInput, void> {
   async execute({ filePath }: RemoveClipCachesInput): Promise<void> {
-    const thumbsDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'thumbnails');
-    const framesDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'frames');
+    const thumbsDir = cacheDirPath('thumbnails');
+    const framesDir = cacheDirPath('frames');
     const thumbKey = crypto.createHash('md5').update(filePath).digest('hex') + '.jpg';
     const stripKey = crypto.createHash('md5').update(filePath + ':strip').digest('hex') + '.jpg';
     const thumbPath = path.join(thumbsDir, thumbKey);

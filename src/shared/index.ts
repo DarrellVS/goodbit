@@ -1,5 +1,5 @@
 /**
- * Shared module for Filmpje
+ * Shared module for GoodBit
  * Exports DTOs, types, and utilities used across client, server, and publisher
  */
 

@@ -38,6 +38,13 @@ const api = {
     version: () => ipcRenderer.invoke('app:version'),
   },
 
+  /** Copies of the library database, taken before any version changes the schema. */
+  backups: {
+    list: () => ipcRenderer.invoke('backup:list'),
+    now: () => ipcRenderer.invoke('backup:now'),
+    reveal: () => ipcRenderer.invoke('backup:reveal'),
+  },
+
   /** Serving one clip to a phone on the same network, for half an hour. */
   share: {
     start: (clipId: number) => ipcRenderer.invoke('share:start', clipId),

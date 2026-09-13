@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fsPromises from 'node:fs/promises';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
+import { cacheDirPath } from './cachePaths.js';
 import { Clip } from '../entity/Clip.js';
 import { EnsureThumbnailAction } from '../actions/EnsureThumbnailAction.js';
 import { EnsureFrameStripAction } from '../actions/EnsureFrameStripAction.js';
@@ -44,8 +45,8 @@ class VideoService {
 
   async removeClipCaches(filePath: string): Promise<void> {
     try {
-      const thumbsDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'thumbnails');
-      const framesDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'frames');
+      const thumbsDir = cacheDirPath('thumbnails');
+      const framesDir = cacheDirPath('frames');
       const thumbKey = crypto.createHash('md5').update(filePath).digest('hex') + '.jpg';
       const stripKey = crypto.createHash('md5').update(filePath + ':strip').digest('hex') + '.jpg';
       const thumbPath = path.join(thumbsDir, thumbKey);

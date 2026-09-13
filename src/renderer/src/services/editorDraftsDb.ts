@@ -12,6 +12,8 @@
  * a draft is restored.
  */
 
+// Named for what the app used to be called. Renaming the store would orphan
+// every draft already in it, which is a worse trade than an untidy name.
 const DB_NAME = 'FilmpjeEditorDrafts';
 const DB_VERSION = 1;
 const STORE_NAME = 'drafts';

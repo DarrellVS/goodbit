@@ -132,3 +132,35 @@ export function seedClips(
   }
   return made;
 }
+
+/**
+ * A clip with an obvious loud moment in the middle of it.
+ *
+ * `seedClips` makes a constant tone, which is exactly the case the analysis is
+ * built to refuse — nothing to point at. This one has somewhere to point.
+ */
+export function seedSpikyClip(
+  videosRoot: string,
+  game: string,
+  name = 'spike',
+  duration = 26,
+  loudFrom = 12,
+  loudTo = 16,
+): string {
+  const ffmpeg = ffmpegPath as unknown as string;
+  const dir = join(videosRoot, game);
+  mkdirSync(dir, { recursive: true });
+
+  const file = join(dir, `${name}.mp4`);
+  execFileSync(ffmpeg, [
+    '-hide_banner', '-v', 'error',
+    '-f', 'lavfi', '-i', `testsrc=size=640x360:rate=30:duration=${duration}`,
+    '-f', 'lavfi', '-i', `sine=frequency=440:duration=${duration}`,
+    // Quiet throughout, then forty times louder for four seconds.
+    '-af', `volume=0.02,volume=enable='between(t,${loudFrom},${loudTo})':volume=40`,
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-shortest', '-y', file,
+  ]);
+
+  return file;
+}

@@ -1,5 +1,6 @@
 import { computed, watch } from 'vue';
 import { useLocalStorage, usePreferredDark } from '@vueuse/core';
+import { carryOverKey } from '../utils/storageKey';
 
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
@@ -11,7 +12,10 @@ export type ThemeChoice = 'system' | 'light' | 'dark';
  * wrong palette. `styles.css` holds the two token sets; all this does is decide
  * which one is on the root element.
  */
-const choice = useLocalStorage<ThemeChoice>('filmpje-theme', 'system');
+const THEME_KEY = 'goodbit-theme';
+carryOverKey('filmpje-theme', THEME_KEY);
+
+const choice = useLocalStorage<ThemeChoice>(THEME_KEY, 'system');
 
 export function useTheme() {
   const prefersDark = usePreferredDark();
@@ -38,7 +42,8 @@ export function useTheme() {
 
 /** Called once at start-up, before the app mounts, so there is no flash. */
 export function initTheme(): void {
-  const stored = (localStorage.getItem('filmpje-theme') ?? '"system"').replace(/"/g, '');
+  carryOverKey('filmpje-theme', THEME_KEY);
+  const stored = (localStorage.getItem(THEME_KEY) ?? '"system"').replace(/"/g, '');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const dark = stored === 'dark' || (stored !== 'light' && prefersDark);
   document.documentElement.classList.toggle('dark', dark);

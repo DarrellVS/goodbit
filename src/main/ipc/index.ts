@@ -1,7 +1,8 @@
 import { app, dialog, ipcMain, shell, BrowserWindow } from 'electron';
 import { readFile } from 'node:fs/promises';
 import { basename, normalize } from 'node:path';
-import { loadSettings, saveSettings } from '../settings.js';
+import { databasePath, loadSettings, saveSettings } from '../settings.js';
+import { backupsDir, listBackups, takeBackup } from '../backup.js';
 import { refreshRoots } from '../data-source.js';
 import { onServiceEvent, reconcile, restartServices } from '../startup.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
@@ -146,6 +147,20 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle('share:current', () => shareService.current());
+
+  /**
+   * Copies of the library.
+   *
+   * One is taken automatically whenever a new version boots — see `backup.ts`
+   * for why — and this is the manual button plus the list of what exists.
+   */
+  ipcMain.handle('backup:list', () => listBackups());
+  ipcMain.handle('backup:now', () => takeBackup(databasePath()));
+  ipcMain.handle('backup:reveal', () => {
+    const newest = listBackups()[0];
+    if (newest) shell.showItemInFolder(normalize(newest.path));
+    else shell.openPath(backupsDir());
+  });
 
   /**
    * Recolour the native caption buttons when the theme changes.

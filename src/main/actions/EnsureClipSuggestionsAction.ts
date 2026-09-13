@@ -5,6 +5,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { AnalyzeClipAction, type AnalyzeClipOutput } from './AnalyzeClipAction.js';
+import { cacheDir as cacheDirFor } from '../services/cachePaths.js';
 
 export type EnsureClipSuggestionsInput = { clipId: number; windowSec?: number; refresh?: boolean };
 
@@ -12,7 +13,7 @@ export type EnsureClipSuggestionsInput = { clipId: number; windowSec?: number; r
  * The analysis of a clip, from cache when the file has not changed.
  *
  * A listen is cheap but not free, and the Trim page asks for it on every open.
- * The cache sits with the other derived files under `.filmpje-cache/`, keyed by
+ * The cache sits with the other derived files under `.goodbit-cache/`, keyed by
  * the path and invalidated by the clip's own mtime — the same rule the
  * thumbnails use, so a trimmed-and-swapped clip re-analyses on its own.
  */
@@ -23,8 +24,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
   async execute({ clipId, windowSec = 10, refresh = false }: EnsureClipSuggestionsInput): Promise<AnalyzeClipOutput> {
     const clip = await AppDataSource.getRepository(Clip).findOneByOrFail({ id: clipId });
 
-    const cacheDir = path.join(VIDEOS_ROOT, '.filmpje-cache', 'analysis');
-    await fsPromises.mkdir(cacheDir, { recursive: true });
+    const cacheDir = cacheDirFor('analysis');
     // The window length is part of the key: a 5 s and a 10 s answer are
     // different answers about the same clip.
     const key =

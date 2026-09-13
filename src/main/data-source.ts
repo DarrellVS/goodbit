@@ -7,6 +7,7 @@ import { Game } from './entity/Game.js';
 import { Project } from './entity/Project.js';
 import { TagPattern } from './entity/TagPattern.js';
 import { databasePath, loadSettings } from './settings.js';
+import { backupBeforeSchemaSync, rememberSchemaVersion, type BackupResult } from './backup.js';
 
 /**
  * Where the clips are, and where the library database lives.
@@ -55,10 +56,16 @@ export function refreshRoots(): void {
 export let AppDataSource: DataSource = null as unknown as DataSource;
 
 let initialised = false;
+let lastBackup: BackupResult | null = null;
 
 export async function initDatabase(): Promise<DataSource> {
   refreshRoots();
   if (initialised) return AppDataSource;
+
+  // `synchronize: true` below is allowed to rewrite tables. Never let a
+  // version that has not booted against this file before do that without a
+  // copy that has been read back first.
+  lastBackup = await backupBeforeSchemaSync(databasePath());
 
   AppDataSource = new DataSource({
     type: 'sqlite',
@@ -70,6 +77,13 @@ export async function initDatabase(): Promise<DataSource> {
 
   await AppDataSource.initialize();
   initialised = true;
+  // The schema survived this version, so the next boot of it can skip the copy.
+  rememberSchemaVersion();
   console.log(`[db] opened ${databasePath()}`);
   return AppDataSource;
+}
+
+/** What the last boot's backup did, for the Settings screen to report. */
+export function lastBackupResult(): BackupResult | null {
+  return lastBackup;
 }
