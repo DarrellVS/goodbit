@@ -161,7 +161,7 @@ watch(
                 type="button"
                 class="px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-50"
                 :class="activePreset?.id === preset.id
-                  ? 'border-orange-500 bg-orange-50 text-orange-700'
+                  ? 'border-orange-500 bg-orange-500/8 text-orange-700'
                   : 'border-border text-muted-700 hover:bg-muted-50'"
                 :title="preset.hint"
                 :disabled="exporting"
@@ -183,7 +183,7 @@ watch(
                 type="button"
                 class="flex flex-col items-center gap-1.5 px-1 py-2 rounded-lg border transition-colors disabled:opacity-50"
                 :class="format === spec.id
-                  ? 'border-orange-500 bg-orange-50'
+                  ? 'border-orange-500 bg-orange-500/8'
                   : 'border-border hover:bg-muted-50'"
                 :title="spec.hint"
                 :disabled="exporting"
@@ -247,7 +247,7 @@ watch(
               <span>{{ message || 'Rendering…' }}</span>
               <span class="font-mono">{{ Math.round(progress) }}%</span>
             </div>
-            <div class="h-2 rounded-full bg-orange-100 overflow-hidden">
+            <div class="h-2 rounded-full bg-orange-500/16 overflow-hidden">
               <div
                 class="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-[width] duration-300"
                 :style="{ width: `${Math.max(2, progress)}%` }"
@@ -276,7 +276,7 @@ watch(
           <!-- A render in flight can be stopped; ffmpeg is killed server-side. -->
           <button
             v-if="exporting"
-            class="px-4 py-2 rounded-lg border border-red-300 text-red-600 font-medium hover:bg-red-50 transition-colors"
+            class="px-4 py-2 rounded-lg border border-red-300 text-red-600 font-medium hover:bg-red-500/8 transition-colors"
             @click="emit('cancel-export')"
           >
             Stop

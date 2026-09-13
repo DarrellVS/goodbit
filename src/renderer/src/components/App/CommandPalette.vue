@@ -117,7 +117,7 @@ function runActive(): void {
             <button
               type="button"
               class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
-              :class="row.index === activeIndex ? 'bg-orange-50 text-orange-900' : 'text-muted-700 hover:bg-muted-50'"
+              :class="row.index === activeIndex ? 'bg-orange-500/8 text-orange-900' : 'text-muted-700 hover:bg-muted-50'"
               :data-active="row.index === activeIndex"
               @click="run(row.command)"
               @mousemove="activeIndex = row.index"

@@ -15,7 +15,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="bg-gradient-to-br from-card to-orange-50/30 rounded-2xl p-6 border border-border">
+  <div class="bg-gradient-to-br from-card to-orange-500/4 rounded-2xl p-6 border border-border">
     <div class="flex items-center gap-2 mb-6">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
         <Icon icon="material-symbols:note-rounded" class="text-xl text-card" />

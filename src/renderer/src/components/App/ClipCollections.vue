@@ -101,12 +101,12 @@ async function createAndAddCollection() {
       <div
         v-for="collection in clipCollections"
         :key="collection.id"
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 group"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/16 to-pink-500/16 border border-purple-200 group"
       >
         <Icon icon="material-symbols:folder-special-rounded" class="text-purple-600" />
         <span class="text-sm font-medium text-purple-900">{{ collection.name }}</span>
         <button
-          class="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 rounded p-0.5"
+          class="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/16 rounded p-0.5"
           @click="removeFromCollection(collection.id)"
         >
           <Icon icon="material-symbols:close-small-rounded" class="text-lg text-red-600" />
@@ -154,7 +154,7 @@ async function createAndAddCollection() {
           <button
             v-for="collection in availableCollections"
             :key="collection.id"
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all text-left group"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-purple-500/8 hover:to-pink-500/8 transition-all text-left group"
             @click="addToCollection(collection.id)"
           >
             <Icon icon="material-symbols:folder-special-rounded" class="text-lg text-purple-600" />

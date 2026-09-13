@@ -107,7 +107,7 @@ function attachTimestampListeners() {
 }
 
 :deep(.markdown-preview .timestamp-link) {
-  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 font-medium no-underline hover:from-orange-200 hover:to-amber-200 transition-all cursor-pointer shadow-sm;
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-700 font-medium no-underline hover:from-orange-500/30 hover:to-amber-500/30 transition-all cursor-pointer shadow-sm;
 }
 
 :deep(.markdown-preview .timestamp-link)::before {

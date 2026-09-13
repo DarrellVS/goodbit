@@ -35,7 +35,7 @@ const hasNotes = computed(() => props.notes && props.notes.trim().length > 0);
       v-if="!hasNotes"
       class="flex flex-col items-center justify-center py-12 px-6 text-center"
     >
-      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center mb-4">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mb-4">
         <Icon icon="material-symbols:note-add" class="text-3xl text-orange-600" />
       </div>
       <h3 class="text-lg font-semibold text-foreground mb-2">No notes yet</h3>
@@ -55,7 +55,7 @@ const hasNotes = computed(() => props.notes && props.notes.trim().length > 0);
     <div v-else class="relative">
       <div class="absolute top-0 right-0 z-10">
         <button
-          class="px-4 py-2 rounded-lg bg-card border border-border hover:border-orange-500 hover:bg-orange-50 transition-all shadow-sm flex items-center gap-2 text-sm font-medium"
+          class="px-4 py-2 rounded-lg bg-card border border-border hover:border-orange-500 hover:bg-orange-500/8 transition-all shadow-sm flex items-center gap-2 text-sm font-medium"
           @click="emit('edit')"
         >
           <Icon icon="material-symbols:edit" class="text-lg" />
@@ -132,7 +132,7 @@ const hasNotes = computed(() => props.notes && props.notes.trim().length > 0);
 }
 
 :deep(.prose .timestamp-link) {
-  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 font-medium no-underline hover:from-orange-200 hover:to-amber-200 transition-all cursor-pointer shadow-sm;
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-700 font-medium no-underline hover:from-orange-500/30 hover:to-amber-500/30 transition-all cursor-pointer shadow-sm;
 }
 
 :deep(.prose .timestamp-link)::before {

@@ -64,7 +64,7 @@ function selectSection(sectionId: string): void {
         Import Settings
       </button>
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm text-red-600"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/8 transition-colors text-sm text-red-600"
         @click="emit('reset')"
       >
         <Icon icon="material-symbols:restart-alt" />

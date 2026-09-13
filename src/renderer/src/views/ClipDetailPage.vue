@@ -19,7 +19,7 @@ import ClipVideoInfo from '../components/ClipDetail/ClipVideoInfo.vue';
 import ClipNotesSection from '../components/ClipDetail/ClipNotesSection.vue';
 import ClipNotesEditor from '../components/ClipDetail/ClipNotesEditor.vue';
 import ShareSheet from '../components/App/ShareSheet.vue';
-import { streamUrl } from '../utils/mediaUrl';
+import { publishClip } from '../services/clips';
 
 interface Props {
   id: string;
@@ -42,10 +42,28 @@ const { clip, metadata, loading, error, loadClip, handleClipUpdated } = useClipL
  * A published clip shares its public link; anything else shares the address
  * this page is already streaming from, which on the LAN is the local one.
  */
-const shareUrl = computed(() => {
-  if (clip.value?.published && clip.value.publishedUrl) return clip.value.publishedUrl;
-  return new URL(streamUrl(clipId.value), window.location.origin).href;
-});
+/**
+ * A link a phone can actually open, or nothing.
+ *
+ * Media is served by the `goodbit://` protocol, which only this app can
+ * resolve — putting it in a QR code produced a camera saying no app can use it.
+ * An unpublished clip simply has no address off this machine, so the sheet says
+ * that instead of offering a code that cannot work.
+ */
+const shareUrl = computed(() =>
+  clip.value?.published && clip.value.publishedUrl ? clip.value.publishedUrl : null,
+);
+
+/** Publishing from the share sheet, so the code it was after can appear. */
+async function publishFromShare(): Promise<void> {
+  if (!clip.value) return;
+  try {
+    handleClipUpdated(await publishClip(clip.value.id));
+    toastStore.success('Published — the link is ready');
+  } catch (error) {
+    toastStore.error((error as Error).message || 'Could not publish this clip');
+  }
+}
 
 watch(() => props.id, () => {
   void loadClip();
@@ -83,13 +101,13 @@ onMounted(() => {
 
 <template>
   <!-- The tinted wash is a light-mode flourish; dark falls back to the page ground. -->
-  <div class="h-full overflow-auto bg-gradient-to-br from-muted-50 via-card to-orange-50/30 dark:bg-none dark:bg-background">
+  <div class="h-full overflow-auto bg-gradient-to-br from-muted-50 via-card to-orange-500/4 dark:bg-none dark:bg-background">
     <!-- Header -->
     <header class="sticky top-0 z-10 bg-card/90 backdrop-blur-xl border-b border-border/80 shadow-sm">
       <div class="max-w-7xl mx-auto px-6 py-4">
         <div class="flex items-center justify-between">
           <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-gray-100 hover:to-muted-50 transition-all group"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-muted-100 hover:to-muted-50 transition-all group"
             @click="goBack"
           >
             <Icon icon="material-symbols:arrow-back-rounded" class="text-xl group-hover:-translate-x-1 transition-transform" />
@@ -153,7 +171,7 @@ onMounted(() => {
           <!-- Tags Section -->
           <div class="bg-card rounded-2xl p-6 border border-border group">
             <div class="flex items-center gap-2 mb-4">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/16 to-amber-500/16 flex items-center justify-center">
                 <Icon icon="material-symbols:label-rounded" class="text-xl text-orange-600" />
               </div>
               <h2 class="text-lg font-bold text-foreground">Tags</h2>
@@ -162,7 +180,7 @@ onMounted(() => {
           </div>
 
           <!-- Collections Section -->
-          <div class="bg-gradient-to-br from-card to-purple-50/30 rounded-2xl p-6 border border-border">
+          <div class="bg-gradient-to-br from-card to-purple-500/4 rounded-2xl p-6 border border-border">
             <div class="flex items-center gap-2 mb-6">
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                 <Icon icon="material-symbols:folder-special-rounded" class="text-xl text-card" />
@@ -207,7 +225,7 @@ onMounted(() => {
       v-model:open="showShareSheet"
       :url="shareUrl"
       :title="clip.displayName || clip.filename"
-      :is-public="!!clip.published"
+      @publish="publishFromShare"
     />
   </div>
 </template>

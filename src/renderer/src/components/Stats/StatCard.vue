@@ -17,7 +17,7 @@ interface Emits {
 
 withDefaults(defineProps<Props>(), {
   iconColor: 'text-orange-500',
-  iconBg: 'bg-orange-50',
+  iconBg: 'bg-orange-500/8',
   clickable: false,
 });
 

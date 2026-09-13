@@ -65,7 +65,7 @@ watch(() => props.open, (isOpen) => {
             @click.stop
           >
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-orange-50 to-amber-50">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-orange-500/8 to-amber-500/8">
               <h2 class="text-xl font-bold text-foreground">
                 {{ title }}
               </h2>

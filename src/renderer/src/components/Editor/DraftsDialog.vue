@@ -138,7 +138,7 @@ watch(
         </div>
 
         <!-- A parsed file, named before it is kept. -->
-        <div v-if="pendingImport" class="p-6 border-b border-border bg-orange-50/60 space-y-2">
+        <div v-if="pendingImport" class="p-6 border-b border-border bg-orange-500/5 space-y-2">
           <div class="flex items-center gap-2 text-sm font-medium text-foreground">
             <Icon icon="material-symbols:upload-file" class="text-lg text-orange-500" />
             Import draft
@@ -207,7 +207,7 @@ watch(
 
         <div class="flex-1 overflow-y-auto p-6">
           <div v-if="drafts.length === 0" class="text-center py-6">
-            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
+            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
               <Icon icon="material-symbols:bookmarks-outline" class="text-2xl text-orange-400" />
             </div>
             <p class="text-sm font-medium text-muted-700">No saved drafts</p>
@@ -250,14 +250,14 @@ watch(
                 Open
               </button>
               <button
-                class="p-1.5 rounded-lg text-muted-500 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                class="p-1.5 rounded-lg text-muted-500 hover:text-orange-600 hover:bg-orange-500/8 transition-colors"
                 title="Export to a file"
                 @click="downloadDraft(draft)"
               >
                 <Icon icon="material-symbols:download" class="text-lg" />
               </button>
               <button
-                class="p-1.5 rounded-lg text-muted-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                class="p-1.5 rounded-lg text-muted-500 hover:text-red-600 hover:bg-red-500/8 transition-colors"
                 title="Delete draft"
                 @click="emit('delete-draft', draft)"
               >

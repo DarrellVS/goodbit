@@ -50,7 +50,7 @@ function applyFadePreset(seconds: number): void {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-border">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:tune" class="text-orange-500" />
         Track Properties
@@ -83,7 +83,7 @@ function applyFadePreset(seconds: number): void {
         min="0"
         max="100"
         :value="volumePercent"
-        class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+        class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
         @input="setVolume(($event.target as HTMLInputElement).valueAsNumber)"
       />
       <div class="flex gap-1">
@@ -118,7 +118,7 @@ function applyFadePreset(seconds: number): void {
           :max="Math.max(0.1, maxFadeIn)"
           step="0.1"
           :value="item.fadeIn"
-          class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
           @input="setFadeIn(($event.target as HTMLInputElement).valueAsNumber)"
         />
       </div>
@@ -134,7 +134,7 @@ function applyFadePreset(seconds: number): void {
           :max="Math.max(0.1, maxFadeOut)"
           step="0.1"
           :value="item.fadeOut"
-          class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
           @input="setFadeOut(($event.target as HTMLInputElement).valueAsNumber)"
         />
       </div>

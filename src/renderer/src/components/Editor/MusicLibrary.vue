@@ -127,7 +127,7 @@ onBeforeUnmount(stopPreview);
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-border flex items-center justify-between gap-2">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:library-music" class="text-orange-500" />
         Music
@@ -137,7 +137,7 @@ onBeforeUnmount(stopPreview);
 
     <div
       class="flex-shrink-0 m-3 rounded-lg border-2 border-dashed transition-colors"
-      :class="isDragOver ? 'border-orange-500 bg-orange-50' : 'border-border bg-card/60'"
+      :class="isDragOver ? 'border-orange-500 bg-orange-500/8' : 'border-border bg-card/60'"
       @dragover.prevent="isDragOver = true"
       @dragleave="isDragOver = false"
       @drop.prevent="handleDrop"
@@ -158,7 +158,7 @@ onBeforeUnmount(stopPreview);
         <span v-if="!uploading" class="text-xs text-muted-500">Drop files or click — mp3, wav, m4a, ogg, flac</span>
       </button>
 
-      <div v-if="uploading" class="h-1 mx-3 mb-3 bg-orange-100 rounded-full overflow-hidden">
+      <div v-if="uploading" class="h-1 mx-3 mb-3 bg-orange-500/16 rounded-full overflow-hidden">
         <div
           class="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-[width] duration-150"
           :style="{ width: `${uploadProgress}%` }"
@@ -181,7 +181,7 @@ onBeforeUnmount(stopPreview);
 
     <div v-else-if="tracks.length === 0" class="flex-1 flex items-center justify-center px-4">
       <div class="text-center">
-        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
           <Icon icon="material-symbols:music-note" class="text-2xl text-orange-400" />
         </div>
         <p class="text-sm font-medium text-muted-700">No music yet</p>
@@ -221,7 +221,7 @@ onBeforeUnmount(stopPreview);
 
         <div class="flex items-center justify-end gap-1 px-2 pb-2">
           <button
-            class="p-1.5 rounded-md hover:bg-orange-50 text-muted-600 hover:text-orange-600 transition-colors"
+            class="p-1.5 rounded-md hover:bg-orange-500/8 text-muted-600 hover:text-orange-600 transition-colors"
             :title="previewId === track.id ? 'Stop preview' : 'Preview'"
             @click.stop="togglePreview(track)"
           >
@@ -231,7 +231,7 @@ onBeforeUnmount(stopPreview);
             />
           </button>
           <button
-            class="p-1.5 rounded-md hover:bg-red-50 text-muted-600 hover:text-red-600 transition-colors"
+            class="p-1.5 rounded-md hover:bg-red-500/8 text-muted-600 hover:text-red-600 transition-colors"
             title="Delete track"
             @click.stop="remove(track)"
           >

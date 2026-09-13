@@ -128,7 +128,7 @@ onMounted(async () => {
               <button
                 v-for="tag in selectedTagsList"
                 :key="tag"
-                class="px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-medium flex items-center gap-1.5 hover:bg-orange-200 transition-colors"
+                class="px-3 py-1.5 rounded-full bg-orange-500/16 text-orange-700 text-sm font-medium flex items-center gap-1.5 hover:bg-orange-200 transition-colors"
                 @click="toggleTag(tag)"
               >
                 <span>{{ tag }}</span>
@@ -149,7 +149,7 @@ onMounted(async () => {
                 :class="[
                   'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                   selectedTags.has(tag)
-                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                    ? 'bg-orange-500/16 text-orange-700 hover:bg-orange-200'
                     : 'bg-muted-100 text-muted-700 hover:bg-muted-200'
                 ]"
                 @click="toggleTag(tag)"

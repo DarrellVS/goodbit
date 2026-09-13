@@ -86,7 +86,7 @@ const emit = defineEmits<Emits>();
     <button
       type="button"
       class="px-3 py-1.5 rounded hover:bg-muted-200 transition-colors flex items-center gap-2 text-sm font-medium"
-      :class="{ 'bg-orange-100 text-orange-600': showPreview }"
+      :class="{ 'bg-orange-500/16 text-orange-600': showPreview }"
       @click="emit('toggle-preview')"
     >
       <Icon :icon="showPreview ? 'material-symbols:edit' : 'material-symbols:visibility'" class="text-lg" />

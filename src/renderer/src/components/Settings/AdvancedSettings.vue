@@ -25,7 +25,7 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
 
       <KeyboardShortcutCustomization v-if="showShortcuts" />
 
-      <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="p-4 bg-blue-500/8 border border-blue-200 rounded-lg">
         <div class="flex gap-3">
           <Icon icon="material-symbols:info" class="text-blue-500 text-xl flex-shrink-0" />
           <div>

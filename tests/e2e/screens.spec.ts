@@ -51,10 +51,17 @@ test.describe('every screen, in both palettes', () => {
 
   for (const theme of ['light', 'dark'] as const) {
     test(`${theme}: text is readable against its own background`, async () => {
-      await ctx.page.evaluate((t) => {
-        localStorage.setItem('filmpje-theme', t);
-        document.documentElement.classList.toggle('dark', t === 'dark');
-      }, theme);
+      // Set the stored preference and reload, rather than toggling the class by
+      // hand: the app applies the theme itself from that value, and a class
+      // added from outside is clobbered the next time it does.
+      await ctx.page.evaluate((t) => localStorage.setItem('filmpje-theme', t), theme);
+      await ctx.page.reload();
+      await ctx.page.waitForTimeout(1200);
+
+      const applied = await ctx.page.evaluate(() =>
+        document.documentElement.classList.contains('dark'),
+      );
+      expect(applied, `the ${theme} theme was not actually applied`).toBe(theme === 'dark');
 
       const problems: string[] = [];
 
@@ -198,5 +205,74 @@ test.describe('layout', () => {
     expect(overflow.body).toBeLessThanOrEqual(1);
     expect(overflow.root).toBeLessThanOrEqual(1);
     expect(overflow.sidebarOverflow).toBeLessThanOrEqual(1);
+  });
+
+  test('no screen is taller than the window', async () => {
+    for (const route of ROUTES) {
+      await ctx.page.evaluate((h) => {
+        window.location.hash = h;
+      }, route.hash);
+      await ctx.page.waitForTimeout(600);
+
+      // The editor used h-screen, which is 100vh and ignores the title bar
+      // above it — so it overflowed by exactly the bar's height.
+      const over = await ctx.page.evaluate(
+        () => document.documentElement.scrollHeight - window.innerHeight,
+      );
+      expect(over, `${route.name} overflows the window by ${over}px`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('dark mode has no pale surfaces left over from light', async () => {
+    await ctx.page.evaluate(() => localStorage.setItem('filmpje-theme', 'dark'));
+    await ctx.page.reload();
+    await ctx.page.waitForTimeout(1200);
+
+    expect(
+      await ctx.page.evaluate(() => document.documentElement.classList.contains('dark')),
+      'dark mode was not applied, so this test would prove nothing',
+    ).toBe(true);
+
+    const pale: string[] = [];
+
+    for (const route of ROUTES) {
+      await ctx.page.evaluate((h) => {
+        window.location.hash = h;
+      }, route.hash);
+      await ctx.page.waitForTimeout(600);
+
+      // Tailwind's -50 and -100 steps are specific pale colours, not 'a hint
+      // of the hue'. Over a dark ground they composite to washed cream, which
+      // is what the editor's panels were.
+      const found = await ctx.page.evaluate(() => {
+        const out: string[] = [];
+
+        for (const el of Array.from(document.querySelectorAll('*'))) {
+          const colour = getComputedStyle(el).backgroundColor;
+          const m = /rgba?\(([^)]+)\)/.exec(colour);
+          if (!m) continue;
+
+          const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
+          const [r, g, b] = parts;
+          const alpha = parts.length > 3 ? parts[3] : 1;
+
+          // Only fills solid enough to actually read as a surface.
+          if (alpha < 0.2) continue;
+          // Bright and near-neutral: the pale end of Tailwind's ramps.
+          if (r < 200 || g < 190 || b < 170) continue;
+
+          const box = el.getBoundingClientRect();
+          if (box.width > 120 && box.height > 24) {
+            out.push(`${colour} — ${el.className.toString().slice(0, 60)}`);
+          }
+        }
+
+        return out;
+      });
+
+      for (const entry of found) pale.push(`${route.name}: ${entry}`);
+    }
+
+    expect(pale, `Pale surfaces in dark mode:\n${pale.join('\n')}`).toEqual([]);
   });
 });

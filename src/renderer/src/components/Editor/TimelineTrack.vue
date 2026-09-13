@@ -140,7 +140,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', clip.id)"
   >
-    <div class="relative w-full h-full bg-gradient-to-br from-card to-orange-50/50 border border-border backdrop-blur-sm overflow-hidden">
+    <div class="relative w-full h-full bg-gradient-to-br from-card to-orange-500/4 border border-border backdrop-blur-sm overflow-hidden">
       <!--
         The frame strip covers the whole source clip, so the block shows only
         the slice between the trim handles — scroll it by trimStart and stretch

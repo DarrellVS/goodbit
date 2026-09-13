@@ -519,7 +519,8 @@ watch(
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+  <!-- h-full, not h-screen: 100vh ignores the title bar above and overflows by exactly its height. -->
+  <div class="h-full flex flex-col bg-background text-foreground overflow-hidden">
     <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-b border-border">
       <div class="flex items-center gap-3">
         <button
@@ -640,7 +641,7 @@ watch(
         <!-- The previous session, offered back rather than restored behind your back. -->
         <div
           v-if="resumable"
-          class="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-50/80 backdrop-blur-sm"
+          class="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/6 backdrop-blur-sm"
         >
           <Icon icon="material-symbols:history" class="text-xl text-orange-500 flex-shrink-0" />
           <div class="min-w-0 flex-1">
@@ -707,7 +708,7 @@ watch(
 
           <div v-else class="absolute inset-0 flex items-center justify-center">
             <div class="text-center">
-              <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
+              <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-500/16 flex items-center justify-center">
                 <Icon icon="material-symbols:movie" class="text-4xl text-orange-400" />
               </div>
               <p class="text-lg font-semibold mb-2 text-foreground">No clips in timeline</p>

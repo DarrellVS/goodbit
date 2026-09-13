@@ -113,7 +113,7 @@ function handleRulerMouseUp(): void {
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden select-none">
     <div
       ref="rulerRef"
-      class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
+      class="flex-shrink-0 h-7 bg-orange-500/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
@@ -136,7 +136,7 @@ function handleRulerMouseUp(): void {
       @scroll="syncScroll"
     >
       <div class="relative h-full py-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
-        <div class="relative h-16 bg-orange-50/30 rounded-lg mx-3 border border-border">
+        <div class="relative h-16 bg-orange-500/4 rounded-lg mx-3 border border-border">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -152,7 +152,7 @@ function handleRulerMouseUp(): void {
           />
         </div>
 
-        <div class="relative h-12 bg-amber-50/40 rounded-lg mx-3 border border-border">
+        <div class="relative h-12 bg-amber-500/4 rounded-lg mx-3 border border-border">
           <!--
             Everything past the last frame of video is dropped on export, so the
             lane says so rather than letting a long track look like it survives.

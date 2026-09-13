@@ -159,7 +159,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Remove from Collection -->
           <MenubarItem
             v-if="collectionId"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-50 text-orange-600 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-500/8 text-orange-600 outline-none cursor-pointer select-none"
             @click="onRemoveFromCollection"
           >
             <Icon icon="material-symbols:folder-delete" class="text-base" />
@@ -171,7 +171,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Publish/Unpublish -->
           <MenubarItem
             v-if="clip.published"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-50 text-red-600 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onUnpublish"
           >
@@ -192,7 +192,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Delete -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-50 text-red-600 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onDelete"
           >

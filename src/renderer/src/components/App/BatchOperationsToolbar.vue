@@ -129,7 +129,7 @@ const someStarred = computed(() =>
             </DropdownMenuItem>
             <DropdownMenuItem
               v-if="somePublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-50 text-red-600 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
               @click="emit('unpublish')"
             >
               <Icon icon="material-symbols:cloud-off" class="text-base" />
@@ -150,7 +150,7 @@ const someStarred = computed(() =>
             <!-- Remove from Collection (if in collection view) -->
             <DropdownMenuItem
               v-if="collectionId"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-50 text-orange-600 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-500/8 text-orange-600 outline-none cursor-pointer select-none"
               @click="emit('remove-from-collection')"
             >
               <Icon icon="material-symbols:folder-delete" class="text-base" />
@@ -161,7 +161,7 @@ const someStarred = computed(() =>
 
             <!-- Delete -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-50 text-red-600 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
               @click="emit('delete')"
             >
               <Icon icon="material-symbols:delete" class="text-base" />

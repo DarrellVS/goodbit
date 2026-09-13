@@ -66,7 +66,7 @@ function toggleTag(name: string): void {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-border flex items-center justify-between gap-2">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:video-library" class="text-orange-500" />
         Clip Library
@@ -172,7 +172,7 @@ function toggleTag(name: string): void {
 
     <div v-else-if="clips.length === 0" class="flex-1 flex items-center justify-center px-4">
       <div class="text-center">
-        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
           <Icon icon="material-symbols:search-off" class="text-2xl text-orange-400" />
         </div>
         <p class="text-sm font-medium text-muted-700">No clips found</p>

@@ -65,7 +65,7 @@ function cancelEdit() {
         @timestamp-click="(seconds) => emit('timestamp-click', seconds)"
       />
       
-      <div class="mt-4 flex items-center gap-3 text-xs text-muted-600 bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-200">
+      <div class="mt-4 flex items-center gap-3 text-xs text-muted-600 bg-gradient-to-r from-orange-500/8 to-amber-500/8 p-3 rounded-lg border border-orange-200">
         <Icon icon="material-symbols:info-rounded" class="text-orange-600 text-lg flex-shrink-0" />
         <div class="space-y-1">
           <p class="font-medium">Use Markdown for rich formatting and add timestamps like <code class="px-1.5 py-0.5 bg-card rounded">1:30</code> to mark specific moments.</p>

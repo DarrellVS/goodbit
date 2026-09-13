@@ -188,7 +188,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', item.id)"
   >
-    <div class="relative w-full h-full bg-gradient-to-br from-orange-100 to-amber-50 border border-orange-300">
+    <div class="relative w-full h-full bg-gradient-to-br from-orange-500/16 to-amber-500/8 border border-orange-300">
       <canvas ref="canvas" class="absolute inset-0 w-full h-full" />
 
       <!-- Fade ramps, drawn as the wedge that the export actually applies. -->

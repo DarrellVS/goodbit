@@ -264,13 +264,13 @@ async function saveNew(): Promise<void> {
                   <h3 class="font-semibold text-foreground">#{{ pattern.tag }}</h3>
                   <div class="flex gap-1">
                     <button
-                      class="p-1.5 rounded-lg hover:bg-orange-100 transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-orange-500/16 transition-colors"
                       @click="startEdit(pattern.tag)"
                     >
                       <Icon icon="material-symbols:edit" class="text-orange-500" />
                     </button>
                     <button
-                      class="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-red-500/16 transition-colors"
                       @click="handleDelete(pattern.tag)"
                     >
                       <Icon icon="material-symbols:delete" class="text-red-500" />
@@ -335,13 +335,13 @@ async function saveNew(): Promise<void> {
             <h3 class="font-semibold text-foreground">#{{ pattern.tag }}</h3>
             <div class="flex gap-1">
               <button
-                class="p-1.5 rounded-lg hover:bg-orange-100 transition-colors"
+                class="p-1.5 rounded-lg hover:bg-orange-500/16 transition-colors"
                 @click="startEdit(pattern.tag)"
               >
                 <Icon icon="material-symbols:edit" class="text-orange-500" />
               </button>
               <button
-                class="p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                class="p-1.5 rounded-lg hover:bg-red-500/16 transition-colors"
                 @click="handleDelete(pattern.tag)"
               >
                 <Icon icon="material-symbols:delete" class="text-red-500" />

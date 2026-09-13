@@ -27,9 +27,15 @@ const emit = defineEmits<Emits>();
 </script>
 
 <template>
+  <!--
+    `relative` on the row matters: the clip count is positioned absolutely so it
+    can share a spot with the hover buttons, and without an anchor on its own
+    row it resolved against a distant ancestor — so once the sidebar scrolled,
+    the counts stayed pinned while their rows moved away beneath them.
+  -->
   <RouterLink
     :to="`/collections/${collection.id}`"
-    class="group w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-card/10 transition-colors"
+    class="group relative w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-card/10 transition-colors"
     :class="{ 'bg-orange-500/20 ring-2 ring-orange-500': isDragOver }"
     active-class="bg-card/10 text-orange-500"
     @dragover.prevent="emit('dragover', $event)"

@@ -136,7 +136,7 @@ onMounted(() => {
             <!-- New Game Badge -->
             <div 
               v-if="isNewGame" 
-              class="px-3 py-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2"
+              class="px-3 py-2 bg-green-500/8 border border-green-200 rounded-lg flex items-center gap-2"
             >
               <Icon icon="material-symbols:add-circle" class="text-green-600 text-lg" />
               <span class="text-sm text-green-700">
@@ -159,7 +159,7 @@ onMounted(() => {
                 :key="game.game"
                 class="w-full px-3 py-2.5 rounded-lg transition-all text-left flex items-center justify-between group"
                 :class="{
-                  'bg-orange-50 text-orange-700': selectedGame === game.game,
+                  'bg-orange-500/8 text-orange-700': selectedGame === game.game,
                   'hover:bg-muted-50': selectedGame !== game.game,
                 }"
                 @click="selectedGame = game.game"

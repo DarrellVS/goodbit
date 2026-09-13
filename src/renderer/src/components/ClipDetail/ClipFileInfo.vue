@@ -20,7 +20,7 @@ const { formatBytes } = useFormat();
 <template>
   <div class="bg-card rounded-2xl p-6 border border-border">
     <div class="flex items-center gap-2 mb-4">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/16 to-indigo-500/16 flex items-center justify-center">
         <Icon icon="material-symbols:folder-rounded" class="text-xl text-blue-600" />
       </div>
       <h2 class="text-lg font-bold text-foreground">File Information</h2>

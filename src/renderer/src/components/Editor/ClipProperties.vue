@@ -28,7 +28,7 @@ function volumeToDecimal(percentage: number): number {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-border">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:tune" class="text-orange-500" />
         Clip Properties
@@ -37,7 +37,7 @@ function volumeToDecimal(percentage: number): number {
 
     <div v-if="!clip" class="flex-1 flex items-center justify-center text-muted-500 text-sm">
       <div class="text-center">
-        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
           <Icon icon="material-symbols:info" class="text-2xl text-orange-400" />
         </div>
         <p class="font-medium text-muted-700">No clip selected</p>
@@ -59,7 +59,7 @@ function volumeToDecimal(percentage: number): number {
           min="0"
           max="100"
           :value="getVolumePercentage(clip.volume)"
-          class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
           @input="emit('update', { volume: volumeToDecimal(($event.target as HTMLInputElement).valueAsNumber) })"
         />
       </div>

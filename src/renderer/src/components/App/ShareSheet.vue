@@ -15,15 +15,14 @@ import { useToastStore } from '../../stores/toast';
 
 interface Props {
   open: boolean;
-  /** The address to hand over. */
-  url: string;
+  /** The public address of this clip, or null when it has none. */
+  url: string | null;
   title: string;
-  /** True when the link is the public one rather than a LAN address. */
-  isPublic: boolean;
 }
 
 interface Emits {
   (e: 'update:open', value: boolean): void;
+  (e: 'publish'): void;
 }
 
 const props = defineProps<Props>();
@@ -57,6 +56,7 @@ async function render(): Promise<void> {
 watch(() => [props.open, props.url], () => { if (props.open) void render(); }, { immediate: true });
 
 async function copy(): Promise<void> {
+  if (!props.url) return;
   try {
     await navigator.clipboard.writeText(props.url);
     toastStore.success('Link copied');
@@ -78,14 +78,14 @@ async function copy(): Promise<void> {
           <DialogDescription class="text-sm text-muted-600 truncate">{{ title }}</DialogDescription>
         </div>
 
-        <div class="p-6 flex flex-col items-center gap-4">
-          <div class="p-3 bg-card rounded-xl border border-border">
-            <img
-              v-if="dataUrl"
-              :src="dataUrl"
-              alt="QR code for this clip"
-              class="w-56 h-56 block"
-            />
+        <!--
+          Only a published clip has an address that exists off this machine.
+          Media is served by the goodbit:// protocol, which nothing but this app
+          can open — a QR of it made phones say no app could use the code.
+        -->
+        <div v-if="url" class="p-6 flex flex-col items-center gap-4">
+          <div class="p-3 bg-white rounded-xl border border-border">
+            <img v-if="dataUrl" :src="dataUrl" alt="QR code for this clip" class="w-56 h-56 block" />
             <div v-else class="w-56 h-56 flex items-center justify-center text-sm text-muted-400">
               <span v-if="failed">Could not draw the code</span>
               <Icon v-else icon="svg-spinners:180-ring-with-bg" class="text-2xl" />
@@ -93,12 +93,7 @@ async function copy(): Promise<void> {
           </div>
 
           <p class="text-xs text-center text-muted-500">
-            <template v-if="isPublic">
-              This is the public link — anyone with it can watch.
-            </template>
-            <template v-else>
-              This address only works on your own network, and the phone has to be on your Wi-Fi.
-            </template>
+            This is the public link — anyone with it can watch.
           </p>
 
           <div class="w-full flex items-center gap-2">
@@ -113,6 +108,22 @@ async function copy(): Promise<void> {
               <Icon icon="material-symbols:content-copy" class="text-lg" />
             </button>
           </div>
+        </div>
+
+        <div v-else class="p-6 flex flex-col items-center gap-3 text-center">
+          <Icon icon="material-symbols:cloud-off" class="text-4xl text-muted-400" />
+          <p class="text-sm text-muted-600">
+            This clip only exists on this computer, so there is no link a phone could open.
+          </p>
+          <p class="text-xs text-muted-500">
+            Publish it and a public link — and a code for it — appears here.
+          </p>
+          <button
+            class="mt-1 px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors"
+            @click="emit('publish')"
+          >
+            Publish this clip
+          </button>
         </div>
 
         <div class="p-6 border-t border-border flex justify-end">
