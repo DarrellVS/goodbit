@@ -122,10 +122,10 @@ Everything here is worth doing regardless and makes the move smaller. No Electro
    parameter on media URLs goes with it.
 2. **Delete the three public endpoints** (`/api/clips/today/count`, `/api/clips/latest`,
    `/api/rescan`) and `getClientIp`. Confirmed unused.
-3. **Move tag patterns into SQLite.** They live in browser IndexedDB today
-   (`client/src/services/tagPatternsDb.ts`) with no server involvement — which means clearing site data
-   loses them and the backend cannot apply them. A `TagPattern` entity, the same way editor drafts just
-   became `Project`.
+3. **Move tag patterns into SQLite — do this first.** They live in browser IndexedDB today
+   (`client/src/services/tagPatternsDb.ts`) with no server involvement. Electron gets its own profile,
+   so they do not survive the move at all unless they are in the database beforehand. A `TagPattern`
+   entity, the same way editor drafts just became `Project`.
 4. **Make the videos root a setting.** `data-source.ts` throws on boot if `VIDEOS_ROOT` does not
    exist. That is correct for a machine you own and fatal for an app someone installs. It becomes a
    stored setting with a first-run picker.
@@ -172,12 +172,15 @@ Tray, autostart, single-instance lock, hide-on-close, the chokidar watcher, the 
 
 ### Phase 4 — 1.0 packaging
 
-- NSIS installer + portable build, `electron-updater` against GitHub releases.
+- NSIS installer + portable build, unsigned. `electron-updater` against GitHub releases, wired to the
+  existing `UpdateBanner`.
 - First-run: pick the videos folder, optionally the music folder, offer "start with Windows".
-- Migrate an existing install: if `<videosRoot>/filmpje.db` exists, adopt it in place.
 - Settings screen gains Publisher (URL, optional), Storage (cache size, clean up), and a health panel
   — ffmpeg version, detected encoder, free space, publisher reachable — which the encoder detection
   from the ApexCut port already provides.
+- **CI lands here, not earlier.** One workflow: typecheck + Prettier + unit tests on push. The
+  build-and-publish job triggers on a `v*` tag only, so routine development costs nothing. Until this
+  point everything is verified locally.
 
 ---
 
@@ -244,19 +247,82 @@ must no-op rather than log failures on every boot.
 
 ---
 
-## Decisions I need from you
+## Decisions made
 
-1. **Where does the database live?** Next to the videos as now (portable, moves with the drive, and an
-   existing install adopts itself), or in `%APPDATA%/Filmpje` (conventional, survives reformatting the
-   media drive, and does not put a database in a folder you sync)? I lean **`%APPDATA%`, with the
-   videos root as a setting** — but yours is the install that already exists.
-2. **Does the app own the folder layout, or follow it?** Right now the top-level folder name *is* the
-   game name, which is OBS's doing. Keep that contract for 1.0, or let people map folders to names?
-   Keeping it is less work and matches how you record.
-3. **Name and identity for a public release** — app id, publisher string, icon. `filmpje` is Dutch;
-   fine as a name, worth deciding deliberately before the installer exists.
-4. **Code signing.** An unsigned installer gets a SmartScreen warning on every machine that is not
-   yours. A cert is ~€200/year. Ship unsigned with a note in the README (what ApexCut does), or buy one?
+1. **Database lives in `%APPDATA%/Filmpje/`.** The videos root stays a setting pointing at wherever
+   OBS writes. Derived caches (`.filmpje-cache/`) stay next to the videos, since they are regenerable
+   and belong with the media they describe.
+2. **The folder layout is followed, not owned.** The top-level folder name remains the game name,
+   because OBS keeps writing to `Battlefield 6/`. Renaming a game already sets `displayName` only and
+   leaves the folder alone — that behaviour ships as-is.
+3. **Ship unsigned.** SmartScreen will warn on first run; the README says so plainly, the way ApexCut
+   does. Revisit if it ever becomes a real support burden.
+4. **Updates work like ApexCut's:** `electron-updater` against GitHub releases, with the existing
+   `UpdateBanner` repointed at it — downloading shows progress, then turns into "ready · Restart to
+   update".
+5. **CI is written last.** No workflow file until the migration is essentially done, so development
+   does not burn Actions minutes on a moving target. When it lands it runs typecheck + Prettier +
+   unit tests only; the build-and-publish job is tag-triggered (`v*`), not per-push.
+
+Still open: **the name** — see below.
+
+---
+
+## Not losing your library
+
+291 clips, 5 tags, 4 collections, 47 games as of 2026-09-13. None of it is derivable from the files
+on disk: `displayName`, tags, notes, collections, stars and publish state exist only in the database.
+The video files themselves are never at risk — nothing in this migration writes to them — but the
+metadata is the thing to be careful with.
+
+**A verified backup already exists.** `server/scripts/backup-db.mjs` takes a consistent snapshot with
+`VACUUM INTO` (rather than copying a file out from under a live writer), checks
+`PRAGMA integrity_check`, and compares row counts before and after. Backups are timestamped and never
+overwritten:
+
+```
+C:\Users\darre\AppData\Roaming\Filmpje\backups\filmpje-<timestamp>.db
+```
+
+Run it before anything that touches the schema. It is also the thing to run before the first launch
+of a migration build.
+
+### The import path
+
+A one-time importer in the desktop app:
+
+1. Looks for a legacy database at `<videosRoot>/filmpje.db`.
+2. Snapshots it to `%APPDATA%/Filmpje/backups/` first, using the same `VACUUM INTO` route.
+3. Copies it to `%APPDATA%/Filmpje/filmpje.db` and opens it there.
+4. Verifies row counts per table against the source and refuses to mark itself done if they differ.
+5. **Never moves or deletes the original.** The web app keeps working off the old file until you are
+   satisfied, and going back is just running the old server again.
+
+**This does not ship publicly.** It lives in `src/main/migration/importLegacy.ts` behind a build-time
+constant, so electron-vite's define-replacement removes the branch entirely from a production build —
+not merely hides it. Belt and braces: the code path also requires an actual legacy database to exist,
+which no external user will ever have. Gate:
+
+```ts
+// Compiled out of public builds: `__LEGACY_IMPORT__` is defined false in the release config,
+// so the whole branch is dead code the bundler drops.
+if (__LEGACY_IMPORT__ && existsSync(legacyDbPath)) { … }
+```
+
+### The quiet one: browser storage does not come with you
+
+Electron has its own profile, so anything in the browser's IndexedDB or localStorage is **not**
+carried over by copying the database. That covers:
+
+- **Smart tag patterns** (`client/src/services/tagPatternsDb.ts`) — IndexedDB, no server copy. These
+  are lost unless they move into SQLite **while still running as a web app**. That is why it is
+  Phase 0 item 3 and not something to leave until later.
+- **Editor drafts** — named drafts already sync to the `Project` table as of the ApexCut port, so
+  they survive. The rolling `__autosave__` record does not, which is fine; it is scratch.
+- **Settings** (`filmpje-public-config`, theme, shortcut customisations) — small and quick to redo,
+  but worth an export/import if you have tuned them.
+
+Do Phase 0 item 3 before anything else in this document.
 
 ---
 
@@ -292,13 +358,20 @@ The layering makes each step small; there are just a lot of them.
 
 ## 1.0 checklist
 
-- [ ] Firebase key rotated, history scrubbed, `API_TOKEN` gone
+- [ ] **Delete the Firebase project, then scrub it from history.** Deliberately still alive until the
+      desktop build is tested locally — that is the agreed order, not an oversight. Once it is proven:
+      delete project `clips-b0bbe` (this is what actually revokes the key), rewrite history with
+      `git filter-repo` to drop `server/secrets/firebase.json`, and remove the `API_TOKEN` string from
+      `server/src/auth.ts`. Deleting the file alone does nothing; the key is in the history.
+- [ ] Legacy importer compiled out of the public build — verify by grepping the packaged bundle
 - [ ] Real migrations replacing `synchronize: true`
 - [ ] First-run wizard; no env var can be required to start
 - [ ] Existing `filmpje.db` adopted without data loss
 - [ ] Publisher genuinely optional, end to end
-- [ ] Installer + portable build, auto-update feed live
-- [ ] README rewritten for someone who has never seen it
+- [ ] Installer + portable build (unsigned), auto-update feed live
+- [ ] CI workflow added — last, and tag-gated for the build job
+- [ ] Name settled; app id, icon and publisher string follow from it
+- [ ] README rewritten for someone who has never seen it, including the SmartScreen note
 - [ ] Unit tests over the pure logic worth pinning — `sanitizeOutputName`, the crop maths, the
       analysis thresholds, `useTimeline`'s reflow, `timestampParser`. Plus one Playwright smoke test
       that launches the built app and checks it opens; no browser-driving beyond that.
