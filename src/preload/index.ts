@@ -28,6 +28,14 @@ const api = {
     version: () => ipcRenderer.invoke('app:version'),
   },
 
+  window: {
+    setOverlay: (colors: { symbolColor?: string }) =>
+      ipcRenderer.invoke('window:setOverlay', colors),
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize'),
+    close: () => ipcRenderer.invoke('window:close'),
+  },
+
   updater: {
     state: () => ipcRenderer.invoke('updater:state'),
     check: () => ipcRenderer.invoke('updater:check'),

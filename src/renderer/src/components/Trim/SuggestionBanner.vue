@@ -44,7 +44,7 @@ const label = computed(() => {
 <template>
   <div
     v-if="loading"
-    class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white/60 text-sm text-gray-500 dark:border-slate-700 dark:text-slate-400"
+    class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card/60 text-sm text-muted-500"
   >
     <Icon icon="material-symbols:graphic-eq" class="text-base animate-pulse" />
     Listening to this clip…
@@ -56,9 +56,9 @@ const label = computed(() => {
   >
     <Icon icon="material-symbols:graphic-eq" class="text-lg text-orange-500 flex-shrink-0" />
 
-    <div class="text-sm text-gray-800 min-w-0 dark:text-slate-200">
+    <div class="text-sm text-muted-800 min-w-0">
       <span class="font-semibold">The loudest stretch is {{ label }}</span>
-      <span class="text-gray-500 dark:text-slate-400"> — that is usually where the good bit is</span>
+      <span class="text-muted-500"> — that is usually where the good bit is</span>
     </div>
 
     <div class="flex items-center gap-1.5 ml-auto">

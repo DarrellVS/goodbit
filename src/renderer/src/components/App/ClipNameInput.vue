@@ -23,7 +23,7 @@ async function handleNameChange(event: Event): Promise<void> {
 <template>
   <div class="flex-1 min-w-0">
     <input 
-      class="w-full bg-transparent border-0 outline-none px-0 py-0 font-medium text-sm truncate hover:bg-white/5 focus:bg-white/5 rounded" 
+      class="w-full bg-transparent border-0 outline-none px-0 py-0 font-medium text-sm truncate hover:bg-card/5 focus:bg-card/5 rounded" 
       :value="clip.displayName ?? clip.filename" 
       :title="clip.displayName ?? clip.filename"
       @change="handleNameChange"

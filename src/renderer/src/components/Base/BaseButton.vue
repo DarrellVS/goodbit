@@ -13,9 +13,9 @@ const variantClass = computed(() => {
     case 'ghost':
       return 'bg-transparent';
     case 'outline':
-      return 'bg-transparent border border-gray-300 hover:bg-muted-50';
+      return 'bg-transparent border border-border hover:bg-muted-50';
     case 'muted':
-      return 'bg-transparent border border-gray-300 hover:bg-muted-50 bg-white/50';
+      return 'bg-transparent border border-border hover:bg-muted-50 bg-card/50';
     default:
       return '';
   }
@@ -25,7 +25,7 @@ const variantClass = computed(() => {
 
 <template>
   <button
-    class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-soft border border-gray-300 hover:shadow-md transition-all duration-200 active:scale-[0.98] dark:border-slate-700"
+    class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-soft border border-border hover:shadow-md transition-all duration-200 active:scale-[0.98]"
     :class="variantClass"
   >
     <slot />

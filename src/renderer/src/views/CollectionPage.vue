@@ -86,7 +86,7 @@ watch([
 
 <template>
   <div>
-    <div class="sticky top-0 z-10 bg-white/60 backdrop-blur-sm border-b border-gray-200 px-6 py-4 dark:border-slate-700">
+    <div class="sticky top-0 z-10 bg-card/60 backdrop-blur-sm border-b border-border px-6 py-4">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold">{{ collection?.name || 'Collection' }}</h1>

@@ -19,14 +19,14 @@ function getBarHeight(count: number): string {
 </script>
 
 <template>
-  <div class="bg-white border border-gray-300 rounded-xl p-6 dark:bg-slate-900 dark:border-slate-700">
+  <div class="bg-card border border-border rounded-xl p-6">
     <div class="flex items-center gap-2 mb-6">
       <Icon icon="material-symbols:calendar-month" class="text-xl text-orange-500" />
       <h3 class="text-lg font-semibold">Activity</h3>
-      <span class="text-sm text-gray-500 ml-auto dark:text-slate-400">Last 14 days</span>
+      <span class="text-sm text-muted-500 ml-auto">Last 14 days</span>
     </div>
     
-    <div v-if="days.length === 0" class="text-center py-12 text-gray-400 dark:text-slate-500">
+    <div v-if="days.length === 0" class="text-center py-12 text-muted-400">
       No activity in the last 14 days
     </div>
     
@@ -38,15 +38,15 @@ function getBarHeight(count: number): string {
       >
         <div 
           class="w-full rounded-t-lg transition-all hover:opacity-80 cursor-default"
-          :class="day.count === 0 ? 'bg-gray-100' : 'bg-orange-500'"
+          :class="day.count === 0 ? 'bg-muted-100' : 'bg-orange-500'"
           :style="{ height: getBarHeight(day.count) }"
           :title="`${new Date(day.date).toLocaleDateString()}: ${day.count} clips`"
         >
-          <div v-if="day.count > 0" class="text-xs font-medium text-white text-center mt-2">
+          <div v-if="day.count > 0" class="text-xs font-medium text-card text-center mt-2">
             {{ day.count }}
           </div>
         </div>
-        <span class="text-xs text-gray-400 dark:text-slate-500">
+        <span class="text-xs text-muted-400">
           {{ new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }) }}
         </span>
       </div>

@@ -87,8 +87,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
       <button
         class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
         :class="[
-          { 'bg-white/10 text-orange-500': !activeGame },
-          props.disabled ? 'cursor-not-allowed' : 'hover:bg-white/10'
+          { 'bg-card/10 text-orange-500': !activeGame },
+          props.disabled ? 'cursor-not-allowed' : 'hover:bg-card/10'
         ]"
         @click="!props.disabled && emit('select-game', '')"
       >
@@ -103,8 +103,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         :key="game.game"
         class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
         :class="[
-          { 'bg-white/10 text-orange-500': activeGame === game.game },
-          props.disabled ? 'cursor-not-allowed' : 'hover:bg-white/10'
+          { 'bg-card/10 text-orange-500': activeGame === game.game },
+          props.disabled ? 'cursor-not-allowed' : 'hover:bg-card/10'
         ]"
       >
         <button
@@ -134,8 +134,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             @update:open="openMenuGame = $event ? game.game : null"
           >
             <DropdownMenuTrigger
-              class="p-1 rounded hover:bg-white/10 outline-none"
-              :class="openMenuGame === game.game ? 'block bg-white/10' : 'hidden group-hover:block'"
+              class="p-1 rounded hover:bg-card/10 outline-none"
+              :class="openMenuGame === game.game ? 'block bg-card/10' : 'hidden group-hover:block'"
               :title="`More actions for ${game.displayName || game.game}`"
               @click.stop
             >
@@ -143,19 +143,19 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             </DropdownMenuTrigger>
             <DropdownMenuPortal>
               <DropdownMenuContent
-                class="min-w-[180px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50 dark:bg-slate-900 dark:border-slate-700"
+                class="min-w-[180px] bg-card rounded-lg p-1 shadow-lg border border-border outline-none z-50"
                 align="end"
                 :side-offset="4"
               >
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
                   @click="openRenameDialog(game)"
                 >
                   <Icon icon="mdi:pencil" class="text-base" />
                   <span>Rename</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
                   @click="hideGame(game)"
                 >
                   <Icon icon="mdi:eye-off-outline" class="text-base" />

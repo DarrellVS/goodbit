@@ -29,7 +29,7 @@ const typeColors = {
 };
 
 function getToastClass(toast: Toast): string {
-  return toast.type ? typeColors[toast.type] : 'text-gray-900 bg-white border-gray-200';
+  return toast.type ? typeColors[toast.type] : 'text-foreground bg-card border-border';
 }
 
 function getIconName(toast: Toast): string {

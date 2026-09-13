@@ -96,10 +96,10 @@ function handleCardClick(event: MouseEvent) {
   <article 
     draggable="true"
     :class="[
-      'clip-card shadow group relative bg-white/5 rounded-xl overflow-hidden border transition-all hover:shadow-lg cursor-pointer',
+      'clip-card shadow group relative bg-card/5 rounded-xl overflow-hidden border transition-all hover:shadow-lg cursor-pointer',
       isSelected 
         ? 'border-orange-500 border-2 ring-2 ring-2 ring-orange-500/30' 
-        : 'border-gray-300 hover:border-orange-500/50'
+        : 'border-border hover:border-orange-500/50'
     ]"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"

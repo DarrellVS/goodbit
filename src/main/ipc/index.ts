@@ -2,6 +2,7 @@ import { app, dialog, ipcMain, shell, BrowserWindow } from 'electron';
 import { loadSettings, saveSettings } from '../settings.js';
 import { refreshRoots } from '../data-source.js';
 import { onServiceEvent, reconcile, restartServices } from '../startup.js';
+import { TITLEBAR_HEIGHT } from '@shared/index.js';
 
 /**
  * The handlers behind the preload bridge.
@@ -58,6 +59,35 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle('app:version', () => app.getVersion());
+
+  /**
+   * Recolour the native caption buttons when the theme changes.
+   *
+   * Windows draws minimise/maximise/close itself, so they keep whatever colour
+   * they were given — light glyphs stay light on a light page and disappear.
+   */
+  ipcMain.handle('window:setOverlay', (_event, colors: { symbolColor?: string }) => {
+    const window = getWindow();
+    if (!window || window.isDestroyed()) return;
+    try {
+      window.setTitleBarOverlay({
+        color: '#00000000',
+        symbolColor: colors.symbolColor ?? '#a0a4ac',
+        height: TITLEBAR_HEIGHT,
+      });
+    } catch {
+      // Only supported where an overlay exists; nothing to do otherwise.
+    }
+  });
+
+  ipcMain.handle('window:minimize', () => getWindow()?.minimize());
+  ipcMain.handle('window:toggleMaximize', () => {
+    const window = getWindow();
+    if (!window) return false;
+    window.isMaximized() ? window.unmaximize() : window.maximize();
+    return window.isMaximized();
+  });
+  ipcMain.handle('window:close', () => getWindow()?.close());
 
   // Push the watcher's findings to whatever window happens to be open.
   onServiceEvent((event) => {

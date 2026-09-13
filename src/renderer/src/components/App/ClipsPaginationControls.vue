@@ -54,7 +54,7 @@ function goToNext(): void {
   </div>
 
   <div v-else-if="showPagination" class="flex flex-col items-center gap-4 py-8">
-    <div class="text-sm text-gray-500 dark:text-slate-400">
+    <div class="text-sm text-muted-500">
       Showing page {{ currentPage }} of {{ totalPages }} ({{ total }} total {{ pluralize(total, 'clip') }})
     </div>
     
@@ -62,7 +62,7 @@ function goToNext(): void {
       <!-- Previous Button -->
       <button
         :disabled="!hasPreviousPage"
-        class="px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm font-medium dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+        class="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm font-medium"
         @click="goToPrevious"
       >
         <Icon icon="material-symbols:chevron-left" class="text-lg" />
@@ -78,7 +78,7 @@ function goToNext(): void {
               'px-3 py-2 rounded-lg text-sm font-medium transition-colors min-w-[40px]',
               page === currentPage
                 ? 'bg-orange-500 text-white'
-                : 'border border-gray-300 bg-white hover:bg-gray-50 text-gray-700'
+                : 'border border-border bg-card hover:bg-muted-50 text-muted-700'
             ]"
             @click="goToPage(page as number)"
           >
@@ -86,7 +86,7 @@ function goToNext(): void {
           </button>
           <span
             v-else
-            class="px-2 text-gray-400 dark:text-slate-500"
+            class="px-2 text-muted-400"
           >
             ...
           </span>
@@ -96,7 +96,7 @@ function goToNext(): void {
       <!-- Next Button -->
       <button
         :disabled="!hasNextPage"
-        class="px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm font-medium dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+        class="px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm font-medium"
         @click="goToNext"
       >
         <span>Next</span>
@@ -105,7 +105,7 @@ function goToNext(): void {
     </div>
   </div>
 
-  <div v-else-if="!hasClips" class="text-center py-8 text-sm text-gray-400 dark:text-slate-500">
+  <div v-else-if="!hasClips" class="text-center py-8 text-sm text-muted-400">
     No clips found
   </div>
 </template>

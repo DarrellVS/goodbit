@@ -71,28 +71,28 @@ async function copy(): Promise<void> {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-sm flex flex-col outline-none modal-content-animate dark:bg-slate-900 dark:border-slate-700"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-sm flex flex-col outline-none modal-content-animate"
       >
-        <div class="p-6 border-b border-gray-200 dark:border-slate-700">
-          <DialogTitle class="text-xl font-bold text-gray-900 mb-1 dark:text-slate-100">Send to my phone</DialogTitle>
-          <DialogDescription class="text-sm text-gray-600 truncate dark:text-slate-400">{{ title }}</DialogDescription>
+        <div class="p-6 border-b border-border">
+          <DialogTitle class="text-xl font-bold text-foreground mb-1">Send to my phone</DialogTitle>
+          <DialogDescription class="text-sm text-muted-600 truncate">{{ title }}</DialogDescription>
         </div>
 
         <div class="p-6 flex flex-col items-center gap-4">
-          <div class="p-3 bg-white rounded-xl border border-gray-200 dark:bg-slate-900 dark:border-slate-700">
+          <div class="p-3 bg-card rounded-xl border border-border">
             <img
               v-if="dataUrl"
               :src="dataUrl"
               alt="QR code for this clip"
               class="w-56 h-56 block"
             />
-            <div v-else class="w-56 h-56 flex items-center justify-center text-sm text-gray-400 dark:text-slate-500">
+            <div v-else class="w-56 h-56 flex items-center justify-center text-sm text-muted-400">
               <span v-if="failed">Could not draw the code</span>
               <Icon v-else icon="svg-spinners:180-ring-with-bg" class="text-2xl" />
             </div>
           </div>
 
-          <p class="text-xs text-center text-gray-500 dark:text-slate-400">
+          <p class="text-xs text-center text-muted-500">
             <template v-if="isPublic">
               This is the public link — anyone with it can watch.
             </template>
@@ -102,11 +102,11 @@ async function copy(): Promise<void> {
           </p>
 
           <div class="w-full flex items-center gap-2">
-            <code class="flex-1 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 truncate dark:bg-slate-800 dark:border-slate-700">
+            <code class="flex-1 text-xs font-mono bg-muted-50 border border-border rounded-lg px-3 py-2 truncate">
               {{ url }}
             </code>
             <button
-              class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              class="px-3 py-2 rounded-lg border border-border text-muted-700 hover:bg-muted-50 transition-colors flex-shrink-0"
               title="Copy the link"
               @click="copy"
             >
@@ -115,7 +115,7 @@ async function copy(): Promise<void> {
           </div>
         </div>
 
-        <div class="p-6 border-t border-gray-200 flex justify-end dark:border-slate-700">
+        <div class="p-6 border-t border-border flex justify-end">
           <DialogClose as-child>
             <button class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors">
               Done

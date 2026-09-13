@@ -68,7 +68,7 @@ onMounted(load);
           v-model="search"
           type="text"
           placeholder="Search games"
-          class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all dark:border-slate-700"
+          class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
         />
       </div>
       <span class="text-sm text-muted-500 whitespace-nowrap">
@@ -86,7 +86,7 @@ onMounted(load);
 
     <div
       v-else-if="!filteredGames.length"
-      class="p-6 text-center text-sm text-muted-500 bg-white rounded-lg border border-gray-200 dark:bg-slate-900 dark:border-slate-700"
+      class="p-6 text-center text-sm text-muted-500 bg-card rounded-lg border border-border"
     >
       {{ search ? 'No games match that search' : 'No games found' }}
     </div>
@@ -95,17 +95,17 @@ onMounted(load);
       <div
         v-for="game in filteredGames"
         :key="game.game"
-        class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 dark:bg-slate-900 dark:border-slate-700"
+        class="flex items-center justify-between p-4 bg-card rounded-lg border border-border"
         :class="{ 'opacity-60': game.hidden }"
       >
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span class="font-medium text-gray-900 truncate dark:text-slate-100">
+            <span class="font-medium text-foreground truncate">
               {{ game.displayName || game.game }}
             </span>
             <span
               v-if="game.hidden"
-              class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-400"
+              class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-muted-200 text-muted-600"
             >
               Hidden
             </span>
@@ -119,13 +119,13 @@ onMounted(load);
 
         <button
           class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 disabled:opacity-50"
-          :class="game.hidden ? 'bg-gray-300' : 'bg-orange-500'"
+          :class="game.hidden ? 'bg-muted-300' : 'bg-orange-500'"
           :title="game.hidden ? 'Show in library' : 'Hide from library'"
           :disabled="busy === game.game"
           @click="toggle(game)"
         >
           <span
-            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900"
+            class="inline-block h-4 w-4 transform rounded-full bg-card transition-transform"
             :class="game.hidden ? 'translate-x-1' : 'translate-x-6'"
           />
         </button>

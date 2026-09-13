@@ -36,16 +36,16 @@ defineProps<Props>();
             icon="material-symbols:upload-file"
             class="text-9xl text-orange-500 mb-6 mx-auto animate-bounce"
           />
-          <h2 class="text-4xl font-bold text-white mb-3">
+          <h2 class="text-4xl font-bold text-card mb-3">
             Drop Files Here
           </h2>
-          <p class="text-xl text-gray-300">
+          <p class="text-xl text-muted-300">
             Videos will be imported to the "Import" game
           </p>
-          <p class="text-sm text-gray-400 mt-4 dark:text-slate-500">
+          <p class="text-sm text-muted-400 mt-4">
             Supported: MP4, MOV, AVI, MKV, WEBM
           </p>
-          <p class="text-xs text-gray-500 mt-2 dark:text-slate-400">
+          <p class="text-xs text-muted-500 mt-2">
             AVI, MKV, WEBM will be automatically converted to MP4
           </p>
         </template>
@@ -61,10 +61,10 @@ defineProps<Props>();
               <div class="w-20 h-20 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
             </div>
           </div>
-          <h2 class="text-4xl font-bold text-white mb-3">
+          <h2 class="text-4xl font-bold text-card mb-3">
             Importing Files...
           </h2>
-          <p class="text-xl text-gray-300">
+          <p class="text-xl text-muted-300">
             Please wait while your files are being processed
           </p>
           <div v-if="uploadProgress !== undefined" class="mt-6">
@@ -74,7 +74,7 @@ defineProps<Props>();
                 :style="{ width: `${uploadProgress}%` }"
               />
             </div>
-            <p class="text-sm text-gray-400 mt-2 dark:text-slate-500">{{ Math.round(uploadProgress) }}%</p>
+            <p class="text-sm text-muted-400 mt-2">{{ Math.round(uploadProgress) }}%</p>
           </div>
         </template>
       </div>

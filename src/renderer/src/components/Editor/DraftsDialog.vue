@@ -110,18 +110,18 @@ watch(
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-lg flex flex-col outline-none modal-content-animate max-h-[85vh] dark:bg-slate-900 dark:border-slate-700"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-lg flex flex-col outline-none modal-content-animate max-h-[85vh]"
       >
-        <div class="p-6 border-b border-gray-200 flex items-start justify-between gap-4 dark:border-slate-700">
+        <div class="p-6 border-b border-border flex items-start justify-between gap-4">
           <div>
-            <DialogTitle class="text-xl font-bold text-gray-900 mb-1 dark:text-slate-100">Drafts</DialogTitle>
-            <DialogDescription class="text-sm text-gray-600 dark:text-slate-400">
+            <DialogTitle class="text-xl font-bold text-foreground mb-1">Drafts</DialogTitle>
+            <DialogDescription class="text-sm text-muted-600">
               Kept in this browser — export one to a file to move it somewhere else
             </DialogDescription>
           </div>
 
           <button
-            class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 flex-shrink-0 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            class="px-3 py-2 rounded-lg border border-border text-muted-700 text-xs font-medium hover:bg-muted-50 transition-colors inline-flex items-center gap-1.5 flex-shrink-0"
             @click="fileInput?.click()"
           >
             <Icon icon="material-symbols:upload-file-outline" class="text-base" />
@@ -138,12 +138,12 @@ watch(
         </div>
 
         <!-- A parsed file, named before it is kept. -->
-        <div v-if="pendingImport" class="p-6 border-b border-gray-200 bg-orange-50/60 space-y-2 dark:border-slate-700">
-          <div class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-slate-100">
+        <div v-if="pendingImport" class="p-6 border-b border-border bg-orange-50/60 space-y-2">
+          <div class="flex items-center gap-2 text-sm font-medium text-foreground">
             <Icon icon="material-symbols:upload-file" class="text-lg text-orange-500" />
             Import draft
           </div>
-          <div class="text-xs text-gray-600 dark:text-slate-400">
+          <div class="text-xs text-muted-600">
             {{ pendingImport.clips.length }} clip{{ pendingImport.clips.length === 1 ? '' : 's' }}
             <span v-if="pendingImport.audio.length">
               · {{ pendingImport.audio.length }} track{{ pendingImport.audio.length === 1 ? '' : 's' }}
@@ -156,7 +156,7 @@ watch(
               v-model="importName"
               type="text"
               :placeholder="pendingImport.name"
-              class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all dark:border-slate-700"
+              class="flex-1 px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               @keydown.enter="confirmImport"
             />
             <button
@@ -166,7 +166,7 @@ watch(
               Import
             </button>
             <button
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-white transition-colors dark:border-slate-700 dark:text-slate-300"
+              class="px-4 py-2 rounded-lg border border-border text-muted-700 font-medium hover:bg-card transition-colors"
               @click="cancelImport"
             >
               Cancel
@@ -174,8 +174,8 @@ watch(
           </div>
         </div>
 
-        <div class="p-6 border-b border-gray-200 space-y-2 dark:border-slate-700">
-          <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-slate-400">
+        <div class="p-6 border-b border-border space-y-2">
+          <label class="block text-xs font-semibold text-muted-600 uppercase tracking-wide">
             Save the current timeline
           </label>
           <div class="flex gap-2">
@@ -184,7 +184,7 @@ watch(
               v-model="name"
               type="text"
               :placeholder="defaultName()"
-              class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all dark:border-slate-700"
+              class="flex-1 px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               @keydown.enter="save"
             />
             <button
@@ -197,10 +197,10 @@ watch(
               Save
             </button>
           </div>
-          <p v-if="!canSave" class="text-xs text-gray-500 dark:text-slate-400">
+          <p v-if="!canSave" class="text-xs text-muted-500">
             Add a clip or a track before saving a draft.
           </p>
-          <p v-else-if="activeId" class="text-xs text-gray-500 dark:text-slate-400">
+          <p v-else-if="activeId" class="text-xs text-muted-500">
             Saving makes a separate copy — the draft you have open keeps updating on its own.
           </p>
         </div>
@@ -210,8 +210,8 @@ watch(
             <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
               <Icon icon="material-symbols:bookmarks-outline" class="text-2xl text-orange-400" />
             </div>
-            <p class="text-sm font-medium text-gray-700 dark:text-slate-300">No saved drafts</p>
-            <p class="text-xs mt-1 text-gray-500 dark:text-slate-400">
+            <p class="text-sm font-medium text-muted-700">No saved drafts</p>
+            <p class="text-xs mt-1 text-muted-500">
               Your last session is restored automatically — this is for keeping more than one.
             </p>
           </div>
@@ -220,10 +220,10 @@ watch(
             <li
               v-for="draft in drafts"
               :key="draft.id"
-              class="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:border-orange-400 transition-colors dark:border-slate-700"
+              class="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-orange-400 transition-colors"
             >
               <div class="min-w-0 flex-1">
-                <div class="text-sm font-medium text-gray-900 truncate flex items-center gap-1.5 dark:text-slate-100">
+                <div class="text-sm font-medium text-foreground truncate flex items-center gap-1.5">
                   {{ draft.name }}
                   <span
                     v-if="draft.id === activeId"
@@ -232,7 +232,7 @@ watch(
                     editing
                   </span>
                 </div>
-                <div class="text-xs text-gray-500 mt-0.5 dark:text-slate-400">
+                <div class="text-xs text-muted-500 mt-0.5">
                   {{ draft.clips.length }} clip{{ draft.clips.length === 1 ? '' : 's' }}
                   <span v-if="draft.audio.length">
                     · {{ draft.audio.length }} track{{ draft.audio.length === 1 ? '' : 's' }}
@@ -250,14 +250,14 @@ watch(
                 Open
               </button>
               <button
-                class="p-1.5 rounded-lg text-gray-500 hover:text-orange-600 hover:bg-orange-50 transition-colors dark:text-slate-400"
+                class="p-1.5 rounded-lg text-muted-500 hover:text-orange-600 hover:bg-orange-50 transition-colors"
                 title="Export to a file"
                 @click="downloadDraft(draft)"
               >
                 <Icon icon="material-symbols:download" class="text-lg" />
               </button>
               <button
-                class="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors dark:text-slate-400"
+                class="p-1.5 rounded-lg text-muted-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                 title="Delete draft"
                 @click="emit('delete-draft', draft)"
               >
@@ -267,9 +267,9 @@ watch(
           </ul>
         </div>
 
-        <div class="p-6 border-t border-gray-200 flex justify-end dark:border-slate-700">
+        <div class="p-6 border-t border-border flex justify-end">
           <DialogClose as-child>
-            <button class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            <button class="px-4 py-2 rounded-lg border border-border text-muted-700 font-medium hover:bg-muted-50 transition-colors">
               Done
             </button>
           </DialogClose>

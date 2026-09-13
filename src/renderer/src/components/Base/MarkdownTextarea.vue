@@ -33,7 +33,7 @@ defineExpose({
     ref="textareaRef"
     :value="modelValue"
     :placeholder="placeholder"
-    class="w-full min-h-[300px] p-4 border-0 outline-none focus:ring-0 resize-none font-mono text-sm bg-white dark:bg-slate-900"
+    class="w-full min-h-[300px] p-4 border-0 outline-none focus:ring-0 resize-none font-mono text-sm bg-card"
     @input="handleInput"
   />
 </template>

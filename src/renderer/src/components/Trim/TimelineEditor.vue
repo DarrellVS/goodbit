@@ -1,5 +1,5 @@
 <template>
-  <section class="bg-white/5 backdrop-blur-sm rounded-2xl border border-gray-300 p-6 shadow-xl space-y-6 dark:border-slate-700">
+  <section class="bg-card/5 backdrop-blur-sm rounded-2xl border border-border p-6 shadow-xl space-y-6">
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-orange-500/10">
@@ -11,14 +11,14 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+      <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/5">
         <Icon icon="material-symbols:timer" class="text-orange-500" />
         <span class="text-muted-400">Duration:</span>
         <span class="font-mono font-semibold text-orange-500">{{ duration }}s</span>
       </div>
     </header>
     
-    <div class="relative h-32 rounded-xl overflow-visible border border-gray-300 dark:border-slate-700">
+    <div class="relative h-32 rounded-xl overflow-visible border border-border">
       <img 
         :src="frameStripSource" 
         alt="Video frames" 
@@ -45,7 +45,7 @@
       </div>
     </div>
     
-    <footer class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-700">
+    <footer class="flex items-center justify-between pt-4 border-t border-border">
       <div class="flex items-center gap-6 text-sm">
         <TimeIndicator label="Start" :time="startTime" />
         <TimeIndicator label="End" :time="endTime" />
@@ -53,7 +53,7 @@
       </div>
       
       <button 
-        class="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+        class="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-card shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
         :disabled="!isValid || isSaving"
         @click="$emit('save')"
       >

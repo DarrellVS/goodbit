@@ -15,7 +15,7 @@ const emit = defineEmits<Emits>();
 
 <template>
   <button
-    class="w-full flex items-center justify-center px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-xs text-muted-400 hover:text-foreground"
+    class="w-full flex items-center justify-center px-3 py-2 rounded-lg hover:bg-card/10 transition-colors text-xs text-muted-400 hover:text-foreground"
     @click="emit('toggle')"
   >
     {{ showAll ? 'Show less' : `Show ${totalCount - visibleCount} more` }}

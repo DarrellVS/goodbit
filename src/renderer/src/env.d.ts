@@ -29,6 +29,12 @@ interface GoodBitBridge {
   showInFolder: (filePath: string) => Promise<void>;
   openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
   app: { version: () => Promise<string> };
+  window: {
+    setOverlay: (colors: { symbolColor?: string }) => Promise<void>;
+    minimize: () => Promise<void>;
+    toggleMaximize: () => Promise<boolean>;
+    close: () => Promise<void>;
+  };
   updater: {
     state: () => Promise<UpdateStateWire>;
     check: () => Promise<UpdateStateWire>;

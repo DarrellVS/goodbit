@@ -88,13 +88,13 @@ onMounted(async () => {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md max-h-[80vh] flex flex-col outline-none modal-content-animate dark:bg-slate-900 dark:border-slate-700"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-none modal-content-animate"
       >
-        <div class="p-6 border-b border-gray-200 dark:border-slate-700">
-          <DialogTitle class="text-xl font-bold text-gray-900 mb-1 dark:text-slate-100">
+        <div class="p-6 border-b border-border">
+          <DialogTitle class="text-xl font-bold text-foreground mb-1">
             Add Tags to {{ selectedCount }} Clip{{ selectedCount === 1 ? '' : 's' }}
           </DialogTitle>
-          <DialogDescription class="text-sm text-gray-600 dark:text-slate-400">
+          <DialogDescription class="text-sm text-muted-600">
             Select existing tags or type to create new ones
           </DialogDescription>
         </div>
@@ -106,22 +106,22 @@ onMounted(async () => {
               v-model="inputValue"
               type="text"
               placeholder="Search or create tags..."
-              class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:border-slate-700"
+              class="w-full px-4 py-2 pr-10 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               @keydown="handleKeydown"
             />
             <button
               v-if="inputValue.trim()"
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-slate-800"
+              class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-muted-100 transition-colors"
               @click="addCustomTag"
               title="Add tag"
             >
-              <Icon icon="material-symbols:add" class="text-xl text-gray-600 dark:text-slate-400" />
+              <Icon icon="material-symbols:add" class="text-xl text-muted-600" />
             </button>
           </div>
 
           <!-- Selected Tags -->
           <div v-if="selectedTagsList.length > 0" class="space-y-2">
-            <div class="text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-slate-400">
+            <div class="text-xs font-semibold text-muted-600 uppercase tracking-wide">
               Selected Tags ({{ selectedTagsList.length }})
             </div>
             <div class="flex flex-wrap gap-2">
@@ -139,7 +139,7 @@ onMounted(async () => {
 
           <!-- Available Tags -->
           <div class="space-y-2">
-            <div class="text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-slate-400">
+            <div class="text-xs font-semibold text-muted-600 uppercase tracking-wide">
               Available Tags
             </div>
             <div v-if="availableTags.length > 0" class="flex flex-wrap gap-2">
@@ -150,23 +150,23 @@ onMounted(async () => {
                   'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                   selectedTags.has(tag)
                     ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-muted-100 text-muted-700 hover:bg-muted-200'
                 ]"
                 @click="toggleTag(tag)"
               >
                 {{ tag }}
               </button>
             </div>
-            <div v-else class="text-sm text-gray-500 italic dark:text-slate-400">
+            <div v-else class="text-sm text-muted-500 italic">
               No matching tags found
             </div>
           </div>
         </div>
 
-        <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3 dark:border-slate-700">
+        <div class="p-6 border-t border-border flex items-center justify-end gap-3">
           <DialogClose as-child>
             <button
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              class="px-4 py-2 rounded-lg border border-border text-muted-700 font-medium hover:bg-muted-50 transition-colors"
               @click="handleCancel"
             >
               Cancel

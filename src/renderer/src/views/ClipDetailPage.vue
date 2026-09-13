@@ -83,13 +83,13 @@ onMounted(() => {
 
 <template>
   <!-- The tinted wash is a light-mode flourish; dark falls back to the page ground. -->
-  <div class="h-full overflow-auto bg-gradient-to-br from-slate-50 via-white to-orange-50/30 dark:bg-none dark:bg-background">
+  <div class="h-full overflow-auto bg-gradient-to-br from-muted-50 via-card to-orange-50/30 dark:bg-none dark:bg-background">
     <!-- Header -->
-    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
+    <header class="sticky top-0 z-10 bg-card/90 backdrop-blur-xl border-b border-border/80 shadow-sm">
       <div class="max-w-7xl mx-auto px-6 py-4">
         <div class="flex items-center justify-between">
           <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 transition-all group"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-gray-100 hover:to-muted-50 transition-all group"
             @click="goBack"
           >
             <Icon icon="material-symbols:arrow-back-rounded" class="text-xl group-hover:-translate-x-1 transition-transform" />
@@ -98,7 +98,7 @@ onMounted(() => {
           
           <div v-if="clip" class="flex items-center gap-3">
             <button
-              class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors dark:hover:bg-slate-800"
+              class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted-100 transition-colors"
               title="Show a QR code for this clip"
               @click="showShareSheet = true"
             >
@@ -119,7 +119,7 @@ onMounted(() => {
     <div v-if="loading" class="flex items-center justify-center h-96">
       <div class="text-center space-y-4">
         <Icon icon="material-symbols:progress-activity" class="text-6xl text-orange-500 animate-spin" />
-        <p class="text-gray-600 dark:text-slate-400">Loading clip...</p>
+        <p class="text-muted-600">Loading clip...</p>
       </div>
     </div>
 
@@ -127,8 +127,8 @@ onMounted(() => {
     <div v-else-if="error || !clip" class="flex items-center justify-center h-96">
       <div class="text-center space-y-4 max-w-md">
         <Icon icon="material-symbols:error-outline" class="text-6xl text-red-500" />
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Clip Not Found</h2>
-        <p class="text-gray-600 dark:text-slate-400">{{ error || 'The clip you are looking for does not exist.' }}</p>
+        <h2 class="text-2xl font-bold text-foreground">Clip Not Found</h2>
+        <p class="text-muted-600">{{ error || 'The clip you are looking for does not exist.' }}</p>
         <button
           class="px-6 py-3 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
           @click="goBack"
@@ -146,28 +146,28 @@ onMounted(() => {
           <ClipVideoPlayer ref="videoPlayerRef" :clip="clip" />
 
           <!-- Clip Title & Game -->
-          <div class="bg-white rounded-2xl p-6 border border-gray-300 dark:bg-slate-900 dark:border-slate-700">
+          <div class="bg-card rounded-2xl p-6 border border-border">
             <ClipNameInput :clip="clip" @updated="clip = $event" />
           </div>
 
           <!-- Tags Section -->
-          <div class="bg-white rounded-2xl p-6 border border-gray-300 group dark:bg-slate-900 dark:border-slate-700">
+          <div class="bg-card rounded-2xl p-6 border border-border group">
             <div class="flex items-center gap-2 mb-4">
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
                 <Icon icon="material-symbols:label-rounded" class="text-xl text-orange-600" />
               </div>
-              <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">Tags</h2>
+              <h2 class="text-lg font-bold text-foreground">Tags</h2>
             </div>
             <ClipTags :clip="clip" @updated="clip = $event" />
           </div>
 
           <!-- Collections Section -->
-          <div class="bg-gradient-to-br from-white to-purple-50/30 rounded-2xl p-6 border border-gray-300 dark:border-slate-700">
+          <div class="bg-gradient-to-br from-card to-purple-50/30 rounded-2xl p-6 border border-border">
             <div class="flex items-center gap-2 mb-6">
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <Icon icon="material-symbols:folder-special-rounded" class="text-xl text-white" />
+                <Icon icon="material-symbols:folder-special-rounded" class="text-xl text-card" />
               </div>
-              <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">Collections</h2>
+              <h2 class="text-lg font-bold text-foreground">Collections</h2>
             </div>
 
             <ClipCollections :clip="clip" />

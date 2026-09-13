@@ -61,7 +61,7 @@ function handleInsert(prefix: string, suffix = '') {
       @toggle-preview="togglePreview"
     />
 
-    <div class="relative bg-white dark:bg-slate-900">
+    <div class="relative bg-card">
       <MarkdownTextarea
         v-if="!showPreview"
         ref="textareaComponent"
@@ -80,7 +80,7 @@ function handleInsert(prefix: string, suffix = '') {
 
 <style scoped>
 .markdown-editor {
-  @apply border border-gray-300 rounded-lg overflow-hidden shadow-sm;
+  @apply border border-border rounded-lg overflow-hidden shadow-sm;
 }
 </style>
 

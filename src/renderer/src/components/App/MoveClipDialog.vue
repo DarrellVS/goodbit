@@ -93,28 +93,28 @@ onMounted(() => {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md max-h-[80vh] flex flex-col outline-none modal-content-animate dark:bg-slate-900 dark:border-slate-700"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-none modal-content-animate"
       >
-        <div class="p-6 border-b border-gray-200 dark:border-slate-700">
-          <DialogTitle class="text-xl font-bold text-gray-900 mb-1 dark:text-slate-100">
+        <div class="p-6 border-b border-border">
+          <DialogTitle class="text-xl font-bold text-foreground mb-1">
             Move Clip to Game
           </DialogTitle>
-          <DialogDescription class="text-sm text-gray-600 dark:text-slate-400">
+          <DialogDescription class="text-sm text-muted-600">
             Select the target game folder. The file will be physically moved.
           </DialogDescription>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 space-y-4">
           <!-- Current Game Info -->
-          <div v-if="clip" class="p-4 bg-gray-50 rounded-lg border border-gray-200 dark:bg-slate-800 dark:border-slate-700">
-            <div class="text-xs text-gray-500 mb-1 dark:text-slate-400">Current Game</div>
-            <div class="font-medium text-gray-900 dark:text-slate-100">{{ currentGameDisplayName }}</div>
-            <div class="text-xs text-gray-500 mt-2 dark:text-slate-400">{{ clip.filename }}</div>
+          <div v-if="clip" class="p-4 bg-muted-50 rounded-lg border border-border">
+            <div class="text-xs text-muted-500 mb-1">Current Game</div>
+            <div class="font-medium text-foreground">{{ currentGameDisplayName }}</div>
+            <div class="text-xs text-muted-500 mt-2">{{ clip.filename }}</div>
           </div>
 
           <!-- Game Selector -->
           <div class="space-y-2">
-            <label class="text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label class="text-sm font-medium text-muted-700">
               Target Game
             </label>
 
@@ -122,13 +122,13 @@ onMounted(() => {
             <div class="relative">
               <Icon 
                 icon="material-symbols:search" 
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none dark:text-slate-500"
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400 text-lg pointer-events-none"
               />
               <input
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search or create new game..."
-                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:border-slate-700"
+                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 @keydown.enter="selectFromSearch"
               />
             </div>
@@ -140,16 +140,16 @@ onMounted(() => {
             >
               <Icon icon="material-symbols:add-circle" class="text-green-600 text-lg" />
               <span class="text-sm text-green-700">
-                Press <kbd class="px-1.5 py-0.5 bg-white border border-green-300 rounded text-xs font-mono dark:bg-slate-900">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
+                Press <kbd class="px-1.5 py-0.5 bg-card border border-green-300 rounded text-xs font-mono">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
               </span>
             </div>
             
             <!-- Game List -->
-            <div v-if="availableGames.length === 0 && !searchQuery.trim()" class="text-sm text-gray-500 py-4 text-center dark:text-slate-400">
+            <div v-if="availableGames.length === 0 && !searchQuery.trim()" class="text-sm text-muted-500 py-4 text-center">
               No other games available
             </div>
 
-            <div v-else-if="availableGames.length === 0 && searchQuery.trim()" class="text-sm text-gray-500 py-4 text-center dark:text-slate-400">
+            <div v-else-if="availableGames.length === 0 && searchQuery.trim()" class="text-sm text-muted-500 py-4 text-center">
               No games match your search
             </div>
 
@@ -160,7 +160,7 @@ onMounted(() => {
                 class="w-full px-3 py-2.5 rounded-lg transition-all text-left flex items-center justify-between group"
                 :class="{
                   'bg-orange-50 text-orange-700': selectedGame === game.game,
-                  'hover:bg-gray-50': selectedGame !== game.game,
+                  'hover:bg-muted-50': selectedGame !== game.game,
                 }"
                 @click="selectedGame = game.game"
               >
@@ -176,7 +176,7 @@ onMounted(() => {
                     class="font-medium truncate"
                     :class="{
                       'text-orange-700': selectedGame === game.game,
-                      'text-gray-900': selectedGame !== game.game,
+                      'text-foreground': selectedGame !== game.game,
                     }"
                     :title="game.displayName || game.game"
                   >
@@ -187,7 +187,7 @@ onMounted(() => {
                   class="text-xs flex-shrink-0 ml-2"
                   :class="{
                     'text-orange-600': selectedGame === game.game,
-                    'text-gray-400': selectedGame !== game.game,
+                    'text-muted-400': selectedGame !== game.game,
                   }"
                 >
                   {{ game.clipCount }}
@@ -197,10 +197,10 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3 dark:border-slate-700">
+        <div class="p-6 border-t border-border flex items-center justify-end gap-3">
           <DialogClose as-child>
             <button
-              class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors font-medium text-gray-700 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
+              class="px-4 py-2 rounded-lg border border-border hover:bg-muted-50 transition-colors font-medium text-muted-700"
               @click="handleCancel"
             >
               Cancel

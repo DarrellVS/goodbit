@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div class="rounded-2xl shadow-card bg-card border border-gray-300 dark:border-slate-700">
+  <div class="rounded-2xl shadow-card bg-card border border-border">
     <slot />
   </div>
 </template>

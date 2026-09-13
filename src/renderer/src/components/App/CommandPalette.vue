@@ -80,36 +80,36 @@ function runActive(): void {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-[92vw] max-w-xl flex flex-col outline-none overflow-hidden modal-content-animate dark:bg-slate-900 dark:border-slate-700"
+        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-none overflow-hidden modal-content-animate"
         @keydown.down.prevent="move(1)"
         @keydown.up.prevent="move(-1)"
         @keydown.enter.prevent="runActive"
       >
         <DialogTitle class="sr-only">Command palette</DialogTitle>
 
-        <div class="flex items-center gap-3 px-4 border-b border-gray-200 dark:border-slate-700">
-          <Icon icon="material-symbols:search" class="text-xl text-gray-400 flex-shrink-0 dark:text-slate-500" />
+        <div class="flex items-center gap-3 px-4 border-b border-border">
+          <Icon icon="material-symbols:search" class="text-xl text-muted-400 flex-shrink-0" />
           <input
             ref="input"
             v-model="query"
             type="text"
             placeholder="Jump to a game, a collection, a page…"
-            class="flex-1 py-3.5 text-sm outline-none placeholder:text-gray-400"
+            class="flex-1 py-3.5 text-sm outline-none placeholder:text-muted-400"
           />
-          <kbd class="text-[10px] font-mono text-gray-400 border border-gray-300 rounded px-1.5 py-0.5 dark:text-slate-500 dark:border-slate-700">
+          <kbd class="text-[10px] font-mono text-muted-400 border border-border rounded px-1.5 py-0.5">
             esc
           </kbd>
         </div>
 
         <div ref="listRef" class="max-h-[50vh] overflow-y-auto py-1.5">
-          <p v-if="results.length === 0" class="px-4 py-6 text-sm text-gray-500 text-center dark:text-slate-400">
+          <p v-if="results.length === 0" class="px-4 py-6 text-sm text-muted-500 text-center">
             Nothing matches “{{ query }}”
           </p>
 
           <template v-for="row in rows" :key="row.command.id">
             <p
               v-if="row.heading"
-              class="px-4 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500"
+              class="px-4 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-400"
             >
               {{ row.heading }}
             </p>
@@ -117,7 +117,7 @@ function runActive(): void {
             <button
               type="button"
               class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
-              :class="row.index === activeIndex ? 'bg-orange-50 text-orange-900' : 'text-gray-700 hover:bg-gray-50'"
+              :class="row.index === activeIndex ? 'bg-orange-50 text-orange-900' : 'text-muted-700 hover:bg-muted-50'"
               :data-active="row.index === activeIndex"
               @click="run(row.command)"
               @mousemove="activeIndex = row.index"
@@ -125,7 +125,7 @@ function runActive(): void {
               <Icon
                 :icon="row.command.icon ?? 'material-symbols:chevron-right'"
                 class="text-lg flex-shrink-0"
-                :class="row.index === activeIndex ? 'text-orange-500' : 'text-gray-400'"
+                :class="row.index === activeIndex ? 'text-orange-500' : 'text-muted-400'"
               />
               <span class="truncate">{{ row.command.label }}</span>
             </button>

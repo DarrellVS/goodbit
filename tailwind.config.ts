@@ -47,6 +47,7 @@ export default {
         },
         ring: 'hsl(var(--ring))',
         border: 'hsl(var(--border))',
+        'line-strong': 'hsl(var(--line-strong))',
       },
       borderRadius: {
         xl: '14px',

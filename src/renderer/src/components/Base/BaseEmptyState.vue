@@ -14,7 +14,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <div class="py-24 flex flex-col items-center justify-center text-center gap-4 opacity-80">
-    <div class="rounded-full w-20 h-20 flex items-center justify-center bg-white/5 border border-gray-300 dark:border-slate-700">
+    <div class="rounded-full w-20 h-20 flex items-center justify-center bg-card/5 border border-border">
       <Icon :icon="icon" class="text-3xl text-muted-400" />
     </div>
     <div>

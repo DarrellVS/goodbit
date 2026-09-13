@@ -54,14 +54,14 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
       <div
         v-if="showNormalControls"
         key="normal"
-        class="bg-white rounded-xl shadow-2xl border border-gray-300 px-4 py-3 flex items-center gap-4 dark:bg-slate-900 dark:border-slate-700"
+        class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4"
       >
         <BaseViewModeToggle 
           :model-value="viewMode" 
           @update:model-value="emit('update:view-mode', $event)" 
         />
         
-        <div class="w-px h-6 bg-gray-300"></div>
+        <div class="w-px h-6 bg-muted-300"></div>
         
         <button
           class="px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors flex items-center gap-2 text-sm font-medium scale-on-hover"
@@ -96,12 +96,12 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
       <div
         v-else-if="showSelectionModeEmpty"
         key="selection-empty"
-        class="bg-white rounded-xl shadow-2xl border border-gray-300 px-4 py-3 flex items-center gap-4 dark:bg-slate-900 dark:border-slate-700"
+        class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4"
       >
-        <span class="text-sm text-gray-500 dark:text-slate-400">Select clips to perform actions</span>
+        <span class="text-sm text-muted-500">Select clips to perform actions</span>
         <div class="flex-1"></div>
         <button
-          class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover dark:hover:bg-slate-800 dark:text-slate-300"
+          class="px-3 py-1.5 rounded-lg hover:bg-muted-100 transition-colors flex items-center gap-2 text-sm font-medium text-muted-700 scale-on-hover"
           @click="emit('exit-selection')"
           title="Exit selection mode (Esc)"
         >

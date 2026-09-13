@@ -29,9 +29,9 @@ const emit = defineEmits<Emits>();
 <template>
   <RouterLink
     :to="`/collections/${collection.id}`"
-    class="group w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors"
+    class="group w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-card/10 transition-colors"
     :class="{ 'bg-orange-500/20 ring-2 ring-orange-500': isDragOver }"
-    active-class="bg-white/10 text-orange-500"
+    active-class="bg-card/10 text-orange-500"
     @dragover.prevent="emit('dragover', $event)"
     @dragenter="emit('dragenter', $event)"
     @dragleave="emit('dragleave', $event)"
@@ -41,7 +41,7 @@ const emit = defineEmits<Emits>();
       <input
         :data-collection-edit="collection.id"
         :value="editingName"
-        class="w-full px-2 py-1 text-sm rounded border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700"
+        class="w-full px-2 py-1 text-sm rounded border border-border bg-card/5 outline-none focus:ring-2 focus:ring-orange-500/50"
         @input="emit('update:editing-name', ($event.target as HTMLInputElement).value)"
         @keyup.enter="emit('save-edit')"
         @keyup.esc="emit('cancel-edit')"

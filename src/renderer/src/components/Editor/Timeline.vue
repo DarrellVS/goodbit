@@ -110,10 +110,10 @@ function handleRulerMouseUp(): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden select-none dark:border-slate-700">
+  <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden select-none">
     <div
       ref="rulerRef"
-      class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-gray-300 relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide dark:border-slate-700"
+      class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
@@ -124,8 +124,8 @@ function handleRulerMouseUp(): void {
           class="absolute top-0 bottom-0 flex flex-col items-center"
           :style="{ left: `${mark.position}px` }"
         >
-          <div class="h-2 w-px bg-gray-300" />
-          <span class="text-[9px] font-mono text-gray-500 mt-0.5 dark:text-slate-400">{{ mark.label }}</span>
+          <div class="h-2 w-px bg-muted-300" />
+          <span class="text-[9px] font-mono text-muted-500 mt-0.5">{{ mark.label }}</span>
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@ function handleRulerMouseUp(): void {
       @scroll="syncScroll"
     >
       <div class="relative h-full py-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
-        <div class="relative h-16 bg-orange-50/30 rounded-lg mx-3 border border-gray-300 dark:border-slate-700">
+        <div class="relative h-16 bg-orange-50/30 rounded-lg mx-3 border border-border">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -152,7 +152,7 @@ function handleRulerMouseUp(): void {
           />
         </div>
 
-        <div class="relative h-12 bg-amber-50/40 rounded-lg mx-3 border border-gray-300 dark:border-slate-700">
+        <div class="relative h-12 bg-amber-50/40 rounded-lg mx-3 border border-border">
           <!--
             Everything past the last frame of video is dropped on export, so the
             lane says so rather than letting a long track look like it survives.
@@ -178,7 +178,7 @@ function handleRulerMouseUp(): void {
 
           <div
             v-if="audio.length === 0"
-            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-gray-400 pointer-events-none dark:text-slate-500"
+            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-muted-400 pointer-events-none"
           >
             <Icon icon="material-symbols:music-note" class="text-sm" />
             Music lane — add a track from the Music panel
@@ -189,7 +189,7 @@ function handleRulerMouseUp(): void {
           class="absolute top-0 bottom-0 w-0.5 bg-orange-500 pointer-events-none z-20 shadow-lg shadow-orange-500/50"
           :style="{ left: `${playheadPosition}px` }"
         >
-          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50 border-2 border-white" />
+          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50 border-2 border-card" />
         </div>
       </div>
     </div>

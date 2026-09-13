@@ -126,18 +126,18 @@ onBeforeUnmount(stopPreview);
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden dark:border-slate-700">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-gray-300 flex items-center justify-between gap-2 dark:border-slate-700">
-      <h3 class="text-sm font-semibold flex items-center gap-2 text-gray-900 dark:text-slate-100">
+  <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-border flex items-center justify-between gap-2">
+      <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:library-music" class="text-orange-500" />
         Music
       </h3>
-      <span class="text-xs text-gray-500 dark:text-slate-400">{{ tracks.length }}</span>
+      <span class="text-xs text-muted-500">{{ tracks.length }}</span>
     </div>
 
     <div
       class="flex-shrink-0 m-3 rounded-lg border-2 border-dashed transition-colors"
-      :class="isDragOver ? 'border-orange-500 bg-orange-50' : 'border-gray-300 bg-white/60'"
+      :class="isDragOver ? 'border-orange-500 bg-orange-50' : 'border-border bg-card/60'"
       @dragover.prevent="isDragOver = true"
       @dragleave="isDragOver = false"
       @drop.prevent="handleDrop"
@@ -152,10 +152,10 @@ onBeforeUnmount(stopPreview);
           class="text-xl text-orange-500"
           :class="{ 'animate-spin': uploading }"
         />
-        <span class="text-sm font-medium text-gray-800 dark:text-slate-200">
+        <span class="text-sm font-medium text-muted-800">
           {{ uploading ? `Uploading… ${uploadProgress}%` : 'Upload music' }}
         </span>
-        <span v-if="!uploading" class="text-xs text-gray-500 dark:text-slate-400">Drop files or click — mp3, wav, m4a, ogg, flac</span>
+        <span v-if="!uploading" class="text-xs text-muted-500">Drop files or click — mp3, wav, m4a, ogg, flac</span>
       </button>
 
       <div v-if="uploading" class="h-1 mx-3 mb-3 bg-orange-100 rounded-full overflow-hidden">
@@ -175,7 +175,7 @@ onBeforeUnmount(stopPreview);
       />
     </div>
 
-    <div v-if="loading" class="flex-1 flex items-center justify-center text-gray-500 text-xs dark:text-slate-400">
+    <div v-if="loading" class="flex-1 flex items-center justify-center text-muted-500 text-xs">
       <Icon icon="material-symbols:progress-activity" class="text-xl animate-spin text-orange-400" />
     </div>
 
@@ -184,8 +184,8 @@ onBeforeUnmount(stopPreview);
         <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
           <Icon icon="material-symbols:music-note" class="text-2xl text-orange-400" />
         </div>
-        <p class="text-sm font-medium text-gray-700 dark:text-slate-300">No music yet</p>
-        <p class="text-xs mt-1 text-gray-500 dark:text-slate-400">Upload a track to lay under your clips</p>
+        <p class="text-sm font-medium text-muted-700">No music yet</p>
+        <p class="text-xs mt-1 text-muted-500">Upload a track to lay under your clips</p>
       </div>
     </div>
 
@@ -193,8 +193,8 @@ onBeforeUnmount(stopPreview);
       <div
         v-for="track in tracks"
         :key="track.id"
-        class="group rounded-lg border bg-white/80 hover:bg-white transition-all overflow-hidden"
-        :class="isAdded(track) ? 'border-orange-400/60' : 'border-gray-300 hover:border-orange-500/50'"
+        class="group rounded-lg border bg-card/80 hover:bg-card transition-all overflow-hidden"
+        :class="isAdded(track) ? 'border-orange-400/60' : 'border-border hover:border-orange-500/50'"
       >
         <button
           class="w-full text-left px-2.5 pt-2.5 pb-1.5"
@@ -203,13 +203,13 @@ onBeforeUnmount(stopPreview);
         >
           <div class="flex items-start gap-2">
             <div class="mt-0.5 w-7 h-7 rounded-md bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
-              <Icon icon="material-symbols:add" class="text-white text-base" />
+              <Icon icon="material-symbols:add" class="text-card text-base" />
             </div>
             <div class="min-w-0 flex-1">
-              <div class="text-sm font-medium text-gray-900 line-clamp-2 leading-snug dark:text-slate-100">
+              <div class="text-sm font-medium text-foreground line-clamp-2 leading-snug">
                 {{ track.displayName }}
               </div>
-              <div class="mt-1.5 flex items-center gap-2 text-xs text-gray-600 font-mono dark:text-slate-400">
+              <div class="mt-1.5 flex items-center gap-2 text-xs text-muted-600 font-mono">
                 <span>{{ formatTimeSimple(track.durationSec) }}</span>
                 <span>·</span>
                 <span>{{ formatBytes(track.sizeBytes) }}</span>
@@ -221,7 +221,7 @@ onBeforeUnmount(stopPreview);
 
         <div class="flex items-center justify-end gap-1 px-2 pb-2">
           <button
-            class="p-1.5 rounded-md hover:bg-orange-50 text-gray-600 hover:text-orange-600 transition-colors dark:text-slate-400"
+            class="p-1.5 rounded-md hover:bg-orange-50 text-muted-600 hover:text-orange-600 transition-colors"
             :title="previewId === track.id ? 'Stop preview' : 'Preview'"
             @click.stop="togglePreview(track)"
           >
@@ -231,7 +231,7 @@ onBeforeUnmount(stopPreview);
             />
           </button>
           <button
-            class="p-1.5 rounded-md hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors dark:text-slate-400"
+            class="p-1.5 rounded-md hover:bg-red-50 text-muted-600 hover:text-red-600 transition-colors"
             title="Delete track"
             @click.stop="remove(track)"
           >

@@ -60,20 +60,20 @@ watch(() => props.open, (isOpen) => {
         <Transition name="modal-content">
           <div
             v-if="open"
-            class="bg-white rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh] dark:bg-slate-900"
+            class="bg-card rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
             :class="maxWidthClasses[maxWidth]"
             @click.stop
           >
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-amber-50 dark:border-slate-700">
-              <h2 class="text-xl font-bold text-gray-900 dark:text-slate-100">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-orange-50 to-amber-50">
+              <h2 class="text-xl font-bold text-foreground">
                 {{ title }}
               </h2>
               <button
-                class="p-2 rounded-lg hover:bg-white/50 transition-colors scale-on-hover"
+                class="p-2 rounded-lg hover:bg-card/50 transition-colors scale-on-hover"
                 @click="close"
               >
-                <Icon icon="material-symbols:close" class="text-2xl text-gray-600 transform-transition dark:text-slate-400" />
+                <Icon icon="material-symbols:close" class="text-2xl text-muted-600 transform-transition" />
               </button>
             </div>
 
@@ -83,7 +83,7 @@ watch(() => props.open, (isOpen) => {
             </div>
 
             <!-- Footer -->
-            <div v-if="$slots.footer" class="px-6 py-4 border-t border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800">
+            <div v-if="$slots.footer" class="px-6 py-4 border-t border-border bg-muted-50">
               <slot name="footer" />
             </div>
           </div>

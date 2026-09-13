@@ -47,19 +47,19 @@ function attachTimestampListeners() {
 
 <style scoped>
 :deep(.markdown-preview) {
-  @apply text-gray-800;
+  @apply text-muted-800;
 }
 
 :deep(.markdown-preview h1) {
-  @apply text-2xl font-bold mt-6 mb-4 text-gray-900;
+  @apply text-2xl font-bold mt-6 mb-4 text-foreground;
 }
 
 :deep(.markdown-preview h2) {
-  @apply text-xl font-bold mt-5 mb-3 text-gray-900;
+  @apply text-xl font-bold mt-5 mb-3 text-foreground;
 }
 
 :deep(.markdown-preview h3) {
-  @apply text-lg font-bold mt-4 mb-2 text-gray-900;
+  @apply text-lg font-bold mt-4 mb-2 text-foreground;
 }
 
 :deep(.markdown-preview p) {
@@ -83,23 +83,23 @@ function attachTimestampListeners() {
 }
 
 :deep(.markdown-preview code) {
-  @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-orange-600;
+  @apply bg-muted-100 px-1.5 py-0.5 rounded text-sm font-mono text-orange-600;
 }
 
 :deep(.markdown-preview pre) {
-  @apply bg-gray-900 text-gray-100 p-4 rounded-lg mb-3 overflow-x-auto;
+  @apply bg-gray-900 text-muted-100 p-4 rounded-lg mb-3 overflow-x-auto;
 }
 
 :deep(.markdown-preview pre code) {
-  @apply bg-transparent p-0 text-gray-100;
+  @apply bg-transparent p-0 text-muted-100;
 }
 
 :deep(.markdown-preview blockquote) {
-  @apply border-l-4 border-orange-400 pl-4 italic my-3 text-gray-600;
+  @apply border-l-4 border-orange-400 pl-4 italic my-3 text-muted-600;
 }
 
 :deep(.markdown-preview strong) {
-  @apply font-bold text-gray-900;
+  @apply font-bold text-foreground;
 }
 
 :deep(.markdown-preview em) {

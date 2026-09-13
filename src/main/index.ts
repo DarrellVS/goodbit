@@ -7,6 +7,7 @@ import { registerIpc } from './ipc/index.js';
 import { registerApiBridge, startApiBridge, stopApiBridge } from './ipc/apiBridge.js';
 import { registerProtocolScheme, registerProtocolHandler } from './protocol.js';
 import { registerUpdater } from './updater.js';
+import { TITLEBAR_HEIGHT } from '@shared/index.js';
 
 /**
  * GoodBit's main process is the background service.
@@ -53,6 +54,15 @@ function createWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0f1012',
+    // A drawn title bar, with Windows still owning the caption buttons — which
+    // keeps the snap layouts that appear on hovering maximise, and the system
+    // behaviour for double-click and drag.
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#00000000',
+      symbolColor: '#a0a4ac',
+      height: TITLEBAR_HEIGHT,
+    },
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.mjs'),
       sandbox: false,

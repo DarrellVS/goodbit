@@ -18,10 +18,10 @@ async function copyPublicUrl() {
 </script>
 
 <template>
-  <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 border border-gray-300 dark:border-slate-700">
+  <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 border border-border">
     <div class="flex items-center gap-2 mb-4">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-        <Icon icon="material-symbols:cloud-done-rounded" class="text-xl text-white" />
+        <Icon icon="material-symbols:cloud-done-rounded" class="text-xl text-card" />
       </div>
       <h2 class="text-lg font-bold text-emerald-900">Published</h2>
     </div>
@@ -32,7 +32,7 @@ async function copyPublicUrl() {
       </p>
       
       <button
-        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-medium transition-all"
+        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-card font-medium transition-all"
         @click="copyPublicUrl"
       >
         <Icon icon="material-symbols:link-rounded" class="text-xl" />

@@ -2,7 +2,7 @@
   <section class="relative group" aria-label="Video preview">
     <div class="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl opacity-20 group-hover:opacity-30 blur transition" />
     
-    <div class="relative bg-white/5 backdrop-blur-sm rounded-2xl border border-gray-300 overflow-hidden shadow-xl dark:border-slate-700">
+    <div class="relative bg-card/5 backdrop-blur-sm rounded-2xl border border-border overflow-hidden shadow-xl">
       <video
         ref="videoElement"
         :src="videoSource"

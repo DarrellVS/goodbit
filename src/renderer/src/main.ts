@@ -8,9 +8,14 @@ import './animations.css';
 import './tooltip.css';
 import { router } from './router';
 import { initTheme } from './composables/useTheme';
+import { TITLEBAR_HEIGHT } from '@shared/index';
 
 // Before the first paint, or the wrong palette shows for a frame.
 initTheme();
+
+// The drawn bar and the strip main reserves for the caption buttons have to be
+// the same height, so both read it from one place.
+document.documentElement.style.setProperty('--titlebar-height', `${TITLEBAR_HEIGHT}px`);
 
 const app = createApp(App);
 app.use(createPinia());

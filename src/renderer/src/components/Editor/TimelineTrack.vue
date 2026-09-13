@@ -140,7 +140,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', clip.id)"
   >
-    <div class="relative w-full h-full bg-gradient-to-br from-white to-orange-50/50 border border-gray-300 backdrop-blur-sm overflow-hidden dark:border-slate-700">
+    <div class="relative w-full h-full bg-gradient-to-br from-card to-orange-50/50 border border-border backdrop-blur-sm overflow-hidden">
       <!--
         The frame strip covers the whole source clip, so the block shows only
         the slice between the trim handles — scroll it by trimStart and stretch
@@ -162,7 +162,7 @@ onBeforeUnmount(stopDrag);
       <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
       
       <div class="absolute top-1.5 left-2 right-2 flex items-start justify-between">
-        <div class="text-[10px] font-semibold text-gray-900 flex items-center gap-1 bg-white/80 backdrop-blur-sm px-1.5 py-0.5 rounded dark:text-slate-100">
+        <div class="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded">
           <Icon icon="material-symbols:video-library" class="text-xs" />
           Clip #{{ clip.clipId }}
         </div>
@@ -171,16 +171,16 @@ onBeforeUnmount(stopDrag);
           class="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 rounded p-0.5"
           @click.stop="emit('remove', clip.id)"
         >
-          <Icon icon="material-symbols:close" class="text-white text-xs" />
+          <Icon icon="material-symbols:close" class="text-card text-xs" />
         </button>
       </div>
       
       <div class="absolute bottom-1.5 left-2 right-2 flex items-end justify-between">
-        <div class="text-[10px] font-mono font-medium text-gray-900 bg-white/80 backdrop-blur-sm px-1.5 py-0.5 rounded dark:text-slate-100">
+        <div class="text-[10px] font-mono font-medium text-foreground bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded">
           {{ formatTime(clip.duration) }}
         </div>
         
-        <div v-if="clip.muted" class="bg-white/80 backdrop-blur-sm px-1.5 py-0.5 rounded">
+        <div v-if="clip.muted" class="bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded">
           <Icon icon="material-symbols:volume-off" class="text-red-500 text-xs" />
         </div>
       </div>
