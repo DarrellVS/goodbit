@@ -1,5 +1,6 @@
 import express from 'express';
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import multer from 'multer';
 import { In } from 'typeorm';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
@@ -11,7 +12,8 @@ import { videoService } from '../services/videoService.js';
 import { publisherService } from '../services/publisherService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
-import { ExportTimelineAction, exportProgress } from '../actions/ExportTimelineAction.js';
+import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
+import { completeJob, createJob, failJob, getJob } from '../services/exportJobs.js';
 import {
   BatchStarAction,
   BatchPublishAction,
@@ -381,18 +383,42 @@ clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res)
   res.json({ ...result, clips: dtos });
 }));
 
+/**
+ * Start a render and answer immediately with its id.
+ *
+ * A long export used to be awaited here, which meant a render past Cloudflare's
+ * 100 second ceiling came back to the client as a 504 even though ffmpeg was
+ * still working. The job now runs detached and the client polls for it.
+ */
 clipsRouter.post('/export', asyncHandler(async (req, res) => {
-  const { clips, outputName, exportId } = req.body;
-  const action = new ExportTimelineAction();
-  const { clip } = await action.execute({ clips, outputName, exportId });
-  const dto = ClipDTO.fromEntity(clip);
-  res.json(dto);
+  const { clips, audio, outputName } = req.body;
+  const exportId = typeof req.body.exportId === 'string' && req.body.exportId
+    ? req.body.exportId
+    : randomUUID();
+
+  createJob(exportId);
+
+  void new ExportTimelineAction()
+    .execute({ clips, audio, outputName, exportId })
+    .then(({ clip }) => completeJob(exportId, ClipDTO.fromEntity(clip)))
+    .catch((error: Error) => {
+      console.error('Export failed:', error);
+      failJob(exportId, error.message);
+    });
+
+  res.status(202).json({ exportId });
 }));
 
-clipsRouter.get('/export/:exportId/progress', asyncHandler(async (req, res) => {
-  const { exportId } = req.params;
-  const progress = exportProgress.get(exportId);
-  res.json({ progress: progress ?? null });
+clipsRouter.get('/export/:exportId/status', asyncHandler(async (req, res) => {
+  const job = getJob(req.params.exportId);
+  if (!job) return res.status(404).json({ error: 'Unknown export' });
+
+  res.json({
+    status: job.status,
+    progress: job.progress,
+    clip: job.clip ?? null,
+    error: job.error ?? null,
+  });
 }));
 
 clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {

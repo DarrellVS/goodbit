@@ -35,6 +35,7 @@ import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
 import { restoreScrollPosition } from '../utils/scroll';
 import { useTrimRange } from '../composables/useTrimRange';
 import { useVideoPlayer } from '../composables/useVideoPlayer';
+import { useLocalMode } from '../composables/useLocalMode';
 import TrimHeader from '../components/Trim/TrimHeader.vue';
 import VideoPreview from '../components/Trim/VideoPreview.vue';
 import TimelineEditor from '../components/Trim/TimelineEditor.vue';
@@ -102,7 +103,12 @@ async function handleSave(): Promise<void> {
   }
 }
 
+const { detectLocalMedia } = useLocalMode();
+
 onMounted(() => {
+  // Outside ShellLayout too, so the LAN probe is this page's own business. The
+  // sources are computed, so they re-point themselves when it lands.
+  void detectLocalMedia();
   void loadClipMetadata();
 });
 </script>

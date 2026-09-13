@@ -33,6 +33,11 @@ export function thumbnailUrl(clipId: number): string {
   return mediaUrl(`/api/clips/${clipId}/thumbnail`);
 }
 
+export function audioUrl(trackId: string, ts?: string | Date): string {
+  const suffix = ts ? `?v=${mediaVersion(ts)}` : '';
+  return mediaUrl(`/api/audio/${encodeURIComponent(trackId)}/stream${suffix}`);
+}
+
 export function frameStripUrl(clipId: number): string {
   return mediaUrl(`/api/clips/${clipId}/frame-strip`);
 }

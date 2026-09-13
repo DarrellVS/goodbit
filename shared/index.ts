@@ -22,3 +22,6 @@ export * from './dtos/collection/UpdateCollectionRequestDTO.js';
 // Game DTOs
 export * from './dtos/game/GameDTO.js';
 
+// Audio DTOs
+export * from './dtos/audio/AudioTrackDTO.js';
+

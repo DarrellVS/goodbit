@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue';
+import { Icon } from '@iconify/vue';
 import { formatTimeSimple } from '../../utils/timeFormat';
 import { EDITOR_CONSTANTS, getRulerInterval } from '../../constants/editor';
-import type { TimelineClip, RulerMark } from '../../types/editor';
+import type { TimelineAudio, TimelineClip, RulerMark } from '../../types/editor';
 import TimelineTrack from './TimelineTrack.vue';
+import AudioTrackItem from './AudioTrackItem.vue';
 
 interface Props {
   clips: readonly TimelineClip[];
+  audio: readonly TimelineAudio[];
   currentTime: number;
+  /** Longest of the two lanes — what the ruler spans. */
   duration: number;
+  /** End of the picture. Music past this point is cut on export. */
+  videoDuration: number;
   zoom: number;
+  selectedClipId: string | null;
+  selectedAudioId: string | null;
 }
 
 interface Emits {
@@ -19,19 +27,30 @@ interface Emits {
   (e: 'trim-clip', clipId: string, trimStart: number, trimEnd: number): void;
   (e: 'move-clip', clipId: string, newStartTime: number): void;
   (e: 'drag-end'): void;
+  (e: 'select-audio', audioId: string): void;
+  (e: 'remove-audio', audioId: string): void;
+  (e: 'trim-audio', audioId: string, trimStart: number, trimEnd: number): void;
+  (e: 'move-audio', audioId: string, newStartTime: number): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const selectedClipId = shallowRef<string | null>(null);
 const rulerRef = shallowRef<HTMLElement | null>(null);
 const contentRef = shallowRef<HTMLElement | null>(null);
 const isDraggingRuler = shallowRef(false);
 
 const pixelsPerSecond = computed(() => EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * props.zoom);
 const timelineWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
-const playheadPosition = computed(() => EDITOR_CONSTANTS.TIMELINE_OFFSET_PX + (props.currentTime * pixelsPerSecond.value));
+const playheadPosition = computed(
+  () => EDITOR_CONSTANTS.TIMELINE_OFFSET_PX + props.currentTime * pixelsPerSecond.value
+);
+
+/** Where the picture ends, in lane pixels — music beyond it is hatched. */
+const videoEndPosition = computed(() => props.videoDuration * pixelsPerSecond.value);
+const showOverrunHatch = computed(
+  () => props.videoDuration > 0 && props.duration > props.videoDuration + 0.05
+);
 
 function syncScroll(event: Event): void {
   const source = event.target as HTMLElement;
@@ -44,11 +63,11 @@ function syncScroll(event: Event): void {
 function seekFromMousePosition(event: MouseEvent): void {
   const ruler = rulerRef.value;
   if (!ruler) return;
-  
+
   const rect = ruler.getBoundingClientRect();
   const x = event.clientX - rect.left + ruler.scrollLeft - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
   const time = x / pixelsPerSecond.value;
-  
+
   emit('seek', Math.max(0, Math.min(time, props.duration)));
 }
 
@@ -57,21 +76,21 @@ const rulerMarks = computed((): RulerMark[] => {
   const interval = getRulerInterval(props.zoom);
   const pps = pixelsPerSecond.value;
   const offset = EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
-  
+
   for (let i = 0; i <= Math.ceil(props.duration); i += interval) {
     marks.push({
-      position: offset + (i * pps),
+      position: offset + i * pps,
       label: formatTimeSimple(i),
     });
   }
-  
+
   return marks;
 });
 
 function handleRulerMouseDown(event: MouseEvent): void {
   isDraggingRuler.value = true;
   seekFromMousePosition(event);
-  
+
   document.addEventListener('mousemove', handleRulerDrag);
   document.addEventListener('mouseup', handleRulerMouseUp);
 }
@@ -86,16 +105,11 @@ function handleRulerMouseUp(): void {
   document.removeEventListener('mousemove', handleRulerDrag);
   document.removeEventListener('mouseup', handleRulerMouseUp);
 }
-
-function handleClipSelect(clipId: string): void {
-  selectedClipId.value = clipId;
-  emit('select-clip', clipId);
-}
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden select-none">
-    <div 
+    <div
       ref="rulerRef"
       class="flex-shrink-0 h-7 bg-orange-50/50 border-b border-gray-300 relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
@@ -114,12 +128,12 @@ function handleClipSelect(clipId: string): void {
       </div>
     </div>
 
-    <div 
+    <div
       ref="contentRef"
       class="flex-1 relative overflow-x-auto overflow-y-hidden"
       @scroll="syncScroll"
     >
-      <div class="relative h-full py-3" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
+      <div class="relative h-full py-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
         <div class="relative h-16 bg-orange-50/30 rounded-lg mx-3 border border-gray-300">
           <TimelineTrack
             v-for="clip in clips"
@@ -127,12 +141,44 @@ function handleClipSelect(clipId: string): void {
             :clip="clip"
             :pixels-per-second="pixelsPerSecond"
             :selected="selectedClipId === clip.id"
-            @select="handleClipSelect"
+            @select="emit('select-clip', $event)"
             @remove="emit('remove-clip', $event)"
             @trim="(id, start, end) => emit('trim-clip', id, start, end)"
             @move="(id, time) => emit('move-clip', id, time)"
             @drag-end="emit('drag-end')"
           />
+        </div>
+
+        <div class="relative h-12 bg-amber-50/40 rounded-lg mx-3 border border-gray-300">
+          <!--
+            Everything past the last frame of video is dropped on export, so the
+            lane says so rather than letting a long track look like it survives.
+          -->
+          <div
+            v-if="showOverrunHatch"
+            class="absolute top-0 bottom-0 right-0 rounded-r-lg pointer-events-none overrun-hatch"
+            :style="{ left: `${videoEndPosition}px` }"
+          />
+
+          <AudioTrackItem
+            v-for="item in audio"
+            :key="item.id"
+            :item="item"
+            :pixels-per-second="pixelsPerSecond"
+            :selected="selectedAudioId === item.id"
+            @select="emit('select-audio', $event)"
+            @remove="emit('remove-audio', $event)"
+            @trim="(id, start, end) => emit('trim-audio', id, start, end)"
+            @move="(id, time) => emit('move-audio', id, time)"
+          />
+
+          <div
+            v-if="audio.length === 0"
+            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-gray-400 pointer-events-none"
+          >
+            <Icon icon="material-symbols:music-note" class="text-sm" />
+            Music lane — add a track from the Music panel
+          </div>
         </div>
 
         <div
@@ -145,3 +191,15 @@ function handleClipSelect(clipId: string): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+.overrun-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(148, 163, 184, 0.25) 0px,
+    rgba(148, 163, 184, 0.25) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+</style>

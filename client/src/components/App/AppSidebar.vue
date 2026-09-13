@@ -53,6 +53,15 @@ const emit = defineEmits<Emits>();
           <Icon icon="material-symbols:schedule" class="text-lg" />
           <span class="font-medium">Today</span>
         </RouterLink>
+
+        <RouterLink
+          to="/editor"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"
+          exact-active-class="bg-white/10 text-orange-500"
+        >
+          <Icon icon="material-symbols:movie-edit" class="text-lg" />
+          <span class="font-medium">Editor</span>
+        </RouterLink>
       </div>
 
       <SidebarGames 

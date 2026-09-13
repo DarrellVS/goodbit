@@ -38,6 +38,20 @@ export function useTimeline() {
     clipMap.set(clip.id, clip);
   }
 
+  /**
+   * Replace the whole lane at once. Restoring a draft rebuilds every clip from
+   * stored trims, so the incremental ops cannot express it.
+   */
+  function loadClips(entries: Array<Omit<TimelineClip, 'id'>>): void {
+    const next = entries.map((entry) => ({ ...entry, id: uuidv4() }));
+
+    clips.value = next;
+    clipMap.clear();
+    for (const clip of next) clipMap.set(clip.id, clip);
+
+    currentTime.value = 0;
+  }
+
   function removeClip(clipId: string): void {
     const clip = clipMap.get(clipId);
     if (!clip) return;
@@ -222,6 +236,7 @@ export function useTimeline() {
     zoom,
     playing,
     addClip,
+    loadClips,
     removeClip,
     updateClipProperties,
     moveClip,

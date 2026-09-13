@@ -2,31 +2,49 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { useClipsStore } from '../stores/clips';
 import { useToastStore } from '../stores/toast';
+import { useGamesStore } from '../stores/games';
+import { useTagsStore } from '../stores/tags';
 import { useTimeline } from '../composables/useTimeline';
+import { useTimelineAudio } from '../composables/useTimelineAudio';
 import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
+import { useEditorAudioPlayback } from '../composables/useEditorAudioPlayback';
+import { useEditorClipLibrary } from '../composables/useEditorClipLibrary';
+import { useLocalMode } from '../composables/useLocalMode';
+import { useEditorDrafts } from '../composables/useEditorDrafts';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { loadVideoMetadata } from '../composables/useVideoMetadata';
 import { EDITOR_CONSTANTS } from '../constants/editor';
-import { videoUrl as videoUrlFor } from '../utils/mediaUrl';
+import { audioUrl, videoUrl as videoUrlFor } from '../utils/mediaUrl';
 import { useClipExport } from '../composables/useClipExport';
 import { useEditorLayout } from '../composables/useEditorLayout';
 import { useClipHandlers } from '../composables/useClipHandlers';
 import { getClip } from '../services/clips';
+import { listAudioTracks } from '../services/audio';
 import { parseClipIds } from '../utils/clipIdQuery';
 import { pluralize } from '../utils/pluralize';
+import { formatRelativeTime } from '../helpers/dateFormat';
 import type { Clip } from '../types/clip';
-import type { TimelineClip } from '../types/editor';
+import type { AudioTrack } from '../types/audio';
+import type { TimelineAudio, TimelineClip } from '../types/editor';
 import Timeline from '../components/Editor/Timeline.vue';
 import EditorControls from '../components/Editor/EditorControls.vue';
 import ClipProperties from '../components/Editor/ClipProperties.vue';
+import AudioProperties from '../components/Editor/AudioProperties.vue';
 import ClipLibrary from '../components/Editor/ClipLibrary.vue';
+import MusicLibrary from '../components/Editor/MusicLibrary.vue';
+import ExportDialog from '../components/Editor/ExportDialog.vue';
+import DraftsDialog from '../components/Editor/DraftsDialog.vue';
+import type { EditorDraft } from '../services/editorDraftsDb';
+import type { DraftFilePayload } from '../utils/draftFile';
+
+type LibraryTab = 'clips' | 'music';
 
 const router = useRouter();
 const route = useRoute();
-const clipsStore = useClipsStore();
 const toastStore = useToastStore();
+const gamesStore = useGamesStore();
+const tagsStore = useTagsStore();
 const { getThumbUrl } = useClipHandlers();
 
 const {
@@ -36,16 +54,29 @@ const {
   zoom,
   playing,
   addClip,
+  loadClips,
   removeClip,
   updateClipProperties,
   moveClip,
   trimClip,
   reflowClips,
-  seekTo,
   setZoom,
-  play,
   pause,
 } = useTimeline();
+
+const {
+  audio: timelineAudio,
+  audioDuration,
+  addAudio,
+  loadAudio,
+  removeAudio,
+  updateAudioProperties,
+  moveAudio,
+  trimAudio,
+} = useTimelineAudio();
+
+/** The ruler spans whichever lane runs longest; the export still cuts at the video. */
+const totalDuration = computed(() => Math.max(duration.value, audioDuration.value));
 
 const { videoA, videoB, activeSlot, isBuffering, togglePlayback, skipForward, skipBackward } = useEditorVideoPlayback(
   timelineClips,
@@ -54,17 +85,84 @@ const { videoA, videoB, activeSlot, isBuffering, togglePlayback, skipForward, sk
   duration
 );
 
+useEditorAudioPlayback(timelineAudio, timelineClips, currentTime, playing, totalDuration);
+
+// useTimeline clamps to the video lane alone, which would pin the playhead at
+// zero on a music-only timeline. Both of these span whichever lane is longer.
+function handleSeek(time: number): void {
+  currentTime.value = Math.max(0, Math.min(time, totalDuration.value));
+}
+
+function handlePlay(): void {
+  if (currentTime.value >= totalDuration.value) currentTime.value = 0;
+  playing.value = true;
+}
+
 const { showLibrary, showProperties, toggleLibrary, toggleProperties } = useEditorLayout();
 
-/** Backs the "In timeline" muting in the library panel. */
+// The editor lives outside ShellLayout, which is where the LAN probe normally
+// runs, so it has to ask for itself — otherwise every clip in here streams the
+// long way round the internet.
+const { detectLocalMedia } = useLocalMode();
+
+const libraryTab = ref<LibraryTab>('clips');
+
+const library = useEditorClipLibrary();
+
+const audioTracks = ref<AudioTrack[]>([]);
+const audioTracksLoading = ref(false);
+
+/** Backs the "In timeline" muting in the library panels. */
 const addedClipIds = computed(() => timelineClips.value.map((c: TimelineClip) => c.clipId));
+const addedTrackIds = computed(() => timelineAudio.value.map((a: TimelineAudio) => a.trackId));
 
 const selectedClipId = ref<string | null>(null);
-const selectedClip = computed(() => 
-  timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
+const selectedAudioId = ref<string | null>(null);
+
+const selectedClip = computed(
+  () => timelineClips.value.find((c: TimelineClip) => c.id === selectedClipId.value) || null
+);
+const selectedAudio = computed(
+  () => timelineAudio.value.find((a: TimelineAudio) => a.id === selectedAudioId.value) || null
 );
 
-const { isExporting, exportProgress, exportClip } = useClipExport(timelineClips);
+const { isExporting, exportProgress, exportClip } = useClipExport(timelineClips, timelineAudio);
+
+const {
+  drafts,
+  activeDraft,
+  resumable,
+  saving: savingDraft,
+  isEmpty: timelineIsEmpty,
+  loadDrafts,
+  loadResumable,
+  setActiveDraft,
+  detachDraft,
+  saveNamed,
+  importDraft,
+  removeDraft,
+  dismissResumable,
+} = useEditorDrafts(timelineClips, timelineAudio);
+
+const showExportDialog = ref(false);
+const showDraftsDialog = ref(false);
+const restoring = ref(false);
+
+const defaultExportName = computed(
+  () => `Edited_${new Date().toISOString().split('T')[0]}`
+);
+
+async function loadAudioTracks(): Promise<void> {
+  audioTracksLoading.value = true;
+  try {
+    audioTracks.value = await listAudioTracks();
+  } catch (error) {
+    console.error('Failed to load the music library:', error);
+    toastStore.error('Could not load your music library');
+  } finally {
+    audioTracksLoading.value = false;
+  }
+}
 
 async function addClipsToTimeline(clips: Clip[]): Promise<void> {
   // Probe durations in parallel, then append in the given order. addClip places
@@ -95,17 +193,179 @@ async function handleAddToTimeline(clip: Clip): Promise<void> {
   await addClipsToTimeline([clip]);
 }
 
-function handleSelectClip(clipId: string): void {
-  selectedClipId.value = clipId;
+function handleAddTrackToTimeline(track: AudioTrack): void {
+  // Placed at the playhead, which is where the user is looking.
+  const item = addAudio(track, audioUrl(track.id, track.modifiedAt), currentTime.value);
+  selectedAudioId.value = item.id;
+  selectedClipId.value = null;
+  showProperties.value = true;
 }
 
-function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>): void {
-  if (selectedClipId.value) {
-    updateClipProperties(selectedClipId.value, updates);
+function openExportDialog(): void {
+  if (timelineClips.value.length === 0) {
+    toastStore.warning('Add clips to the timeline before exporting');
+    return;
+  }
+
+  showExportDialog.value = true;
+}
+
+async function handleExportConfirm(name: string): Promise<void> {
+  await exportClip(name);
+  showExportDialog.value = false;
+}
+
+/**
+ * Rebuild a timeline from a draft.
+ *
+ * Only ids and edits were stored, so the media URLs are built fresh here — and
+ * anything that has since been deleted from disk simply drops out, with a count
+ * rather than a silent gap.
+ */
+async function restoreDraft(draft: EditorDraft): Promise<void> {
+  restoring.value = true;
+
+  try {
+    const ids = [...new Set(draft.clips.map((entry) => entry.clipId))];
+    const resolved = await Promise.all(ids.map(resolveClip));
+
+    const clipsById = new Map<number, Clip>();
+    for (const clip of resolved) {
+      if (clip) clipsById.set(clip.id, clip);
+    }
+
+    const clipEntries = draft.clips
+      .filter((entry) => clipsById.has(entry.clipId))
+      .map((entry) => {
+        const clip = clipsById.get(entry.clipId)!;
+        return {
+          clipId: entry.clipId,
+          startTime: entry.startTime,
+          duration: entry.duration,
+          trimStart: entry.trimStart,
+          trimEnd: entry.trimEnd,
+          originalDuration: entry.originalDuration,
+          volume: entry.volume,
+          muted: entry.muted,
+          videoUrl: videoUrlFor(clip.id, clip.fileModifiedAt),
+          thumbnailUrl: getThumbUrl(clip),
+        };
+      });
+
+    if (draft.audio.length > 0 && audioTracks.value.length === 0) {
+      await loadAudioTracks();
+    }
+
+    const tracksById = new Map(audioTracks.value.map((track) => [track.id, track]));
+    const audioEntries = draft.audio
+      .filter((entry) => tracksById.has(entry.trackId))
+      .map((entry) => ({
+        trackId: entry.trackId,
+        name: entry.name,
+        url: audioUrl(entry.trackId, tracksById.get(entry.trackId)!.modifiedAt),
+        startTime: entry.startTime,
+        duration: entry.duration,
+        trimStart: entry.trimStart,
+        trimEnd: entry.trimEnd,
+        originalDuration: entry.originalDuration,
+        volume: entry.volume,
+        muted: entry.muted,
+        fadeIn: entry.fadeIn,
+        fadeOut: entry.fadeOut,
+      }));
+
+    loadClips(clipEntries);
+    loadAudio(audioEntries);
+    setActiveDraft(draft);
+
+    selectedClipId.value = null;
+    selectedAudioId.value = null;
+    resumable.value = null;
+    showDraftsDialog.value = false;
+
+    const missing =
+      draft.clips.length - clipEntries.length + (draft.audio.length - audioEntries.length);
+
+    if (missing > 0) {
+      toastStore.warning(`${missing} item${missing === 1 ? '' : 's'} no longer exist and were skipped`);
+    } else {
+      toastStore.success(`Restored "${draft.name}"`);
+    }
+  } catch (error) {
+    console.error('Failed to restore the draft:', error);
+    toastStore.error('Please try again.', 'Could not restore the draft');
+  } finally {
+    restoring.value = false;
   }
 }
 
-function handleDeleteClip(): void {
+async function handleSaveDraft(name: string): Promise<void> {
+  try {
+    await saveNamed(name);
+    toastStore.success(`Saved "${name}"`);
+  } catch (error) {
+    console.error('Failed to save the draft:', error);
+    toastStore.error('Please try again.', 'Could not save the draft');
+  }
+}
+
+async function handleImportDraft(payload: DraftFilePayload): Promise<void> {
+  try {
+    const draft = await importDraft(payload);
+    toastStore.success(`Imported "${draft.name}" — open it to load it onto the timeline`);
+  } catch (error) {
+    console.error('Failed to import the draft:', error);
+    toastStore.error('Please try again.', 'Could not import the draft');
+  }
+}
+
+function handleDeleteDraft(draft: EditorDraft): void {
+  toastStore.confirm(
+    `"${draft.name}" is removed from this browser.`,
+    async () => {
+      try {
+        await removeDraft(draft.id);
+      } catch (error) {
+        console.error('Failed to delete the draft:', error);
+        toastStore.error('Please try again.', 'Could not delete the draft');
+      }
+    },
+    'Delete draft?'
+  );
+}
+
+function handleSelectClip(clipId: string): void {
+  selectedClipId.value = clipId;
+  selectedAudioId.value = null;
+}
+
+function handleSelectAudio(audioId: string): void {
+  selectedAudioId.value = audioId;
+  selectedClipId.value = null;
+}
+
+function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>): void {
+  if (selectedClipId.value) updateClipProperties(selectedClipId.value, updates);
+}
+
+function handleUpdateAudio(
+  updates: Partial<Pick<TimelineAudio, 'volume' | 'muted' | 'fadeIn' | 'fadeOut'>>
+): void {
+  if (selectedAudioId.value) updateAudioProperties(selectedAudioId.value, updates);
+}
+
+function handleRemoveAudio(audioId: string): void {
+  removeAudio(audioId);
+  if (selectedAudioId.value === audioId) selectedAudioId.value = null;
+}
+
+/** The delete shortcut acts on whichever lane holds the selection. */
+function handleDeleteSelection(): void {
+  if (selectedAudioId.value) {
+    handleRemoveAudio(selectedAudioId.value);
+    return;
+  }
+
   if (selectedClipId.value) {
     removeClip(selectedClipId.value);
     selectedClipId.value = null;
@@ -125,11 +385,11 @@ function goBack(): void {
 }
 
 async function resolveClip(id: number): Promise<Clip | null> {
-  const loaded = clipsStore.items.find((c: Clip) => c.id === id);
+  const loaded = library.clips.value.find((c: Clip) => c.id === id);
   if (loaded) return loaded;
 
-  // Selection survives paging, so a selected clip is not necessarily on the
-  // page the store currently holds. Fetch it directly rather than dropping it.
+  // Selection survives paging, so a selected clip is not necessarily in the
+  // page the library currently holds. Fetch it directly rather than dropping it.
   try {
     return await getClip(id);
   } catch (error) {
@@ -163,12 +423,24 @@ useKeyboardShortcuts({
     'editor-play-pause': togglePlayback,
     'editor-skip-backward': () => skipBackward(),
     'editor-skip-forward': () => skipForward(),
-    'editor-delete-clip': handleDeleteClip,
+    'editor-delete-clip': handleDeleteSelection,
   },
 });
 
 onMounted(async () => {
-  await clipsStore.fetchClips(false);
+  // Before anything builds a media URL: timeline entries hold the URL as a
+  // string, so a late-arriving LAN address would not reach the clips already
+  // placed.
+  await detectLocalMedia();
+
+  void gamesStore.fetchGames();
+  void tagsStore.fetchTags();
+  void loadAudioTracks();
+
+  void loadDrafts();
+  await loadResumable();
+
+  await library.fetchClips(false);
   await loadClipsFromQuery();
 });
 
@@ -188,19 +460,44 @@ watch(
         >
           <Icon icon="material-symbols:arrow-back" class="text-xl" />
         </button>
-        
+
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
             <Icon icon="material-symbols:movie-edit" class="text-white" />
           </div>
           <div>
             <h1 class="text-lg font-bold">Advanced Editor</h1>
-            <p class="text-[10px] text-gray-600">Create your masterpiece</p>
+            <p v-if="!activeDraft" class="text-[10px] text-gray-600">Create your masterpiece</p>
+            <p v-else class="text-[10px] text-gray-600 flex items-center gap-1">
+              <Icon icon="material-symbols:bookmark" class="text-orange-500 text-xs" />
+              <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
+              <button
+                class="text-gray-400 hover:text-gray-700 transition-colors"
+                title="Stop editing this draft — further changes go to the autosave"
+                @click="detachDraft"
+              >
+                <Icon icon="material-symbols:close" class="text-xs" />
+              </button>
+            </p>
           </div>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
+        <button
+          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium bg-black/5 hover:bg-black/10 border border-transparent text-gray-700"
+          @click="showDraftsDialog = true"
+        >
+          <Icon icon="material-symbols:bookmarks-outline" />
+          Drafts
+          <span
+            v-if="drafts.length"
+            class="px-1.5 rounded-full bg-orange-500/20 text-orange-700 text-[10px] font-semibold"
+          >
+            {{ drafts.length }}
+          </span>
+        </button>
+
         <button
           class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
           :class="showLibrary ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' : 'bg-black/5 hover:bg-black/10 border border-transparent text-gray-700'"
@@ -209,7 +506,7 @@ watch(
           <Icon icon="material-symbols:video-library" />
           Library
         </button>
-        
+
         <button
           class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
           :class="showProperties ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' : 'bg-black/5 hover:bg-black/10 border border-transparent text-gray-700'"
@@ -222,16 +519,90 @@ watch(
     </header>
 
     <div class="flex-1 flex gap-3 p-3 overflow-hidden">
-      <aside v-if="showLibrary" class="w-64 flex-shrink-0">
-        <ClipLibrary
-          :clips="clipsStore.items"
-          :get-thumb-url="(clip: Clip) => getThumbUrl(clip)"
-          :added-clip-ids="addedClipIds"
-          @add-to-timeline="handleAddToTimeline"
-        />
+      <aside v-if="showLibrary" class="w-96 flex-shrink-0 flex flex-col gap-2">
+        <div class="flex-shrink-0 grid grid-cols-2 gap-1 p-1 bg-white/60 rounded-lg border border-gray-300">
+          <button
+            class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+            :class="libraryTab === 'clips' ? 'bg-orange-500 text-white' : 'text-gray-700 hover:bg-black/5'"
+            @click="libraryTab = 'clips'"
+          >
+            <Icon icon="material-symbols:video-library" />
+            Clips
+          </button>
+          <button
+            class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+            :class="libraryTab === 'music' ? 'bg-orange-500 text-white' : 'text-gray-700 hover:bg-black/5'"
+            @click="libraryTab = 'music'"
+          >
+            <Icon icon="material-symbols:library-music" />
+            Music
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0">
+          <ClipLibrary
+            v-if="libraryTab === 'clips'"
+            v-model:search="library.search.value"
+            v-model:selected-game="library.selectedGame.value"
+            v-model:selected-tags="library.selectedTags.value"
+            :clips="library.clips.value"
+            :games="gamesStore.items"
+            :tags="tagsStore.items"
+            :loading="library.loading.value"
+            :has-more="library.hasMore.value"
+            :get-thumb-url="(clip: Clip) => getThumbUrl(clip)"
+            :added-clip-ids="addedClipIds"
+            @add-to-timeline="handleAddToTimeline"
+            @load-more="library.loadMore"
+            @clear-filters="library.clearFilters"
+          />
+
+          <MusicLibrary
+            v-else
+            :tracks="audioTracks"
+            :loading="audioTracksLoading"
+            :added-track-ids="addedTrackIds"
+            @add-to-timeline="handleAddTrackToTimeline"
+            @changed="loadAudioTracks"
+          />
+        </div>
       </aside>
 
       <main class="flex-1 flex flex-col gap-3 min-w-0">
+        <!-- The previous session, offered back rather than restored behind your back. -->
+        <div
+          v-if="resumable"
+          class="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-50/80 backdrop-blur-sm"
+        >
+          <Icon icon="material-symbols:history" class="text-xl text-orange-500 flex-shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium text-gray-900">
+              {{ resumable.name === 'Autosave' ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
+            </div>
+            <div class="text-xs text-gray-600">
+              {{ resumable.clips.length }} clip{{ resumable.clips.length === 1 ? '' : 's' }}
+              <span v-if="resumable.audio.length">
+                · {{ resumable.audio.length }} track{{ resumable.audio.length === 1 ? '' : 's' }}
+              </span>
+              · {{ formatRelativeTime(resumable.updatedAt) }}
+            </div>
+          </div>
+          <button
+            class="h-8 px-4 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 flex-shrink-0"
+            :disabled="restoring"
+            @click="restoreDraft(resumable)"
+          >
+            <Icon v-if="restoring" icon="svg-spinners:180-ring-with-bg" class="text-sm" />
+            <span>{{ restoring ? 'Restoring…' : 'Resume' }}</span>
+          </button>
+          <button
+            class="h-8 px-4 rounded-lg border border-gray-300 bg-white/70 text-gray-700 text-xs font-semibold hover:bg-white transition-colors inline-flex items-center justify-center flex-shrink-0"
+            @click="dismissResumable"
+          >
+            Discard
+          </button>
+        </div>
+
         <div class="flex-1 relative bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
           <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
             <!--
@@ -265,7 +636,7 @@ watch(
               </div>
             </div>
           </div>
-          
+
           <div v-else class="absolute inset-0 flex items-center justify-center">
             <div class="text-center">
               <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
@@ -277,24 +648,40 @@ watch(
           </div>
         </div>
 
-        <div class="h-44 flex-shrink-0">
+        <div class="h-56 flex-shrink-0">
           <Timeline
             :clips="timelineClips"
+            :audio="timelineAudio"
             :current-time="currentTime"
-            :duration="duration"
+            :duration="totalDuration"
+            :video-duration="duration"
             :zoom="zoom"
-            @seek="seekTo"
+            :selected-clip-id="selectedClipId"
+            :selected-audio-id="selectedAudioId"
+            @seek="handleSeek"
             @select-clip="handleSelectClip"
             @remove-clip="removeClip"
             @trim-clip="trimClip"
             @move-clip="moveClip"
             @drag-end="reflowClips"
+            @select-audio="handleSelectAudio"
+            @remove-audio="handleRemoveAudio"
+            @trim-audio="trimAudio"
+            @move-audio="moveAudio"
           />
         </div>
       </main>
 
-      <aside v-if="showProperties" class="w-72 flex-shrink-0">
+      <aside v-if="showProperties" class="w-80 flex-shrink-0">
+        <AudioProperties
+          v-if="selectedAudio"
+          :item="selectedAudio"
+          @update="handleUpdateAudio"
+          @remove="handleRemoveAudio(selectedAudio.id)"
+        />
+
         <ClipProperties
+          v-else
           :clip="selectedClip"
           @update="handleUpdateClip"
         />
@@ -304,13 +691,13 @@ watch(
     <EditorControls
       :playing="playing"
       :current-time="currentTime"
-      :duration="duration"
+      :duration="totalDuration"
       :zoom="zoom"
       :can-undo="false"
       :can-redo="false"
       :exporting="isExporting"
       :export-progress="exportProgress"
-      @play="play"
+      @play="handlePlay"
       @pause="pause"
       @skip-backward="skipBackward()"
       @skip-forward="skipForward()"
@@ -318,7 +705,30 @@ watch(
       @zoom-out="handleZoomOut"
       @undo="() => {}"
       @redo="() => {}"
-      @export="exportClip"
+      @export="openExportDialog"
+    />
+
+    <ExportDialog
+      v-model:open="showExportDialog"
+      :default-name="defaultExportName"
+      :clip-count="timelineClips.length"
+      :track-count="timelineAudio.length"
+      :duration="duration"
+      :exporting="isExporting"
+      :progress="exportProgress"
+      @confirm="handleExportConfirm"
+    />
+
+    <DraftsDialog
+      v-model:open="showDraftsDialog"
+      :drafts="drafts"
+      :active-id="activeDraft?.id ?? null"
+      :can-save="!timelineIsEmpty"
+      :saving="savingDraft"
+      @save="handleSaveDraft"
+      @import="handleImportDraft"
+      @open-draft="restoreDraft"
+      @delete-draft="handleDeleteDraft"
     />
   </div>
 </template>

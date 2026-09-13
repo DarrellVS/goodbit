@@ -41,7 +41,8 @@ These hardcoded IPs are real, not placeholders. Don't "fix" them to localhost.
 answers, builds all media URLs against it — so video and thumbnails come straight off the LAN even
 though the page was served over HTTPS from the internet. Browsers permit requests to private-network
 addresses (measured, including `<img>`/`<video>`; the mixed-content console warning is not a block).
-If the probe fails, media falls back to the page's own origin. The server also serves `client/dist`,
+If the probe fails, media falls back to the page's own origin. The routes outside the shell — `/editor`
+and `/trim/:id` — run the probe themselves, or their media would quietly take the internet path. The server also serves `client/dist`,
 so `http://192.168.178.28:4000` works as a standalone app. See `LOCAL_STREAMING.md`.
 
 `client/src/utils/mediaUrl.ts` is the single place media URLs are built — always go through it, or
@@ -98,6 +99,11 @@ be careful with anything TypeORM auto-sync would resolve destructively on SQLite
 
 On-disk siblings of the game folders: `.thumbnails/`, `.frame-strips/`, `filmpje.db`.
 
+**Editor music has no table.** Tracks live as files in `<AUDIO_ROOT>/Editor` and the filename is the id;
+`/api/audio` lists, uploads (multer), streams with range support, and trashes them. `AudioTrackDTO` is
+built from a stat plus an ffprobe (duration is cached per name+mtime+size). The editor's music lane is
+client state only — placements exist until export, never in the database.
+
 ## Architecture patterns
 
 ### Server: routes are thin, Actions hold the logic
@@ -137,10 +143,50 @@ types through it. Use those (`Clip`, `Tag`, `Game`, `Collection`), not the raw D
 - Settings live in localStorage under `filmpje-public-config` via `useConfiguration()`, not in a store.
   Defaults: `viewMode: 'grouped'`, `pageSize: 15`.
 
+### Editor
+
+`views/EditorPage.vue` owns two lanes. Video: `useTimeline` (gapless, reflows on drag end) played by
+`useEditorVideoPlayback`, whose element is the clock wherever a clip sits under the playhead. Music:
+`useTimelineAudio` (free-floating, may overlap, may run past the picture) played by
+`useEditorAudioPlayback`, which follows that clock — and advances it off wall-clock only where no clip
+covers the playhead, so a music-only timeline still moves. The ruler spans the longer lane; anything
+past the video end is hatched because `ExportTimelineAction` cuts it there.
+
+Export concatenates the trimmed video segments, then mixes music in a second pass (`atrim` → `volume` →
+`afade` → `adelay` → `amix ... normalize=0` → `apad`, with `-c:v copy -shortest`) so the picture is
+never re-encoded and the result stays exactly as long as the video.
+
+The editor's clip library is `useEditorClipLibrary`, deliberately not the `clips` store — it filters and
+pages on its own so it cannot disturb the library page.
+
+**Drafts** (`services/editorDraftsDb.ts`, IndexedDB `FilmpjeEditorDrafts`) are how "continue later"
+works. `useEditorDrafts` debounce-writes the timeline on every change and flushes it on unmount. Where
+it writes depends on `activeDraft`: opening or saving a named draft makes that draft the target, so
+editing it keeps updating *it*; with nothing open the writes go to the reserved `__autosave__` record.
+Only clip ids, track filenames and the edits are stored — media URLs carry an expiring token and a LAN
+host, so they are rebuilt on restore and anything since deleted drops out with a count. The resume
+banner offers the newest stored timeline (autosave or named), captured at mount into `resumable` so
+working before deciding cannot revoke the offer; dismissing deletes the autosave record but never a
+named draft.
+
+Drafts move between machines as JSON via `utils/draftFile.ts` — same payload as the stored record, so a
+draft only replays where the library holds those clip ids and the music folder holds those filenames;
+import parses and validates, then asks for a name defaulting to the exported one.
+
+Export runs as a **background job**: `POST /api/clips/export` registers it in `services/exportJobs.ts`,
+starts the render detached and answers `202 {exportId}`; the client polls `/export/:id/status` for
+progress and the finished clip. Awaiting the render inside the request meant anything past Cloudflare's
+100 second ceiling returned a 504 while ffmpeg carried on regardless — never await a render in a
+handler. Jobs live in memory and are pruned 15 minutes after finishing.
+
+Export opens a name dialog first. `ExportTimelineAction.sanitizeOutputName()` is what stands between a
+typed name and `path.join` — keep it.
+
 ### Routes
 
 `/login`, then everything under a `ShellLayout` parent: `/` (library), `/today`, `/tag-patterns`,
-`/stats`, `/settings`, `/collections/:id`, `/clips/:id`. Outside the shell: `/trim/:id`, `/editor`.
+`/stats`, `/settings`, `/collections/:id`, `/clips/:id`. Outside the shell: `/trim/:id`, `/editor`
+(linked from the sidebar's main menu).
 Route `meta.title`/`meta.subtitle` drive the header. All eagerly imported — no lazy routes.
 
 ### Auth

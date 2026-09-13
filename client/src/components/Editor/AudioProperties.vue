@@ -1,0 +1,224 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { Icon } from '@iconify/vue';
+import { formatTime } from '../../utils/timeFormat';
+import type { TimelineAudio } from '../../types/editor';
+
+interface Props {
+  item: TimelineAudio;
+}
+
+interface Emits {
+  (e: 'update', updates: Partial<Pick<TimelineAudio, 'volume' | 'muted' | 'fadeIn' | 'fadeOut'>>): void;
+  (e: 'remove'): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+/** Fades cannot overlap, so each is capped at what the other leaves. */
+const maxFadeIn = computed(() => Math.max(0, props.item.duration - props.item.fadeOut));
+const maxFadeOut = computed(() => Math.max(0, props.item.duration - props.item.fadeIn));
+
+const volumePercent = computed(() => Math.round(props.item.volume * 100));
+
+/** Volume in dB reads truer to the ear than a percentage of amplitude. */
+const volumeDb = computed(() => {
+  if (props.item.volume <= 0) return '−∞';
+  const db = 20 * Math.log10(props.item.volume);
+  return `${db > 0 ? '+' : ''}${db.toFixed(1)}`;
+});
+
+function setVolume(percent: number): void {
+  emit('update', { volume: percent / 100 });
+}
+
+function setFadeIn(seconds: number): void {
+  emit('update', { fadeIn: seconds });
+}
+
+function setFadeOut(seconds: number): void {
+  emit('update', { fadeOut: seconds });
+}
+
+function applyFadePreset(seconds: number): void {
+  const capped = Math.min(seconds, props.item.duration / 2);
+  emit('update', { fadeIn: capped });
+  emit('update', { fadeOut: capped });
+}
+</script>
+
+<template>
+  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-gray-300">
+      <h3 class="text-sm font-semibold flex items-center gap-2 text-gray-900">
+        <Icon icon="material-symbols:tune" class="text-orange-500" />
+        Track Properties
+      </h3>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <div class="flex items-start gap-2">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+        <Icon icon="material-symbols:music-note" class="text-white" />
+      </div>
+      <div class="min-w-0">
+        <div class="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">{{ item.name }}</div>
+        <div class="text-[10px] text-gray-500 font-mono mt-0.5">
+          starts at {{ formatTime(item.startTime) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <label class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center justify-between">
+        <span class="flex items-center gap-1">
+          <Icon icon="material-symbols:volume-up" class="text-orange-500" />
+          Level
+        </span>
+        <span class="text-gray-900 font-mono text-sm">{{ volumePercent }}% · {{ volumeDb }} dB</span>
+      </label>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        :value="volumePercent"
+        class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+        @input="setVolume(($event.target as HTMLInputElement).valueAsNumber)"
+      />
+      <div class="flex gap-1">
+        <button
+          v-for="preset in [15, 25, 35, 50, 100]"
+          :key="preset"
+          class="flex-1 py-1 rounded-md text-[10px] font-medium border transition-colors"
+          :class="volumePercent === preset
+            ? 'bg-orange-500 text-white border-orange-500'
+            : 'bg-white/80 text-gray-700 border-gray-300 hover:border-orange-400'"
+          @click="setVolume(preset)"
+        >
+          {{ preset }}%
+        </button>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <div class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1">
+        <Icon icon="material-symbols:gradient" class="text-orange-500" />
+        Fades
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-[11px] text-gray-600">
+          <span>Fade in</span>
+          <span class="font-mono text-gray-900">{{ item.fadeIn.toFixed(1) }}s</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          :max="Math.max(0.1, maxFadeIn)"
+          step="0.1"
+          :value="item.fadeIn"
+          class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+          @input="setFadeIn(($event.target as HTMLInputElement).valueAsNumber)"
+        />
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-[11px] text-gray-600">
+          <span>Fade out</span>
+          <span class="font-mono text-gray-900">{{ item.fadeOut.toFixed(1) }}s</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          :max="Math.max(0.1, maxFadeOut)"
+          step="0.1"
+          :value="item.fadeOut"
+          class="w-full h-2 bg-orange-100 rounded-lg appearance-none cursor-pointer slider-thumb"
+          @input="setFadeOut(($event.target as HTMLInputElement).valueAsNumber)"
+        />
+      </div>
+
+      <div class="flex gap-1">
+        <button
+          v-for="preset in [0, 1, 2, 4]"
+          :key="preset"
+          class="flex-1 py-1 rounded-md text-[10px] font-medium border bg-white/80 text-gray-700 border-gray-300 hover:border-orange-400 transition-colors"
+          @click="applyFadePreset(preset)"
+        >
+          {{ preset === 0 ? 'none' : `${preset}s` }}
+        </button>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <button
+        class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border"
+        :class="item.muted
+          ? 'bg-red-500/20 hover:bg-red-500/30 text-red-600 border-red-500/40'
+          : 'bg-white/80 hover:bg-white text-gray-700 border-gray-300'"
+        @click="emit('update', { muted: !item.muted })"
+      >
+        <Icon :icon="item.muted ? 'material-symbols:volume-off' : 'material-symbols:volume-up'" class="text-lg" />
+        {{ item.muted ? 'Unmute Track' : 'Mute Track' }}
+      </button>
+    </div>
+
+    <div class="pt-4 border-t border-gray-300 space-y-2">
+      <div class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1">
+        <Icon icon="material-symbols:info" class="text-orange-500" />
+        Track Info
+      </div>
+      <div class="space-y-1.5 text-xs bg-white/80 rounded-lg p-3 border border-gray-300">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Original:</span>
+          <span class="font-mono text-gray-900">{{ formatTime(item.originalDuration) }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Used:</span>
+          <span class="font-mono text-gray-900">{{ formatTime(item.duration) }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Trim Start:</span>
+          <span class="font-mono text-gray-900">{{ formatTime(item.trimStart) }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Trim End:</span>
+          <span class="font-mono text-gray-900">{{ formatTime(item.trimEnd) }}</span>
+        </div>
+      </div>
+    </div>
+
+      <button
+        class="w-full px-4 py-2.5 rounded-lg text-sm font-medium border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-colors flex items-center justify-center gap-2"
+        @click="emit('remove')"
+      >
+        <Icon icon="material-symbols:delete-outline" class="text-lg" />
+        Remove from timeline
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.slider-thumb::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+  border: 2px solid white;
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+}
+</style>

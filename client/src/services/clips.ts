@@ -1,5 +1,5 @@
 import axios from '../axios';
-import type { TimelineClip } from '../types/editor';
+import type { TimelineAudio, TimelineClip } from '../types/editor';
 import type { Clip } from '../types/clip';
 import type { Tag } from '../types/tag';
 
@@ -20,11 +20,63 @@ interface ExportTimelineRequest {
     volume: number;
     muted: boolean;
   }>;
+  audio: Array<{
+    trackId: string;
+    startTime: number;
+    trimStart: number;
+    trimEnd: number;
+    volume: number;
+    muted: boolean;
+    fadeIn: number;
+    fadeOut: number;
+  }>;
   outputName?: string;
-  exportId?: string;
 }
 
-export async function exportTimeline(clips: readonly TimelineClip[], outputName?: string, exportId?: string): Promise<{ id: number }> {
+export interface ListClipsParams {
+  page?: number;
+  pageSize?: number;
+  game?: string;
+  q?: string;
+  tags?: string[];
+}
+
+export interface ListClipsResult {
+  items: Clip[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function listClips(params: ListClipsParams = {}, signal?: AbortSignal): Promise<ListClipsResult> {
+  const query: Record<string, string | number> = {
+    page: params.page ?? 1,
+    pageSize: params.pageSize ?? 50,
+  };
+
+  if (params.game) query.game = params.game;
+  if (params.q) query.q = params.q;
+  if (params.tags?.length) query.tags = params.tags.join(',');
+
+  const { data } = await axios.get<ListClipsResult>('/api/clips', { params: query, signal });
+  return data;
+}
+
+export type ExportJobStatus = 'running' | 'done' | 'error';
+
+export interface ExportStatus {
+  status: ExportJobStatus;
+  progress: number;
+  clip: Clip | null;
+  error: string | null;
+}
+
+/** Kicks the render off; the server answers with an id, not a file. */
+export async function startExport(
+  clips: readonly TimelineClip[],
+  audio: readonly TimelineAudio[] = [],
+  outputName?: string
+): Promise<{ exportId: string }> {
   const payload: ExportTimelineRequest = {
     clips: clips.map(clip => ({
       clipId: clip.clipId,
@@ -34,17 +86,26 @@ export async function exportTimeline(clips: readonly TimelineClip[], outputName?
       volume: clip.volume,
       muted: clip.muted,
     })),
+    audio: audio.map(item => ({
+      trackId: item.trackId,
+      startTime: item.startTime,
+      trimStart: item.trimStart,
+      trimEnd: item.trimEnd,
+      volume: item.volume,
+      muted: item.muted,
+      fadeIn: item.fadeIn,
+      fadeOut: item.fadeOut,
+    })),
     outputName,
-    exportId,
   };
 
-  const response = await axios.post('/api/clips/export', payload);
-  return response.data;
+  const { data } = await axios.post<{ exportId: string }>('/api/clips/export', payload);
+  return data;
 }
 
-export async function getExportProgress(exportId: string): Promise<number | null> {
-  const response = await axios.get(`/api/clips/export/${exportId}/progress`);
-  return response.data.progress;
+export async function getExportStatus(exportId: string): Promise<ExportStatus> {
+  const { data } = await axios.get<ExportStatus>(`/api/clips/export/${exportId}/status`);
+  return data;
 }
 
 export async function updateClipName(id: number, displayName: string | null): Promise<Clip> {
