@@ -264,7 +264,17 @@ must no-op rather than log failures on every boot.
    does not burn Actions minutes on a moving target. When it lands it runs typecheck + Prettier +
    unit tests only; the build-and-publish job is tag-triggered (`v*`), not per-push.
 
-Still open: **the name** — see below.
+6. **The app is called GoodBit.** The good bit is what the app is for: a thirty second replay buffer
+   arrives, and the job is finding the ten seconds worth keeping. Plain-spoken, with a quiet second
+   reading for anyone who knows what a bit is. A search turned up no software using it, so it is
+   ownable — worth confirming the domain and a GitHub org before the installer bakes the name in.
+
+   Everything downstream follows from it: `appId` (`com.darrellvs.goodbit` or similar), the product
+   name in the installer, the window title, the update feed's repository, the custom protocol
+   (`goodbit://media/…` rather than `filmpje://`), and `%APPDATA%/GoodBit/`. Settle the domain and org
+   first, because renaming after the auto-update feed is live means stranding anyone already on it.
+
+   `Filmpje` stays as the repository name until the rename lands, to avoid churn mid-migration.
 
 ---
 
@@ -326,6 +336,39 @@ Do Phase 0 item 3 before anything else in this document.
 
 ---
 
+## Known broken: dark mode
+
+Shipped visibly wrong and **deliberately not fixed in the web app**, since the UI is rebuilt here
+anyway. Recorded so the rewrite fixes the cause rather than the screen.
+
+The Settings sidebar renders dark text on a dark ground, unreadable. Two systematic gaps in the pass
+that added `dark:` variants, both invisible to typecheck and to the build:
+
+1. **Opacity-modified utilities were not in the map** — `bg-white/10`, `bg-gray-50/50`,
+   `border-gray-200/80`. The map held `bg-white` and `bg-gray-50` but Tailwind treats
+   `bg-white/50` as a different class entirely, so those elements kept their light backgrounds.
+   **101 occurrences** across the client.
+2. **Bound classes were skipped on purpose.** `:class="active ? 'bg-orange-50' : 'text-gray-700'"`
+   holds colours inside a JavaScript expression. The pass deliberately left these alone after an
+   earlier attempt appended Tailwind tokens into the expressions and broke the parse in six files —
+   correct to skip, but it means every conditional style stayed light-only. **11 files.**
+
+**The fix in the rewrite is not another find-and-replace.** Both gaps come from colours being spelled
+literally at 600-odd call sites, where a mechanical pass can only ever approximate. `styles.css`
+already defines a full semantic token ladder (`--bg0..3`, `--fg`/`--fg2`/`--fg3`, `--card`, `--border`)
+with both palettes, and Tailwind already maps them — it is simply unused, because components say
+`bg-white` instead of `bg-card`. Converting to the tokens makes dark mode fall out of the token
+definitions instead of being maintained per-element, and it works inside bound classes and with
+opacity modifiers alike. ApexCut's `docs/design.md` is the reference for what a finished ladder looks
+like.
+
+**This is what Playwright is for.** Every automated check passed on a screen no one could read:
+`vue-tsc` was clean, the build succeeded, the CSS contained the right rules. Nothing that existed
+could see the result. The Electron suite gets, at minimum, a light and dark screenshot of every top
+level screen, so a palette regression is a failing test rather than something spotted in use.
+
+---
+
 ## Risks, honestly
 
 **1. The native SQLite module — the one that can actually stall you.** TypeORM's `sqlite3` driver is a
@@ -372,7 +415,12 @@ The layering makes each step small; there are just a lot of them.
 - [ ] CI workflow added — last, and tag-gated for the build job
 - [ ] Name settled; app id, icon and publisher string follow from it
 - [ ] README rewritten for someone who has never seen it, including the SmartScreen note
+- [ ] Colours converted to the semantic tokens; dark mode verified on every screen
 - [ ] Unit tests over the pure logic worth pinning — `sanitizeOutputName`, the crop maths, the
-      analysis thresholds, `useTimeline`'s reflow, `timestampParser`. Plus one Playwright smoke test
-      that launches the built app and checks it opens; no browser-driving beyond that.
+      analysis thresholds, `useTimeline`'s reflow, `timestampParser`
+- [ ] **Playwright against the built app** (`_electron.launch` on `out/main/index.js`, ApexCut's
+      arrangement): each test gets a throw-away data folder so runs never touch the real library.
+      Covers the screens in both palettes, plus scan → trim → export. Kept **out of CI** — it is the
+      pre-release gate, with the build depending on it, so an installer cannot be cut from a tree
+      whose tests fail.
 - [ ] A licence decision (there is an MIT `LICENSE` in ApexCut; this repo has none)
