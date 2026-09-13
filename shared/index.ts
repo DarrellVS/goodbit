@@ -25,3 +25,13 @@ export * from './dtos/game/GameDTO.js';
 // Audio DTOs
 export * from './dtos/audio/AudioTrackDTO.js';
 
+// Export formats and crop maths, shared so the crop frame and the ffmpeg
+// filter cannot drift apart
+export * from './constants/exportFormats.js';
+
+// Saved editor timelines
+export * from './dtos/project/ProjectDTO.js';
+
+// Highlight suggestions
+export * from './dtos/clip/ClipSuggestionsDTO.js';
+

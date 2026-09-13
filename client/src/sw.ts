@@ -20,15 +20,14 @@ registerRoute(
 // Do not cache API calls; they require auth
 // Any further runtime routes can be added here if needed
 
-// Take over immediately instead of parking in "waiting" until every tab is
-// closed. vite-plugin-pwa only injects these for the generateSW strategy — an
-// injectManifest worker like this one has to do it itself, and without them
-// `registerType: 'autoUpdate'` does nothing: the old worker keeps answering
-// navigations from the old precached index.html, which is why a new deploy only
-// showed up on a hard reload (a hard reload bypasses the worker entirely).
-self.addEventListener('install', () => {
-  void self.skipWaiting();
-});
+// A new build waits here until the page says to take over.
+//
+// This used to call skipWaiting() on install, which claimed the page the moment
+// a deploy was fetched and reloaded it out from under whatever was being done —
+// mid-drag in the editor, say. The page now notices the waiting worker, offers
+// a reload, and sends SKIP_WAITING when the user accepts. The handler below is
+// the other half of that, and claiming on activate is still what makes the old
+// precached index.html stop answering navigations.
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());

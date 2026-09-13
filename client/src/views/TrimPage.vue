@@ -7,7 +7,15 @@
         ref="videoPreviewRef"
         :video-source="videoSource"
       />
-      
+
+      <SuggestionBanner
+        :suggestions="suggestions"
+        :loading="suggestionsLoading"
+        :applied="suggestionApplied"
+        @apply="applySuggestion"
+        @seek="seekTo"
+      />
+
       <TimelineEditor
         v-model="range"
         :max-duration="duration"
@@ -30,7 +38,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
-import { getClipMeta, trimClip } from '../services/clips';
+import { getClipMeta, getClipSuggestions, trimClip, type ClipSuggestions } from '../services/clips';
 import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
 import { restoreScrollPosition } from '../utils/scroll';
 import { useTrimRange } from '../composables/useTrimRange';
@@ -39,6 +47,7 @@ import { useLocalMode } from '../composables/useLocalMode';
 import TrimHeader from '../components/Trim/TrimHeader.vue';
 import VideoPreview from '../components/Trim/VideoPreview.vue';
 import TimelineEditor from '../components/Trim/TimelineEditor.vue';
+import SuggestionBanner from '../components/Trim/SuggestionBanner.vue';
 
 interface Props {
   id: string;
@@ -84,6 +93,42 @@ async function loadClipMetadata(): Promise<void> {
   }
 }
 
+const suggestions = ref<ClipSuggestions | null>(null);
+const suggestionsLoading = ref(false);
+
+/**
+ * The banner only appears when the analysis is confident, so a failure here is
+ * not worth telling the user about — there was nothing promised to lose.
+ */
+async function loadSuggestions(): Promise<void> {
+  suggestionsLoading.value = true;
+  try {
+    suggestions.value = await getClipSuggestions(Number(props.id));
+  } catch (error) {
+    console.error('Failed to analyse clip:', error);
+    suggestions.value = null;
+  } finally {
+    suggestionsLoading.value = false;
+  }
+}
+
+/** True once the range already matches the suggestion, within a rounding error. */
+const suggestionApplied = computed(() => {
+  const w = suggestions.value?.window;
+  if (!w) return false;
+  return Math.abs(range.value[0] - w.start) < 0.15 && Math.abs(range.value[1] - w.end) < 0.15;
+});
+
+function applySuggestion(start: number, end: number): void {
+  range.value = [start, Math.min(end, duration.value)];
+  seekTo(start);
+}
+
+function seekTo(time: number): void {
+  const video = videoElement.value;
+  if (video) video.currentTime = time;
+}
+
 async function handleSave(): Promise<void> {
   if (isSaving.value || !isValidRange.value) return;
   
@@ -110,5 +155,6 @@ onMounted(() => {
   // sources are computed, so they re-point themselves when it lands.
   void detectLocalMedia();
   void loadClipMetadata();
+  void loadSuggestions();
 });
 </script>

@@ -2,6 +2,7 @@ import axios from '../axios';
 import type { TimelineAudio, TimelineClip } from '../types/editor';
 import type { Clip } from '../types/clip';
 import type { Tag } from '../types/tag';
+import type { ExportFormat } from '../../../shared';
 
 export type ClipMeta = {
   durationSec: number;
@@ -31,6 +32,16 @@ interface ExportTimelineRequest {
     fadeOut: number;
   }>;
   outputName?: string;
+  format?: ExportFormat;
+  framePos?: number;
+  normalizeLoudness?: boolean;
+}
+
+/** The shape and sound choices an export is made with. */
+export interface ExportOptions {
+  format?: ExportFormat;
+  framePos?: number;
+  normalizeLoudness?: boolean;
 }
 
 export interface ListClipsParams {
@@ -62,11 +73,15 @@ export async function listClips(params: ListClipsParams = {}, signal?: AbortSign
   return data;
 }
 
-export type ExportJobStatus = 'running' | 'done' | 'error';
+export type ExportJobStatus = 'running' | 'done' | 'error' | 'cancelled';
 
 export interface ExportStatus {
   status: ExportJobStatus;
   progress: number;
+  /** What the render is doing right now, in the words the UI uses. */
+  message: string;
+  /** Seconds left, or null until there is enough progress for it to mean anything. */
+  etaSeconds: number | null;
   clip: Clip | null;
   error: string | null;
 }
@@ -75,7 +90,8 @@ export interface ExportStatus {
 export async function startExport(
   clips: readonly TimelineClip[],
   audio: readonly TimelineAudio[] = [],
-  outputName?: string
+  outputName?: string,
+  options: ExportOptions = {}
 ): Promise<{ exportId: string }> {
   const payload: ExportTimelineRequest = {
     clips: clips.map(clip => ({
@@ -97,6 +113,9 @@ export async function startExport(
       fadeOut: item.fadeOut,
     })),
     outputName,
+    format: options.format,
+    framePos: options.framePos,
+    normalizeLoudness: options.normalizeLoudness,
   };
 
   const { data } = await axios.post<{ exportId: string }>('/api/clips/export', payload);
@@ -141,8 +160,76 @@ export async function getClipMeta(id: number): Promise<ClipMeta> {
   return data;
 }
 
-export async function trimClip(id: number, startSec: number, endSec: number): Promise<void> {
-  await axios.post(`/api/clips/${id}/trim`, { startSec, endSec });
+export type TrimMode = 'lossless' | 'exact';
+
+export interface TrimResult {
+  ok: boolean;
+  /** Where the cut actually landed; a lossless copy snaps back to a keyframe. */
+  actualStartSec: number;
+  actualEndSec: number;
+  mode: TrimMode;
+}
+
+export async function trimClip(
+  id: number,
+  startSec: number,
+  endSec: number,
+  mode: TrimMode = 'lossless',
+): Promise<TrimResult> {
+  const { data } = await axios.post<TrimResult>(`/api/clips/${id}/trim`, {
+    startSec,
+    endSec,
+    mode,
+  });
+  return data;
+}
+
+/** Where a lossless cut can begin, so the UI can show the snap before committing. */
+export async function getKeyframes(id: number, until: number): Promise<number[]> {
+  const { data } = await axios.get<{ keyframes: number[] }>(`/api/clips/${id}/keyframes`, {
+    params: { until },
+  });
+  return data.keyframes;
+}
+
+export interface ClipSuggestions {
+  clipId: number;
+  analyzed: boolean;
+  /** False when the clip's sound never changes — the UI then shows nothing. */
+  confident: boolean;
+  reason: string | null;
+  durationSec: number;
+  window: { start: number; end: number } | null;
+  moments: Array<{ t: number; score: number }>;
+  spreadLu: number;
+  lift: number;
+}
+
+export async function getClipSuggestions(
+  id: number,
+  windowSec = 10,
+): Promise<ClipSuggestions> {
+  const { data } = await axios.get<ClipSuggestions>(`/api/clips/${id}/suggestions`, {
+    params: { windowSec },
+  });
+  return data;
+}
+
+/** Stop a running render. */
+export async function cancelExport(exportId: string): Promise<void> {
+  await axios.delete(`/api/clips/export/${exportId}`);
+}
+
+export interface EncoderInfo {
+  ffmpegVersion: string;
+  h264: string;
+  hardware: boolean;
+  hwaccel: string | null;
+}
+
+export async function getEncoderInfo(): Promise<EncoderInfo> {
+  const { data } = await axios.get<EncoderInfo>('/api/clips/system/encoders');
+  return data;
 }
 
 export async function publishClip(id: number): Promise<Clip> {

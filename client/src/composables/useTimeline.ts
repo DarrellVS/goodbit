@@ -202,6 +202,24 @@ export function useTimeline() {
     for (const clip of newClips) clipMap.set(clip.id, clip);
   }
 
+  /**
+   * A copy of the lane, for undo.
+   *
+   * Unlike loadClips this keeps the existing ids: a restored snapshot has to be
+   * the same clips, or whatever was selected before the undo would point at
+   * nothing afterwards.
+   */
+  function snapshotClips(): TimelineClip[] {
+    return clips.value.map((clip) => ({ ...clip }));
+  }
+
+  function restoreClips(snapshot: TimelineClip[]): void {
+    const next = snapshot.map((clip) => ({ ...clip }));
+    clips.value = next;
+    clipMap.clear();
+    for (const clip of next) clipMap.set(clip.id, clip);
+  }
+
   function seekTo(time: number): void {
     currentTime.value = Math.max(0, Math.min(time, duration.value));
   }
@@ -242,6 +260,8 @@ export function useTimeline() {
     moveClip,
     trimClip,
     reflowClips,
+    snapshotClips,
+    restoreClips,
     seekTo,
     setZoom,
     play,

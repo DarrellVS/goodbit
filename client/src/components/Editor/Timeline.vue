@@ -26,6 +26,8 @@ interface Emits {
   (e: 'remove-clip', clipId: string): void;
   (e: 'trim-clip', clipId: string, trimStart: number, trimEnd: number): void;
   (e: 'move-clip', clipId: string, newStartTime: number): void;
+  /** Once per gesture, before anything moves: the page records an undo step here. */
+  (e: 'drag-start'): void;
   (e: 'drag-end'): void;
   (e: 'select-audio', audioId: string): void;
   (e: 'remove-audio', audioId: string): void;
@@ -145,6 +147,7 @@ function handleRulerMouseUp(): void {
             @remove="emit('remove-clip', $event)"
             @trim="(id, start, end) => emit('trim-clip', id, start, end)"
             @move="(id, time) => emit('move-clip', id, time)"
+            @drag-start="emit('drag-start')"
             @drag-end="emit('drag-end')"
           />
         </div>
@@ -170,6 +173,7 @@ function handleRulerMouseUp(): void {
             @remove="emit('remove-audio', $event)"
             @trim="(id, start, end) => emit('trim-audio', id, start, end)"
             @move="(id, time) => emit('move-audio', id, time)"
+            @drag-start="emit('drag-start')"
           />
 
           <div

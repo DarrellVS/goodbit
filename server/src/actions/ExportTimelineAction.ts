@@ -5,7 +5,23 @@ import { Clip } from '../entity/Clip.js';
 import { BaseAction } from './BaseAction.js';
 import { ffmpegConfigured } from '../services/ffmpeg.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
-import { setJobProgress } from '../services/exportJobs.js';
+import { setJobProgress } from '../services/jobs.js';
+import { runFfmpeg } from '../services/ffmpegRun.js';
+import {
+  detectEncoders,
+  decodeArgs,
+  encoderArgs,
+  probeVideo,
+  TONEMAP_FILTER,
+  type EncoderInfo,
+  type ProbeInfo,
+} from '../services/encoders.js';
+import {
+  cropFilterFor,
+  outputSizeFor,
+  targetKbpsFor,
+  type ExportFormat,
+} from '../../../shared/index.js';
 import type { FfmpegCommand } from 'fluent-ffmpeg';
 
 interface TimelineClipData {
@@ -35,27 +51,47 @@ interface ExportTimelineInput {
   audio?: TimelineAudioData[];
   outputName?: string;
   exportId?: string;
+  /** The shape of the finished movie. Defaults to the source's own shape. */
+  format?: ExportFormat;
+  /** 0..1, where the crop window sits in the direction it can move. */
+  framePos?: number;
+  /** Even the whole movie out to -14 LUFS, the level the platforms settle on. */
+  normalizeLoudness?: boolean;
+  signal?: AbortSignal;
 }
+
+/** Loudness the platforms normalise to anyway, so the movie arrives already there. */
+const LOUDNESS = { i: -14, tp: -1.5, lra: 11 };
 
 export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip: Clip }> {
   async execute(input: ExportTimelineInput): Promise<{ clip: Clip }> {
-    const { clips, audio = [], exportId } = input;
+    const {
+      clips,
+      audio = [],
+      exportId,
+      format = 'original',
+      framePos = 0.5,
+      normalizeLoudness = false,
+      signal,
+    } = input;
+
     // The name is typed by the user now, and it is about to become a path.
     const outputName = this.sanitizeOutputName(input.outputName);
     // A muted or silent track would only add an ffmpeg input for nothing.
     const audible = audio.filter((track) => !track.muted && track.volume > 0);
-    
-    if (exportId) {
-      setJobProgress(exportId, 0);
-    }
 
     if (!clips || clips.length === 0) {
       throw new Error('No clips provided for export');
     }
 
+    const progress = (percent: number, message?: string): void => {
+      if (exportId) setJobProgress(exportId, percent, message);
+    };
+    progress(0, 'Getting ready');
+
     const clipRepo = AppDataSource.getRepository(Clip);
-    const dbClips = await clipRepo.findByIds(clips.map(c => c.clipId));
-    const clipMap = new Map(dbClips.map(c => [c.id, c]));
+    const dbClips = await clipRepo.findByIds(clips.map((c) => c.clipId));
+    const clipMap = new Map(dbClips.map((c) => [c.id, c]));
 
     const editorDir = path.join(VIDEOS_ROOT, 'Editor');
     await fs.mkdir(editorDir, { recursive: true });
@@ -70,56 +106,87 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const relPath = path.join('Editor', outputFilename);
 
     try {
-      const totalSteps = clips.length + 1;
-      
+      const encoders = await detectEncoders();
+
+      // Every segment is normalised to the same shape and timebase so the
+      // concat demuxer can copy them together afterwards.
+      const stamp = Date.now();
+      // Music and loudness each add a pass after the cutting.
+      const extraPasses = (audible.length > 0 ? 1 : 0) + (normalizeLoudness ? 1 : 0);
+      const totalSteps = clips.length + 1 + extraPasses;
+
       for (let i = 0; i < clips.length; i++) {
+        if (signal?.aborted) throw new Error('Cancelled');
+
         const timelineClip = clips[i];
         const dbClip = clipMap.get(timelineClip.clipId);
-        
-        if (!dbClip) {
-          throw new Error(`Clip ${timelineClip.clipId} not found`);
-        }
+        if (!dbClip) throw new Error(`Clip ${timelineClip.clipId} not found`);
 
-        const inputPath = dbClip.filePath;
-        const tempOutputPath = path.join(tempDir, `segment_${i}_${Date.now()}.mp4`);
+        const tempOutputPath = path.join(tempDir, `segment_${i}_${stamp}.mp4`);
         tempFiles.push(tempOutputPath);
 
-        if (exportId) {
-          setJobProgress(exportId, (i / totalSteps) * 100);
-        }
+        const info = await probeVideo(dbClip.filePath);
+        const segmentDuration = Math.max(0.05, timelineClip.trimEnd - timelineClip.trimStart);
 
-        await this.processClipSegment(
-          inputPath,
-          tempOutputPath,
-          timelineClip.trimStart,
-          timelineClip.trimEnd,
-          timelineClip.volume,
-          timelineClip.muted
-        );
-      }
-      
-      if (exportId) {
-        setJobProgress(exportId, (clips.length / totalSteps) * 100);
+        await this.processClipSegment({
+          inputPath: dbClip.filePath,
+          outputPath: tempOutputPath,
+          trimStart: timelineClip.trimStart,
+          duration: segmentDuration,
+          volume: timelineClip.volume,
+          muted: timelineClip.muted,
+          format,
+          framePos,
+          encoders,
+          info,
+          signal,
+          onProgress: (fraction) =>
+            progress(
+              ((i + fraction) / totalSteps) * 100,
+              `Cutting clip ${i + 1} of ${clips.length}`,
+            ),
+        });
       }
 
-      const concatContent = tempFiles.map(f => `file '${f}'`).join('\n');
+      progress((clips.length / totalSteps) * 100, 'Joining the clips');
+
+      const concatContent = tempFiles.map((f) => `file '${f.replace(/'/g, "'\\''")}'`).join('\n');
       await fs.writeFile(concatListPath, concatContent, 'utf-8');
 
-      if (audible.length === 0) {
-        await this.concatenateClips(concatListPath, outputPath);
-      } else {
-        // Music is mixed in a second pass: the concat demuxer can only copy
-        // streams, so the soundtrack has to be laid over the finished cut.
-        const mergedPath = path.join(tempDir, `merged_${Date.now()}.mp4`);
-        await this.concatenateClips(concatListPath, mergedPath);
-        await this.mixAudioTracks(mergedPath, audible, outputPath);
+      // The picture is finished after the join and is only ever copied from
+      // here on, so the encode above is the one and only generation.
+      let current = path.join(tempDir, `joined_${stamp}.mp4`);
+      await this.concatenateClips(concatListPath, current, signal);
+      let step = clips.length + 1;
+
+      if (audible.length > 0) {
+        if (signal?.aborted) throw new Error('Cancelled');
+        progress((step / totalSteps) * 100, 'Mixing the music');
+        const mixed = path.join(tempDir, `mixed_${stamp}.mp4`);
+        await this.mixAudioTracks(current, audible, mixed, signal);
+        current = mixed;
+        step++;
       }
 
+      if (normalizeLoudness) {
+        if (signal?.aborted) throw new Error('Cancelled');
+        progress((step / totalSteps) * 100, 'Evening out the sound');
+        const evened = path.join(tempDir, `loud_${stamp}.mp4`);
+        await this.normalizeLoudness(current, evened, signal);
+        current = evened;
+        step++;
+      }
+
+      await fs.rename(current, outputPath).catch(async () => {
+        // A rename across devices fails; copying is the fallback.
+        await fs.copyFile(current, outputPath);
+      });
+
       const stats = await fs.stat(outputPath);
-      
+
       const newClip = clipRepo.create({
         filePath: outputPath,
-        relPath: relPath,
+        relPath,
         filename: outputFilename,
         extension: '.mp4',
         displayName: outputName,
@@ -133,6 +200,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
       const savedClip = await clipRepo.save(newClip);
 
       await fs.rm(tempDir, { recursive: true, force: true });
+      progress(100, 'Done');
 
       return { clip: savedClip };
     } catch (error) {
@@ -155,53 +223,88 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     return cleaned || `Export_${Date.now()}`;
   }
 
-  private processClipSegment(
-    inputPath: string,
-    outputPath: string,
-    trimStart: number,
-    trimEnd: number,
-    volume: number,
-    muted: boolean
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      let command: FfmpegCommand = ffmpegConfigured(inputPath)
-        .setStartTime(trimStart)
-        .setDuration(trimEnd - trimStart)
-        .outputOptions([
-          '-c:v libx264',
-          '-preset ultrafast',
-          '-crf 23',
-        ]);
+  /**
+   * Cut one segment and make it match every other segment.
+   *
+   * Three things happen here that did not before. The source is decoded on the
+   * GPU where there is one — these are 3440x1440 AV1 files and software
+   * decoding them runs at 0.44x realtime, so this is the single biggest cost in
+   * the whole export. An HDR source is tone mapped, without which the PQ curve
+   * is read as sRGB and the result is the grey, washed-out picture the exports
+   * used to have. And only the first audio track is taken, because OBS writes
+   * six identical copies of the same mix.
+   */
+  private async processClipSegment(opts: {
+    inputPath: string;
+    outputPath: string;
+    trimStart: number;
+    duration: number;
+    volume: number;
+    muted: boolean;
+    format: ExportFormat;
+    framePos: number;
+    encoders: EncoderInfo;
+    info: ProbeInfo;
+    signal?: AbortSignal;
+    onProgress?: (fraction: number) => void;
+  }): Promise<void> {
+    const {
+      inputPath, outputPath, trimStart, duration, volume, muted,
+      format, framePos, encoders, info, signal, onProgress,
+    } = opts;
 
-      if (muted) {
-        command = command.outputOptions('-an');
-      } else if (volume !== 1) {
-        command = command.outputOptions(`-af volume=${volume}`);
-      } else {
-        command = command.outputOptions('-c:a aac');
-      }
+    const filters: string[] = [];
+    if (info.isHdr) filters.push(TONEMAP_FILTER);
 
-      command
-        .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err) => reject(err))
-        .run();
+    const crop = cropFilterFor(format, info.width, info.height, framePos);
+    if (crop) filters.push(crop);
+
+    const targetKbps = targetKbpsFor(format, info.width, info.height, info.kbps);
+
+    let command: FfmpegCommand = ffmpegConfigured(inputPath)
+      .inputOptions([...decodeArgs(encoders), `-ss ${trimStart.toFixed(3)}`])
+      .outputOptions([`-t ${duration.toFixed(3)}`]);
+
+    if (filters.length) command = command.outputOptions([`-vf ${filters.join(',')}`]);
+
+    command = command.outputOptions([
+      ...encoderArgs(encoders, { quality: 21, targetKbps }),
+      '-map 0:v:0',
+      // Every segment needs the same stream layout or the concat demuxer
+      // refuses to join them.
+      '-r 60',
+      '-video_track_timescale 60000',
+    ]);
+
+    if (muted || info.audioStreams === 0) {
+      command = command.outputOptions(['-an']);
+    } else {
+      command = command.outputOptions(['-map 0:a:0']);
+      if (volume !== 1) command = command.outputOptions([`-af volume=${volume.toFixed(3)}`]);
+      command = command.outputOptions(['-c:a aac', '-b:a 256k', '-ac 2', '-ar 48000']);
+    }
+
+    await runFfmpeg(command.outputOptions(['-y']).output(outputPath), {
+      signal,
+      onProgress,
+      durationSec: duration,
+      timeoutMs: 60 * 60_000,
     });
   }
 
-  private concatenateClips(concatListPath: string, outputPath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+  private concatenateClips(
+    concatListPath: string,
+    outputPath: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    return runFfmpeg(
       ffmpegConfigured()
         .input(concatListPath)
         .inputOptions(['-f concat', '-safe 0'])
-        .outputOptions([
-          '-c copy',
-        ])
-        .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err) => reject(err))
-        .run();
-    });
+        .outputOptions(['-c copy', '-movflags +faststart', '-y'])
+        .output(outputPath),
+      { signal, timeoutMs: 30 * 60_000 },
+    );
   }
 
   private hasAudioStream(filePath: string): Promise<boolean> {
@@ -224,7 +327,8 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
   private async mixAudioTracks(
     videoPath: string,
     tracks: TimelineAudioData[],
-    outputPath: string
+    outputPath: string,
+    signal?: AbortSignal,
   ): Promise<void> {
     const videoHasAudio = await this.hasAudioStream(videoPath);
 
@@ -269,10 +373,10 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     // normalize=0 keeps amix from dividing every input by the input count,
     // which would quietly duck the clip audio as soon as music is added.
     filters.push(
-      `${mixLabels.join('')}amix=inputs=${mixLabels.length}:duration=longest:dropout_transition=0:normalize=0,apad[aout]`
+      `${mixLabels.join('')}amix=inputs=${mixLabels.length}:duration=longest:dropout_transition=0:normalize=0,apad[aout]`,
     );
 
-    return new Promise((resolve, reject) => {
+    await runFfmpeg(
       command
         .complexFilter(filters)
         .outputOptions([
@@ -283,12 +387,45 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
           '-b:a 192k',
           '-shortest',
           '-movflags +faststart',
+          '-y',
         ])
-        .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err) => reject(err))
-        .run();
-    });
+        .output(outputPath),
+      { signal, timeoutMs: 30 * 60_000 },
+    );
+  }
+
+  /**
+   * One loudness for the whole movie.
+   *
+   * Game audio lands all over the place between titles and OBS setups, and the
+   * platforms clamp whatever is too loud anyway. `loudnorm` puts the movie at
+   * the level they normalise to, in one pass, with the picture copied.
+   */
+  private async normalizeLoudness(
+    inputPath: string,
+    outputPath: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    if (!(await this.hasAudioStream(inputPath))) {
+      // Nothing to even out; hand the file on untouched.
+      await fs.copyFile(inputPath, outputPath);
+      return;
+    }
+
+    await runFfmpeg(
+      ffmpegConfigured(inputPath)
+        .outputOptions([
+          '-map 0:v:0',
+          '-map 0:a:0',
+          '-c:v copy',
+          `-af loudnorm=I=${LOUDNESS.i}:TP=${LOUDNESS.tp}:LRA=${LOUDNESS.lra}`,
+          '-c:a aac',
+          '-b:a 256k',
+          '-movflags +faststart',
+          '-y',
+        ])
+        .output(outputPath),
+      { signal, timeoutMs: 30 * 60_000 },
+    );
   }
 }
-

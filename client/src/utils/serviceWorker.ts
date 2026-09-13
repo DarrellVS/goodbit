@@ -1,14 +1,22 @@
+import { ref, type Ref } from 'vue';
+
 // How often a tab that stays open looks for a new build. The app is installable
 // as a PWA, so a tab can easily outlive several deploys.
 const UPDATE_CHECK_INTERVAL_MS = 60_000;
 
+/** True once a new build is fetched and waiting to take over. */
+export const updateAvailable: Ref<boolean> = ref(false);
+
+let waitingWorker: ServiceWorker | null = null;
+
 /**
- * Registers the service worker and makes a deploy land on its own.
+ * Registers the service worker and watches for a new build.
  *
- * The worker calls `skipWaiting()` + `clients.claim()`, so a new build activates
- * as soon as it is fetched. Claiming an already-controlled page means that page
- * is now running HTML and chunks from the previous build, so it gets reloaded —
- * this is what turns "a new deploy needs Shift+F5" into "it just appears".
+ * The worker no longer claims the page the instant a deploy lands. It used to,
+ * which meant a new build reloaded the page out from under whatever was being
+ * done — losing a drag in progress, or a dialog half filled in. Instead the new
+ * worker parks in `waiting`, this reports it, and the page offers a reload the
+ * user can take when it suits them.
  */
 export function registerServiceWorker(): void {
   if (!('serviceWorker' in navigator)) return;
@@ -27,6 +35,22 @@ export function registerServiceWorker(): void {
   navigator.serviceWorker
     .register('/sw.js')
     .then((registration) => {
+      const check = (worker: ServiceWorker | null): void => {
+        // `installed` with a controller already present means this is an update
+        // rather than a first install.
+        if (!worker || worker.state !== 'installed') return;
+        if (!navigator.serviceWorker.controller) return;
+        waitingWorker = worker;
+        updateAvailable.value = true;
+      };
+
+      check(registration.waiting);
+
+      registration.addEventListener('updatefound', () => {
+        const installing = registration.installing;
+        installing?.addEventListener('statechange', () => check(installing));
+      });
+
       void registration.update();
 
       window.setInterval(() => {
@@ -40,4 +64,25 @@ export function registerServiceWorker(): void {
     .catch((error) => {
       console.error('Service worker registration failed:', error);
     });
+}
+
+/**
+ * Take the waiting build.
+ *
+ * The worker answers SKIP_WAITING by activating and claiming, which fires
+ * `controllerchange` above and reloads the page — so there is nothing to do
+ * here but ask.
+ */
+export function applyUpdate(): void {
+  if (!waitingWorker) {
+    window.location.reload();
+    return;
+  }
+  waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+  updateAvailable.value = false;
+}
+
+/** Leave the new build waiting; it will still be there on the next visit. */
+export function dismissUpdate(): void {
+  updateAvailable.value = false;
 }

@@ -1,6 +1,9 @@
 import type { Config } from 'tailwindcss';
 
 export default {
+  // The token sets in styles.css are keyed off a `.dark` class rather than the
+  // media query, so the user's own choice can beat what the OS says.
+  darkMode: 'class',
   content: [
     './index.html',
     './src/**/*.{vue,ts,tsx}',

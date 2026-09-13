@@ -127,6 +127,18 @@ export function useTimelineAudio() {
     });
   }
 
+  /** A copy of the lane for undo, ids intact so a selection survives the restore. */
+  function snapshotAudio(): TimelineAudio[] {
+    return audio.value.map((item) => ({ ...item }));
+  }
+
+  function restoreAudio(snapshot: TimelineAudio[]): void {
+    const next = snapshot.map((item) => ({ ...item }));
+    audio.value = next;
+    audioMap.clear();
+    for (const item of next) audioMap.set(item.id, item);
+  }
+
   function resetAudio(): void {
     audio.value = [];
     audioMap.clear();
@@ -141,6 +153,8 @@ export function useTimelineAudio() {
     updateAudioProperties,
     moveAudio,
     trimAudio,
+    snapshotAudio,
+    restoreAudio,
     resetAudio,
   };
 }

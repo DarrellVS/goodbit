@@ -2,6 +2,7 @@
 import { computed, ref, onBeforeUnmount } from 'vue';
 import { Icon } from '@iconify/vue';
 import { formatTime } from '../../utils/timeFormat';
+import { frameStripUrl } from '../../utils/mediaUrl';
 import type { TimelineClip } from '../../types/editor';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Emits {
   (e: 'remove', clipId: string): void;
   (e: 'trim', clipId: string, trimStart: number, trimEnd: number): void;
   (e: 'move', clipId: string, newStartTime: number): void;
+  /** Fired once when a gesture begins, so undo steps over a whole drag. */
+  (e: 'drag-start'): void;
   (e: 'drag-end'): void;
 }
 
@@ -37,6 +40,35 @@ const style = computed(() => ({
   width: `${props.clip.duration * props.pixelsPerSecond}px`,
 }));
 
+/**
+ * The strip, positioned so the visible stills are the ones between the handles.
+ *
+ * The image spans the whole source clip, so the kept fraction decides how far
+ * it is blown up and the head trim decides how far it is pushed left. Dimmed,
+ * because the labels on top of it have to stay readable.
+ */
+const stripStyle = computed(() => {
+  const { originalDuration, trimStart, duration } = props.clip;
+  if (!frameStripUrlFor.value || !originalDuration || duration <= 0) return null;
+
+  const keptFraction = Math.min(1, duration / originalDuration);
+  if (keptFraction <= 0) return null;
+
+  const scale = 1 / keptFraction;
+  const offsetPercent = originalDuration > duration
+    ? (trimStart / (originalDuration - duration)) * 100
+    : 0;
+
+  return {
+    backgroundImage: `url("${frameStripUrlFor.value}")`,
+    backgroundSize: `${scale * 100}% 100%`,
+    backgroundPosition: `${offsetPercent}% center`,
+    opacity: '0.45',
+  };
+});
+
+const frameStripUrlFor = computed(() => frameStripUrl(props.clip.clipId));
+
 const cursorClass = computed(() =>
   dragMode.value === DragMode.Move ? 'cursor-grabbing' : 'cursor-grab'
 );
@@ -45,7 +77,8 @@ const isDragging = computed(() => dragMode.value !== DragMode.None);
 
 function startDrag(mode: DragMode, initialValue: number, event: MouseEvent): void {
   event.stopPropagation();
-  
+
+  emit('drag-start');
   dragMode.value = mode;
   dragStartX.value = event.clientX;
   dragInitialValue.value = initialValue;
@@ -107,13 +140,25 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', clip.id)"
   >
-    <div class="relative w-full h-full bg-gradient-to-br from-white to-orange-50/50 border border-gray-300 backdrop-blur-sm">
+    <div class="relative w-full h-full bg-gradient-to-br from-white to-orange-50/50 border border-gray-300 backdrop-blur-sm overflow-hidden">
+      <!--
+        The frame strip covers the whole source clip, so the block shows only
+        the slice between the trim handles — scroll it by trimStart and stretch
+        it by the share of the clip that is kept, and the stills stay under the
+        moments they belong to while the handles move.
+      -->
+      <div
+        v-if="stripStyle"
+        class="absolute inset-0 bg-no-repeat pointer-events-none"
+        :style="stripStyle"
+      />
       <img
+        v-else
         :src="clip.thumbnailUrl"
         :alt="`Clip ${clip.clipId}`"
         class="w-full h-full object-cover opacity-30"
       />
-      
+
       <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
       
       <div class="absolute top-1.5 left-2 right-2 flex items-start justify-between">

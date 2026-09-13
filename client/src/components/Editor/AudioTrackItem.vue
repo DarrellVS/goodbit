@@ -16,6 +16,8 @@ interface Emits {
   (e: 'remove', id: string): void;
   (e: 'trim', id: string, trimStart: number, trimEnd: number): void;
   (e: 'move', id: string, newStartTime: number): void;
+  /** Fired once when a gesture begins, so undo steps over a whole drag. */
+  (e: 'drag-start'): void;
 }
 
 const enum DragMode {
@@ -102,6 +104,7 @@ async function loadPeaks(): Promise<void> {
 function startDrag(mode: DragMode, initialValue: number, event: MouseEvent): void {
   event.stopPropagation();
 
+  emit('drag-start');
   dragMode.value = mode;
   dragStartX.value = event.clientX;
   dragInitialValue.value = initialValue;

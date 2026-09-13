@@ -35,6 +35,8 @@
       </main>
     </div>
 
+    <CommandPalette v-model:open="showCommandPalette" />
+
     <FileDropZone
       :is-dragging="fileImport.isDragging.value"
       :is-uploading="fileImport.isUploading.value"
@@ -44,7 +46,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import { rescanGames } from '../services/games';
 import { RouterView, useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
@@ -57,6 +59,8 @@ import AppHeader from '../components/App/AppHeader.vue';
 import AppSidebar from '../components/App/AppSidebar.vue';
 import FileDropZone from '../components/App/FileDropZone.vue';
 import AppTagsFilter from '../components/App/AppTagsFilter.vue';
+import CommandPalette from '../components/App/CommandPalette.vue';
+import { useCollectionsStore } from '../stores/collections';
 import { useLocalMode } from '../composables/useLocalMode';
 
 const gamesStore = useGamesStore();
@@ -95,13 +99,34 @@ async function logout(): Promise<void> {
   await router.push('/login');
 }
 
+const collectionsStore = useCollectionsStore();
+const showCommandPalette = ref(false);
+
+/**
+ * Ctrl+K gets its own listener.
+ *
+ * The shortcut registry matches on `event.code` alone with no notion of
+ * modifiers, so registering this there would fire on a bare K as well.
+ */
+function handlePaletteKey(event: KeyboardEvent): void {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+  if (event.code !== 'KeyK') return;
+  event.preventDefault();
+  showCommandPalette.value = !showCommandPalette.value;
+}
+
 const { detectLocalMedia } = useLocalMode();
+
+onMounted(() => document.addEventListener('keydown', handlePaletteKey));
+onBeforeUnmount(() => document.removeEventListener('keydown', handlePaletteKey));
 
 onMounted(async () => {
   // Point media at the LAN address before the first clips render, so thumbnails
   // and video do not take the long way round the internet.
   await detectLocalMedia();
-  await Promise.all([gamesStore.fetchGames(), tagsStore.fetchTags()]);
+  // The palette offers collections as well as games and tags, so they have to
+  // be loaded for it to find them.
+  await Promise.all([gamesStore.fetchGames(), tagsStore.fetchTags(), collectionsStore.fetchCollections()]);
   selectedGame.value = clipsStore.selectedGame;
 });
 

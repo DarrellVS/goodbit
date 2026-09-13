@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToastStore } from '../stores/toast';
-import { getExportStatus, startExport } from '../services/clips';
+import { cancelExport, getExportStatus, startExport, type ExportOptions } from '../services/clips';
 import type { TimelineAudio, TimelineClip } from '../types/editor';
 
 /**
@@ -28,8 +28,13 @@ export function useClipExport(
   const toastStore = useToastStore();
   const isExporting = ref(false);
   const exportProgress = ref(0);
+  /** What the render is doing, straight from the job. */
+  const exportMessage = ref('');
+  const exportEta = ref<number | null>(null);
+  /** Held so the user can stop a render they have changed their mind about. */
+  const currentExportId = ref<string | null>(null);
 
-  async function exportClip(outputName?: string): Promise<void> {
+  async function exportClip(outputName?: string, options: ExportOptions = {}): Promise<void> {
     if (timelineClips.value.length === 0) {
       toastStore.warning('Add clips to the timeline before exporting');
       return;
@@ -37,10 +42,18 @@ export function useClipExport(
 
     isExporting.value = true;
     exportProgress.value = 0;
+    exportMessage.value = '';
+    exportEta.value = null;
 
     try {
       const name = outputName?.trim() || `Edited_${new Date().toISOString().split('T')[0]}`;
-      const { exportId } = await startExport(timelineClips.value, timelineAudio?.value ?? [], name);
+      const { exportId } = await startExport(
+        timelineClips.value,
+        timelineAudio?.value ?? [],
+        name,
+        options,
+      );
+      currentExportId.value = exportId;
 
       let failures = 0;
 
@@ -64,11 +77,19 @@ export function useClipExport(
         }
 
         exportProgress.value = status.progress;
+        exportMessage.value = status.message ?? '';
+        exportEta.value = status.etaSeconds ?? null;
 
         if (status.status === 'done') {
           exportProgress.value = 100;
           toastStore.success('Your edited clip has been saved!', 'Export successful');
           router.push('/');
+          return;
+        }
+
+        // The user asked for this one; it is not a failure to report.
+        if (status.status === 'cancelled') {
+          toastStore.info('Export cancelled');
           return;
         }
 
@@ -82,12 +103,37 @@ export function useClipExport(
     } finally {
       isExporting.value = false;
       exportProgress.value = 0;
+      exportMessage.value = '';
+      exportEta.value = null;
+      currentExportId.value = null;
+    }
+  }
+
+  /**
+   * Stop the running render.
+   *
+   * The poll loop sees the cancelled status and unwinds itself, so this only
+   * has to ask — ffmpeg is killed server-side rather than left to finish a file
+   * nobody is waiting for.
+   */
+  async function cancelCurrentExport(): Promise<void> {
+    const id = currentExportId.value;
+    if (!id) return;
+
+    try {
+      await cancelExport(id);
+    } catch (error) {
+      console.error('Failed to cancel export:', error);
+      toastStore.error('Could not stop the render');
     }
   }
 
   return {
     isExporting,
     exportProgress,
+    exportMessage,
+    exportEta,
     exportClip,
+    cancelCurrentExport,
   };
 }

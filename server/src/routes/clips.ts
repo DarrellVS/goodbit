@@ -13,7 +13,19 @@ import { publisherService } from '../services/publisherService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
-import { completeJob, createJob, failJob, getJob } from '../services/exportJobs.js';
+import { EnsureClipSuggestionsAction } from '../actions/EnsureClipSuggestionsAction.js';
+import { TrimVideoAction } from '../actions/TrimVideoAction.js';
+import {
+  cancelJob,
+  completeJob,
+  createJob,
+  failJob,
+  getJob,
+  jobSignal,
+  jobView,
+  listJobs,
+} from '../services/jobs.js';
+import { detectEncoders } from '../services/encoders.js';
 import {
   BatchStarAction,
   BatchPublishAction,
@@ -27,7 +39,8 @@ import { GetClipCollectionsAction } from '../actions/GetClipCollectionsAction.js
 import { OpenFileInExplorerAction } from '../actions/OpenFileInExplorerAction.js';
 import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
 import { excludeHiddenGames } from '../utils/hiddenGames.js';
-import { ClipDTO, UpdateClipRequestDTO } from '../../../shared/index.js';
+import { ClipDTO, ClipSuggestionsDTO, UpdateClipRequestDTO } from '../../../shared/index.js';
+import type { ExportFormat } from '../../../shared/index.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -351,12 +364,50 @@ clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
 
 clipsRouter.post('/:id/trim', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { startSec, endSec } = req.body as { startSec: number; endSec: number };
+  const { startSec, endSec, mode } = req.body as {
+    startSec: number;
+    endSec: number;
+    mode?: 'lossless' | 'exact';
+  };
   if (!(startSec >= 0) || !(endSec > startSec)) {
     return res.status(400).json({ error: 'Invalid range' });
   }
-  await videoService.trimAndSwapClip(id, startSec, endSec);
-  res.json({ ok: true });
+  const result = await videoService.trimAndSwapClip(id, startSec, endSec, mode);
+  // The actual range matters: a lossless cut snaps to a keyframe, so what
+  // landed on disk can differ from what was asked for.
+  res.json({ ok: true, ...result });
+}));
+
+/**
+ * Where a lossless cut would actually land.
+ *
+ * Copying cannot start mid-GOP, so the Trim page shows the snapped position
+ * before the user commits to it rather than surprising them afterwards.
+ */
+clipsRouter.get('/:id/keyframes', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const repo = AppDataSource.getRepository(Clip);
+  const clip = await repo.findOneBy({ id });
+  if (!clip) return res.status(404).json({ error: 'Clip not found' });
+
+  const until = Number(req.query.until ?? 0) || 0;
+  const keyframes = await new TrimVideoAction().keyframesUpTo(clip.filePath, until);
+  res.json({ keyframes });
+}));
+
+/**
+ * What one listen to this clip found, cached per file.
+ *
+ * Answers with `confident: false` far more often than not, and that is the
+ * point — a clip whose sound never changes has nothing to point at.
+ */
+clipsRouter.get('/:id/suggestions', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const windowSec = Math.min(60, Math.max(2, Number(req.query.windowSec ?? 10) || 10));
+  const refresh = req.query.refresh === 'true';
+
+  const result = await new EnsureClipSuggestionsAction().execute({ clipId: id, windowSec, refresh });
+  res.json(ClipSuggestionsDTO.fromAnalysis(id, result));
 }));
 
 clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
@@ -398,18 +449,36 @@ clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res)
  * still working. The job now runs detached and the client polls for it.
  */
 clipsRouter.post('/export', asyncHandler(async (req, res) => {
-  const { clips, audio, outputName } = req.body;
+  const { clips, audio, outputName, format, framePos, normalizeLoudness } = req.body as {
+    clips: unknown[];
+    audio?: unknown[];
+    outputName?: string;
+    format?: ExportFormat;
+    framePos?: number;
+    normalizeLoudness?: boolean;
+  };
   const exportId = typeof req.body.exportId === 'string' && req.body.exportId
     ? req.body.exportId
     : randomUUID();
 
-  createJob(exportId);
+  createJob('export', outputName ?? 'Export', exportId);
+  const signal = jobSignal(exportId);
 
   void new ExportTimelineAction()
-    .execute({ clips, audio, outputName, exportId })
+    .execute({
+      clips: clips as never,
+      audio: audio as never,
+      outputName,
+      exportId,
+      format,
+      framePos,
+      normalizeLoudness,
+      signal,
+    })
     .then(({ clip }) => completeJob(exportId, ClipDTO.fromEntity(clip)))
     .catch((error: Error) => {
-      console.error('Export failed:', error);
+      // A cancel arrives here as an ffmpeg kill; failJob tells the two apart.
+      if (!signal?.aborted) console.error('Export failed:', error);
       failJob(exportId, error.message);
     });
 
@@ -419,13 +488,24 @@ clipsRouter.post('/export', asyncHandler(async (req, res) => {
 clipsRouter.get('/export/:exportId/status', asyncHandler(async (req, res) => {
   const job = getJob(req.params.exportId);
   if (!job) return res.status(404).json({ error: 'Unknown export' });
+  res.json(jobView(job));
+}));
 
-  res.json({
-    status: job.status,
-    progress: job.progress,
-    clip: job.clip ?? null,
-    error: job.error ?? null,
-  });
+/** Stop a running render. ffmpeg used to keep going with nobody waiting for it. */
+clipsRouter.delete('/export/:exportId', asyncHandler(async (req, res) => {
+  const stopped = cancelJob(req.params.exportId);
+  if (!stopped) return res.status(404).json({ error: 'No running job with that id' });
+  res.json({ ok: true });
+}));
+
+/** Everything running or recently finished, for a jobs readout. */
+clipsRouter.get('/jobs/list', asyncHandler(async (_req, res) => {
+  res.json(listJobs().map(jobView));
+}));
+
+/** What this machine can do: shown on the Settings health panel. */
+clipsRouter.get('/system/encoders', asyncHandler(async (_req, res) => {
+  res.json(await detectEncoders());
 }));
 
 clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {

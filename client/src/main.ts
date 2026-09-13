@@ -9,6 +9,10 @@ import './tooltip.css';
 import { router } from './router';
 import { useAuthStore } from './stores/auth';
 import { registerServiceWorker } from './utils/serviceWorker';
+import { initTheme } from './composables/useTheme';
+
+// Before the first paint, or the wrong palette shows for a frame.
+initTheme();
 
 const app = createApp(App);
 app.use(createPinia());

@@ -18,6 +18,8 @@ import ClipFileInfo from '../components/ClipDetail/ClipFileInfo.vue';
 import ClipVideoInfo from '../components/ClipDetail/ClipVideoInfo.vue';
 import ClipNotesSection from '../components/ClipDetail/ClipNotesSection.vue';
 import ClipNotesEditor from '../components/ClipDetail/ClipNotesEditor.vue';
+import ShareSheet from '../components/App/ShareSheet.vue';
+import { streamUrl } from '../utils/mediaUrl';
 
 interface Props {
   id: string;
@@ -30,10 +32,20 @@ const collectionsStore = useCollectionsStore();
 
 const showExactDate = ref(false);
 const showNotesDialog = ref(false);
+const showShareSheet = ref(false);
 const videoPlayerRef = ref<InstanceType<typeof ClipVideoPlayer> | null>(null);
 
 const clipId = computed(() => Number(props.id));
 const { clip, metadata, loading, error, loadClip, handleClipUpdated } = useClipLoader(clipId);
+
+/**
+ * A published clip shares its public link; anything else shares the address
+ * this page is already streaming from, which on the LAN is the local one.
+ */
+const shareUrl = computed(() => {
+  if (clip.value?.published && clip.value.publishedUrl) return clip.value.publishedUrl;
+  return new URL(streamUrl(clipId.value), window.location.origin).href;
+});
 
 watch(() => props.id, () => {
   void loadClip();
@@ -84,6 +96,13 @@ onMounted(() => {
           </button>
           
           <div v-if="clip" class="flex items-center gap-3">
+            <button
+              class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+              title="Show a QR code for this clip"
+              @click="showShareSheet = true"
+            >
+              <Icon icon="material-symbols:qr-code-2" class="text-xl" />
+            </button>
             <ClipStarButton :clip="clip" @updated="clip = $event" />
             <ClipActionsMenu 
               :clip="clip" 
@@ -180,6 +199,14 @@ onMounted(() => {
       :clip="clip"
       @updated="handleClipUpdated"
       @timestamp-click="handleTimestampClick"
+    />
+
+    <ShareSheet
+      v-if="clip"
+      v-model:open="showShareSheet"
+      :url="shareUrl"
+      :title="clip.displayName || clip.filename"
+      :is-public="!!clip.published"
     />
   </div>
 </template>

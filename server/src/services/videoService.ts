@@ -5,7 +5,7 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { EnsureThumbnailAction } from '../actions/EnsureThumbnailAction.js';
 import { EnsureFrameStripAction } from '../actions/EnsureFrameStripAction.js';
-import { TrimAndSwapClipAction } from '../actions/TrimAndSwapClipAction.js';
+import { TrimAndSwapClipAction, type TrimAndSwapOutput } from '../actions/TrimAndSwapClipAction.js';
 import { ScanAndSyncClipsAction, type ScanResult } from '../actions/ScanAndSyncClipsAction.js';
 import { GetClipMetaAction, type ClipMeta } from '../actions/GetClipMetaAction.js';
 import { OpenClipAction } from '../actions/OpenClipAction.js';
@@ -16,12 +16,18 @@ import { MoveFileToTrashAction } from '../actions/MoveFileToTrashAction.js';
  * Singleton export ensures a single coordination point across routes.
  */
 class VideoService {
-  async trimAndSwapClip(id: number, startSec: number, endSec: number): Promise<void> {
-    await new TrimAndSwapClipAction().execute({ clipId: id, startSec, endSec });
+  async trimAndSwapClip(
+    id: number,
+    startSec: number,
+    endSec: number,
+    mode?: 'lossless' | 'exact',
+  ): Promise<TrimAndSwapOutput> {
+    const result = await new TrimAndSwapClipAction().execute({ clipId: id, startSec, endSec, mode });
     // After swapping, invalidate caches so they regenerate on next request
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id });
     await this.removeClipCaches(clip.filePath);
+    return result;
   }
 
   async ensureThumbnail(clip: Clip): Promise<string> {

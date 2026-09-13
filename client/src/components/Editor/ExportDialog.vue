@@ -11,6 +11,8 @@ import {
   DialogTitle,
 } from 'radix-vue';
 import { formatTime } from '../../utils/timeFormat';
+import { EXPORT_FORMATS, PLATFORM_PRESETS, type ExportFormat } from '../../../../shared';
+import type { ExportOptions } from '../../services/clips';
 
 interface Props {
   open: boolean;
@@ -20,26 +22,61 @@ interface Props {
   duration: number;
   exporting?: boolean;
   progress?: number;
+  message?: string;
+  etaSeconds?: number | null;
 }
 
 interface Emits {
   (e: 'update:open', value: boolean): void;
-  (e: 'confirm', name: string): void;
+  (e: 'confirm', name: string, options: ExportOptions): void;
+  (e: 'cancel-export'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   exporting: false,
   progress: 0,
+  message: '',
+  etaSeconds: null,
 });
 const emit = defineEmits<Emits>();
 
 const name = ref('');
 const input = ref<HTMLInputElement | null>(null);
 
+const format = ref<ExportFormat>('original');
+const framePos = ref(0.5);
+const normalizeLoudness = ref(false);
+
 /** The name becomes a filename, so the characters Windows rejects go first. */
 const cleanName = computed(() => name.value.replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim());
 const isValid = computed(() => cleanName.value.length > 0);
 const wasCleaned = computed(() => cleanName.value !== name.value.trim());
+
+/** Which preset, if any, the current choices already match. */
+const activePreset = computed(
+  () =>
+    PLATFORM_PRESETS.find(
+      (p) => p.format === format.value && p.normalizeLoudness === normalizeLoudness.value,
+    ) ?? null,
+);
+
+/** A crop that keeps the whole frame has nothing to position. */
+const canPosition = computed(() => format.value !== 'original');
+
+function applyPreset(id: string): void {
+  const preset = PLATFORM_PRESETS.find((p) => p.id === id);
+  if (!preset) return;
+  // Nothing a preset does is hidden — it sets the same controls shown below.
+  format.value = preset.format;
+  normalizeLoudness.value = preset.normalizeLoudness;
+}
+
+const etaLabel = computed(() => {
+  const eta = props.etaSeconds;
+  if (eta === null || eta === undefined) return '';
+  if (eta < 60) return `about ${eta}s left`;
+  return `about ${Math.round(eta / 60)} min left`;
+});
 
 /** Escape and backdrop clicks must not walk away from a render in flight. */
 function handleOpenChange(value: boolean): void {
@@ -49,7 +86,11 @@ function handleOpenChange(value: boolean): void {
 
 function submit(): void {
   if (!isValid.value || props.exporting) return;
-  emit('confirm', cleanName.value);
+  emit('confirm', cleanName.value, {
+    format: format.value,
+    framePos: framePos.value,
+    normalizeLoudness: normalizeLoudness.value,
+  });
 }
 
 watch(
@@ -68,7 +109,7 @@ watch(
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md flex flex-col outline-none modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-lg max-h-[90vh] flex flex-col outline-none modal-content-animate"
       >
         <div class="p-6 border-b border-gray-200">
           <DialogTitle class="text-xl font-bold text-gray-900 mb-1">Export timeline</DialogTitle>
@@ -77,7 +118,7 @@ watch(
           </DialogDescription>
         </div>
 
-        <div class="p-6 space-y-4">
+        <div class="p-6 space-y-5 overflow-y-auto">
           <div class="space-y-2">
             <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
               Clip name
@@ -101,9 +142,101 @@ watch(
             </p>
           </div>
 
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Made for
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="preset in PLATFORM_PRESETS"
+                :key="preset.id"
+                type="button"
+                class="px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-50"
+                :class="activePreset?.id === preset.id
+                  ? 'border-orange-500 bg-orange-50 text-orange-700'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
+                :title="preset.hint"
+                :disabled="exporting"
+                @click="applyPreset(preset.id)"
+              >
+                {{ preset.label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Shape
+            </label>
+            <div class="grid grid-cols-5 gap-2">
+              <button
+                v-for="spec in EXPORT_FORMATS"
+                :key="spec.id"
+                type="button"
+                class="flex flex-col items-center gap-1.5 px-1 py-2 rounded-lg border transition-colors disabled:opacity-50"
+                :class="format === spec.id
+                  ? 'border-orange-500 bg-orange-50'
+                  : 'border-gray-300 hover:bg-gray-50'"
+                :title="spec.hint"
+                :disabled="exporting"
+                @click="format = spec.id"
+              >
+                <span
+                  class="block border-2 rounded-[2px]"
+                  :class="format === spec.id ? 'border-orange-500' : 'border-gray-400'"
+                  :style="{
+                    width: spec.ratio === null ? '22px' : (spec.ratio >= 1 ? '22px' : `${22 * spec.ratio}px`),
+                    height: spec.ratio === null ? '12px' : (spec.ratio >= 1 ? `${22 / spec.ratio}px` : '22px'),
+                  }"
+                />
+                <span class="text-[10px] font-medium text-gray-700 text-center leading-tight">
+                  {{ spec.label }}
+                </span>
+              </button>
+            </div>
+
+            <!--
+              Only a cropping format has anywhere to move. The slider says which
+              slice of the picture survives, since an ultrawide loses most of it.
+            -->
+            <div v-if="canPosition" class="pt-1 space-y-1">
+              <div class="flex items-center justify-between text-xs text-gray-600">
+                <span>Crop position</span>
+                <span class="font-mono">{{ Math.round(framePos * 100) }}%</span>
+              </div>
+              <input
+                v-model.number="framePos"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                class="w-full accent-orange-500"
+                :disabled="exporting"
+              />
+              <div class="flex justify-between text-[10px] text-gray-400">
+                <span>Left</span><span>Centre</span><span>Right</span>
+              </div>
+            </div>
+          </div>
+
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input
+              v-model="normalizeLoudness"
+              type="checkbox"
+              class="mt-0.5 accent-orange-500"
+              :disabled="exporting"
+            />
+            <span class="text-sm text-gray-700">
+              Even out the sound
+              <span class="block text-xs text-gray-500">
+                Puts the whole movie at −14 LUFS, the level the platforms turn everything down to anyway
+              </span>
+            </span>
+          </label>
+
           <div v-if="exporting" class="space-y-1.5">
             <div class="flex items-center justify-between text-xs font-medium text-gray-700">
-              <span>Rendering…</span>
+              <span>{{ message || 'Rendering…' }}</span>
               <span class="font-mono">{{ Math.round(progress) }}%</span>
             </div>
             <div class="h-2 rounded-full bg-orange-100 overflow-hidden">
@@ -113,7 +246,7 @@ watch(
               />
             </div>
             <p class="text-xs text-gray-500">
-              This runs on the server — it keeps going even if the render outlasts the page.
+              {{ etaLabel || 'This runs on the server — it keeps going even if the render outlasts the page.' }}
             </p>
           </div>
 
@@ -132,14 +265,23 @@ watch(
         </div>
 
         <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
-          <DialogClose as-child>
+          <!-- A render in flight can be stopped; ffmpeg is killed server-side. -->
+          <button
+            v-if="exporting"
+            class="px-4 py-2 rounded-lg border border-red-300 text-red-600 font-medium hover:bg-red-50 transition-colors"
+            @click="emit('cancel-export')"
+          >
+            Stop
+          </button>
+
+          <DialogClose v-else as-child>
             <button
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-              :disabled="exporting"
+              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
           </DialogClose>
+
           <button
             class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             :disabled="!isValid || exporting"

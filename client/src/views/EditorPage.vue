@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useToastStore } from '../stores/toast';
@@ -7,6 +7,8 @@ import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
 import { useTimeline } from '../composables/useTimeline';
 import { useTimelineAudio } from '../composables/useTimelineAudio';
+import { useEditorHistory } from '../composables/useEditorHistory';
+import { snapTime } from '../composables/useEdgeSnap';
 import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
 import { useEditorAudioPlayback } from '../composables/useEditorAudioPlayback';
 import { useEditorClipLibrary } from '../composables/useEditorClipLibrary';
@@ -19,7 +21,7 @@ import { audioUrl, videoUrl as videoUrlFor } from '../utils/mediaUrl';
 import { useClipExport } from '../composables/useClipExport';
 import { useEditorLayout } from '../composables/useEditorLayout';
 import { useClipHandlers } from '../composables/useClipHandlers';
-import { getClip } from '../services/clips';
+import { getClip, type ExportOptions } from '../services/clips';
 import { listAudioTracks } from '../services/audio';
 import { parseClipIds } from '../utils/clipIdQuery';
 import { pluralize } from '../utils/pluralize';
@@ -60,6 +62,8 @@ const {
   moveClip,
   trimClip,
   reflowClips,
+  snapshotClips,
+  restoreClips,
   setZoom,
   pause,
 } = useTimeline();
@@ -73,7 +77,18 @@ const {
   updateAudioProperties,
   moveAudio,
   trimAudio,
+  snapshotAudio,
+  restoreAudio,
 } = useTimelineAudio();
+
+// Both lanes are captured together: one gesture can change both, and undoing
+// half of it would be worse than not undoing at all.
+const { canUndo, canRedo, record, undo, redo, clearHistory } = useEditorHistory({
+  snapshotClips,
+  restoreClips,
+  snapshotAudio,
+  restoreAudio,
+});
 
 /** The ruler spans whichever lane runs longest; the export still cuts at the video. */
 const totalDuration = computed(() => Math.max(duration.value, audioDuration.value));
@@ -126,7 +141,14 @@ const selectedAudio = computed(
   () => timelineAudio.value.find((a: TimelineAudio) => a.id === selectedAudioId.value) || null
 );
 
-const { isExporting, exportProgress, exportClip } = useClipExport(timelineClips, timelineAudio);
+const {
+  isExporting,
+  exportProgress,
+  exportMessage,
+  exportEta,
+  exportClip,
+  cancelCurrentExport,
+} = useClipExport(timelineClips, timelineAudio);
 
 const {
   drafts,
@@ -184,6 +206,7 @@ async function addClipsToTimeline(clips: Clip[]): Promise<void> {
     })
   );
 
+  if (prepared.length > 0) record();
   for (const item of prepared) {
     addClip(item.clip.id, item.videoUrl, item.thumbnailUrl, item.videoDuration);
   }
@@ -194,6 +217,7 @@ async function handleAddToTimeline(clip: Clip): Promise<void> {
 }
 
 function handleAddTrackToTimeline(track: AudioTrack): void {
+  record();
   // Placed at the playhead, which is where the user is looking.
   const item = addAudio(track, audioUrl(track.id, track.modifiedAt), currentTime.value);
   selectedAudioId.value = item.id;
@@ -210,8 +234,8 @@ function openExportDialog(): void {
   showExportDialog.value = true;
 }
 
-async function handleExportConfirm(name: string): Promise<void> {
-  await exportClip(name);
+async function handleExportConfirm(name: string, options: ExportOptions): Promise<void> {
+  await exportClip(name, options);
   showExportDialog.value = false;
 }
 
@@ -276,6 +300,8 @@ async function restoreDraft(draft: EditorDraft): Promise<void> {
 
     loadClips(clipEntries);
     loadAudio(audioEntries);
+    // Opening a draft is a fresh start, not a step to undo back through.
+    clearHistory();
     setActiveDraft(draft);
 
     selectedClipId.value = null;
@@ -345,18 +371,29 @@ function handleSelectAudio(audioId: string): void {
 }
 
 function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>): void {
-  if (selectedClipId.value) updateClipProperties(selectedClipId.value, updates);
+  if (!selectedClipId.value) return;
+  record();
+  updateClipProperties(selectedClipId.value, updates);
 }
 
 function handleUpdateAudio(
   updates: Partial<Pick<TimelineAudio, 'volume' | 'muted' | 'fadeIn' | 'fadeOut'>>
 ): void {
-  if (selectedAudioId.value) updateAudioProperties(selectedAudioId.value, updates);
+  if (!selectedAudioId.value) return;
+  record();
+  updateAudioProperties(selectedAudioId.value, updates);
 }
 
 function handleRemoveAudio(audioId: string): void {
+  record();
   removeAudio(audioId);
   if (selectedAudioId.value === audioId) selectedAudioId.value = null;
+}
+
+function handleRemoveClip(clipId: string): void {
+  record();
+  removeClip(clipId);
+  if (selectedClipId.value === clipId) selectedClipId.value = null;
 }
 
 /** The delete shortcut acts on whichever lane holds the selection. */
@@ -367,9 +404,26 @@ function handleDeleteSelection(): void {
   }
 
   if (selectedClipId.value) {
-    removeClip(selectedClipId.value);
-    selectedClipId.value = null;
+    handleRemoveClip(selectedClipId.value);
   }
+}
+
+/**
+ * Music placements float freely, so dragging one is the only place in the
+ * editor where lining up with a cut is done by eye. Snap targets are the
+ * playhead, both edges of every clip, and the edges of the other tracks.
+ */
+function handleMoveAudio(audioId: string, newStartTime: number): void {
+  const item = timelineAudio.value.find((a: TimelineAudio) => a.id === audioId);
+  const { time } = snapTime(newStartTime, {
+    clips: timelineClips.value,
+    audio: timelineAudio.value,
+    currentTime: currentTime.value,
+    pixelsPerSecond: EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * zoom.value,
+    ignoreAudioId: audioId,
+  }, { duration: item?.duration });
+
+  moveAudio(audioId, time);
 }
 
 function handleZoomIn(): void {
@@ -426,6 +480,30 @@ useKeyboardShortcuts({
     'editor-delete-clip': handleDeleteSelection,
   },
 });
+
+/**
+ * Undo and redo get their own listener.
+ *
+ * The shortcut registry matches on `event.code` alone with no notion of
+ * modifiers, so registering Ctrl+Z there would fire on a bare Z as well. These
+ * two are also the bindings nobody wants to customise.
+ */
+function handleHistoryKeys(event: KeyboardEvent): void {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+  if (event.code !== 'KeyZ' && event.code !== 'KeyY') return;
+
+  const target = event.target as HTMLElement | null;
+  const tag = target?.tagName.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+
+  event.preventDefault();
+  // Ctrl+Y and Ctrl+Shift+Z both redo; Windows apps are split on which.
+  if (event.code === 'KeyY' || event.shiftKey) redo();
+  else undo();
+}
+
+onMounted(() => document.addEventListener('keydown', handleHistoryKeys));
+onBeforeUnmount(() => document.removeEventListener('keydown', handleHistoryKeys));
 
 onMounted(async () => {
   // Before anything builds a media URL: timeline entries hold the URL as a
@@ -660,14 +738,15 @@ watch(
             :selected-audio-id="selectedAudioId"
             @seek="handleSeek"
             @select-clip="handleSelectClip"
-            @remove-clip="removeClip"
+            @remove-clip="handleRemoveClip"
             @trim-clip="trimClip"
             @move-clip="moveClip"
+            @drag-start="record"
             @drag-end="reflowClips"
             @select-audio="handleSelectAudio"
             @remove-audio="handleRemoveAudio"
             @trim-audio="trimAudio"
-            @move-audio="moveAudio"
+            @move-audio="handleMoveAudio"
           />
         </div>
       </main>
@@ -693,8 +772,8 @@ watch(
       :current-time="currentTime"
       :duration="totalDuration"
       :zoom="zoom"
-      :can-undo="false"
-      :can-redo="false"
+      :can-undo="canUndo"
+      :can-redo="canRedo"
       :exporting="isExporting"
       :export-progress="exportProgress"
       @play="handlePlay"
@@ -703,8 +782,8 @@ watch(
       @skip-forward="skipForward()"
       @zoom-in="handleZoomIn"
       @zoom-out="handleZoomOut"
-      @undo="() => {}"
-      @redo="() => {}"
+      @undo="undo"
+      @redo="redo"
       @export="openExportDialog"
     />
 
@@ -716,7 +795,10 @@ watch(
       :duration="duration"
       :exporting="isExporting"
       :progress="exportProgress"
+      :message="exportMessage"
+      :eta-seconds="exportEta"
       @confirm="handleExportConfirm"
+      @cancel-export="cancelCurrentExport"
     />
 
     <DraftsDialog
