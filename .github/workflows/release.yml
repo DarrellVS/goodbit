@@ -30,8 +30,6 @@ jobs:
       # pushed, so by this point they have already passed.
       - name: Build
         run: npm run build
-        env:
-          GOODBIT_RELEASE: '1'
 
       - name: Package and publish
         run: npx electron-builder --win --publish always

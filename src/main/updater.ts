@@ -69,9 +69,21 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
   autoUpdater.on('update-downloaded', (info) =>
     publish(getWindow, { status: 'ready', version: info.version }),
   );
-  autoUpdater.on('error', (error) =>
-    publish(getWindow, { status: 'error', message: error?.message ?? String(error) }),
-  );
+  autoUpdater.on('error', (error) => {
+    const message = error?.message ?? String(error);
+
+    // Before the first release exists there is no feed to read, and GitHub
+    // answers 404 for a repository it will not confirm either way. That is the
+    // normal state of a new install, not something to report as a failure.
+    const noFeedYet = /404/.test(message) || /releases\.atom/.test(message);
+    if (noFeedYet) {
+      publish(getWindow, { status: 'idle' });
+      return;
+    }
+
+    console.error('[updater]', message);
+    publish(getWindow, { status: 'error', message });
+  });
 
   void autoUpdater.checkForUpdates();
   // A window left open for days should still notice a release.

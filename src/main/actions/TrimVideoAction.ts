@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
+import { FFPROBE_PATH } from '../services/binaries.js';
 import { promisify } from 'node:util';
-import ffprobePath from 'ffprobe-static';
 import { BaseAction } from './BaseAction.js';
 import { ffmpegConfigured } from '../services/ffmpeg.js';
 import { runFfmpeg } from '../services/ffmpegRun.js';
@@ -13,7 +13,7 @@ import {
 } from '../services/encoders.js';
 
 const execFileAsync = promisify(execFile);
-const FFPROBE = ffprobePath?.path ?? 'ffprobe';
+const FFPROBE = FFPROBE_PATH;
 
 export type TrimMode = 'lossless' | 'exact';
 

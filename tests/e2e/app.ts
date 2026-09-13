@@ -59,8 +59,17 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     mkdirSync(join(base, 'music'), { recursive: true });
   }
 
+  /**
+   * Normally the dev build, but GOODBIT_TEST_BINARY points the same suite at a
+   * packaged .exe — the artifact people actually install, where asar packing
+   * and native module loading can fail in ways the dev build never does.
+   */
+  const packaged = process.env.GOODBIT_TEST_BINARY;
+
   const app = await electron.launch({
-    args: ['out/main/index.js'],
+    ...(packaged
+      ? { executablePath: packaged, args: [] }
+      : { args: ['out/main/index.js'] }),
     cwd: process.cwd(),
     env: { ...process.env, GOODBIT_USER_DATA: dataDir },
   });

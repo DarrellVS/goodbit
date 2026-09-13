@@ -1,13 +1,8 @@
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegPath from 'ffmpeg-static';
-import ffprobePath from 'ffprobe-static';
+import { FFMPEG_PATH, FFPROBE_PATH } from './binaries.js';
 
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath as unknown as string);
-}
+ffmpeg.setFfmpegPath(FFMPEG_PATH);
 
-if (ffprobePath?.path) {
-  ffmpeg.setFfprobePath(ffprobePath.path);
-}
+ffmpeg.setFfprobePath(FFPROBE_PATH);
 
 export const ffmpegConfigured = ffmpeg;

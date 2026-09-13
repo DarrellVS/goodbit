@@ -19,6 +19,7 @@ asarUnpack:
   - '**/node_modules/sqlite3/**'
 
 win:
+  icon: build/icon.png
   target:
     - target: nsis
       arch: [x64]

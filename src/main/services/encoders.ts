@@ -1,12 +1,11 @@
 import { execFile } from 'node:child_process';
+import { FFMPEG_PATH, FFPROBE_PATH } from './binaries.js';
 import { promisify } from 'node:util';
-import ffmpegPath from 'ffmpeg-static';
-import ffprobePath from 'ffprobe-static';
 
 const execFileAsync = promisify(execFile);
 
-const FFMPEG = (ffmpegPath as unknown as string) ?? 'ffmpeg';
-const FFPROBE = ffprobePath?.path ?? 'ffprobe';
+const FFMPEG = FFMPEG_PATH;
+const FFPROBE = FFPROBE_PATH;
 
 /**
  * What this machine can do, decided once.

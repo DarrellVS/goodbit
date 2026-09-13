@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process';
+import { FFMPEG_PATH } from '../services/binaries.js';
 import { promisify } from 'node:util';
-import ffmpegPath from 'ffmpeg-static';
 import { BaseAction } from './BaseAction.js';
 import type { SuggestedMoment } from '@shared/index.js';
 
 const execFileAsync = promisify(execFile);
-const FFMPEG = (ffmpegPath as unknown as string) ?? 'ffmpeg';
+const FFMPEG = FFMPEG_PATH;
 
 /**
  * Where the interesting part of a clip probably is, from its sound alone.
