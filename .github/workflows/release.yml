@@ -1,0 +1,39 @@
+name: Release
+
+# Tag-triggered only. Building an installer on every push would burn minutes on
+# an artefact nobody downloads.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Not `build:win`: that depends on the Playwright suite, which cannot run
+      # in a container. Those are the gate on a real machine before the tag is
+      # pushed, so by this point they have already passed.
+      - name: Build
+        run: npm run build
+        env:
+          GOODBIT_RELEASE: '1'
+
+      - name: Package and publish
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

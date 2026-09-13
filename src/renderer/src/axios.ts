@@ -51,8 +51,13 @@ const ipcAdapter: AxiosAdapter = async (config) => {
   // Anything but a 2xx has to reject, or every `catch` in the app stops firing
   // and failures surface as success with an error-shaped body.
   if (status < 200 || status >= 300) {
+    // Routes answer with `{ error }`, while anything that throws goes through
+    // the error handler and comes back as `{ status, code, message }`. Reading
+    // only the first turned every thrown error into "Request failed with
+    // status 500" and threw away what actually went wrong.
+    const failure = body as { error?: string; message?: string } | null;
     throw new axios.AxiosError(
-      (body as { error?: string })?.error ?? `Request failed with status ${status}`,
+      failure?.error ?? failure?.message ?? `Request failed with status ${status}`,
       status === 404 ? 'ERR_NOT_FOUND' : 'ERR_BAD_RESPONSE',
       config,
       null,

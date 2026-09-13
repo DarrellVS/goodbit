@@ -15,7 +15,7 @@
     <div class="flex flex-col h-full overflow-hidden">
       <AppHeader 
         v-model:search="searchText" 
-        :rescan-loading="isRescanLoading"
+        :rescan-loading="isRescanLoading || scanning"
         :title="(router.currentRoute.value.meta.title as string)"
         :subtitle="(router.currentRoute.value.meta.subtitle as string)"
         @rescan="rescan"
@@ -58,6 +58,7 @@ import AppSidebar from '../components/App/AppSidebar.vue';
 import FileDropZone from '../components/App/FileDropZone.vue';
 import AppTagsFilter from '../components/App/AppTagsFilter.vue';
 import CommandPalette from '../components/App/CommandPalette.vue';
+import { useServiceEvents } from '../composables/useServiceEvents';
 import { useCollectionsStore } from '../stores/collections';
 
 const gamesStore = useGamesStore();
@@ -91,6 +92,10 @@ async function rescan(): Promise<void> {
 
 
 const collectionsStore = useCollectionsStore();
+
+// The watcher indexes clips while this window is open; without this the list
+// shows whatever was there when it loaded.
+const { scanning } = useServiceEvents();
 const showCommandPalette = ref(false);
 
 /**

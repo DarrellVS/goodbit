@@ -1,0 +1,38 @@
+name: CI
+
+# Kept deliberately cheap. Typecheck only, on the branches that matter — the
+# end-to-end suite needs a desktop session, a GPU and ffmpeg, so it runs before
+# a release on a real machine instead (see `npm run check:pre-release`).
+on:
+  push:
+    branches: [main, electron]
+  pull_request:
+    branches: [main]
+
+# A new push supersedes the run in flight rather than queueing behind it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # electron-builder's postinstall pulls a full Electron download that
+      # nothing here needs; typechecking only wants the type definitions.
+      - name: Install
+        run: npm ci --ignore-scripts
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Typecheck
+        run: npm run typecheck

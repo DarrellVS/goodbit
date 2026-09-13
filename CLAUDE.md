@@ -4,230 +4,153 @@ Guidance for Claude Code when working in this repository.
 
 ## What this is
 
-Filmpje is a single-user game-clip manager. It indexes video files that OBS drops into
-`C:\Users\darre\Videos\<GameName>\*.mp4|*.mov` (top-level folder name = game name), stores metadata in
-SQLite, and provides a web UI to browse, tag, annotate, trim, edit, and publish clips to a public URL
-with Discord-friendly embeds.
+**GoodBit** is a single-user desktop app for game clips. It watches the folder OBS records into
+(`<videosRoot>/<GameName>/*.mp4|*.mov|*.mkv` — the top-level folder name *is* the game name), indexes
+what appears, and provides a UI to browse, tag, annotate, trim, edit and optionally publish.
 
-Files on disk are the source of truth for *content*; the database is the source of truth for *metadata*.
-**Clip files are never renamed** — `displayName` is a DB field only. Deletes go to the Windows Recycle
-Bin (`trash` package), never permanent unlink.
+Files on disk are the source of truth for *content*; the database is the source of truth for
+*metadata*. **Clips are never renamed** — `displayName` is a DB field only. Deletes go to the Recycle
+Bin via `shell.trashItem`, never `unlink`.
 
-## Repository layout
+It was a self-hosted web app (four packages, Express on :4000, Firebase auth, LAN streaming) until the
+Electron migration. `ELECTRON_MIGRATION.md` records what changed and why; the short version is that
+Firebase, the LAN streaming probe and the service worker were all deleted rather than ported, because
+each existed only to cross a network.
 
-Four packages, no monorepo tooling — each has its own `package.json` and `npm i`, and `shared/` is
-consumed via **relative paths** (`../../shared/index.js`), not as an installed dependency.
+## Layout
 
-| Path | Stack | Port | Role |
-|---|---|---|---|
-| `server/` | Express, TypeORM, SQLite, fluent-ffmpeg, firebase-admin | 4000 | API + filesystem + video processing, and serves the built client. Windows-only (Recycle Bin, `explorer.exe`, `start`) |
-| `client/` | Vue 3, Vite, Pinia, vue-router, Tailwind, radix-vue, PWA | 5173 dev | The UI |
-| `publisher/` | Express, multer | 5555 (Docker) / 5000 (dev default) | Public CDN origin: serves `/media/*` and an OG-tagged embed page per clip |
-| `shared/` | plain TS | — | DTO classes shared by all three |
+One electron-vite project, three builds.
 
-### Runtime topology
-
-Two machines on the LAN:
-
-- **Windows PC** — runs `server/` and the client. `client/vite.config.ts` proxies `/api` to
-  `http://192.168.178.28:4000`.
-- **NAS / ARM box** — runs `publisher/` in Docker. `server/.env` sets
-  `PUBLISHER_BASE_URL=http://192.168.178.26:5555`. Cloudflare sits in front; the publisher purges its
-  cache on publish/unpublish.
-
-These hardcoded IPs are real, not placeholders. Don't "fix" them to localhost.
-
-**Local network streaming.** The client probes the server's LAN address on shell mount and, when it
-answers, builds all media URLs against it — so video and thumbnails come straight off the LAN even
-though the page was served over HTTPS from the internet. Browsers permit requests to private-network
-addresses (measured, including `<img>`/`<video>`; the mixed-content console warning is not a block).
-If the probe fails, media falls back to the page's own origin. The routes outside the shell — `/editor`
-and `/trim/:id` — run the probe themselves, or their media would quietly take the internet path. The server also serves `client/dist`,
-so `http://192.168.178.28:4000` works as a standalone app. See `LOCAL_STREAMING.md`.
-
-`client/src/utils/mediaUrl.ts` is the single place media URLs are built — always go through it, or
-the LAN routing is silently bypassed.
-
-`client/docker-compose.bat` builds `darrellvs/filmpje:arm64` (static `dist` served by `http-server`)
-for the same ARM box.
+| Path | Role |
+|---|---|
+| `src/main` | Electron main — **the background service**. Owns the database, the folder watcher, ffmpeg, the tray. Runs whether or not a window is open |
+| `src/preload` | The typed bridge, `window.goodbit`. The only way the renderer reaches main |
+| `src/renderer` | Vue 3 + Pinia + vue-router + Tailwind |
+| `src/shared` | DTOs and constants both processes agree on, imported as `@shared/*` |
+| `publisher/` | Optional, unchanged: Express + multer in Docker, serves `/media/*` and an embed page |
+| `tests/e2e` | Playwright against the built app |
 
 ## Commands
 
 ```bash
-# server  (terminal A)
-cd server && npm i && npm run dev      # tsx watch, listens on :4000
-
-# client  (terminal B)
-cd client && npm i && npm run dev      # vite, :5173
-
-# publisher (usually only on the NAS)
-cd publisher && npm run dev
+npm run dev            # electron-vite, hot reload
+npm run typecheck      # tsconfig.node.json (main+preload) and tsconfig.web.json (renderer)
+npm run build          # typecheck, then all three bundles into out/
+npm run test:e2e       # builds, then Playwright drives the real app
+npm run build:win      # check:pre-release (typecheck + e2e) then electron-builder
+node scripts/backup-db.mjs   # verified snapshot of the library database
 ```
 
-`server/npm run build` → `tsc`. `client/npm run build` → `vue-tsc` over the app plus `tsc` over
-`src/sw.ts` (separate program: the worker's WebWorker lib collides with the app's DOM lib), then
-`vite build`. `client/npm run typecheck` runs just the checks. Keep both green — the build fails
-otherwise. No test, lint, or CI setup exists.
+Keep `npm run typecheck` green — `build` runs it first and fails otherwise.
 
-`server/start-local-client.vbs` launches the built server silently at Windows login.
+## Where things live at runtime
 
-## Environment
+`%APPDATA%/GoodBit/`: `goodbit.db`, `settings.json`, `backups/`. Derived caches
+(`.filmpje-cache/{thumbnails,frames,analysis}`) stay next to the clips, since they are regenerable
+and belong with the media.
 
-Server (`server/.env`, gitignored):
-- `VIDEOS_ROOT` — default `C:\Users\darre\Videos`. Must exist or startup throws.
-- `AUDIO_ROOT` — default `C:\Users\darre\Music`.
-- `DB_PATH` — default `<VIDEOS_ROOT>/filmpje.db`.
-- `PORT` — default 4000.
-- `PUBLISHER_BASE_URL`.
-- `CLIENT_DIST` — override the auto-detected `client/dist` location.
+`settings.json` holds what main needs before a window exists: `videosRoot`, `audioRoot`,
+`publisherBaseUrl`, `startAtLogin`, `keepRunningInTray`. **There are no required environment
+variables** — a missing videos root opens the first-run picker rather than throwing at boot.
+`GOODBIT_USER_DATA` overrides the whole data directory *and the single-instance lock*, which is how
+tests run beside the installed app without touching a real library.
 
-Publisher (`publisher/.env`, gitignored): `PORT`, `PUBLIC_BASE_URL`, `UPLOAD_DIR`,
-`CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_API_TOKEN`.
+## Architecture
 
-## Data model
+### Main is the service, not a host for the window
 
-`server/src/entity/`, `synchronize: true` — **no migrations**. Schema changes apply on next boot;
-be careful with anything TypeORM auto-sync would resolve destructively on SQLite.
+Registered at login, lives in the tray, hides on window close. `startup.ts` runs the boot sequence
+(each step isolated so one failure does not stop the rest) and then a chokidar watcher with
+`awaitWriteFinish` — **not optional**, because OBS writes for the length of the recording and
+indexing mid-write reads a garbage duration and a black first frame. A reconciliation sweep is the
+backstop, since filesystem events are a hint rather than a guarantee.
 
-- **Clip** — `filePath` (absolute, unique), `relPath`, `game`, `filename`, `displayName?`, `extension`,
-  `sizeBytes`, `fileModifiedAt`, `published`/`publishedUrl`, `starred`, `notes` (markdown). M:N `Tag`.
-- **Tag** — `id`, unique `name`. Relation owned by `Clip` (inverse side omitted to dodge circular imports).
-- **Collection** — `id`, `name`, timestamps. M:N `Clip`.
-- **Game** — PK `name` = the on-disk folder name (immutable, keeps OBS working), nullable `displayName`,
-  `hidden`. Renaming a game only sets `displayName` and re-pushes metadata for that game's published
-  clips so Discord embeds update. `hidden` keeps a folder out of the *browsing* surfaces — `/api/clips`,
-  `/api/games`, `/api/stats`, `/api/clips/today/count`, `/api/clips/latest` — while leaving explicit
-  access alone: a clip fetched by id, a `?game=` filter, and collection membership all still resolve.
-  Nothing on disk moves and published clips stay published. `server/src/utils/hiddenGames.ts` is the
-  single place that filter is built; `?includeHidden=true` opts out of it (the Settings → Games screen
-  is the only caller).
+### No network surface
 
-On-disk siblings of the game folders: `.thumbnails/`, `.frame-strips/`, `filmpje.db`.
+- **Data** goes over one IPC channel (`api:request`) to a loopback listener in the same process,
+  behind a secret regenerated each launch. Loopback alone is not enough: any other program on the
+  machine can reach 127.0.0.1, and this API deletes clips.
+- **Media** is served by the `goodbit://` protocol straight off disk, with Range support — without
+  which `<video>` cannot seek.
+- The Express **router is kept** rather than rewritten into forty IPC channels. Faking a
+  `ServerResponse` to dispatch it in-process does not work: `app.handle` reassigns the response
+  prototype to Express's own, so hand-written methods are bypassed and Node's real `getHeader` runs
+  against an object with no socket.
+- The renderer's axios only had its **adapter** swapped, so every `services/*.ts` call site is
+  unchanged.
 
-**Editor music has no table.** Tracks live as files in `<AUDIO_ROOT>/Editor` and the filename is the id;
-`/api/audio` lists, uploads (multer), streams with range support, and trashes them. `AudioTrackDTO` is
-built from a stat plus an ffprobe (duration is cached per name+mtime+size). The editor's music lane is
-client state only — placements exist until export, never in the database.
+### Server-side actions
 
-## Architecture patterns
+Every non-trivial operation is a class in `src/main/actions/` extending `BaseAction<TInput, TOutput>`
+with a single `execute(input)`. **Add new business logic as an Action**, not inline in a route.
 
-### Server: routes are thin, Actions hold the logic
+`ScanAndSyncClipsAction` has a **prune guard**: it refuses to delete rows when the videos folder looks
+empty or when one scan would remove more than half the library. A clip row carries the only copy of
+its tags, notes, display name, collections and stars, and an unmounted drive makes every file look
+missing at once.
 
-Every non-trivial operation is a class in `server/src/actions/` extending `BaseAction<TInput, TOutput>`
-with a single `execute(input)`. Routes parse/validate, call an action, map to a DTO, respond. Wrap every
-handler in `asyncHandler` so `middlewares/errorHandler.ts` catches throws. **Add new business logic as
-an Action**, not inline in a route.
+### Encoding
 
-Startup (`server/src/index.ts`) runs a fixed sequence before listening: cleanup empty folders → scan &
-sync clips → SyncGames → SyncClipCreationDates → SyncPublishedClipsMetadata → SyncPublisher. Each is
-wrapped in try/catch so one failure doesn't block boot.
+`services/encoders.ts` probes `h264_nvenc` / `qsv` / `amf` and `cuda` / `d3d11va` / `qsv` once per
+process, by actually encoding a tiny clip — a build can list an encoder the GPU will refuse.
 
-### Shared DTOs
+H.264 rather than HEVC: exports go to Discord and browsers. **GPU decode matters more than the
+encoder here** — these are 3440x1440 AV1 files and software decoding them runs at 0.44x realtime.
 
-`shared/dtos/**` exports DTO classes extending `BaseDTO` with static `fromEntity()` / `fromQueryResult()`
-and instance `validate()`. Server converts entities → DTOs at the route boundary. Changing a DTO changes
-both sides at once — that's the point.
-
-The client resolves `../../../shared` through `shared/package.json`, whose `types` points at
-**`shared/dist/`** (gitignored). So after editing a DTO, run `npm run build` in `shared/` or
-`client/npm run typecheck` still checks the stale declarations and reports phantom errors.
-
-The client must **not** use the DTO classes directly as data types: what arrives over the wire is JSON,
-with no prototype and none of `validate`/`toJSON`/`clone`. `client/src/types/plain.ts` defines
-`PlainData<T>`, which strips the methods, and `types/{clip,collection,tag,game}.ts` export the client
-types through it. Use those (`Clip`, `Tag`, `Game`, `Collection`), not the raw DTO classes.
+**HDR sources must be tone mapped.** OBS writes PQ/bt2020; reading that as sRGB is what made every
+export grey and washed out. `TONEMAP_FILTER` (hable) is applied wherever a frame is decoded — export,
+exact trims, thumbnails, frame strips.
 
 ### Client
 
-- `stores/` (Pinia): `auth`, `clips`, `collections`, `games`, `tags`, `batchOperations`, `toast`.
-  `clips` and `collections` both use the abort-and-requestId pattern to drop stale responses; preserve it.
-- `composables/` (~40): reusable logic and side effects. Most component logic lives here, not in `.vue`.
-- `services/`: thin axios wrappers, one function per endpoint. Components call composables, composables
-  call services.
-- `components/Base/` = generic primitives, `components/App/` = app-specific, plus `ClipDetail/`,
-  `Editor/`, `Trim/`, `Settings/`, `Stats/` feature folders.
-- `axios.ts` attaches the Firebase ID token as a `Bearer` header globally. For `<video>`/`<img>` src
-  attributes, which can't send headers, `utils/withAuthToken.ts` appends `?token=` instead — the server
-  accepts either.
-- Settings live in localStorage under `filmpje-public-config` via `useConfiguration()`, not in a store.
-  Defaults: `viewMode: 'grouped'`, `pageSize: 15`.
+- `stores/` (Pinia): `clips`, `collections`, `games`, `tags`, `batchOperations`, `toast`.
+  `clips` and `collections` use the abort-and-requestId pattern to drop stale responses; preserve it.
+- `composables/` hold most component logic; `services/` are thin one-function-per-endpoint wrappers.
+- `utils/mediaUrl.ts` is the single place media URLs are built.
+- View preferences live in localStorage via `useConfiguration()`. App settings come from main via
+  `useAppSettings()` — different things, do not merge them.
 
-### Editor
+### Colours
 
-`views/EditorPage.vue` owns two lanes. Video: `useTimeline` (gapless, reflows on drag end) played by
-`useEditorVideoPlayback`, whose element is the clock wherever a clip sits under the playhead. Music:
-`useTimelineAudio` (free-floating, may overlap, may run past the picture) played by
-`useEditorAudioPlayback`, which follows that clock — and advances it off wall-clock only where no clip
-covers the playhead, so a music-only timeline still moves. The ruler spans the longer lane; anything
-past the video end is hatched because `ExportTimelineAction` cuts it there.
+**No literal colour in a component.** `styles.css` defines the token ladder (`--background`,
+`--foreground`, `--muted-50..900`, `--card`, `--border`, `--line-strong`) for both palettes, and
+Tailwind maps them. Dark mode falls out of the tokens.
 
-Export concatenates the trimmed video segments, then mixes music in a second pass (`atrim` → `volume` →
-`afade` → `adelay` → `amix ... normalize=0` → `apad`, with `-c:v copy -shortest`) so the picture is
-never re-encoded and the result stays exactly as long as the video.
+This is not a style preference. Adding `dark:` variants beside literals was tried and shipped
+visibly broken: variants cannot reach colours inside bound `:class` expressions, and `bg-white/60` is
+a different class from `bg-white`, so whole screens stayed light while the shell went dark. Tokens
+have neither problem.
 
-The editor's clip library is `useEditorClipLibrary`, deliberately not the `clips` store — it filters and
-pages on its own so it cannot disturb the library page.
+White stays literal **only** where it sits on a brand or fixed-dark surface (an orange button, a chip
+over video), since those grounds do not follow the theme.
 
-**Drafts** (`services/editorDraftsDb.ts`, IndexedDB `FilmpjeEditorDrafts`) are how "continue later"
-works. `useEditorDrafts` debounce-writes the timeline on every change and flushes it on unmount. Where
-it writes depends on `activeDraft`: opening or saving a named draft makes that draft the target, so
-editing it keeps updating *it*; with nothing open the writes go to the reserved `__autosave__` record.
-Only clip ids, track filenames and the edits are stored — media URLs carry an expiring token and a LAN
-host, so they are rebuilt on restore and anything since deleted drops out with a count. The resume
-banner offers the newest stored timeline (autosave or named), captured at mount into `resumable` so
-working before deciding cannot revoke the offer; dismissing deletes the autosave record but never a
-named draft.
+## Testing
 
-Drafts move between machines as JSON via `utils/draftFile.ts` — same payload as the stored record, so a
-draft only replays where the library holds those clip ids and the music folder holds those filenames;
-import parses and validates, then asks for a name defaulting to the exported one.
+`tests/e2e` drives the built app with Playwright. Each test gets a throw-away data directory, videos
+root and database; fixtures are generated with the bundled ffmpeg. **A test must never touch the real
+library.**
 
-Export runs as a **background job**: `POST /api/clips/export` registers it in `services/exportJobs.ts`,
-starts the render detached and answers `202 {exportId}`; the client polls `/export/:id/status` for
-progress and the finished clip. Awaiting the render inside the request meant anything past Cloudflare's
-100 second ceiling returned a 504 while ffmpeg carried on regardless — never await a render in a
-handler. Jobs live in memory and are pruned 15 minutes after finishing.
+`screens.spec.ts` walks every screen in both palettes and fails on text below 2.5:1 against its own
+*painted* background — translucent layers composited, since a tint like `bg-orange-500/10` computes to
+`rgb(249 115 22 / 0.1)` and reading it as opaque orange flags every label on it.
 
-Export opens a name dialog first. `ExportTimelineAction.sanitizeOutputName()` is what stands between a
-typed name and `path.join` — keep it.
-
-### Routes
-
-`/login`, then everything under a `ShellLayout` parent: `/` (library), `/today`, `/tag-patterns`,
-`/stats`, `/settings`, `/collections/:id`, `/clips/:id`. Outside the shell: `/trim/:id`, `/editor`
-(linked from the sidebar's main menu).
-Route `meta.title`/`meta.subtitle` drive the header. All eagerly imported — no lazy routes.
-
-### Auth
-
-Firebase Auth (project `clips-b0bbe`). `server/src/auth.ts` guards everything under `/api` except a few
-public endpoints declared before the middleware in `index.ts`: `/api/health`, `/api/clips/today/count`,
-`/api/clips/latest`, `/api/rescan`. The last two additionally gate on client IP `::1`.
+These do not run in CI (they need a desktop session, a GPU and ffmpeg). `build:win` depends on them.
 
 ## Conventions
 
-- TypeScript strict, ESM everywhere (`"type": "module"`) — **server imports need the `.js` extension**
-  on relative paths.
-- Vue: `<script setup lang="ts">`, typed `defineProps`/`defineEmits` interfaces, `ref` over `reactive`.
-- Tailwind utilities over custom CSS; scoped styles when needed.
-- User feedback goes through the toast store; destructive actions use `toastStore.confirm` and respect
-  the `confirmBeforeDelete` setting.
-- Errors bubble from services up to the component/composable, which shows a toast.
+- TypeScript strict, ESM everywhere. Main imports need the `.js` extension on relative paths.
+- Vue: `<script setup lang="ts">`, typed `defineProps`/`defineEmits`, `ref` over `reactive`.
+- Tailwind utilities over custom CSS; tokens over literals.
+- Feedback through the toast store; destructive actions use `toastStore.confirm`.
+- Long work runs as a job (`services/jobs.ts`) with progress, an ETA and an `AbortController` —
+  never awaited inside a handler.
 
 ## Known gaps
 
-Real, and worth knowing before you trust a green build:
-
-- No tests, no linter, no CI. (The client is typechecked as of the local-streaming work; it previously
-  was not, which had let four type errors accumulate. They are fixed.)
-- `.cursor/rules/*.mdc` predates the Game-rename work and has drifted: it describes tag patterns as
-  server-side SQLite with `/api/tag-patterns` routes, but they actually live in **browser IndexedDB**
-  (`client/src/services/tagPatternsDb.ts`) with no server involvement at all. It also omits the `Game`
-  entity, `AUDIO_ROOT`, and the public endpoints. Every rule file also contains its own content twice.
-  Prefer this file when the two disagree.
-- `getClientIp()` trusts `X-Forwarded-For` unconditionally, so the `::1` gate on `/api/clips/latest`
-  and `/api/rescan` is spoofable by anything that can reach port 4000.
-- `server/src/auth.ts` hardcodes a static `API_TOKEN` string that bypasses Firebase entirely, and
-  `server/secrets/firebase.json` (a Firebase Admin service account key) is committed. Both are known
-  and accepted — the GitHub repo is private. Don't re-flag them; do keep the values out of anything
-  that leaves the machine.
+- **`synchronize: true` with no migrations.** Fine while the only library is one that can be rebuilt
+  from disk; **a 1.0 blocker** once strangers have tags and notes they cannot re-derive, because
+  TypeORM's SQLite auto-sync resolves some schema changes by rebuilding a table.
+- No linter. Typecheck and the e2e suite are the only automated gates.
+- `publisher/` still reads its config from a `.env`; it was deliberately left alone.
+- The app is no longer Windows-only in principle (`shell.trashItem`, `shell.showItemInFolder`), but
+  nothing has been built or tested anywhere else.
