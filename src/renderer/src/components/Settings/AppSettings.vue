@@ -178,7 +178,7 @@ async function testPublisher(): Promise<void> {
         </p>
       </div>
 
-      <div class="p-4 bg-muted-50 rounded-lg border border-border space-y-2">
+      <div class="p-4 bg-card rounded-lg border border-border space-y-2">
         <h3 class="font-medium text-foreground flex items-center gap-2">
           <Icon icon="material-symbols:favorite-outline" class="text-orange-500" />
           Health

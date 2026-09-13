@@ -34,17 +34,48 @@
       />
       
       <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
-        <div 
-          class="absolute inset-y-0 left-0 bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-[2px]" 
+        <div
+          class="absolute inset-y-0 left-0 bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-[2px]"
           :style="{ width: startPercentage + '%' }"
         />
-        <div 
-          class="absolute inset-y-0 right-0 bg-gradient-to-l from-black/60 to-black/40 backdrop-blur-[2px]" 
+        <div
+          class="absolute inset-y-0 right-0 bg-gradient-to-l from-black/60 to-black/40 backdrop-blur-[2px]"
           :style="{ width: (100 - endPercentage) + '%' }"
         />
+
+        <!--
+          Where the preview is. Above the shading so it stays visible over the
+          trimmed-away parts, and inert so it never fights the range handles.
+        -->
+        <div
+          class="absolute inset-y-0 w-0.5 -ml-px bg-white shadow-[0_0_6px_rgba(0,0,0,0.8)]"
+          :style="{ left: playheadPercentage + '%' }"
+        >
+          <div class="absolute -top-px left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow" />
+        </div>
       </div>
     </div>
-    
+
+    <!-- The preview has no controls of its own, so the transport lives here. -->
+    <div class="flex items-center gap-3">
+      <button
+        class="flex items-center justify-center w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg hover:bg-orange-600 transition-colors flex-shrink-0"
+        :title="isPlaying ? 'Pause (Space)' : 'Play (Space)'"
+        :aria-label="isPlaying ? 'Pause' : 'Play'"
+        @click="$emit('toggle-playback')"
+      >
+        <Icon :icon="isPlaying ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-2xl" />
+      </button>
+
+      <span class="font-mono text-sm text-muted-400">
+        <span class="text-foreground">{{ playhead }}s</span>
+        <span class="mx-1">/</span>
+        <span>{{ duration }}s</span>
+      </span>
+
+      <span class="text-xs text-muted-400 ml-auto">Space plays the trimmed range on loop</span>
+    </div>
+
     <footer class="flex items-center justify-between pt-4 border-t border-border">
       <div class="flex items-center gap-6 text-sm">
         <TimeIndicator label="Start" :time="startTime" />
@@ -85,12 +116,18 @@ interface Props {
   frameStripSource: string;
   isValid: boolean;
   isSaving: boolean;
+  /** Where the preview is, as a percentage of the whole clip. */
+  playheadPercentage: number;
+  /** The same position, formatted. */
+  playhead: string;
+  isPlaying: boolean;
 }
 
 defineProps<Props>();
 
 interface Emits {
   (e: 'save'): void;
+  (e: 'toggle-playback'): void;
 }
 
 defineEmits<Emits>();

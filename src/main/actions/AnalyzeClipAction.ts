@@ -31,6 +31,15 @@ const MIN_SPREAD_LU = 4;
 const MIN_LIFT = 0.08;
 /** ebur128 reports momentary loudness every 100 ms. */
 const HOP = 0.1;
+
+/**
+ * How far to start before the loud part, in seconds.
+ *
+ * What the sound marks is the *reaction* — the explosion, the shout, the
+ * killfeed — and the thing that caused it already happened. Cutting exactly on
+ * the spike drops the shot that led to it, so the window opens a beat earlier.
+ */
+const LEAD_IN = 2.5;
 /** Anything below this is silence, not a quiet moment, and would wreck the median. */
 const SILENCE_LUFS = -70;
 
@@ -142,9 +151,7 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
       confident,
       reason: confident ? null : 'the sound of this clip never really changes',
       durationSec: round(durationSec),
-      window: confident
-        ? { start: round(bestIndex * HOP), end: round(bestIndex * HOP + effectiveWindow) }
-        : null,
+      window: confident ? withLeadIn(bestIndex * HOP, effectiveWindow, durationSec) : null,
       moments: confident ? moments : [],
       spreadLu: round(spreadLu),
       lift: round(lift, 3),
@@ -175,6 +182,24 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
     }
     return { times, loudness };
   }
+}
+
+/**
+ * Open the window a beat before the loud part, keeping its length.
+ *
+ * Sliding rather than stretching: the caller asked for a window of a given
+ * length and should get one. Pushed back up against the end of the clip when
+ * there is not enough room in front.
+ */
+function withLeadIn(
+  start: number,
+  length: number,
+  durationSec: number,
+): { start: number; end: number } {
+  const shifted = Math.max(0, start - LEAD_IN);
+  const end = Math.min(durationSec, shifted + length);
+
+  return { start: round(Math.max(0, end - length)), end: round(end) };
 }
 
 function round(n: number, places = 1): number {

@@ -28,14 +28,14 @@ function handleChange(event: Event): void {
 </script>
 
 <template>
-  <div class="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+  <div class="flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border">
     <div>
       <label class="font-medium text-foreground">{{ label }}</label>
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>
     </div>
     <select
       :value="modelValue"
-      class="px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+      class="px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
       @change="handleChange"
     >
       <option v-for="option in options" :key="String(option.value)" :value="option.value">

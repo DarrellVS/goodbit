@@ -10,6 +10,7 @@ import { registerProtocolScheme, registerProtocolHandler } from './protocol.js';
 import { registerUpdater } from './updater.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
 import { initialBounds, rememberWindowState } from './windowState.js';
+import { shareService } from './services/share.js';
 
 /**
  * GoodBit's main process is the background service.
@@ -235,5 +236,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   quitting = true;
   stopServices();
+  // A share is only ever meant to outlive the sheet that started it, not the app.
+  shareService.stop();
   void stopApiBridge();
 });

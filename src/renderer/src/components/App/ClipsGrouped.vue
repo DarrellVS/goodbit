@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import type { Clip } from '../../types/clip';
 import { useClipHover } from '../../composables/useClipHover';
 import { useConfiguration } from '../../composables/useConfiguration';
 import { useClipGrouping } from '../../composables/useClipGrouping';
 import AppClipCard from './AppClipCard.vue';
+
+/** Structural shape of one grouped day, as `useClipGrouping` builds it. */
+interface DayGroup {
+  clips: Array<{ clip: Clip }>;
+}
 
 interface Props {
   clips: Clip[];
@@ -25,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const router = useRouter();
 const config = useConfiguration();
 const { handleClipHover } = useClipHover();
 
@@ -36,6 +43,29 @@ function handleClipUpdated(clip: Clip): void {
 
 function handleClipDeleted(): void {
   emit('clip-deleted');
+}
+
+/**
+ * Send a whole day into the editor, in the order it was played.
+ *
+ * The library lists newest first, which is the wrong way round for a montage —
+ * so the ids go over in recording order and land on the timeline that way.
+ * `EditorPage` reads them from `?clips=` and appends left to right.
+ */
+function editDayInEditor(group: DayGroup): void {
+  const ids = [...group.clips]
+    .sort((a, b) => time(a.clip) - time(b.clip))
+    .map((entry) => entry.clip.id);
+
+  if (ids.length === 0) return;
+
+  void router.push({ path: '/editor', query: { clips: ids.join(',') } });
+}
+
+/** When a clip happened. Falls back to the file's own date if it was never set. */
+function time(clip: Clip): number {
+  const stamp = clip.createdAt ?? clip.fileModifiedAt;
+  return stamp ? new Date(stamp).getTime() : 0;
 }
 </script>
 
@@ -60,6 +90,20 @@ function handleClipDeleted(): void {
             </span>
           </div>
         </div>
+
+        <!--
+          A day of one game is the unit a montage is usually made from, so it
+          gets a one-click way into the editor with the whole day already on the
+          timeline, oldest first.
+        -->
+        <button
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-orange-500 hover:bg-orange-500/10 transition-colors flex-shrink-0"
+          :title="`Open these ${group.clips.length} clips in the editor, oldest first`"
+          @click="editDayInEditor(group)"
+        >
+          <Icon icon="material-symbols:movie-edit" class="text-base" />
+          Edit day
+        </button>
       </div>
 
       <div class="relative">

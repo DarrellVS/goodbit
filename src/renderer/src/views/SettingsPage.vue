@@ -46,7 +46,7 @@ const { resetToDefaults, exportSettings, importSettings } = useSettingsManagemen
 </script>
 
 <template>
-  <div class="h-full flex">
+  <div class="h-full min-h-0 flex overflow-hidden">
     <SettingsSidebar
       :sections="sections"
       :active-section="activeSection"

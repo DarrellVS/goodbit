@@ -38,6 +38,13 @@ const api = {
     version: () => ipcRenderer.invoke('app:version'),
   },
 
+  /** Serving one clip to a phone on the same network, for half an hour. */
+  share: {
+    start: (clipId: number) => ipcRenderer.invoke('share:start', clipId),
+    stop: () => ipcRenderer.invoke('share:stop'),
+    current: () => ipcRenderer.invoke('share:current'),
+  },
+
   window: {
     setOverlay: (colors: { symbolColor?: string }) =>
       ipcRenderer.invoke('window:setOverlay', colors),

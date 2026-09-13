@@ -1,17 +1,34 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import type { TimelineClip } from '../../types/editor';
 
 interface Props {
   clip: TimelineClip | null;
+  /** What the audio analysis found in this clip, once it has been asked. */
+  highlight?: { start: number; end: number } | null;
+  highlightLoading?: boolean;
 }
 
 interface Emits {
   (e: 'update', updates: Partial<TimelineClip>): void;
+  (e: 'trim-to-highlight'): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  highlight: null,
+  highlightLoading: false,
+});
 const emit = defineEmits<Emits>();
+
+/** True once the clip already sits on its highlight, within a rounding error. */
+const onHighlight = computed(() => {
+  if (!props.clip || !props.highlight) return false;
+  return (
+    Math.abs(props.clip.trimStart - props.highlight.start) < 0.15 &&
+    Math.abs(props.clip.trimEnd - props.highlight.end) < 0.15
+  );
+});
 
 function formatDuration(seconds: number): string {
   return seconds.toFixed(2) + 's';
@@ -46,7 +63,46 @@ function volumeToDecimal(percentage: number): number {
     </div>
 
     <div v-else class="flex-1 overflow-y-auto p-4 space-y-4">
+      <!--
+        The same listen the Trim page does, offered where a montage is actually
+        assembled: one button puts the clip on its loudest ten seconds.
+      -->
       <div class="space-y-2">
+        <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
+          <Icon icon="material-symbols:auto-awesome" class="text-orange-500" />
+          Highlight
+        </label>
+
+        <div
+          v-if="highlightLoading"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600"
+        >
+          <Icon icon="material-symbols:progress-activity" class="animate-spin text-orange-400 text-base" />
+          Listening to this clip…
+        </div>
+
+        <button
+          v-else-if="highlight"
+          class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border disabled:cursor-default"
+          :class="onHighlight
+            ? 'bg-orange-500/10 text-orange-700 border-orange-500/40'
+            : 'bg-card/80 hover:bg-card text-muted-700 border-border hover:border-orange-500/50'"
+          :disabled="onHighlight"
+          @click="emit('trim-to-highlight')"
+        >
+          <Icon
+            :icon="onHighlight ? 'material-symbols:check-circle' : 'material-symbols:bolt'"
+            class="text-lg"
+          />
+          {{ onHighlight ? 'Trimmed to the highlight' : `Trim to ${formatDuration(highlight.start)}–${formatDuration(highlight.end)}` }}
+        </button>
+
+        <p v-else class="px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600">
+          The sound of this clip never really changes, so there is nothing to point at.
+        </p>
+      </div>
+
+      <div class="space-y-2 pt-4 border-t border-border">
         <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center justify-between">
           <span class="flex items-center gap-1">
             <Icon icon="material-symbols:volume-up" class="text-orange-500" />

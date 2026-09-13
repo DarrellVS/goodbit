@@ -29,8 +29,8 @@ function selectSection(sectionId: string): void {
 </script>
 
 <template>
-  <aside class="w-64 border-r border-border bg-muted-50/50 flex flex-col">
-    <nav class="flex-1 p-3 space-y-1 overflow-y-auto pt-6">
+  <aside class="w-64 flex-shrink-0 border-r border-border bg-muted-50/50 flex flex-col min-h-0">
+    <nav class="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto pt-6">
       <button
         v-for="section in sections"
         :key="section.id"

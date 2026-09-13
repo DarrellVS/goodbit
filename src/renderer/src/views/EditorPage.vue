@@ -12,6 +12,7 @@ import { snapTime } from '../composables/useEdgeSnap';
 import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
 import { useEditorAudioPlayback } from '../composables/useEditorAudioPlayback';
 import { useEditorClipLibrary } from '../composables/useEditorClipLibrary';
+import { useClipHighlights } from '../composables/useClipHighlights';
 import { useEditorDrafts } from '../composables/useEditorDrafts';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { loadVideoMetadata } from '../composables/useVideoMetadata';
@@ -137,6 +138,15 @@ const selectedClip = computed(
 const selectedAudio = computed(
   () => timelineAudio.value.find((a: TimelineAudio) => a.id === selectedAudioId.value) || null
 );
+
+const highlights = useClipHighlights();
+const trimmingAll = ref(false);
+
+// Asking about a clip the moment it is selected means the answer is usually
+// already there by the time anyone looks at the panel.
+watch(selectedClip, (clip) => {
+  if (clip) void highlights.load(clip.clipId);
+});
 
 const {
   isExporting,
@@ -373,6 +383,91 @@ function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'
   updateClipProperties(selectedClipId.value, updates);
 }
 
+/**
+ * The suggested window for whichever clip is selected.
+ *
+ * A window longer than the clip on the timeline would trim to nothing, so it is
+ * clamped — the analysis measured the file, and the file can have been trimmed
+ * since.
+ */
+const selectedHighlight = computed(() => {
+  const clip = selectedClip.value;
+  if (!clip) return null;
+
+  const found = highlights.get(clip.clipId);
+  if (!found?.confident || !found.window) return null;
+
+  const start = Math.max(0, Math.min(found.window.start, clip.originalDuration));
+  const end = Math.min(found.window.end, clip.originalDuration);
+  return end - start >= EDITOR_CONSTANTS.MIN_CLIP_DURATION ? { start, end } : null;
+});
+
+const selectedHighlightLoading = computed(
+  () => Boolean(selectedClip.value) && highlights.get(selectedClip.value!.clipId) === undefined
+);
+
+function trimSelectedToHighlight(): void {
+  const clip = selectedClip.value;
+  const window = selectedHighlight.value;
+  if (!clip || !window) return;
+
+  record();
+  trimClip(clip.id, window.start, window.end);
+  reflowClips();
+}
+
+/**
+ * Put every clip on the timeline on its own highlight.
+ *
+ * This is what the "Edit day" button is for: a day of replay-buffer clips
+ * becomes a montage of the moments that made noise, in one step. Clips the
+ * analysis has nothing to say about are left exactly as they are.
+ */
+async function trimAllToHighlights(): Promise<void> {
+  const lane = timelineClips.value;
+  if (lane.length === 0) {
+    toastStore.warning('Add clips to the timeline first');
+    return;
+  }
+
+  trimmingAll.value = true;
+  try {
+    await highlights.loadMany([...new Set(lane.map((clip) => clip.clipId))]);
+
+    const targets = lane
+      .map((clip) => {
+        const found = highlights.get(clip.clipId);
+        if (!found?.confident || !found.window) return null;
+
+        const start = Math.max(0, Math.min(found.window.start, clip.originalDuration));
+        const end = Math.min(found.window.end, clip.originalDuration);
+        if (end - start < EDITOR_CONSTANTS.MIN_CLIP_DURATION) return null;
+
+        const already =
+          Math.abs(clip.trimStart - start) < 0.15 && Math.abs(clip.trimEnd - end) < 0.15;
+        return already ? null : { id: clip.id, start, end };
+      })
+      .filter((target): target is { id: string; start: number; end: number } => target !== null);
+
+    if (targets.length === 0) {
+      toastStore.info('Nothing to trim — these clips are already on their highlights, or have none');
+      return;
+    }
+
+    record();
+    for (const target of targets) trimClip(target.id, target.start, target.end);
+    reflowClips();
+
+    const untouched = lane.length - targets.length;
+    toastStore.success(
+      `Trimmed ${targets.length} ${pluralize(targets.length, 'clip')} to their highlights` +
+        (untouched > 0 ? ` — ${untouched} left alone` : '')
+    );
+  } finally {
+    trimmingAll.value = false;
+  }
+}
+
 function handleUpdateAudio(
   updates: Partial<Pick<TimelineAudio, 'volume' | 'muted' | 'fadeIn' | 'fadeOut'>>
 ): void {
@@ -534,14 +629,8 @@ watch(
   <!-- h-full, not h-screen: 100vh ignores the title bar above and overflows by exactly its height. -->
   <div class="h-full flex flex-col bg-background text-foreground overflow-hidden">
     <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-b border-border">
+      <!-- No back arrow here: the title bar already has one. -->
       <div class="flex items-center gap-3">
-        <button
-          class="p-2 rounded-lg hover:bg-black/5 transition-colors"
-          @click="goBack"
-        >
-          <Icon icon="material-symbols:arrow-back" class="text-xl" />
-        </button>
-
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
             <Icon icon="material-symbols:movie-edit" class="text-card" />
@@ -766,7 +855,10 @@ watch(
         <ClipProperties
           v-else
           :clip="selectedClip"
+          :highlight="selectedHighlight"
+          :highlight-loading="selectedHighlightLoading"
           @update="handleUpdateClip"
+          @trim-to-highlight="trimSelectedToHighlight"
         />
       </aside>
     </div>
@@ -780,6 +872,9 @@ watch(
       :can-redo="canRedo"
       :exporting="isExporting"
       :export-progress="exportProgress"
+      :trimming-highlights="trimmingAll"
+      :clip-count="timelineClips.length"
+      @trim-to-highlights="trimAllToHighlights"
       @play="handlePlay"
       @pause="pause"
       @skip-backward="skipBackward()"

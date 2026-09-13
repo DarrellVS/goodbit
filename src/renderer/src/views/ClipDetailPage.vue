@@ -43,12 +43,12 @@ const { clip, metadata, loading, error, loadClip, handleClipUpdated } = useClipL
  * this page is already streaming from, which on the LAN is the local one.
  */
 /**
- * A link a phone can actually open, or nothing.
+ * The clip's permanent public address, or nothing.
  *
  * Media is served by the `goodbit://` protocol, which only this app can
  * resolve — putting it in a QR code produced a camera saying no app can use it.
- * An unpublished clip simply has no address off this machine, so the sheet says
- * that instead of offering a code that cannot work.
+ * An unpublished clip has no permanent address, and the sheet offers to serve
+ * it on the local network instead.
  */
 const shareUrl = computed(() =>
   clip.value?.published && clip.value.publishedUrl ? clip.value.publishedUrl : null,
@@ -103,35 +103,6 @@ onMounted(() => {
   <!-- The tinted wash is a light-mode flourish; dark falls back to the page ground. -->
   <div class="h-full overflow-auto bg-gradient-to-br from-muted-50 via-card to-orange-500/4 dark:bg-none dark:bg-background">
     <!-- Header -->
-    <header class="sticky top-0 z-10 bg-card/90 backdrop-blur-xl border-b border-border/80 shadow-sm">
-      <div class="max-w-7xl mx-auto px-6 py-4">
-        <div class="flex items-center justify-between">
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-muted-100 hover:to-muted-50 transition-all group"
-            @click="goBack"
-          >
-            <Icon icon="material-symbols:arrow-back-rounded" class="text-xl group-hover:-translate-x-1 transition-transform" />
-            <span class="font-semibold">Back</span>
-          </button>
-          
-          <div v-if="clip" class="flex items-center gap-3">
-            <button
-              class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted-100 transition-colors"
-              title="Show a QR code for this clip"
-              @click="showShareSheet = true"
-            >
-              <Icon icon="material-symbols:qr-code-2" class="text-xl" />
-            </button>
-            <ClipStarButton :clip="clip" @updated="clip = $event" />
-            <ClipActionsMenu 
-              :clip="clip" 
-              @updated="handleClipUpdated" 
-              @deleted="handleClipDeleted"
-            />
-          </div>
-        </div>
-      </div>
-    </header>
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center h-96">
@@ -208,6 +179,30 @@ onMounted(() => {
             @toggle-date="toggleDateDisplay"
           />
           <ClipVideoInfo :metadata="metadata" />
+
+          <!--
+            The actions were floating loose in a header strip above the page.
+            They belong with the other cards, and labelled: two unlabelled icons
+            on a dark ground were near-invisible.
+          -->
+          <div class="bg-card rounded-2xl p-4 border border-border space-y-2">
+            <button
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
+              @click="showShareSheet = true"
+            >
+              <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 flex-shrink-0" />
+              <span class="text-sm font-medium text-foreground">Send to my phone</span>
+            </button>
+
+            <div class="flex items-center gap-2">
+              <ClipStarButton :clip="clip" class="flex-1" @updated="clip = $event" />
+              <ClipActionsMenu
+                :clip="clip"
+                @updated="handleClipUpdated"
+                @deleted="handleClipDeleted"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -223,6 +218,7 @@ onMounted(() => {
     <ShareSheet
       v-if="clip"
       v-model:open="showShareSheet"
+      :clip-id="clip.id"
       :url="shareUrl"
       :title="clip.displayName || clip.filename"
       @publish="publishFromShare"

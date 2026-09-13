@@ -6,6 +6,7 @@
       <VideoPreview
         ref="videoPreviewRef"
         :video-source="videoSource"
+        @toggle="togglePlayback"
       />
 
       <SuggestionBanner
@@ -13,7 +14,7 @@
         :loading="suggestionsLoading"
         :applied="suggestionApplied"
         @apply="applySuggestion"
-        @seek="seekTo"
+        @seek="seek"
       />
 
       <TimelineEditor
@@ -28,7 +29,11 @@
         :frame-strip-source="frameStripSource"
         :is-valid="isValidRange"
         :is-saving="isSaving"
+        :playhead-percentage="timeToPercentage(currentTime)"
+        :playhead="formatTime(currentTime)"
+        :is-playing="isPlaying"
         @save="handleSave"
+        @toggle-playback="togglePlayback"
       />
     </main>
   </div>
@@ -78,7 +83,7 @@ const videoElement = computed(() =>
   videoPreviewRef.value?.videoElement ?? null
 );
 
-useVideoPlayer({
+const { currentTime, isPlaying, togglePlayback, seek } = useVideoPlayer({
   videoElement,
   range,
 });
@@ -120,12 +125,7 @@ const suggestionApplied = computed(() => {
 
 function applySuggestion(start: number, end: number): void {
   range.value = [start, Math.min(end, duration.value)];
-  seekTo(start);
-}
-
-function seekTo(time: number): void {
-  const video = videoElement.value;
-  if (video) video.currentTime = time;
+  seek(start);
 }
 
 async function handleSave(): Promise<void> {

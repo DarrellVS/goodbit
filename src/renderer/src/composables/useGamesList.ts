@@ -1,25 +1,52 @@
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useGamesStore } from '../stores/games';
 
+/** How many games the sidebar shows before "Show N more". */
 const MAX_VISIBLE_ITEMS = 5;
+
+/**
+ * Above this many games, scrolling a list is worse than typing a name — which
+ * is the situation at 47 of them.
+ */
+const SEARCH_APPEARS_AT = 8;
 
 export function useGamesList() {
   const gamesStore = useGamesStore();
+
   const showAllGames = ref(false);
+  const search = ref('');
 
   const games = computed(() => gamesStore.games());
 
-  const visibleGames = computed(() => {
-    return showAllGames.value ? games.value : games.value.slice(0, MAX_VISIBLE_ITEMS);
+  const showSearch = computed(() => games.value.length >= SEARCH_APPEARS_AT);
+
+  const matching = computed(() => {
+    const query = search.value.trim().toLowerCase();
+    if (!query) return games.value;
+
+    return games.value.filter((game) =>
+      `${game.displayName ?? ''} ${game.game}`.toLowerCase().includes(query),
+    );
   });
 
-  const hasMoreGames = computed(() => games.value.length > MAX_VISIBLE_ITEMS);
+  const visibleGames = computed(() => {
+    // A search is already a filter; capping its results as well would hide
+    // exactly the match someone typed for.
+    if (search.value.trim()) return matching.value;
+    return showAllGames.value ? matching.value : matching.value.slice(0, MAX_VISIBLE_ITEMS);
+  });
+
+  const hasMoreGames = computed(
+    () => !search.value.trim() && matching.value.length > MAX_VISIBLE_ITEMS,
+  );
 
   return {
     games,
+    matching,
     visibleGames,
     hasMoreGames,
     showAllGames,
+    search,
+    showSearch,
   };
 }
-

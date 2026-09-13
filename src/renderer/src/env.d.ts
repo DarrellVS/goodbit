@@ -26,6 +26,11 @@ interface GoodBitBridge {
   showInFolder: (filePath: string) => Promise<void>;
   openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
   app: { version: () => Promise<string> };
+  share: {
+    start: (clipId: number) => Promise<ShareStateWire>;
+    stop: () => Promise<null>;
+    current: () => Promise<ShareStateWire | null>;
+  };
   window: {
     setOverlay: (colors: { symbolColor?: string }) => Promise<void>;
     minimize: () => Promise<void>;
@@ -48,6 +53,15 @@ interface AppSettingsWire {
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   migratedFromWebApp: boolean;
+}
+
+/** A clip being served to the local network right now. */
+interface ShareStateWire {
+  url: string;
+  clipId: number;
+  name: string;
+  /** Epoch milliseconds at which the share closes itself. */
+  until: number;
 }
 
 type UpdateStateWire =

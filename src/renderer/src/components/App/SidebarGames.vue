@@ -30,7 +30,8 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const { games, visibleGames, hasMoreGames, showAllGames } = useGamesList();
+const { games, matching, visibleGames, hasMoreGames, showAllGames, search, showSearch } =
+  useGamesList();
 const gamesStore = useGamesStore();
 const toastStore = useToastStore();
 const { setHidden } = useGameVisibility();

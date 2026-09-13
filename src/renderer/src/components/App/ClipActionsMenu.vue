@@ -67,9 +67,10 @@ async function handleMoveToGame(targetGame: string) {
   <MenubarRoot>
     <MenubarMenu>
       <MenubarTrigger
-        class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 px-2 py-2 outline-none size-8 hover:bg-black/80 transition cursor-pointer"
+        title="More actions"
+        class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/30 px-2 py-2 outline-none size-8 hover:bg-black/80 transition cursor-pointer"
       >
-        <Icon icon="material-symbols:more-vert" class="text-card" />
+        <Icon icon="material-symbols:more-vert" class="text-white" />
       </MenubarTrigger>
       <MenubarPortal>
         <MenubarContent

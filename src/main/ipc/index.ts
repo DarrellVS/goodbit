@@ -1,10 +1,11 @@
 import { app, dialog, ipcMain, shell, BrowserWindow } from 'electron';
 import { readFile } from 'node:fs/promises';
-import { basename } from 'node:path';
+import { basename, normalize } from 'node:path';
 import { loadSettings, saveSettings } from '../settings.js';
 import { refreshRoots } from '../data-source.js';
 import { onServiceEvent, reconcile, restartServices } from '../startup.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
+import { shareService } from '../services/share.js';
 
 /**
  * The handlers behind the preload bridge.
@@ -112,15 +113,39 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   // `trash`, `explorer.exe` and `start` were Windows-only shell-outs; these do
   // the same thing through Electron and work everywhere.
   ipcMain.handle('shell:showInFolder', (_event, filePath: string) => {
-    shell.showItemInFolder(filePath);
+    // Normalised: these paths carry forward slashes, which the Windows shell
+    // rejects.
+    shell.showItemInFolder(normalize(filePath));
   });
 
   ipcMain.handle('shell:openPath', async (_event, filePath: string) => {
-    const error = await shell.openPath(filePath);
+    const error = await shell.openPath(normalize(filePath));
     return error ? { ok: false, error } : { ok: true };
   });
 
   ipcMain.handle('app:version', () => app.getVersion());
+
+  /**
+   * Sharing a clip with a phone on the same network.
+   *
+   * The clip is named by id and the path comes from the database, so nothing
+   * the renderer says can widen what gets served.
+   */
+  ipcMain.handle('share:start', async (_event, clipId: number) => {
+    const { AppDataSource } = await import('../data-source.js');
+    const { Clip } = await import('../entity/Clip.js');
+    const clip = await AppDataSource.getRepository(Clip).findOneBy({ id: Number(clipId) });
+    if (!clip) throw new Error('That clip is not in the library any more');
+
+    return shareService.start(clip.id, normalize(clip.filePath));
+  });
+
+  ipcMain.handle('share:stop', () => {
+    shareService.stop();
+    return null;
+  });
+
+  ipcMain.handle('share:current', () => shareService.current());
 
   /**
    * Recolour the native caption buttons when the theme changes.

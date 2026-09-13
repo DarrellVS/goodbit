@@ -18,7 +18,7 @@ function toggle(): void {
 </script>
 
 <template>
-  <div class="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+  <div class="flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border">
     <div>
       <label class="font-medium text-foreground">{{ label }}</label>
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>

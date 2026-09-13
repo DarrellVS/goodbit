@@ -1,4 +1,5 @@
 import { shell } from 'electron';
+import { normalize } from 'node:path';
 import { BaseAction } from './BaseAction.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
 
@@ -12,7 +13,9 @@ export class DeleteAudioTrackAction extends BaseAction<DeleteAudioTrackInput, { 
     if (!filePath) throw new Error(`Unknown audio track: ${input.id}`);
 
     // Recycle Bin, never unlink — same rule the clips follow.
-    await shell.trashItem(filePath);
+    // Normalised: the Windows shell rejects the forward slashes these paths
+    // carry, with "Failed to parse path".
+    await shell.trashItem(normalize(filePath));
     return { ok: true };
   }
 }
