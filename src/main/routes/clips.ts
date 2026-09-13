@@ -92,63 +92,6 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   res.json({ items: dtos, total, page: pageNum, pageSize: pageSz });
 }));
 
-clipsRouter.get('/:id/stream', asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOneByOrFail({ id });
-  const filePath = clip.filePath;
-
-  const stat = fs.statSync(filePath);
-  const fileSize = stat.size;
-  const range = req.headers.range;
-
-  if (range) {
-    const parts = range.replace(/bytes=/, '').split('-');
-    let start = parseInt(parts[0], 10);
-    let end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-    if (!Number.isFinite(start) || start < 0) start = 0;
-    if (!Number.isFinite(end) || end >= fileSize) end = fileSize - 1;
-    if (start >= fileSize || start > end) { start = 0; end = fileSize - 1; }
-    const chunkSize = end - start + 1;
-    const file = fs.createReadStream(filePath, { start, end });
-    res.writeHead(206, {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunkSize,
-      'Content-Type': clip.extension.toLowerCase() === 'mov' ? 'video/quicktime' : 'video/mp4',
-      'Cache-Control': 'no-store',
-    });
-    file.pipe(res);
-  } else {
-    res.writeHead(200, {
-      'Content-Length': fileSize,
-      'Content-Type': clip.extension.toLowerCase() === 'mov' ? 'video/quicktime' : 'video/mp4',
-      'Cache-Control': 'no-store',
-    });
-    fs.createReadStream(filePath).pipe(res);
-  }
-}));
-
-clipsRouter.get('/:id/thumbnail', asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOneByOrFail({ id });
-  const thumbPath = await videoService.ensureThumbnail(clip);
-  res.setHeader('Cache-Control', 'public, max-age=604800');
-  res.setHeader('Content-Type', 'image/jpeg');
-  res.sendFile(thumbPath);
-}));
-
-clipsRouter.get('/:id/frame-strip', asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOneByOrFail({ id });
-  const stripPath = await videoService.ensureFrameStrip(clip);
-  res.setHeader('Content-Type', 'image/jpeg');
-  res.setHeader('Cache-Control', 'public, max-age=604800');
-  res.sendFile(stripPath);
-}));
-
 clipsRouter.get('/:id/meta', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const meta = await videoService.getClipMeta(id);

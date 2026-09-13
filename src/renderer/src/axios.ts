@@ -1,24 +1,76 @@
-import axios from 'axios';
+import axios, { AxiosHeaders, type AxiosAdapter, type AxiosResponse } from 'axios';
 
 /**
- * Talking to the loopback API.
+ * axios, talking over IPC instead of the network.
  *
- * A migration scaffold. The API runs inside the main process on 127.0.0.1 at a
- * port the OS picks, so the base URL is built from what the preload was handed
- * at launch. Each `services/*.ts` file moves to IPC in turn, and this goes away
- * with the last of them.
+ * Swapping the adapter rather than rewriting the call sites is deliberate:
+ * there are roughly forty of them across six service files, each already a thin
+ * one-function-per-endpoint wrapper, and rewriting every signature by hand is
+ * forty chances to change one by accident. The services, composables and
+ * components above them are untouched; only the transport moved.
  *
- * The Firebase token interceptor is gone: there is nobody to authenticate to.
- * The listener is on loopback and its only client is this window.
+ * There is no HTTP server any more. A port on 127.0.0.1 is reachable by every
+ * other process on the machine — for an API that can delete clips, that is a
+ * surface an installed app has no reason to expose.
+ *
+ * The Firebase token interceptor is gone with it: there is nobody to
+ * authenticate to.
  */
-const port = window.goodbit?.apiPort ?? 0;
+const ipcAdapter: AxiosAdapter = async (config) => {
+  const bridge = window.goodbit;
+  if (!bridge) {
+    throw new axios.AxiosError(
+      'The GoodBit bridge is unavailable',
+      'ERR_NO_BRIDGE',
+      config,
+    );
+  }
 
-if (port > 0) {
-  axios.defaults.baseURL = `http://127.0.0.1:${port}`;
-} else {
-  // Only reachable if the renderer somehow loads outside Electron. Same-origin
-  // requests will fail, which is the honest outcome rather than a silent hang.
-  console.error('No API port was provided; requests will fail.');
+  // Paths are written as `/api/clips/…` everywhere; the bridge prefixes /api
+  // itself, so strip it rather than making every call site change.
+  const rawUrl = config.url ?? '';
+  const path = rawUrl.replace(/^\/api/, '');
+
+  const { status, body } = await bridge.apiRequest({
+    method: (config.method ?? 'get').toUpperCase(),
+    path,
+    query: (config.params ?? {}) as Record<string, unknown>,
+    // axios has already serialised the body to a string by this point.
+    body: typeof config.data === 'string' ? safeParse(config.data) : config.data,
+  });
+
+  const response: AxiosResponse = {
+    data: body,
+    status,
+    statusText: String(status),
+    headers: new AxiosHeaders(),
+    config,
+    request: null,
+  };
+
+  // Anything but a 2xx has to reject, or every `catch` in the app stops firing
+  // and failures surface as success with an error-shaped body.
+  if (status < 200 || status >= 300) {
+    throw new axios.AxiosError(
+      (body as { error?: string })?.error ?? `Request failed with status ${status}`,
+      status === 404 ? 'ERR_NOT_FOUND' : 'ERR_BAD_RESPONSE',
+      config,
+      null,
+      response,
+    );
+  }
+
+  return response;
+};
+
+function safeParse(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
 }
+
+axios.defaults.adapter = ipcAdapter;
 
 export default axios;

@@ -3,8 +3,10 @@ import { join } from 'node:path';
 import { initDatabase } from './data-source.js';
 import { isConfigured, loadSettings, saveSettings, userDataDir } from './settings.js';
 import { startServices, stopServices } from './startup.js';
-import { startLocalServer, type LocalServer } from './server.js';
 import { registerIpc } from './ipc/index.js';
+import { registerApiBridge, startApiBridge, stopApiBridge } from './ipc/apiBridge.js';
+import { registerProtocolScheme, registerProtocolHandler } from './protocol.js';
+import { registerUpdater } from './updater.js';
 
 /**
  * GoodBit's main process is the background service.
@@ -21,7 +23,6 @@ declare const __LEGACY_IMPORT__: boolean;
 let quitting = false;
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-let apiServer: LocalServer | null = null;
 
 /**
  * One service, or two watchers fight over one SQLite file.
@@ -33,6 +34,10 @@ const lockKey = process.env.GOODBIT_USER_DATA ?? 'default';
 if (!app.requestSingleInstanceLock({ key: lockKey })) {
   app.quit();
 }
+
+// Must run before the app is ready, or Chromium will not treat the scheme as
+// privileged and Range requests (therefore seeking) will not work.
+registerProtocolScheme();
 
 app.on('second-instance', () => {
   // Launching again is how someone asks for the window back.
@@ -51,10 +56,6 @@ function createWindow(): BrowserWindow {
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.mjs'),
       sandbox: false,
-      // The loopback API's port is chosen by the OS, and the renderer's axios
-      // needs it at module load. Handing it over as a launch argument makes it
-      // readable synchronously in the preload, with no round trip to race.
-      additionalArguments: [`--api-port=${apiServer?.port ?? 0}`],
       // The renderer is ours, but it also renders filenames and notes that came
       // off disk; there is no reason for it to reach Node directly.
       contextIsolation: true,
@@ -165,10 +166,11 @@ app.whenReady().then(async () => {
 
   await initDatabase();
 
-  // Before the window: it is handed the port as a launch argument.
-  apiServer = await startLocalServer();
-
+  registerProtocolHandler();
+  await startApiBridge();
+  registerApiBridge();
   registerIpc(() => mainWindow);
+  registerUpdater(() => mainWindow);
   buildTray();
   applyLoginItem();
 
@@ -192,6 +194,5 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   quitting = true;
   stopServices();
-  void apiServer?.close();
-  apiServer = null;
+  void stopApiBridge();
 });

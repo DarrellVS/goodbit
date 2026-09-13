@@ -8,8 +8,13 @@ declare module '*.vue' {
 
 /** What the preload exposes. See `src/preload/index.ts`. */
 interface GoodBitBridge {
-  /** Loopback API port, until the HTTP layer is gone. */
-  apiPort: number;
+  /** Every data call, dispatched through the router in main. */
+  apiRequest: (request: {
+    method: string;
+    path: string;
+    query?: Record<string, unknown>;
+    body?: unknown;
+  }) => Promise<{ status: number; body: unknown }>;
   getSettings: () => Promise<{
     videosRoot: string;
     audioRoot: string;

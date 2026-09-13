@@ -8,19 +8,9 @@ import { contextBridge, ipcRenderer } from 'electron';
  * arguments get copied to plain data — Vue reactive proxies cannot cross the
  * contextBridge and arrive as "An object could not be cloned".
  */
-/**
- * Where the loopback API is listening.
- *
- * Passed as a launch argument rather than fetched, so the renderer's axios can
- * read it at module load without a round trip it would have to wait on. Goes
- * away with the HTTP layer.
- */
-const apiPort = Number(
-  process.argv.find((arg) => arg.startsWith('--api-port='))?.split('=')[1] ?? 0,
-);
-
 const api = {
-  apiPort,
+  /** Every data call, dispatched through the router in main. No socket. */
+  apiRequest: (request: unknown) => ipcRenderer.invoke('api:request', request),
 
   /** Settings main itself needs: roots, publisher, autostart. */
   getSettings: () => ipcRenderer.invoke('settings:get'),

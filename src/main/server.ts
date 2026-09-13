@@ -2,28 +2,24 @@ import express from 'express';
 import type { Server } from 'node:http';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { SESSION_HEADER, sessionSecret } from './ipc/apiBridge.js';
 
 /**
  * The API, bound to loopback only.
  *
- * A migration scaffold, not the destination. The renderer still speaks HTTP to
- * roughly sixty routes; rewriting all of them at once would mean a long stretch
- * where nothing works, so the same Express app runs inside the main process
- * until each `services/*.ts` file has been moved over to IPC. It is deleted
- * when the last one has.
+ * Reached only by the IPC bridge in the same process, never by the renderer.
+ * The Express router is kept rather than rewritten into forty IPC channels —
+ * see ipc/apiBridge.ts for why the transport moved but the routes did not.
  *
  * Three things are gone already, because none of them mean anything here:
  *
- * - **Firebase auth.** There is nothing to authenticate: the listener is on
- *   127.0.0.1 and the only client is this app's own window.
+ * - **Firebase auth.** Replaced by a per-launch secret that only main knows.
  * - **The Private Network Access header and the LAN endpoints.** Those existed
  *   so a page served over the internet could reach the server on the LAN.
- * - **The public endpoints** (`today/count`, `latest`, `rescan`) and the
- *   spoofable `::1` check that guarded them.
+ * - **The public endpoints** and the spoofable `::1` check that guarded them.
  *
  * Binding to 127.0.0.1 on port 0 is deliberate: the OS picks a free port, so
- * two installs cannot collide, and nothing outside the machine can reach it
- * even briefly.
+ * two installs cannot collide, and nothing outside the machine can reach it.
  */
 export interface LocalServer {
   port: number;
@@ -33,9 +29,23 @@ export interface LocalServer {
 export function createApiApp(): express.Express {
   const app = express();
 
-  app.use(express.json());
+  app.use(express.json({ limit: '1gb' }));
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true }));
+  /**
+   * Only this process may call in.
+   *
+   * The listener is on loopback, which keeps it off the network but not away
+   * from other programs on the machine — and this API can delete clips. The
+   * secret is generated at launch, held in main, and never reaches the
+   * renderer, so a request without it did not come from the app.
+   */
+  app.use('/api', (req, res, next) => {
+    if (req.get(SESSION_HEADER) !== sessionSecret()) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    next();
+  });
+
   app.use('/api', apiRouter);
 
   app.use(errorHandler);
