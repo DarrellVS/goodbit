@@ -1,11 +1,11 @@
-# Filmpje → Electron
+# Filmpje → GoodBit
 
-Plan for turning Filmpje from a self-hosted web app into a desktop application that runs entirely on
-one machine, with the publisher as an optional module people install on a server if they want public
-links. Target is a public 1.0.x.
+How the self-hosted web app became a desktop application, and what was deliberately thrown away on
+the way. Written as a plan; kept as the record of what was actually done.
 
-Written after the ApexCut feature port (see `git log`), which already moved the expensive parts —
-hardware encoding, job control, analysis — into shapes that transplant cleanly.
+**Status: the migration is complete.** The app boots as a background service, indexes clips as OBS
+writes them, and packages into an installer that has been run and tested. What remains before a
+public 1.0 is listed at the bottom — the real blocker is database migrations, not features.
 
 ---
 
@@ -17,7 +17,7 @@ hardware encoding, job control, analysis — into shapes that transplant cleanly
 | Starts | `start-local-client.vbs` at login, serving a web page | Background service at login, window on demand |
 | Scanning | Once at boot, plus a manual rescan button | A watcher that notices clips as OBS writes them |
 | Auth | Firebase + a hardcoded API token | None. There is no remote surface to protect |
-| Media | HTTP with a `?token=`, LAN-probed to avoid the internet round trip | `filmpje://` protocol straight off disk |
+| Media | HTTP with a `?token=`, LAN-probed to avoid the internet round trip | `goodbit://` protocol straight off disk |
 | Data API | ~60 REST routes + axios | Typed IPC over a preload bridge |
 | Publisher | Assumed present, IP hardcoded | Optional. Unset = the publish feature is simply absent |
 | Updates | Service worker | electron-updater against GitHub releases |
@@ -25,6 +25,89 @@ hardware encoding, job control, analysis — into shapes that transplant cleanly
 Three whole subsystems **disappear** rather than get ported: Firebase auth, the LAN streaming probe
 (`LOCAL_STREAMING.md`), and the PWA service worker. That is the single biggest simplification here —
 each of them exists only because the app had to cross a network.
+
+---
+
+## What actually happened
+
+The plan below is kept because the reasoning still holds, but several things changed on contact.
+Where this section and the plan disagree, this section is what was built.
+
+### Deviations from the plan
+
+**Auth removal moved out of Phase 0.** The plan had it first. The web app was live at
+`filmpje.darrellvs.nl`, so deleting Firebase there would have left the whole library publicly
+readable. It happened inside the Electron work instead, where there is no network surface, and the
+web app kept its login until it was retired.
+
+**The API is still Express, and that is deliberate.** The plan said the routes would become IPC
+handlers one at a time. What shipped is one IPC channel relaying to a loopback listener in the same
+process. Faking a `ServerResponse` to dispatch the router in-process was tried first and does not
+work — `app.handle` reassigns the response prototype to Express's own, which inherits from
+`http.ServerResponse`, so hand-written methods are bypassed and Node's real `getHeader` runs against
+an object with no socket. Relaying keeps Express on the objects it expects.
+
+Loopback alone is not enough, since any other program on the machine can reach `127.0.0.1` and this
+API deletes clips, so every request carries a secret generated at launch that never reaches the
+renderer. The renderer's axios only had its **adapter** swapped, leaving all forty call sites
+unchanged.
+
+**Dark mode was rebuilt on tokens, not repaired.** Adding `dark:` variants beside literal colours had
+already shipped broken: variants cannot reach colours inside bound `:class` expressions, and
+`bg-white/60` is a different class from `bg-white`, so Settings and the editor stayed light while the
+shell went dark. In places it was worse than incomplete — text on `bg-white/85` gained a dark variant
+while its background stayed light, turning readable into invisible. 794 literals became semantic
+tokens and 539 variants were dropped.
+
+**The legacy importer is opt-in, not opt-out.** It was originally excluded by setting an environment
+variable at release time, which meant forgetting it would ship the thing that must never reach anyone
+else. `GOODBIT_LEGACY_IMPORT=1` now turns it on; a plain build has no trace of it.
+
+### Bugs the work surfaced
+
+Each of these was live before the migration or introduced during it, and none was visible to a
+typecheck:
+
+- **Exports of HDR clips came out grey.** OBS writes PQ/bt2020 here; converting to SDR with no tone
+  mapping reads the PQ curve as sRGB. Fixed everywhere a frame is decoded.
+- **Frame strips lied about time.** Sampled at a flat `fps=1` and tiled ten wide, so on any clip
+  longer than ten seconds the strip covered only the first ten while the UI stretched it across the
+  whole width.
+- **A scan could delete the entire library.** `ScanAndSyncClipsAction` pruned unconditionally, so a
+  videos folder that was momentarily unreachable — an unmounted drive, a wrong first-run pick — took
+  every tag, note, display name, collection and star with it. It now refuses to prune when the folder
+  looks empty or when one scan would remove more than half the library.
+- **An open window never showed new clips.** The service indexed correctly and the database was
+  right, but nothing in the renderer subscribed to the events main was emitting, so the window showed
+  whatever was there when it loaded. Every test asked the API directly, which is why none caught it.
+- **The packaged app would not start**, then would not spawn ffmpeg. Shipping `node_modules` let
+  electron-builder misplace a hoisted transitive dependency; bundling removed the class of problem.
+  `ffmpeg-static` then reported a path inside `app.asar`, which is an archive, so thumbnails, trims
+  and exports failed only when packaged.
+- **Errors read as "Request failed with status 500".** Routes answer `{ error }` but anything that
+  throws returns `{ status, code, message }`, and the adapter only read the first.
+
+### What is verified
+
+18 end-to-end tests run against the **packaged installer binary**, not just the dev build — which is
+what caught the last two bugs above. They cover the bridge and protocol (including Range requests, so
+video can seek), indexing, tagging, the analysis, a lossless trim, a real export landing on disk,
+publishing being absent rather than broken, an open window keeping up with the watcher, and every
+screen in both palettes against a contrast floor.
+
+Each run gets a throw-away data directory, videos root and database, so a test can never touch a real
+library.
+
+### Still to do before 1.0
+
+- **Database migrations.** `synchronize: true` is the one real blocker; see the risks section.
+- A licence, and confirming the `goodbit` name and org are free before the update feed goes live.
+- Deleting the Firebase project, which is what actually revokes the committed key — after that, the
+  history scrub is tidiness rather than remediation.
+- The derivation queue still runs on the main thread. Fine at this scale; worth a `utilityProcess`
+  if a large import ever makes the UI stutter.
+
+---
 
 ---
 
