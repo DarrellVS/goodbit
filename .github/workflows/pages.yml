@@ -28,7 +28,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Turns Pages on the first time this runs. It cannot do that while the
+      # repository is private on a free plan, which is why the first run of this
+      # workflow failed with "Get Pages site failed"; it will pass once the
+      # repository is public.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
