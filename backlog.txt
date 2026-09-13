@@ -1,5 +1,0 @@
-✅ COMPLETED - Clip Notes & Annotations
-Why: Users may want to remember context about clips
-✓ Add text notes/descriptions to clips
-✓ Timestamp-based annotations (notes at specific times)
-✓ Markdown support for rich text

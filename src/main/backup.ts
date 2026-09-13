@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { copyFileSync, existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import sqlite3 from 'sqlite3';
 import { backupsDir, loadSettings, saveSettings } from './settings.js';
@@ -14,12 +14,12 @@ import { backupsDir, loadSettings, saveSettings } from './settings.js';
  * table rebuild, and a rebuild that goes wrong takes the library with it.
  *
  * Migrations are the real answer and are not what 1.0 ships. What it ships
- * instead is this: the file is copied and the copy is *read back* before any
- * version that could carry a schema change is allowed near it. A backup nobody
- * has opened is a guess, not a backup.
+ * instead is this: SQLite is asked for a snapshot and the snapshot is *read
+ * back* before any version that could carry a schema change is allowed near
+ * the file. A backup nobody has opened is a guess, not a backup.
  *
- * Cheap by construction — one file copy, only when the app version changed
- * since the last successful boot, and never while a connection is open.
+ * Cheap by construction — one `VACUUM INTO`, only when the app version changed
+ * since the last successful boot.
  */
 
 /** How many copies to keep. Enough to step back past a bad release. */
@@ -34,6 +34,34 @@ export interface BackupResult {
 
 function stamp(): string {
   return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+}
+
+/**
+ * Ask SQLite for the copy rather than copying the file.
+ *
+ * A plain file copy taken while something is writing can capture a torn page,
+ * and the manual "Back up now" button runs with the app's own connection open.
+ * `VACUUM INTO` is answered by SQLite itself, so what lands is always a valid
+ * database — and compacted on the way out. A read-only connection is enough;
+ * the source is never modified.
+ */
+async function snapshot(source: string, target: string): Promise<void> {
+  const db = await new Promise<sqlite3.Database>((resolve, reject) => {
+    const handle = new sqlite3.Database(source, sqlite3.OPEN_READONLY, (error) =>
+      error ? reject(error) : resolve(handle),
+    );
+  });
+
+  try {
+    await new Promise<void>((resolve, reject) =>
+      // The path is a literal, not a bindable parameter, so quotes are doubled.
+      db.run(`VACUUM INTO '${target.replace(/'/g, "''")}'`, (error) =>
+        error ? reject(error) : resolve(),
+      ),
+    );
+  } finally {
+    db.close();
+  }
 }
 
 /**
@@ -105,7 +133,7 @@ export async function backupBeforeSchemaSync(databaseFile: string): Promise<Back
   const target = join(backupsDir(), `goodbit-${version}-${stamp()}.db`);
 
   try {
-    copyFileSync(databaseFile, target);
+    await snapshot(databaseFile, target);
     const clips = await verify(target);
     prune();
 
@@ -144,7 +172,7 @@ export async function takeBackup(databaseFile: string): Promise<BackupResult> {
   const target = join(backupsDir(), `goodbit-manual-${stamp()}.db`);
 
   try {
-    copyFileSync(databaseFile, target);
+    await snapshot(databaseFile, target);
     const clips = await verify(target);
     prune();
     return { taken: true, reason: 'copied and read back', path: target, clips };

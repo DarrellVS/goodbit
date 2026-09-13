@@ -5,7 +5,7 @@ name: CI
 # a release on a real machine instead (see `npm run check:pre-release`).
 on:
   push:
-    branches: [main, electron]
+    branches: [main]
   pull_request:
     branches: [main]
 
