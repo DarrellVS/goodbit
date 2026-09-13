@@ -6,6 +6,7 @@ import { statsRouter } from './stats.js';
 import { collectionsRouter } from './collections.js';
 import { audioRouter } from './audio.js';
 import { projectsRouter } from './projects.js';
+import { tagPatternsRouter } from './tagPatterns.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
 import { getLanEndpoints } from '../utils/networkInfo.js';
@@ -32,6 +33,7 @@ apiRouter.use('/stats', statsRouter);
 apiRouter.use('/collections', collectionsRouter);
 apiRouter.use('/audio', audioRouter);
 apiRouter.use('/projects', projectsRouter);
+apiRouter.use('/tag-patterns', tagPatternsRouter);
 apiRouter.post('/scan', asyncHandler(async (_req, res) => {
   const result = await videoService.scanAndSyncClips();
   res.json(result);

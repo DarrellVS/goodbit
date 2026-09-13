@@ -3,7 +3,7 @@ import { updateClipTags, deleteTag as deleteTagService } from '../services/clips
 import { useTagsStore } from '../stores/tags';
 import { useToastStore } from '../stores/toast';
 import { useClipsStore } from '../stores/clips';
-import { getAllPatterns } from '../services/tagPatternsDb';
+import { listTagPatterns } from '../services/tagPatterns';
 import { getCategoryForTag } from '../utils/tagSuggestions';
 import type { Clip } from '../types/clip';
 import type { TagPattern } from '../utils/tagSuggestions';
@@ -47,7 +47,19 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
   
   onMounted(async () => {
     try {
-      patterns.value = await getAllPatterns();
+      // Sources cross the wire as strings; a rule that cannot compile is
+      // dropped rather than allowed to throw on every clip it is matched to.
+      patterns.value = (await listTagPatterns()).flatMap((pattern) => {
+        try {
+          return [{
+            tag: pattern.tag,
+            patterns: pattern.patterns.map((source) => new RegExp(source, 'i')),
+            category: pattern.category,
+          }];
+        } catch {
+          return [];
+        }
+      });
       patternsLoaded.value = true;
     } catch (error) {
       console.error('Failed to load patterns:', error);

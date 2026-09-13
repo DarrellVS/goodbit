@@ -12,6 +12,7 @@ export * from './dtos/clip/UpdateClipRequestDTO.js';
 
 // Tag DTOs
 export * from './dtos/tag/TagDTO.js';
+export * from './dtos/tag/TagPatternDTO.js';
 
 // Collection DTOs
 export * from './dtos/collection/CollectionDTO.js';
