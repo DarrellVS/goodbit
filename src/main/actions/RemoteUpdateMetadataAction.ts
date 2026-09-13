@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { publisherBaseUrl, NO_PUBLISHER } from '../services/publisherConfig.js';
 import { BaseAction } from './BaseAction.js';
 
 export interface RemoteUpdateMetadataInput {
@@ -13,8 +14,8 @@ export interface RemoteUpdateMetadataOutput {
 
 export class RemoteUpdateMetadataAction extends BaseAction<RemoteUpdateMetadataInput, RemoteUpdateMetadataOutput> {
   async execute(input: RemoteUpdateMetadataInput): Promise<RemoteUpdateMetadataOutput> {
-    const baseUrl = (process.env.PUBLISHER_BASE_URL || '').replace(/\/$/, '');
-    if (!baseUrl) throw new Error('PUBLISHER_BASE_URL is not set');
+    const baseUrl = publisherBaseUrl();
+    if (!baseUrl) throw new Error(NO_PUBLISHER);
     
     const url = `${baseUrl}/api/publish/${encodeURIComponent(input.filename)}/metadata`;
     

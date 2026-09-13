@@ -1,4 +1,5 @@
 import { computed, type Ref } from 'vue';
+import { usePublisher } from './usePublisher';
 import type { Clip } from '../types/clip';
 import type { PopoverAction } from '../components/Base/types';
 
@@ -20,6 +21,8 @@ interface MenuItemsOptions {
 }
 
 export function useClipActionsMenuItems(options: MenuItemsOptions) {
+  const { isConfigured: isPublisherConfigured } = usePublisher();
+
   const editSubmenuItems = computed(() => [
     { key: 'trim', label: 'Trim', onClick: options.onTrim, icon: 'material-symbols:content-cut' },
     { key: 'edit', label: 'Advanced Edit', onClick: options.onAdvancedEdit, icon: 'material-symbols:video-settings' },
@@ -79,7 +82,11 @@ export function useClipActionsMenuItems(options: MenuItemsOptions) {
       });
     }
 
-    if (options.clip.value.published) {
+    // The publisher is optional. With none set up, publishing is absent from
+    // the menu rather than present and failing on click.
+    if (!isPublisherConfigured.value) {
+      // nothing to offer
+    } else if (options.clip.value.published) {
       items.push({
         key: 'unpublish',
         label: options.isPublishing.value ? 'Unpublishing…' : 'Unpublish',

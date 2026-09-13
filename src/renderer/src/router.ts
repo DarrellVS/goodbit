@@ -9,6 +9,7 @@ import TrimPage from './views/TrimPage.vue';
 import EditorPage from './views/EditorPage.vue';
 import ClipDetailPage from './views/ClipDetailPage.vue';
 import ShellLayout from './layouts/ShellLayout.vue';
+import WelcomePage from './views/WelcomePage.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -97,6 +98,19 @@ export const router = createRouter({
     { path: '/trim/:id', name: 'trim', component: TrimPage, props: true },
     { path: '/editor', name: 'editor', component: EditorPage },
   ],
+});
+
+/**
+ * With nowhere to look for clips, every screen is empty and none of them say
+ * why. The first run goes to the folder picker instead.
+ */
+router.beforeEach(async (to) => {
+  if (to.name === 'welcome') return true;
+
+  const settings = await window.goodbit?.getSettings();
+  if (settings && !settings.videosRoot) return { name: 'welcome' };
+
+  return true;
 });
 
 

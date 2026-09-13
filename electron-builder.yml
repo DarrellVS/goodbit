@@ -1,0 +1,45 @@
+appId: com.darrellvs.goodbit
+productName: GoodBit
+copyright: Copyright © 2026 Darrell van Swinderen
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**
+  - package.json
+
+# ffmpeg and ffprobe are binaries that get spawned, and sqlite3 is a native
+# module. A packaged .exe cannot be executed from inside an asar archive, and a
+# .node cannot be loaded from one — so these stay unpacked on disk.
+asarUnpack:
+  - '**/node_modules/ffmpeg-static/**'
+  - '**/node_modules/ffprobe-static/**'
+  - '**/node_modules/sqlite3/**'
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  # Unsigned on purpose: a certificate is a yearly cost, and SmartScreen's
+  # warning is documented in the README instead.
+  signAndEditExecutable: true
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+portable:
+  artifactName: GoodBit-${version}-portable.exe
+
+publish:
+  provider: github
+  owner: DarrellVS
+  repo: goodbit

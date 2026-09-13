@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { publisherBaseUrl, NO_PUBLISHER } from '../services/publisherConfig.js';
 import { BaseAction } from './BaseAction.js';
 
 export interface RemoteUnpublishInput {
@@ -11,8 +12,8 @@ export interface RemoteUnpublishOutput {
 
 export class RemoteUnpublishAction extends BaseAction<RemoteUnpublishInput, RemoteUnpublishOutput> {
   async execute(input: RemoteUnpublishInput): Promise<RemoteUnpublishOutput> {
-    const baseUrl = (process.env.PUBLISHER_BASE_URL || '').replace(/\/$/, '');
-    if (!baseUrl) throw new Error('PUBLISHER_BASE_URL is not set');
+    const baseUrl = publisherBaseUrl();
+    if (!baseUrl) throw new Error(NO_PUBLISHER);
     const url = `${baseUrl}/api/publish/${encodeURIComponent(input.filename)}`;
     const res = await axios.delete(url);
     return res.data as RemoteUnpublishOutput;

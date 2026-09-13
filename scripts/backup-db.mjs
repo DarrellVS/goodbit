@@ -6,27 +6,33 @@
  * can capture a torn page. VACUUM INTO asks SQLite itself for the snapshot, so
  * what lands is always a valid database — and it is compacted on the way out.
  *
- * Run before anything that touches the schema, and before migrating to the
- * desktop app. Backups are never overwritten; each run writes a new timestamp.
+ * Run before anything that touches the schema. The desktop app keeps its
+ * database in %APPDATA%/GoodBit; this defaults there and still accepts a path
+ * for a library left behind by the self-hosted version.
  *
- *   node scripts/backup-db.mjs [--out <dir>]
+ *   node scripts/backup-db.mjs [--db <file>] [--out <dir>]
  */
 import { mkdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import sqlite3 from 'sqlite3';
 
-const VIDEOS_ROOT = process.env.VIDEOS_ROOT || join(homedir(), 'Videos');
-const DB_PATH = process.env.DB_PATH || join(VIDEOS_ROOT, 'filmpje.db');
+const APPDATA = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming');
+
+const dbFlag = process.argv.indexOf('--db');
+const DB_PATH =
+  dbFlag !== -1 && process.argv[dbFlag + 1]
+    ? process.argv[dbFlag + 1]
+    : join(APPDATA, 'GoodBit', 'goodbit.db');
 
 const outFlag = process.argv.indexOf('--out');
 const OUT_DIR =
   outFlag !== -1 && process.argv[outFlag + 1]
     ? process.argv[outFlag + 1]
-    : join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'Filmpje', 'backups');
+    : join(APPDATA, 'GoodBit', 'backups');
 
 /** Tables worth counting, so the report says what was actually preserved. */
-const TABLES = ['clip', 'tag', 'collection', 'game', 'project'];
+const TABLES = ['clip', 'tag', 'collection', 'game', 'project', 'tag_pattern'];
 
 function open(path, mode) {
   return new Promise((resolve, reject) => {

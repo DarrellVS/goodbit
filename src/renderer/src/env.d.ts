@@ -15,15 +15,8 @@ interface GoodBitBridge {
     query?: Record<string, unknown>;
     body?: unknown;
   }) => Promise<{ status: number; body: unknown }>;
-  getSettings: () => Promise<{
-    videosRoot: string;
-    audioRoot: string;
-    publisherBaseUrl: string;
-    startAtLogin: boolean;
-    keepRunningInTray: boolean;
-    migratedFromWebApp: boolean;
-  }>;
-  saveSettings: (patch: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  getSettings: () => Promise<AppSettingsWire>;
+  saveSettings: (patch: Partial<AppSettingsWire>) => Promise<AppSettingsWire>;
   pickFolder: (title: string) => Promise<string | null>;
   rescan: () => Promise<{ ok: boolean }>;
   showInFolder: (filePath: string) => Promise<void>;
@@ -42,6 +35,15 @@ interface GoodBitBridge {
     onState: (listener: (state: UpdateStateWire) => void) => () => void;
   };
   onServiceEvent: (listener: (event: unknown) => void) => () => void;
+}
+
+interface AppSettingsWire {
+  videosRoot: string;
+  audioRoot: string;
+  publisherBaseUrl: string;
+  startAtLogin: boolean;
+  keepRunningInTray: boolean;
+  migratedFromWebApp: boolean;
 }
 
 type UpdateStateWire =

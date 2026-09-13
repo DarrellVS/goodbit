@@ -1,4 +1,5 @@
 import FormData from 'form-data';
+import { publisherBaseUrl, NO_PUBLISHER } from '../services/publisherConfig.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import axios from 'axios';
@@ -17,8 +18,8 @@ export interface RemotePublishOutput {
 
 export class RemotePublishAction extends BaseAction<RemotePublishInput, RemotePublishOutput> {
   async execute(input: RemotePublishInput): Promise<RemotePublishOutput> {
-    const baseUrl = (process.env.PUBLISHER_BASE_URL || '').replace(/\/$/, '');
-    if (!baseUrl) throw new Error('PUBLISHER_BASE_URL is not set');
+    const baseUrl = publisherBaseUrl();
+    if (!baseUrl) throw new Error(NO_PUBLISHER);
     const filename = path.basename(input.filePath);
     const form = new FormData();
     form.append('file', fs.createReadStream(input.filePath), filename);
