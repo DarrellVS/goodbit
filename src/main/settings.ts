@@ -24,6 +24,17 @@ export interface Settings {
   keepRunningInTray: boolean;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
+  /** Where the window was last, so it opens where you left it. */
+  window?: WindowBounds;
+}
+
+export interface WindowBounds {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  /** Restored maximised rather than at the remembered size. */
+  maximized: boolean;
 }
 
 const DEFAULTS: Settings = {

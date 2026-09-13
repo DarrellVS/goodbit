@@ -1,6 +1,6 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, copyFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import ffmpegPath from 'ffmpeg-static';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
@@ -28,13 +28,23 @@ export interface LaunchOptions {
   configured?: boolean;
   /** Copy a database in as though the web app had left one behind. */
   legacyDatabase?: string;
+  /** Reuse an existing profile, to test what survives a restart. */
+  dataDir?: string;
+  /** Seed remembered window bounds. */
+  window?: {
+    x?: number;
+    y?: number;
+    width: number;
+    height: number;
+    maximized: boolean;
+  };
 }
 
 export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
-  const { configured = true, legacyDatabase } = options;
+  const { configured = true, legacyDatabase, dataDir: existing } = options;
 
-  const base = mkdtempSync(join(tmpdir(), 'goodbit-test-'));
-  const dataDir = join(base, 'data');
+  const base = existing ? dirname(existing) : mkdtempSync(join(tmpdir(), 'goodbit-test-'));
+  const dataDir = existing ?? join(base, 'data');
   const videosRoot = join(base, 'videos');
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(videosRoot, { recursive: true });
@@ -43,7 +53,9 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     copyFileSync(legacyDatabase, join(videosRoot, 'filmpje.db'));
   }
 
-  if (configured) {
+  // Reusing a profile means keeping whatever it already stored — that is the
+  // point of relaunching into it.
+  if (configured && !existing) {
     writeFileSync(
       join(dataDir, 'settings.json'),
       JSON.stringify({
@@ -54,6 +66,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
         startAtLogin: false,
         keepRunningInTray: false,
         migratedFromWebApp: false,
+        ...(options.window ? { window: options.window } : {}),
       }),
     );
     mkdirSync(join(base, 'music'), { recursive: true });
@@ -84,7 +97,9 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     dataDir,
     close: async () => {
       await app.close();
-      rmSync(base, { recursive: true, force: true });
+      // A caller that supplied its own dataDir owns the cleanup; removing it
+      // here would delete the profile a relaunch is about to read.
+      if (!existing) rmSync(base, { recursive: true, force: true });
     },
   };
 }

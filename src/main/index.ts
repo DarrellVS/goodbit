@@ -9,6 +9,7 @@ import { registerApiBridge, startApiBridge, stopApiBridge } from './ipc/apiBridg
 import { registerProtocolScheme, registerProtocolHandler } from './protocol.js';
 import { registerUpdater } from './updater.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
+import { initialBounds, rememberWindowState } from './windowState.js';
 
 /**
  * GoodBit's main process is the background service.
@@ -69,9 +70,13 @@ app.on('second-instance', () => {
 });
 
 function createWindow(): BrowserWindow {
+  const remembered = initialBounds();
+
   const window = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: remembered.width,
+    height: remembered.height,
+    x: remembered.x,
+    y: remembered.y,
     minWidth: 940,
     minHeight: 600,
     show: false,
@@ -95,6 +100,9 @@ function createWindow(): BrowserWindow {
       nodeIntegration: false,
     },
   });
+
+  if (remembered.maximized) window.maximize();
+  rememberWindowState(window);
 
   window.once('ready-to-show', () => window.show());
 
