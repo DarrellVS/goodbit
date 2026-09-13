@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoodBit — documentation</title>
+    <meta
+      name="description"
+      content="Setting GoodBit up, what it expects of your recording folder, how the highlight analysis works, trimming, the editor, sharing, publishing, and where it keeps your data."
+    />
+    <link rel="icon" href="assets/img/icon.png" />
+    <link rel="canonical" href="https://darrellvs.github.io/goodbit/docs.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GoodBit" />
+    <meta property="og:url" content="https://darrellvs.github.io/goodbit/docs.html" />
+    <meta property="og:title" content="GoodBit — documentation" />
+    <meta
+      property="og:description"
+      content="The folder layout, the highlight analysis, trimming, the editor, sharing, publishing and backups."
+    />
+    <meta property="og:image" content="https://darrellvs.github.io/goodbit/assets/img/og-card.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://darrellvs.github.io/goodbit/assets/img/og-card.jpg" />
+    <meta name="theme-color" content="#08090a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header" id="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <img src="assets/img/icon.png" alt="" width="24" height="24" />
+          GoodBit
+        </a>
+        <nav class="site-nav" aria-label="Sections">
+          <a href="index.html#listen" data-small-hide>The idea</a>
+          <a href="index.html#what" data-optional>What it does</a>
+          <a href="https://github.com/DarrellVS/goodbit" data-optional>Source</a>
+          <a class="cta" href="index.html#get">Get it</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="wrap docs">
+      <nav class="toc" aria-label="On this page">
+        <p>Contents</p>
+        <ol>
+          <li><a href="#install">Installing</a></li>
+          <li><a href="#first-run">First run</a></li>
+          <li><a href="#folders">Folder layout</a></li>
+          <li><a href="#library">The library</a></li>
+          <li><a href="#highlights">How the highlight works</a></li>
+          <li><a href="#trim">Trimming</a></li>
+          <li><a href="#editor">The editor</a></li>
+          <li><a href="#export">Exporting</a></li>
+          <li><a href="#phone">Sending to a phone</a></li>
+          <li><a href="#publish">Publishing</a></li>
+          <li><a href="#data">Where your data lives</a></li>
+          <li><a href="#updates">Updates</a></li>
+          <li><a href="#trouble">Troubleshooting</a></li>
+          <li><a href="#build">Building from source</a></li>
+        </ol>
+      </nav>
+
+      <article class="prose">
+        <h2 id="install">Installing</h2>
+        <p>
+          Download the installer or the portable build from the
+          <a href="https://github.com/DarrellVS/goodbit/releases/latest">latest release</a>. Windows
+          10 or 11, 64-bit.
+        </p>
+        <p>
+          The installer puts GoodBit in your own user folder, so Windows does not ask for an
+          administrator, and it keeps itself up to date. The portable build is a single executable
+          you can run from anywhere; it uses the same library and settings, and does not update
+          itself.
+        </p>
+        <div class="notice">
+          <p>
+            <strong>SmartScreen will interrupt you once.</strong> These builds are not signed with a
+            paid code-signing certificate, so Windows shows “Windows protected your PC”. Choose
+            <em>More info</em>, then <em>Run anyway</em>. It is what Windows does with every unsigned
+            installer, and it stops once the app is installed.
+          </p>
+        </div>
+
+        <h2 id="first-run">First run</h2>
+        <p>
+          GoodBit asks for one thing: the folder your recordings land in. In OBS that is
+          <em>Settings → Output → Recording → Recording Path</em>, or the replay buffer path if you
+          keep those separately.
+        </p>
+        <p>
+          It then scans what is already there. A few hundred clips take a minute or two the first
+          time, most of it spent making thumbnails. After that, new clips are picked up one at a
+          time as they appear.
+        </p>
+        <p>Two settings are worth knowing on day one, both under <strong>Settings → App</strong>:</p>
+        <ul>
+          <li>
+            <strong>Start with Windows</strong>, on by default. GoodBit's job is to have indexed the
+            clip before you go looking for it, which it cannot do if it is not running.
+          </li>
+          <li>
+            <strong>Keep running in the tray</strong>. Closing the window leaves the watcher going.
+            Quit from the tray icon when you want it gone.
+          </li>
+        </ul>
+
+        <h2 id="folders">Folder layout</h2>
+        <p>
+          One folder per game, clips inside it. This is what OBS produces when the filename format
+          includes the game, and the top-level folder name is what GoodBit takes as the game:
+        </p>
+        <pre><code>C:\Users\you\Videos\
+  Battlefield 6\
+    Battlefield 6_06.09.2026_20-53-57.mp4
+    Battlefield 6_30.08.2026_21-03-56.mp4
+  Ready Or Not\
+    Ready Or Not_05.05.2026_22-25-52.mp4
+  .goodbit-cache\        &lt;- thumbnails and frame strips, made by GoodBit</code></pre>
+        <p>
+          Anything nested deeper than one folder is ignored, as is any folder whose name starts with
+          a dot. <code>.mp4</code>, <code>.mov</code> and <code>.mkv</code> are recognised.
+        </p>
+        <p>
+          <strong>Renaming a game inside GoodBit does not rename the folder.</strong> It sets a
+          display name, so OBS keeps writing exactly where it was and nothing needs reconfiguring.
+          The same goes for clips: the name you give one is a label, never a file operation.
+        </p>
+        <p>
+          A game you would rather not see can be hidden under <strong>Settings → Games</strong>.
+          Hiding leaves the files alone and keeps anything already published working; it only removes
+          the game from the browsing screens.
+        </p>
+
+        <h2 id="library">The library</h2>
+        <figure class="frame">
+          <img
+            src="assets/shots/library.webp"
+            alt="The library, with clips grouped under the date they were recorded and tagged."
+            width="1440"
+            height="900"
+            loading="lazy"
+          />
+          <figcaption>Library · grouped by game and day</figcaption>
+        </figure>
+        <ul>
+          <li>
+            <strong>Grouped or grid.</strong> Grouped is the default: one heading per game per day,
+            newest first, each with an <strong>Edit day</strong> button that sends the whole day to
+            the editor in recording order.
+          </li>
+          <li><strong>Search</strong> covers names and tags. The sidebar lists games, with a search box of its own once there are enough to scroll.</li>
+          <li><strong>Tags</strong> can be typed, or suggested from the filename by rules you set up under <strong>Smart Tags</strong>.</li>
+          <li><strong>Collections</strong> group clips across games without moving anything on disk.</li>
+          <li><strong>Select mode</strong> does the bulk work: tag, star, publish or delete many at once. Deletes go to the Recycle Bin.</li>
+        </ul>
+
+        <h2 id="highlights">How the highlight works</h2>
+        <p>
+          Whatever made a clip worth keeping almost always made a noise. GoodBit runs one loudness
+          pass over the clip's first audio track and looks for the stretch that stands out most
+          against <em>that clip's own</em> middle, so a quiet horror game and a loud shooter are each
+          judged on their own terms.
+        </p>
+        <ul>
+          <li>
+            <strong>It starts early on purpose.</strong> The sound is the reaction; whatever caused
+            it happened a second or two earlier. The suggested window opens ahead of the spike so
+            the shot that led to it is still in the clip. It will not slide so far that it loses the
+            loud part itself, and it will not end before it either.
+          </li>
+          <li>
+            <strong>It expects the end.</strong> A replay buffer is saved <em>after</em> something
+            happened. Measured across 68 real recordings, the loudest moment lands in the last tenth
+            of a clip 24% of the time, where an even spread would put it at 10%, and in the last 40%
+            sixty per cent of the time. The search leans that way accordingly, without ignoring a
+            bigger event earlier.
+          </li>
+          <li>
+            <strong>It stays quiet when it has nothing</strong>, which is most of the time. A moment
+            has to stand well clear of the rest of its own clip before GoodBit will point at it.
+            Loud is not enough: a menu screen whose music swells is 17 LU above its own median,
+            louder in those terms than a helicopter crash, and it gets refused. About one clip in
+            six gets a suggestion.
+          </li>
+          <li>
+            <strong>It is cheap and local.</strong> About a tenth of a second per clip, computed by
+            ffmpeg on your own machine, cached beside the clip and recomputed if the file changes.
+          </li>
+        </ul>
+        <p>
+          It is deliberately audio-only. Scene-change detection measured at more than a minute per
+          clip on 3440×1440 footage, hundreds of times the cost, for a signal that mostly agreed with
+          the sound anyway.
+        </p>
+
+        <h2 id="trim">Trimming</h2>
+        <figure class="frame">
+          <img
+            src="assets/shots/trim.webp"
+            alt="The trim screen: a preview, a suggestion banner, a frame strip with handles and a playhead."
+            width="1440"
+            height="900"
+            loading="lazy"
+          />
+          <figcaption>Trim · the suggestion sits above the strip</figcaption>
+        </figure>
+        <p>
+          Drag the handles on the frame strip, or take the suggestion above it. The preview loops the
+          range you have chosen, <kbd>Space</kbd> plays and pauses, and the playhead on the strip
+          shows where you are.
+        </p>
+        <p>
+          <strong>Saving writes a new file and keeps the original.</strong> The trim is lossless: the
+          streams are copied rather than re-encoded, so there is no generational quality loss and it
+          takes a second rather than a minute. The trade is that cuts land on the nearest keyframe,
+          which is why the result can be a fraction of a second off what you asked for. GoodBit
+          reports where it actually landed.
+        </p>
+
+        <h2 id="editor">The editor</h2>
+        <figure class="frame">
+          <img
+            src="assets/shots/editor.webp"
+            alt="The editor: clip library, preview, timeline with two clips, and a properties panel offering to trim to the highlight."
+            width="1440"
+            height="900"
+            loading="lazy"
+          />
+          <figcaption>Editor · video lane above, music lane below</figcaption>
+        </figure>
+        <p>
+          Two lanes. The video lane is gapless, clips sitting end to end in the order they will be
+          rendered. The music lane is free: tracks may overlap, start anywhere, and run past the
+          picture, which is hatched because the export cuts there.
+        </p>
+        <ul>
+          <li><strong>Add clips</strong> by clicking them in the library, or arrive with a whole day already loaded from <strong>Edit day</strong>.</li>
+          <li><strong>Trim to highlights</strong> puts every clip on the timeline onto its own loud moment and leaves the rest alone. The properties panel does the same for one clip at a time.</li>
+          <li><strong>Music</strong> lives in a folder of its own, set under <strong>Settings → App</strong>. Each track gets a volume, a fade in and a fade out.</li>
+          <li><strong>Undo</strong> steps over whole gestures rather than every pixel of a drag.</li>
+          <li><strong>Drafts</strong> save as you work and survive closing the app. They export to a file and import on another machine; only ids and edits travel, so that machine needs the same clips.</li>
+        </ul>
+
+        <h2 id="export">Exporting</h2>
+        <p>
+          Exports run in the background: start one and carry on, or close the dialog and come back.
+          GoodBit uses the GPU's encoder when it finds one and falls back to the CPU when it does
+          not.
+        </p>
+        <ul>
+          <li>
+            <strong>Crop</strong> to widescreen, vertical or square. The crop takes the middle of the
+            frame and never scales up, so a 16:9 recording cropped to vertical stays sharp instead of
+            stretching.
+          </li>
+          <li><strong>HDR</strong> footage is tone mapped to SDR rather than dumped into an SDR container, which is what turns a bright HDR clip grey everywhere else.</li>
+          <li><strong>Loudness</strong> can be normalised to −14 LUFS so one clip does not arrive twice as loud as the last.</li>
+          <li><strong>Music</strong> is mixed in a second pass, so the picture is never re-encoded to add a soundtrack.</li>
+        </ul>
+
+        <h2 id="phone">Sending to a phone</h2>
+        <p>
+          Open a clip and choose <strong>Send to my phone</strong>. GoodBit starts a small web server
+          on this computer serving exactly that one file behind a 32-character random address, and
+          shows a QR code for it. Anything on the same wifi can scan it, watch the clip and save it.
+        </p>
+        <p>
+          The share closes itself after thirty minutes, when you press <strong>Stop sharing</strong>,
+          or when the app quits, whichever comes first. Only that one file is ever reachable and the
+          address is not guessable. Nothing is uploaded: the phone is talking to your PC.
+        </p>
+
+        <h2 id="publish">Publishing</h2>
+        <p>
+          Publishing turns a clip into a public link with a Discord-friendly embed. It needs
+          somewhere to publish <em>to</em>: a small Express service in the
+          <code>publisher/</code> folder of the repository, packaged for Docker and happy on a NAS.
+        </p>
+        <p>
+          Put its address into <strong>Settings → App</strong> and the publish actions appear
+          throughout the app. Leave it empty and they stay hidden, so the feature is absent rather
+          than present and failing.
+        </p>
+
+        <h2 id="data">Where your data lives</h2>
+        <div class="scroll-x">
+          <table>
+            <thead>
+              <tr>
+                <th>What</th>
+                <th>Where</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Library database, settings</td>
+                <td><code>%APPDATA%\GoodBit</code></td>
+              </tr>
+              <tr>
+                <td>Backups of the database</td>
+                <td><code>%APPDATA%\GoodBit\backups</code></td>
+              </tr>
+              <tr>
+                <td>Thumbnails, frame strips, analysis</td>
+                <td><code>&lt;your clips folder&gt;\.goodbit-cache</code></td>
+              </tr>
+              <tr>
+                <td>Your clips</td>
+                <td>Exactly where they were. GoodBit never moves them.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The database holds the things that are not in the files themselves: names, tags, notes,
+          collections, stars. Before a new version of GoodBit is allowed near it, SQLite is asked for
+          a snapshot and the snapshot is opened and checked, so an update that goes wrong costs
+          nothing. Five are kept, and <strong>Settings → Advanced</strong> lists them, takes one on
+          demand, and opens the folder.
+        </p>
+        <p>
+          Deleting the cache folder is safe: everything in it is rebuilt from your clips. Deleting
+          the database loses tags and names, never clips.
+        </p>
+
+        <h2 id="updates">Updates</h2>
+        <p>
+          The installed build checks GitHub Releases in the background and offers the update when one
+          is ready; installing it restarts the app. The portable build does not update itself, so
+          download a new one when you want it.
+        </p>
+
+        <h2 id="trouble">Troubleshooting</h2>
+
+        <div class="qa">
+          <div>
+            <h3>A clip I just recorded has not appeared</h3>
+            <p>
+              GoodBit waits for a file to stop changing before it touches it, which for a long
+              recording means waiting until OBS has finished writing all of it. Give it a few
+              seconds. If it still has not appeared, press <strong>Rescan</strong> in the header, and
+              check the clip is in a folder directly inside your clips folder rather than nested
+              deeper.
+            </p>
+          </div>
+          <div>
+            <h3>Half my library vanished</h3>
+            <p>
+              It has not. If your clips are on a drive that was disconnected, GoodBit sees the files
+              as missing but deliberately refuses to remove more than half the library at once: a
+              scan that would wipe everything is treated as a broken drive rather than a thousand
+              deletions. Reconnect the drive and press <strong>Rescan</strong>.
+            </p>
+          </div>
+          <div>
+            <h3>The QR code my phone scanned did nothing</h3>
+            <p>
+              A phone can only open an address it can reach. Check it is on the same wifi as the PC,
+              not on mobile data and not on a guest network. Some routers block device-to-device
+              traffic entirely; if yours does, publishing is the other route.
+            </p>
+          </div>
+          <div>
+            <h3>Exporting is slow, or the picture looks washed out</h3>
+            <p>
+              <strong>Settings → Playback</strong> reports which hardware encoder GoodBit found. If
+              it says none, exports fall back to the CPU and will be slower. Washed-out colour on an
+              HDR recording means tone mapping was skipped: re-export from the editor rather than
+              re-using an old render.
+            </p>
+          </div>
+          <div>
+            <h3>I want to move my library to another drive</h3>
+            <p>
+              Move the folder, then point GoodBit at the new location under
+              <strong>Settings → App</strong>. It re-indexes in place, and tags and names follow,
+              because they are keyed to the files rather than to the path.
+            </p>
+          </div>
+        </div>
+
+        <h2 id="build">Building from source</h2>
+        <p>Node 22 and npm, on Windows.</p>
+        <pre><code>git clone https://github.com/DarrellVS/goodbit
+cd goodbit
+npm install
+
+npm run dev          # electron-vite, hot reload
+npm run typecheck    # main, preload and renderer
+npm run test:e2e     # builds, then drives the real app with Playwright
+npm run build:win    # installer and portable build, into release/</code></pre>
+        <p>
+          <code>build:win</code> depends on the end-to-end suite, so an installer cannot be produced
+          from a tree whose tests fail. Those tests never run in CI, since they need a desktop
+          session and ffmpeg, and each gets a throw-away data folder, videos root and database, so a
+          run can never touch a real library.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>GoodBit</span>
+        <span class="spacer"></span>
+        <a href="index.html">Home</a>
+        <a href="https://github.com/DarrellVS/goodbit">Source</a>
+        <a href="https://github.com/DarrellVS/goodbit/releases/latest">Releases</a>
+      </div>
+    </footer>
+
+    <script src="assets/js/site.js" defer></script>
+  </body>
+</html>

@@ -12,7 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import ffmpegPath from 'ffmpeg-static';
-import { ruleV2 } from './analysis-rules.mjs';
+import { ruleV3 } from './analysis-rules.mjs';
 
 const FFMPEG = ffmpegPath;
 const DATA = join(process.cwd(), 'tmp', 'analysis-data');
@@ -54,7 +54,7 @@ function main() {
     .filter((f) => f.endsWith('.json'))
     .map((f) => JSON.parse(readFileSync(join(DATA, f), 'utf-8')))
     .filter((c) => existsSync(c.file))
-    .map((clip) => ({ clip, verdict: ruleV2(clip) }))
+    .map((clip) => ({ clip, verdict: ruleV3(clip) }))
     .filter(({ verdict, clip }) => {
       if (only === 'rejected') return !verdict.confident && clip.durationSec > 14;
       if (only === 'confident') return verdict.confident;

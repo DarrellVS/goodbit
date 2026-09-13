@@ -1,0 +1,782 @@
+/*
+ * GoodBit — the website.
+ *
+ * Plain CSS, no build step. The visual idea is the app's own timeline: a ruler
+ * down the left, hairlines instead of shadows, timecodes set in mono, square
+ * corners. Deliberately not the soft-rounded, glass-panelled, gradient-blob
+ * landing page that every tool has; this is a tool for cutting video and it
+ * should look like one.
+ */
+
+:root {
+  --bg: #08090a;
+  --panel: #0e1012;
+  --panel-2: #14171a;
+  --rule: #20242a;
+  --rule-soft: #171b1f;
+  --ink: #f4f5f6;
+  --ink-2: #9aa1aa;
+  --ink-3: #6d757e;
+  --accent: #f97316;
+  --accent-soft: #ffb066;
+  --ok: #34d399;
+
+  --wrap: 1180px;
+  --rail: 108px;
+
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f5f3;
+    --panel: #ffffff;
+    --panel-2: #f0eeea;
+    --rule: #dcd8d2;
+    --rule-soft: #e8e5e0;
+    --ink: #14161a;
+    --ink-2: #4e545c;
+    --ink-3: #757c85;
+    --accent: #d85a06;
+    --accent-soft: #b44a05;
+
+    color-scheme: light;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 clamp(0.95rem, 0.9rem + 0.22vw, 1.05rem) / 1.62 var(--body), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+img {
+  height: auto;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display), sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  margin: 0 0 0.5em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.1rem, 1.2rem + 3.6vw, 3.9rem);
+}
+
+h2 {
+  font-size: clamp(1.55rem, 1.2rem + 1.5vw, 2.3rem);
+}
+
+h3 {
+  font-size: clamp(1.05rem, 1rem + 0.35vw, 1.22rem);
+  letter-spacing: -0.015em;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+code {
+  color: var(--accent-soft);
+}
+
+kbd {
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  padding: 0.05em 0.4em;
+  color: var(--ink);
+}
+
+pre {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--accent);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  margin: 0 0 1.4em;
+  line-height: 1.55;
+}
+
+pre code {
+  color: var(--ink-2);
+}
+
+.wrap {
+  width: min(100% - 2.5rem, var(--wrap));
+  margin-inline: auto;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  background: var(--accent);
+  color: #000;
+  padding: 0.7rem 1rem;
+  z-index: 100;
+}
+
+.skip:focus {
+  left: 0;
+  top: 0;
+}
+
+:where(a, button, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------- mono bits */
+
+.tag {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.tag .on {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ header */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 56px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--display), sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand img {
+  width: 24px;
+  height: 24px;
+}
+
+.site-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.8vw, 1.5rem);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-width: 0;
+}
+
+.site-nav a {
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-nav a:hover {
+  color: var(--ink);
+}
+
+.site-nav .cta {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.34rem 0.7rem;
+}
+
+.site-nav .cta:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+@media (max-width: 760px) {
+  .site-nav [data-optional] {
+    display: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .site-nav [data-small-hide] {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------- rails */
+
+/*
+ * The ruler. A repeating hairline pattern down the left edge of the page, the
+ * way the editor's timeline marks seconds. Decorative, so it is hidden from
+ * assistive tech and dropped entirely when there is no room for it.
+ */
+.rail {
+  position: fixed;
+  inset: 56px auto 0 0;
+  width: var(--rail);
+  border-right: 1px solid var(--rule-soft);
+  background: repeating-linear-gradient(
+      to bottom,
+      var(--rule-soft) 0 1px,
+      transparent 1px 100%
+    )
+    right / 12px 24px no-repeat;
+  background-position: right 0 top 0;
+  background-size: 10px 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rail::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 9px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--rule) 0 1px,
+    transparent 1px 22px
+  );
+}
+
+@media (max-width: 1340px) {
+  .rail {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------------- hero */
+
+.hero {
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(2.2rem, 5vw, 4.2rem) 0 clamp(2rem, 4vw, 3.4rem);
+}
+
+.hero-grid {
+  display: grid;
+  gap: clamp(1.8rem, 4vw, 3.2rem);
+  align-items: center;
+}
+
+@media (min-width: 62rem) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  }
+}
+
+.hero h1 {
+  margin-top: 0.6rem;
+}
+
+.lede {
+  font-size: clamp(1rem, 0.95rem + 0.45vw, 1.18rem);
+  color: var(--ink-2);
+  max-width: 46ch;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.5rem 0 1rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.72rem 1.15rem;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.12s linear, border-color 0.12s linear, color 0.12s linear;
+}
+
+.button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  font-weight: 600;
+}
+
+.button.primary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: #000;
+}
+
+.fineprint {
+  color: var(--ink-3);
+  font-size: 0.85rem;
+  margin: 0;
+  max-width: 46ch;
+}
+
+/* The measurement next to the hero copy. */
+.readout {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.readout figcaption {
+  border-top: 1px solid var(--rule);
+  padding: 0.7rem 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.readout svg {
+  width: 100%;
+  height: auto;
+  padding: 0.4rem 0.2rem 0;
+}
+
+/* --------------------------------------------------------------- sections */
+
+section {
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(2.4rem, 5vw, 4rem) 0;
+}
+
+.head {
+  max-width: 60ch;
+  margin-bottom: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.head h2 {
+  margin-top: 0.55rem;
+}
+
+.head p {
+  color: var(--ink-2);
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ tracks */
+
+/*
+ * A numbered row, picture on one side and copy on the other. Numbered because
+ * the site is a timeline; alternating because a page of identical rows reads
+ * as a template.
+ */
+.track {
+  display: grid;
+  gap: clamp(1.2rem, 3vw, 2.6rem);
+  padding: clamp(1.8rem, 3.5vw, 2.8rem) 0;
+  border-top: 1px solid var(--rule-soft);
+  align-items: center;
+}
+
+.track:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+@media (min-width: 60rem) {
+  .track {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .track.flip > .frame {
+    order: -1;
+  }
+}
+
+.track .num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 0.7rem;
+}
+
+.track p {
+  color: var(--ink-2);
+}
+
+.track p:last-child {
+  margin-bottom: 0;
+}
+
+.track strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* A screenshot, framed the way the app frames a clip. */
+.frame {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.frame img {
+  width: 100%;
+}
+
+.frame figcaption {
+  border-top: 1px solid var(--rule);
+  padding: 0.55rem 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------------- spec */
+
+/*
+ * The rest of the features, as a specification rather than as six identical
+ * cards with six identical icons.
+ */
+.spec {
+  border-top: 1px solid var(--rule);
+}
+
+.spec > div {
+  display: grid;
+  gap: 0.3rem 2rem;
+  padding: 1.05rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+@media (min-width: 46rem) {
+  .spec > div {
+    grid-template-columns: 13rem minmax(0, 1fr);
+    align-items: baseline;
+  }
+}
+
+.spec dt {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.spec dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------------------ stack */
+
+.stack {
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 1.8rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+/* ----------------------------------------------------------------- notice */
+
+.notice {
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--accent);
+  background: var(--panel);
+  padding: 1rem 1.2rem;
+  color: var(--ink-2);
+}
+
+.notice p:last-child {
+  margin-bottom: 0;
+}
+
+.notice strong {
+  color: var(--ink);
+}
+
+/* ----------------------------------------------------------------- q and a */
+
+.qa {
+  border-top: 1px solid var(--rule);
+}
+
+.qa > div {
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 1.3rem 0;
+}
+
+.qa h3 {
+  margin-bottom: 0.45rem;
+  font-family: var(--body), sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.qa p {
+  color: var(--ink-2);
+  margin-bottom: 0;
+  max-width: 76ch;
+}
+
+/* ------------------------------------------------------------------ footer */
+
+.site-footer {
+  padding: 2rem 0 3rem;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+}
+
+.site-footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.6rem;
+  align-items: center;
+}
+
+.site-footer a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+.site-footer .spacer {
+  margin-left: auto;
+}
+
+/* -------------------------------------------------------------------- docs */
+
+.docs {
+  display: grid;
+  /*
+   * `minmax(0, 1fr)` rather than the implicit `auto`: an auto track is sized by
+   * its contents, and the prose inside it asks for 74ch, so on a phone the
+   * column stayed 590px wide and the whole page scrolled sideways.
+   */
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+  padding: clamp(1.6rem, 4vw, 2.6rem) 0 4rem;
+}
+
+@media (min-width: 64rem) {
+  .docs {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  .toc {
+    position: sticky;
+    top: 76px;
+  }
+}
+
+.toc p {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.7rem;
+}
+
+.toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--rule);
+  display: grid;
+}
+
+.toc a {
+  display: block;
+  padding: 0.28rem 0 0.28rem 0.9rem;
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.toc a:hover,
+.toc a[aria-current="true"] {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.prose {
+  max-width: 74ch;
+}
+
+.prose h2 {
+  scroll-margin-top: 76px;
+  margin-top: 2.6rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--rule);
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.prose h3 {
+  margin-top: 1.9rem;
+}
+
+.prose p,
+.prose li {
+  color: var(--ink-2);
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.1rem;
+  margin: 0 0 1.2em;
+}
+
+.prose li + li {
+  margin-top: 0.35rem;
+}
+
+.prose .frame {
+  margin: 1.4rem 0 1.7rem;
+}
+
+.prose .notice {
+  margin: 1.4rem 0;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+.scroll-x {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  margin-bottom: 1.4em;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 28rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+  color: var(--ink-2);
+}
+
+th {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--panel);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* --------------------------------------------------------------------- 404 */
+
+.middle {
+  min-height: 68vh;
+  display: grid;
+  place-items: center;
+  border-bottom: 0;
+}
+
+.middle .wrap {
+  max-width: 46ch;
+}

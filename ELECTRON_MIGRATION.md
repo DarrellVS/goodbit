@@ -534,26 +534,51 @@ The layering makes each step small; there are just a lot of them.
 
 ## 1.0 checklist
 
-- [ ] **Delete the Firebase project, then scrub it from history.** Deliberately still alive until the
-      desktop build is tested locally — that is the agreed order, not an oversight. Once it is proven:
-      delete project `clips-b0bbe` (this is what actually revokes the key), rewrite history with
-      `git filter-repo` to drop `server/secrets/firebase.json`, and remove the `API_TOKEN` string from
-      `server/src/auth.ts`. Deleting the file alone does nothing; the key is in the history.
-- [ ] Legacy importer compiled out of the public build — verify by grepping the packaged bundle
-- [ ] Real migrations replacing `synchronize: true`
-- [ ] First-run wizard; no env var can be required to start
-- [ ] Existing `filmpje.db` adopted without data loss
-- [ ] Publisher genuinely optional, end to end
-- [ ] Installer + portable build (unsigned), auto-update feed live
-- [ ] CI workflow added — last, and tag-gated for the build job
-- [ ] Name settled; app id, icon and publisher string follow from it
-- [ ] README rewritten for someone who has never seen it, including the SmartScreen note
-- [ ] Colours converted to the semantic tokens; dark mode verified on every screen
+- [x] **Firebase deleted, and scrubbed from history.** Project `clips-b0bbe` was deleted on
+      2026-09-13, which is what actually revokes the key. History was then rewritten with
+      `git filter-repo`, dropping `server/secrets/firebase.json`, both `.env.development` files and
+      `publisher/public/` (personal recordings), and replacing the `API_TOKEN` literal and the
+      Cloudflare token with `REMOVED` in every blob that ever held them. 558 MB of history became
+      10 MB. A mirror of the pre-rewrite repo is in `~/Downloads/filmpje-repo-backup-2026-09-13.git`.
+      **The force-push to `origin` has not happened yet** — see "Still to do" below.
+- [x] Legacy importer compiled out of the public build (`__LEGACY_IMPORT__` is false in the release
+      config, so the bundler drops every call to it)
+- [ ] **Real migrations replacing `synchronize: true`.** Not in 1.0. Mitigated rather than solved:
+      `src/main/backup.ts` takes a `VACUUM INTO` snapshot and reads it back — SQLite's own integrity
+      check plus a row count — before any version that has not booted against this database is
+      allowed near the schema. Five copies are kept and Settings → Advanced shows them. This is a
+      net, not a fix; the fix is migrations.
+- [x] First-run wizard; no env var can be required to start
+- [x] Existing `filmpje.db` adopted without data loss
+- [x] Publisher genuinely optional, end to end
+- [x] Installer + portable build (unsigned), auto-update feed live
+- [x] CI workflow added — typecheck only, and a tag-gated release build
+- [x] Name settled; app id, icon and publisher string follow from it
+- [x] README rewritten for someone who has never seen it, including the SmartScreen note
+- [x] Colours converted to the semantic tokens; dark mode verified on every screen — and asserted:
+      `screens.spec.ts` walks every route in both palettes and fails on unreadable contrast or a
+      light-mode surface left behind
 - [ ] Unit tests over the pure logic worth pinning — `sanitizeOutputName`, the crop maths, the
-      analysis thresholds, `useTimeline`'s reflow, `timestampParser`
-- [ ] **Playwright against the built app** (`_electron.launch` on `out/main/index.js`, ApexCut's
-      arrangement): each test gets a throw-away data folder so runs never touch the real library.
-      Covers the screens in both palettes, plus scan → trim → export. Kept **out of CI** — it is the
-      pre-release gate, with the build depending on it, so an installer cannot be cut from a tree
-      whose tests fail.
+      analysis thresholds, `useTimeline`'s reflow, `timestampParser`. The end-to-end suite covers
+      these paths through the app; the pure-function tests would be faster and sharper.
+- [x] **Playwright against the built app**: 35 tests over a throw-away data folder, videos root and
+      database, so a run can never touch a real library. `GOODBIT_TEST_BINARY` points the same suite
+      at the packaged .exe. Out of CI, and `build:win` depends on it.
 - [ ] A licence decision (there is an MIT `LICENSE` in ApexCut; this repo has none)
+
+## Still to do, and why it needs you
+
+1. **Push the rewritten history.** `git push --force origin main`. It was blocked here by the
+   permission gate around destructive git operations, which is the right gate to have. Everything
+   else is committed locally. Anyone who cloned the old repo keeps the old objects, so this is
+   necessary but not sufficient — the values below have to be treated as burned.
+2. **Rotate the Cloudflare API token.** `publisher/.env.development` was committed with a live
+   Cloudflare token and zone id. The file is gone from the rewritten history, but the token existed
+   in the pushed repository and should be rolled in the Cloudflare dashboard.
+3. **Rename the GitHub repository `filmpje` → `goodbit`.** `electron-builder.yml` already publishes
+   its update feed to `DarrellVS/goodbit`, and the Pages site is written for
+   `https://darrellvs.github.io/goodbit/`. GitHub redirects the old name, so nothing breaks.
+4. **Enable Pages** (Settings → Pages → Source: GitHub Actions). `.github/workflows/pages.yml`
+   publishes `site/` on every push to `main` that touches it.
+5. **Choose a licence.** A public repository with no licence is "all rights reserved" by default,
+   which is a legitimate choice but probably not the intended one. ApexCut ships MIT.

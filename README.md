@@ -2,14 +2,16 @@
 
 # GoodBit
 
-**Your best moments, already found.**
+**You pressed the hotkey for a reason.**
 
-A thirty second replay buffer lands on your disk every time you press the hotkey. The good bit is
-about ten seconds of it. GoodBit watches the folder OBS records into, indexes every clip as it
-arrives, listens for where the interesting part probably is, and gives you somewhere to tag, trim and
-cut them together.
+Thirty seconds of game lands on your disk every time you reach for the replay key, and about ten of
+them are the reason you reached. GoodBit watches the folder OBS records into, indexes every clip as
+it arrives, listens for which ten seconds those were, and gives you somewhere to tag, trim and cut
+them together.
 
 Everything happens on your own machine. Nothing is uploaded unless you ask it to be.
+
+[**goodbit website**](https://darrellvs.github.io/goodbit/) · [Download](https://github.com/DarrellVS/goodbit/releases/latest)
 
 </div>
 
@@ -20,19 +22,29 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
 - **Watches, so you do not have to.** Registered to start with Windows and living in the tray, it
   notices a clip the moment OBS finishes writing it — thumbnail, frame strip and all — whether or not
   a window is open.
-- **Finds the loud part.** One cheap pass over a clip's sound (about 100 ms) says where the gunfire,
-  the explosion or the shouting was, measured against that clip's own normal. It stays quiet when a
-  clip has nothing to point at, which is most of them.
+- **Finds the good bit.** One cheap pass over a clip's sound (about 100 ms) says where the gunfire,
+  the explosion or the shouting was, measured against that clip's own normal, and leaning towards
+  the end because a replay buffer is saved *after* something happens. It stays quiet when a clip has
+  nothing that stands out, which is about five clips in six — being loud is not enough, or every
+  menu screen with music over it would qualify.
 - **Keeps your files alone.** Clips are never renamed — a display name is a database field. Deletes
   go to the Recycle Bin, never `unlink`. Trimming copies the streams rather than re-encoding, so the
   picture is the recorded bytes.
 - **Cuts a montage.** A timeline with a music lane, undo, snapping and drafts that survive a restart.
+  A day of one game goes onto it in one click, in recording order, and **Trim to highlights** puts
+  every clip on the moment its sound spiked.
+- **Hands a clip to your phone.** No cable and no upload: the clip is served to whoever is on the
+  same wifi, behind a 32-character random address, from a server that closes itself after half an
+  hour. Point a camera at the code.
 - **Exports properly.** Hardware encoding where the machine has it, HDR tone mapped to SDR, crop to
   widescreen, vertical or square without ever scaling up, and an optional −14 LUFS pass so a clip
   does not arrive twice as loud as the last one.
 - **Publishes, if you want it to.** An optional module you run on a server of your own turns a clip
   into a public link with a Discord-friendly embed. Leave it unconfigured and the feature is simply
   absent.
+- **Keeps a copy of itself.** Before a new version is allowed near the database, SQLite is asked for
+  a snapshot and the snapshot is read back — integrity check and row count — so an update that goes
+  wrong is an inconvenience rather than a loss. Settings → Advanced lists them.
 
 ## Install
 
@@ -93,13 +105,16 @@ one gets a throw-away data folder, videos root and database, so a run can never 
 | `src/shared` | DTOs and constants both sides agree on |
 | `publisher/` | The optional public-links module |
 
-There is no network surface. Data calls travel over IPC to a loopback listener in the same process,
-behind a secret regenerated at every launch; media is served off disk by a `goodbit://` protocol
-handler with Range support, so video can seek. Nothing listens on a port anything else can find.
+Data calls travel over IPC to a loopback listener in the same process, behind a secret regenerated
+at every launch; media is served off disk by a `goodbit://` protocol handler with Range support, so
+video can seek. Nothing is reachable from outside the machine — with one deliberate exception, which
+is "Send to my phone": that starts a server bound to the network which serves exactly one file,
+behind a random address, and closes itself after thirty minutes or when the app quits.
 
 More in [ELECTRON_MIGRATION.md](ELECTRON_MIGRATION.md), which describes how this grew out of a
 self-hosted web app and what was deliberately thrown away on the way.
 
 ## Licence
 
-Not yet chosen.
+Not yet chosen, which legally means all rights reserved. If you want to do something with this, open
+an issue and ask.
