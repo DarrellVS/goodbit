@@ -35,14 +35,14 @@ defineEmits<{
               type="text"
               :value="search"
               placeholder="Search your video, recent, tags, idea"
-              class="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50 transition w-96"
+              class="pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50 transition w-96 dark:border-slate-700"
               @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
             />
           </div>
           
           <BasePopover side="bottom" :side-offset="10">
             <template #trigger>
-              <button class="rounded-lg inline-flex items-center justify-center border border-gray-300 bg-white/5 hover:bg-white/10 px-3 py-2 outline-none gap-2">
+              <button class="rounded-lg inline-flex items-center justify-center border border-gray-300 bg-white/5 hover:bg-white/10 px-3 py-2 outline-none gap-2 dark:border-slate-700">
                 <Icon icon="material-symbols:label" class="text-lg" />
                 <span>Tags</span>
               </button>

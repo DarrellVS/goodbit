@@ -1,5 +1,5 @@
 <template>
-  <section class="bg-white/5 backdrop-blur-sm rounded-2xl border border-gray-300 p-6 shadow-xl space-y-6">
+  <section class="bg-white/5 backdrop-blur-sm rounded-2xl border border-gray-300 p-6 shadow-xl space-y-6 dark:border-slate-700">
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-orange-500/10">
@@ -18,7 +18,7 @@
       </div>
     </header>
     
-    <div class="relative h-32 rounded-xl overflow-visible border border-gray-300">
+    <div class="relative h-32 rounded-xl overflow-visible border border-gray-300 dark:border-slate-700">
       <img 
         :src="frameStripSource" 
         alt="Video frames" 
@@ -45,7 +45,7 @@
       </div>
     </div>
     
-    <footer class="flex items-center justify-between pt-4 border-t border-gray-200">
+    <footer class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-slate-700">
       <div class="flex items-center gap-6 text-sm">
         <TimeIndicator label="Start" :time="startTime" />
         <TimeIndicator label="End" :time="endTime" />

@@ -50,12 +50,12 @@ function handleClipDeleted(): void {
         <Icon icon="material-symbols:label" class="w-5 h-5 text-orange-500" />
         <div class="flex-1">
           <div class="flex items-center gap-2">
-            <h3 class="text-sm font-semibold text-gray-900">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">
               {{ getGameDisplayName(group.game) }}
             </h3>
-            <span class="text-xs text-gray-500">•</span>
-            <span class="text-xs text-gray-500">{{ group.displayDate }}</span>
-            <span class="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+            <span class="text-xs text-gray-500 dark:text-slate-400">•</span>
+            <span class="text-xs text-gray-500 dark:text-slate-400">{{ group.displayDate }}</span>
+            <span class="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full dark:text-slate-500 dark:bg-slate-800">
               {{ group.clips.length }}
             </span>
           </div>

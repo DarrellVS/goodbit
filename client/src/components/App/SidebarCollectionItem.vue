@@ -41,7 +41,7 @@ const emit = defineEmits<Emits>();
       <input
         :data-collection-edit="collection.id"
         :value="editingName"
-        class="w-full px-2 py-1 text-sm rounded border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50"
+        class="w-full px-2 py-1 text-sm rounded border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700"
         @input="emit('update:editing-name', ($event.target as HTMLInputElement).value)"
         @keyup.enter="emit('save-edit')"
         @keyup.esc="emit('cancel-edit')"

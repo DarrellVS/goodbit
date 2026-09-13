@@ -38,8 +38,8 @@ const hasNotes = computed(() => props.notes && props.notes.trim().length > 0);
       <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center mb-4">
         <Icon icon="material-symbols:note-add" class="text-3xl text-orange-600" />
       </div>
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">No notes yet</h3>
-      <p class="text-sm text-gray-600 mb-6 max-w-md">
+      <h3 class="text-lg font-semibold text-gray-900 mb-2 dark:text-slate-100">No notes yet</h3>
+      <p class="text-sm text-gray-600 mb-6 max-w-md dark:text-slate-400">
         Add notes to remember context, mark important moments with timestamps, or annotate your clip with markdown formatting.
       </p>
       <button
@@ -55,7 +55,7 @@ const hasNotes = computed(() => props.notes && props.notes.trim().length > 0);
     <div v-else class="relative">
       <div class="absolute top-0 right-0 z-10">
         <button
-          class="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-all shadow-sm flex items-center gap-2 text-sm font-medium"
+          class="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-all shadow-sm flex items-center gap-2 text-sm font-medium dark:bg-slate-900 dark:border-slate-700"
           @click="emit('edit')"
         >
           <Icon icon="material-symbols:edit" class="text-lg" />

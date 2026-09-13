@@ -23,7 +23,7 @@ function handleInput(event: Event) {
     <input
       :value="modelValue"
       :placeholder="placeholder"
-      class="w-full px-2 py-1.5 text-sm rounded-lg border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50"
+      class="w-full px-2 py-1.5 text-sm rounded-lg border border-gray-300 bg-white/5 outline-none focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700"
       @input="handleInput"
       @keyup.enter="emit('submit')"
       @keyup.esc="emit('cancel')"

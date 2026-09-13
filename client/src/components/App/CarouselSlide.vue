@@ -47,9 +47,9 @@ function handleDelete(): void {
         :default-value="clip.displayName || clip.filename" 
         @update:model-value="handleRename"
       >
-        <EditableArea class="text-lg font-semibold text-gray-900">
+        <EditableArea class="text-lg font-semibold text-gray-900 dark:text-slate-100">
           <EditablePreview />
-          <EditableInput class="bg-transparent outline-none border-b border-gray-300" />
+          <EditableInput class="bg-transparent outline-none border-b border-gray-300 dark:border-slate-700" />
         </EditableArea>
       </EditableRoot>
       

@@ -143,19 +143,19 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             </DropdownMenuTrigger>
             <DropdownMenuPortal>
               <DropdownMenuContent
-                class="min-w-[180px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50"
+                class="min-w-[180px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50 dark:bg-slate-900 dark:border-slate-700"
                 align="end"
                 :side-offset="4"
               >
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
                   @click="openRenameDialog(game)"
                 >
                   <Icon icon="mdi:pencil" class="text-base" />
                   <span>Rename</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
                   @click="hideGame(game)"
                 >
                   <Icon icon="mdi:eye-off-outline" class="text-base" />

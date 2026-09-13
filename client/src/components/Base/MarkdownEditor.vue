@@ -61,7 +61,7 @@ function handleInsert(prefix: string, suffix = '') {
       @toggle-preview="togglePreview"
     />
 
-    <div class="relative bg-white">
+    <div class="relative bg-white dark:bg-slate-900">
       <MarkdownTextarea
         v-if="!showPreview"
         ref="textareaComponent"

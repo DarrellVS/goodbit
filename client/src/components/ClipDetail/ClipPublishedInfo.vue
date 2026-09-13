@@ -18,7 +18,7 @@ async function copyPublicUrl() {
 </script>
 
 <template>
-  <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 border border-gray-300">
+  <div v-if="clip.published && clip.publishedUrl" class="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-6 border border-gray-300 dark:border-slate-700">
     <div class="flex items-center gap-2 mb-4">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
         <Icon icon="material-symbols:cloud-done-rounded" class="text-xl text-white" />

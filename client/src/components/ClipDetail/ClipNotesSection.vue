@@ -15,12 +15,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="bg-gradient-to-br from-white to-orange-50/30 rounded-2xl p-6 border border-gray-300">
+  <div class="bg-gradient-to-br from-white to-orange-50/30 rounded-2xl p-6 border border-gray-300 dark:border-slate-700">
     <div class="flex items-center gap-2 mb-6">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
         <Icon icon="material-symbols:note-rounded" class="text-xl text-white" />
       </div>
-      <h2 class="text-lg font-bold text-gray-900">Notes & Annotations</h2>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">Notes & Annotations</h2>
     </div>
     
     <NotesDisplay

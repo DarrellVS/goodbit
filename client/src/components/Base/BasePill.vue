@@ -4,7 +4,7 @@ defineProps<{ active?: boolean }>();
 
 <template>
   <button
-    class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white text-sm font-medium text-foreground/80 border border-gray-300 shadow-soft hover:bg-muted-50 transition"
+    class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white text-sm font-medium text-foreground/80 border border-gray-300 shadow-soft hover:bg-muted-50 transition dark:bg-slate-900 dark:border-slate-700"
     :class="{ 'ring-2 ring-primary/40 border-primary/60': active }"
   >
     <slot />

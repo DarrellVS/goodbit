@@ -49,9 +49,9 @@ function applyFadePreset(seconds: number): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-gray-300">
-      <h3 class="text-sm font-semibold flex items-center gap-2 text-gray-900">
+  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden dark:border-slate-700">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-gray-300 dark:border-slate-700">
+      <h3 class="text-sm font-semibold flex items-center gap-2 text-gray-900 dark:text-slate-100">
         <Icon icon="material-symbols:tune" class="text-orange-500" />
         Track Properties
       </h3>
@@ -63,20 +63,20 @@ function applyFadePreset(seconds: number): void {
         <Icon icon="material-symbols:music-note" class="text-white" />
       </div>
       <div class="min-w-0">
-        <div class="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">{{ item.name }}</div>
-        <div class="text-[10px] text-gray-500 font-mono mt-0.5">
+        <div class="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight dark:text-slate-100">{{ item.name }}</div>
+        <div class="text-[10px] text-gray-500 font-mono mt-0.5 dark:text-slate-400">
           starts at {{ formatTime(item.startTime) }}
         </div>
       </div>
     </div>
 
     <div class="space-y-2">
-      <label class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center justify-between">
+      <label class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center justify-between dark:text-slate-300">
         <span class="flex items-center gap-1">
           <Icon icon="material-symbols:volume-up" class="text-orange-500" />
           Level
         </span>
-        <span class="text-gray-900 font-mono text-sm">{{ volumePercent }}% · {{ volumeDb }} dB</span>
+        <span class="text-gray-900 font-mono text-sm dark:text-slate-100">{{ volumePercent }}% · {{ volumeDb }} dB</span>
       </label>
       <input
         type="range"
@@ -102,15 +102,15 @@ function applyFadePreset(seconds: number): void {
     </div>
 
     <div class="space-y-3">
-      <div class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1">
+      <div class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1 dark:text-slate-300">
         <Icon icon="material-symbols:gradient" class="text-orange-500" />
         Fades
       </div>
 
       <div class="space-y-1.5">
-        <div class="flex items-center justify-between text-[11px] text-gray-600">
+        <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-slate-400">
           <span>Fade in</span>
-          <span class="font-mono text-gray-900">{{ item.fadeIn.toFixed(1) }}s</span>
+          <span class="font-mono text-gray-900 dark:text-slate-100">{{ item.fadeIn.toFixed(1) }}s</span>
         </div>
         <input
           type="range"
@@ -124,9 +124,9 @@ function applyFadePreset(seconds: number): void {
       </div>
 
       <div class="space-y-1.5">
-        <div class="flex items-center justify-between text-[11px] text-gray-600">
+        <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-slate-400">
           <span>Fade out</span>
-          <span class="font-mono text-gray-900">{{ item.fadeOut.toFixed(1) }}s</span>
+          <span class="font-mono text-gray-900 dark:text-slate-100">{{ item.fadeOut.toFixed(1) }}s</span>
         </div>
         <input
           type="range"
@@ -143,7 +143,7 @@ function applyFadePreset(seconds: number): void {
         <button
           v-for="preset in [0, 1, 2, 4]"
           :key="preset"
-          class="flex-1 py-1 rounded-md text-[10px] font-medium border bg-white/80 text-gray-700 border-gray-300 hover:border-orange-400 transition-colors"
+          class="flex-1 py-1 rounded-md text-[10px] font-medium border bg-white/80 text-gray-700 border-gray-300 hover:border-orange-400 transition-colors dark:text-slate-300 dark:border-slate-700"
           @click="applyFadePreset(preset)"
         >
           {{ preset === 0 ? 'none' : `${preset}s` }}
@@ -164,27 +164,27 @@ function applyFadePreset(seconds: number): void {
       </button>
     </div>
 
-    <div class="pt-4 border-t border-gray-300 space-y-2">
-      <div class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1">
+    <div class="pt-4 border-t border-gray-300 space-y-2 dark:border-slate-700">
+      <div class="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1 dark:text-slate-300">
         <Icon icon="material-symbols:info" class="text-orange-500" />
         Track Info
       </div>
-      <div class="space-y-1.5 text-xs bg-white/80 rounded-lg p-3 border border-gray-300">
+      <div class="space-y-1.5 text-xs bg-white/80 rounded-lg p-3 border border-gray-300 dark:border-slate-700">
         <div class="flex justify-between">
-          <span class="text-gray-600">Original:</span>
-          <span class="font-mono text-gray-900">{{ formatTime(item.originalDuration) }}</span>
+          <span class="text-gray-600 dark:text-slate-400">Original:</span>
+          <span class="font-mono text-gray-900 dark:text-slate-100">{{ formatTime(item.originalDuration) }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-gray-600">Used:</span>
-          <span class="font-mono text-gray-900">{{ formatTime(item.duration) }}</span>
+          <span class="text-gray-600 dark:text-slate-400">Used:</span>
+          <span class="font-mono text-gray-900 dark:text-slate-100">{{ formatTime(item.duration) }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-gray-600">Trim Start:</span>
-          <span class="font-mono text-gray-900">{{ formatTime(item.trimStart) }}</span>
+          <span class="text-gray-600 dark:text-slate-400">Trim Start:</span>
+          <span class="font-mono text-gray-900 dark:text-slate-100">{{ formatTime(item.trimStart) }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-gray-600">Trim End:</span>
-          <span class="font-mono text-gray-900">{{ formatTime(item.trimEnd) }}</span>
+          <span class="text-gray-600 dark:text-slate-400">Trim End:</span>
+          <span class="font-mono text-gray-900 dark:text-slate-100">{{ formatTime(item.trimEnd) }}</span>
         </div>
       </div>
     </div>

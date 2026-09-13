@@ -42,10 +42,10 @@ defineProps<Props>();
           <p class="text-xl text-gray-300">
             Videos will be imported to the "Import" game
           </p>
-          <p class="text-sm text-gray-400 mt-4">
+          <p class="text-sm text-gray-400 mt-4 dark:text-slate-500">
             Supported: MP4, MOV, AVI, MKV, WEBM
           </p>
-          <p class="text-xs text-gray-500 mt-2">
+          <p class="text-xs text-gray-500 mt-2 dark:text-slate-400">
             AVI, MKV, WEBM will be automatically converted to MP4
           </p>
         </template>
@@ -74,7 +74,7 @@ defineProps<Props>();
                 :style="{ width: `${uploadProgress}%` }"
               />
             </div>
-            <p class="text-sm text-gray-400 mt-2">{{ Math.round(uploadProgress) }}%</p>
+            <p class="text-sm text-gray-400 mt-2 dark:text-slate-500">{{ Math.round(uploadProgress) }}%</p>
           </div>
         </template>
       </div>

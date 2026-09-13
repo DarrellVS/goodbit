@@ -65,19 +65,19 @@ function cancelEdit() {
         @timestamp-click="(seconds) => emit('timestamp-click', seconds)"
       />
       
-      <div class="mt-4 flex items-center gap-3 text-xs text-gray-600 bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-200">
+      <div class="mt-4 flex items-center gap-3 text-xs text-gray-600 bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border border-orange-200 dark:text-slate-400">
         <Icon icon="material-symbols:info-rounded" class="text-orange-600 text-lg flex-shrink-0" />
         <div class="space-y-1">
-          <p class="font-medium">Use Markdown for rich formatting and add timestamps like <code class="px-1.5 py-0.5 bg-white rounded">1:30</code> to mark specific moments.</p>
+          <p class="font-medium">Use Markdown for rich formatting and add timestamps like <code class="px-1.5 py-0.5 bg-white rounded dark:bg-slate-900">1:30</code> to mark specific moments.</p>
           <p>Click timestamps in preview mode to jump to that moment in the video!</p>
         </div>
       </div>
     </div>
     
     <template #footer>
-      <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800">
         <button
-          class="px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors font-medium text-gray-700"
+          class="px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors font-medium text-gray-700 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300"
           @click="cancelEdit"
         >
           Cancel

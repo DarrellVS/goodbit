@@ -25,7 +25,7 @@ import { applyUpdate, dismissUpdate, updateAvailable } from '../../utils/service
       </button>
 
       <button
-        class="text-gray-400 hover:text-white transition-colors"
+        class="text-gray-400 hover:text-white transition-colors dark:text-slate-500"
         title="Later"
         @click="dismissUpdate"
       >

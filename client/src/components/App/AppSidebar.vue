@@ -22,7 +22,7 @@ const emit = defineEmits<Emits>();
 </script>
 
 <template>
-  <aside class="w-64 bg-white/5 backdrop-blur-sm border-r border-gray-200 flex flex-col h-full">
+  <aside class="w-64 bg-white/5 backdrop-blur-sm border-r border-gray-200 flex flex-col h-full dark:border-slate-700">
     <div class="p-6">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
@@ -73,7 +73,7 @@ const emit = defineEmits<Emits>();
       <SidebarCollections />
     </nav>
 
-    <div class="p-3 space-y-1 border-t border-gray-200">
+    <div class="p-3 space-y-1 border-t border-gray-200 dark:border-slate-700">
       <RouterLink
         to="/tag-patterns"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors group"

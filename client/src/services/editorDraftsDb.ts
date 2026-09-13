@@ -50,6 +50,14 @@ export interface EditorDraft {
   updatedAt: string;
   clips: EditorDraftClip[];
   audio: EditorDraftAudio[];
+  /**
+   * The server-side project this draft mirrors, once it has one.
+   *
+   * Named drafts are pushed to the library so they survive a cleared browser
+   * and show up on another machine. Optional, and the store has no schema, so
+   * records written before this existed still read back fine.
+   */
+  serverId?: number;
 }
 
 let db: IDBDatabase | null = null;

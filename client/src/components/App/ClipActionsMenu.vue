@@ -73,34 +73,34 @@ async function handleMoveToGame(targetGame: string) {
       </MenubarTrigger>
       <MenubarPortal>
         <MenubarContent
-          class="min-w-[200px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50"
+          class="min-w-[200px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50 dark:bg-slate-900 dark:border-slate-700"
           align="end"
           :side-offset="8"
         >
           <!-- Edit Submenu -->
           <MenubarSub>
             <MenubarSubTrigger
-              class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none data-[state=open]:bg-gray-100"
+              class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none data-[state=open]:bg-gray-100 dark:hover:bg-slate-800"
             >
               <div class="flex items-center gap-2">
                 <Icon icon="material-symbols:edit" class="text-base" />
                 <span>Edit</span>
               </div>
-              <Icon icon="material-symbols:chevron-right" class="text-base text-gray-400" />
+              <Icon icon="material-symbols:chevron-right" class="text-base text-gray-400 dark:text-slate-500" />
             </MenubarSubTrigger>
             <MenubarPortal>
               <MenubarSubContent
-                class="min-w-[180px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50"
+                class="min-w-[180px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50 dark:bg-slate-900 dark:border-slate-700"
               >
                 <MenubarItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
                   @click="onTrim"
                 >
                   <Icon icon="material-symbols:content-cut" class="text-base" />
                   <span>Trim</span>
                 </MenubarItem>
                 <MenubarItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
                   @click="onAdvancedEdit"
                 >
                   <Icon icon="material-symbols:video-settings" class="text-base" />
@@ -110,11 +110,11 @@ async function handleMoveToGame(targetGame: string) {
             </MenubarPortal>
           </MenubarSub>
 
-          <MenubarSeparator class="h-px bg-gray-200 my-1" />
+          <MenubarSeparator class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
           <!-- Reveal in Explorer -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
             @click="onReveal"
           >
             <Icon icon="material-symbols:folder-open" class="text-base" />
@@ -123,7 +123,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Export Audio -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
             :class="{ 'opacity-50 pointer-events-none': isExportingAudio }"
             @click="onExportAudio"
           >
@@ -137,7 +137,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Move to Game -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
             @click="showMoveDialog = true"
           >
             <Icon icon="material-symbols:drive-file-move" class="text-base" />
@@ -147,14 +147,14 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Copy URL (conditional) -->
           <MenubarItem
             v-if="clip.published && clip.publishedUrl"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
             @click="onCopyUrl"
           >
             <Icon icon="material-symbols:link" class="text-base" />
             <span>Copy URL</span>
           </MenubarItem>
 
-          <MenubarSeparator v-if="collectionId" class="h-px bg-gray-200 my-1" />
+          <MenubarSeparator v-if="collectionId" class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
           <!-- Remove from Collection -->
           <MenubarItem
@@ -166,7 +166,7 @@ async function handleMoveToGame(targetGame: string) {
             <span>Remove from Collection</span>
           </MenubarItem>
 
-          <MenubarSeparator class="h-px bg-gray-200 my-1" />
+          <MenubarSeparator class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
           <!-- Publish/Unpublish -->
           <MenubarItem
@@ -180,7 +180,7 @@ async function handleMoveToGame(targetGame: string) {
           </MenubarItem>
           <MenubarItem
             v-else
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none dark:hover:bg-slate-800"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onPublish"
           >
@@ -188,7 +188,7 @@ async function handleMoveToGame(targetGame: string) {
             <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
           </MenubarItem>
 
-          <MenubarSeparator class="h-px bg-gray-200 my-1" />
+          <MenubarSeparator class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
           <!-- Delete -->
           <MenubarItem

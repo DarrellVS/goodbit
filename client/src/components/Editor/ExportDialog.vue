@@ -11,7 +11,15 @@ import {
   DialogTitle,
 } from 'radix-vue';
 import { formatTime } from '../../utils/timeFormat';
-import { EXPORT_FORMATS, PLATFORM_PRESETS, type ExportFormat } from '../../../../shared';
+// Straight at the source rather than through the package root: `shared/dist` is
+// compiled to CommonJS, and Rollup cannot pick named runtime values out of a
+// CJS re-export. Types alone resolved fine through the root, which is why every
+// other import here still does.
+import {
+  EXPORT_FORMATS,
+  PLATFORM_PRESETS,
+  type ExportFormat,
+} from '../../../../shared/constants/exportFormats';
 import type { ExportOptions } from '../../services/clips';
 
 interface Props {
@@ -109,18 +117,18 @@ watch(
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-lg max-h-[90vh] flex flex-col outline-none modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-lg max-h-[90vh] flex flex-col outline-none modal-content-animate dark:bg-slate-900 dark:border-slate-700"
       >
-        <div class="p-6 border-b border-gray-200">
-          <DialogTitle class="text-xl font-bold text-gray-900 mb-1">Export timeline</DialogTitle>
-          <DialogDescription class="text-sm text-gray-600">
+        <div class="p-6 border-b border-gray-200 dark:border-slate-700">
+          <DialogTitle class="text-xl font-bold text-gray-900 mb-1 dark:text-slate-100">Export timeline</DialogTitle>
+          <DialogDescription class="text-sm text-gray-600 dark:text-slate-400">
             The render lands in your Editor folder under this name
           </DialogDescription>
         </div>
 
         <div class="p-6 space-y-5 overflow-y-auto">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-slate-400">
               Clip name
             </label>
             <div class="relative">
@@ -129,11 +137,11 @@ watch(
                 v-model="name"
                 type="text"
                 placeholder="Name your clip"
-                class="w-full px-4 py-2.5 pr-14 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-500"
+                class="w-full px-4 py-2.5 pr-14 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-500 dark:border-slate-700"
                 :disabled="exporting"
                 @keydown.enter="submit"
               />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-mono text-gray-400">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-mono text-gray-400 dark:text-slate-500">
                 .mp4
               </span>
             </div>
@@ -143,7 +151,7 @@ watch(
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-slate-400">
               Made for
             </label>
             <div class="flex flex-wrap gap-2">
@@ -165,7 +173,7 @@ watch(
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide dark:text-slate-400">
               Shape
             </label>
             <div class="grid grid-cols-5 gap-2">
@@ -189,7 +197,7 @@ watch(
                     height: spec.ratio === null ? '12px' : (spec.ratio >= 1 ? `${22 / spec.ratio}px` : '22px'),
                   }"
                 />
-                <span class="text-[10px] font-medium text-gray-700 text-center leading-tight">
+                <span class="text-[10px] font-medium text-gray-700 text-center leading-tight dark:text-slate-300">
                   {{ spec.label }}
                 </span>
               </button>
@@ -200,7 +208,7 @@ watch(
               slice of the picture survives, since an ultrawide loses most of it.
             -->
             <div v-if="canPosition" class="pt-1 space-y-1">
-              <div class="flex items-center justify-between text-xs text-gray-600">
+              <div class="flex items-center justify-between text-xs text-gray-600 dark:text-slate-400">
                 <span>Crop position</span>
                 <span class="font-mono">{{ Math.round(framePos * 100) }}%</span>
               </div>
@@ -213,7 +221,7 @@ watch(
                 class="w-full accent-orange-500"
                 :disabled="exporting"
               />
-              <div class="flex justify-between text-[10px] text-gray-400">
+              <div class="flex justify-between text-[10px] text-gray-400 dark:text-slate-500">
                 <span>Left</span><span>Centre</span><span>Right</span>
               </div>
             </div>
@@ -226,16 +234,16 @@ watch(
               class="mt-0.5 accent-orange-500"
               :disabled="exporting"
             />
-            <span class="text-sm text-gray-700">
+            <span class="text-sm text-gray-700 dark:text-slate-300">
               Even out the sound
-              <span class="block text-xs text-gray-500">
+              <span class="block text-xs text-gray-500 dark:text-slate-400">
                 Puts the whole movie at −14 LUFS, the level the platforms turn everything down to anyway
               </span>
             </span>
           </label>
 
           <div v-if="exporting" class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs font-medium text-gray-700">
+            <div class="flex items-center justify-between text-xs font-medium text-gray-700 dark:text-slate-300">
               <span>{{ message || 'Rendering…' }}</span>
               <span class="font-mono">{{ Math.round(progress) }}%</span>
             </div>
@@ -245,16 +253,16 @@ watch(
                 :style="{ width: `${Math.max(2, progress)}%` }"
               />
             </div>
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-gray-500 dark:text-slate-400">
               {{ etaLabel || 'This runs on the server — it keeps going even if the render outlasts the page.' }}
             </p>
           </div>
 
-          <div class="rounded-lg bg-gray-50 border border-gray-200 p-3 space-y-1.5 text-sm text-gray-700">
+          <div class="rounded-lg bg-gray-50 border border-gray-200 p-3 space-y-1.5 text-sm text-gray-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
             <div class="flex items-center gap-2">
               <Icon icon="material-symbols:movie" class="text-lg text-orange-500" />
               {{ clipCount }} clip{{ clipCount === 1 ? '' : 's' }}
-              <span class="text-gray-400">·</span>
+              <span class="text-gray-400 dark:text-slate-500">·</span>
               <span class="font-mono">{{ formatTime(duration) }}</span>
             </div>
             <div class="flex items-center gap-2">
@@ -264,7 +272,7 @@ watch(
           </div>
         </div>
 
-        <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+        <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3 dark:border-slate-700">
           <!-- A render in flight can be stopped; ffmpeg is killed server-side. -->
           <button
             v-if="exporting"
@@ -276,7 +284,7 @@ watch(
 
           <DialogClose v-else as-child>
             <button
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Cancel
             </button>

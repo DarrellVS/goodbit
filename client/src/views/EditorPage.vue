@@ -529,8 +529,8 @@ watch(
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-background text-gray-900 overflow-hidden">
-    <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-white/60 backdrop-blur-sm border-b border-gray-300">
+  <div class="h-screen flex flex-col bg-background text-gray-900 overflow-hidden dark:text-slate-100">
+    <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-white/60 backdrop-blur-sm border-b border-gray-300 dark:border-slate-700">
       <div class="flex items-center gap-3">
         <button
           class="p-2 rounded-lg hover:bg-black/5 transition-colors"
@@ -545,12 +545,12 @@ watch(
           </div>
           <div>
             <h1 class="text-lg font-bold">Advanced Editor</h1>
-            <p v-if="!activeDraft" class="text-[10px] text-gray-600">Create your masterpiece</p>
-            <p v-else class="text-[10px] text-gray-600 flex items-center gap-1">
+            <p v-if="!activeDraft" class="text-[10px] text-gray-600 dark:text-slate-400">Create your masterpiece</p>
+            <p v-else class="text-[10px] text-gray-600 flex items-center gap-1 dark:text-slate-400">
               <Icon icon="material-symbols:bookmark" class="text-orange-500 text-xs" />
               <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
               <button
-                class="text-gray-400 hover:text-gray-700 transition-colors"
+                class="text-gray-400 hover:text-gray-700 transition-colors dark:text-slate-500"
                 title="Stop editing this draft — further changes go to the autosave"
                 @click="detachDraft"
               >
@@ -563,7 +563,7 @@ watch(
 
       <div class="flex items-center gap-2">
         <button
-          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium bg-black/5 hover:bg-black/10 border border-transparent text-gray-700"
+          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium bg-black/5 hover:bg-black/10 border border-transparent text-gray-700 dark:text-slate-300"
           @click="showDraftsDialog = true"
         >
           <Icon icon="material-symbols:bookmarks-outline" />
@@ -598,7 +598,7 @@ watch(
 
     <div class="flex-1 flex gap-3 p-3 overflow-hidden">
       <aside v-if="showLibrary" class="w-96 flex-shrink-0 flex flex-col gap-2">
-        <div class="flex-shrink-0 grid grid-cols-2 gap-1 p-1 bg-white/60 rounded-lg border border-gray-300">
+        <div class="flex-shrink-0 grid grid-cols-2 gap-1 p-1 bg-white/60 rounded-lg border border-gray-300 dark:border-slate-700">
           <button
             class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
             :class="libraryTab === 'clips' ? 'bg-orange-500 text-white' : 'text-gray-700 hover:bg-black/5'"
@@ -654,10 +654,10 @@ watch(
         >
           <Icon icon="material-symbols:history" class="text-xl text-orange-500 flex-shrink-0" />
           <div class="min-w-0 flex-1">
-            <div class="text-sm font-medium text-gray-900">
+            <div class="text-sm font-medium text-gray-900 dark:text-slate-100">
               {{ resumable.name === 'Autosave' ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
             </div>
-            <div class="text-xs text-gray-600">
+            <div class="text-xs text-gray-600 dark:text-slate-400">
               {{ resumable.clips.length }} clip{{ resumable.clips.length === 1 ? '' : 's' }}
               <span v-if="resumable.audio.length">
                 · {{ resumable.audio.length }} track{{ resumable.audio.length === 1 ? '' : 's' }}
@@ -674,21 +674,21 @@ watch(
             <span>{{ restoring ? 'Restoring…' : 'Resume' }}</span>
           </button>
           <button
-            class="h-8 px-4 rounded-lg border border-gray-300 bg-white/70 text-gray-700 text-xs font-semibold hover:bg-white transition-colors inline-flex items-center justify-center flex-shrink-0"
+            class="h-8 px-4 rounded-lg border border-gray-300 bg-white/70 text-gray-700 text-xs font-semibold hover:bg-white transition-colors inline-flex items-center justify-center flex-shrink-0 dark:border-slate-700 dark:text-slate-300"
             @click="dismissResumable"
           >
             Discard
           </button>
         </div>
 
-        <div class="flex-1 relative bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
+        <div class="flex-1 relative bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden dark:border-slate-700">
           <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
             <!--
               Two stacked players: one is on screen while the other preloads and
               pre-seeks the next clip, so switching clips does not blank the
               frame. Black backdrop so any residual gap reads as black, not white.
             -->
-            <div class="relative max-w-full max-h-full bg-black shadow-2xl rounded-lg border border-gray-300 overflow-hidden">
+            <div class="relative max-w-full max-h-full bg-black shadow-2xl rounded-lg border border-gray-300 overflow-hidden dark:border-slate-700">
               <video
                 ref="videoA"
                 class="max-w-full max-h-full block"
@@ -720,8 +720,8 @@ watch(
               <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
                 <Icon icon="material-symbols:movie" class="text-4xl text-orange-400" />
               </div>
-              <p class="text-lg font-semibold mb-2 text-gray-900">No clips in timeline</p>
-              <p class="text-sm text-gray-600">Click clips from the library to get started</p>
+              <p class="text-lg font-semibold mb-2 text-gray-900 dark:text-slate-100">No clips in timeline</p>
+              <p class="text-sm text-gray-600 dark:text-slate-400">Click clips from the library to get started</p>
             </div>
           </div>
         </div>

@@ -18,9 +18,9 @@ function toggle(): void {
 </script>
 
 <template>
-  <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+  <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 dark:bg-slate-900 dark:border-slate-700">
     <div>
-      <label class="font-medium text-gray-900">{{ label }}</label>
+      <label class="font-medium text-gray-900 dark:text-slate-100">{{ label }}</label>
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>
     </div>
     <button
@@ -29,7 +29,7 @@ function toggle(): void {
       @click="toggle"
     >
       <span
-        class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+        class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900"
         :class="modelValue ? 'translate-x-6' : 'translate-x-1'"
       />
     </button>

@@ -29,7 +29,7 @@ function selectSection(sectionId: string): void {
 </script>
 
 <template>
-  <aside class="w-64 border-r border-gray-200 bg-gray-50/50 flex flex-col">
+  <aside class="w-64 border-r border-gray-200 bg-gray-50/50 flex flex-col dark:border-slate-700">
     <nav class="flex-1 p-3 space-y-1 overflow-y-auto pt-6">
       <button
         v-for="section in sections"
@@ -48,16 +48,16 @@ function selectSection(sectionId: string): void {
       </button>
     </nav>
 
-    <div class="p-3 border-t border-gray-200 space-y-2">
+    <div class="p-3 border-t border-gray-200 space-y-2 dark:border-slate-700">
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/50 transition-colors text-sm text-gray-700"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/50 transition-colors text-sm text-gray-700 dark:text-slate-300"
         @click="emit('export')"
       >
         <Icon icon="material-symbols:download" />
         Export Settings
       </button>
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/50 transition-colors text-sm text-gray-700"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/50 transition-colors text-sm text-gray-700 dark:text-slate-300"
         @click="emit('import')"
       >
         <Icon icon="material-symbols:upload" />

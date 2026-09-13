@@ -52,13 +52,13 @@ const someStarred = computed(() =>
 
 <template>
   <div
-    class="bg-white rounded-xl shadow-2xl border border-gray-300 px-4 py-3 flex items-center gap-4 min-w-[500px]"
+    class="bg-white rounded-xl shadow-2xl border border-gray-300 px-4 py-3 flex items-center gap-4 min-w-[500px] dark:bg-slate-900 dark:border-slate-700"
   >
     <div class="flex items-center gap-2">
       <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm text-white count-animate">
         {{ selectedCount }}
       </div>
-      <span class="font-medium text-gray-900">
+      <span class="font-medium text-gray-900 dark:text-slate-100">
         {{ selectedCount === 1 ? 'clip selected' : `clips selected` }}
       </span>
     </div>
@@ -67,7 +67,7 @@ const someStarred = computed(() =>
       <!-- Star/Unstar -->
       <button
         v-if="!allStarred"
-        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover dark:hover:bg-slate-800 dark:text-slate-300"
         @click="emit('star')"
         title="Star selected clips"
       >
@@ -76,7 +76,7 @@ const someStarred = computed(() =>
       </button>
       <button
         v-else
-        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover dark:hover:bg-slate-800 dark:text-slate-300"
         @click="emit('unstar')"
         title="Unstar selected clips"
       >
@@ -86,7 +86,7 @@ const someStarred = computed(() =>
 
       <!-- Add Tags -->
       <button
-        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover dark:hover:bg-slate-800 dark:text-slate-300"
         @click="emit('add-tags')"
         title="Add tags to selected clips"
       >
@@ -97,31 +97,31 @@ const someStarred = computed(() =>
       <!-- More Actions Dropdown -->
       <DropdownMenuRoot>
         <DropdownMenuTrigger
-          class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium outline-none text-gray-700 scale-on-hover"
+          class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium outline-none text-gray-700 scale-on-hover dark:hover:bg-slate-800 dark:text-slate-300"
         >
           <Icon icon="material-symbols:more-horiz" class="text-base transform-transition" />
           <span>More</span>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuContent
-            class="min-w-[200px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50"
+            class="min-w-[200px] bg-white rounded-lg p-1 shadow-lg border border-gray-200 outline-none z-50 dark:bg-slate-900 dark:border-slate-700"
             :side-offset="8"
           >
             <!-- Open in Advanced Editor -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
               @click="emit('open-in-editor')"
             >
               <Icon icon="material-symbols:movie-edit" class="text-base" />
               <span>Open in Advanced Editor</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-gray-200 my-1" />
+            <DropdownMenuSeparator class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
             <!-- Publish/Unpublish -->
             <DropdownMenuItem
               v-if="!allPublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
               @click="emit('publish')"
             >
               <Icon icon="material-symbols:cloud-upload" class="text-base" />
@@ -136,11 +136,11 @@ const someStarred = computed(() =>
               <span>Unpublish</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-gray-200 my-1" />
+            <DropdownMenuSeparator class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
             <!-- Add to Collection -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-gray-100 outline-none cursor-pointer select-none text-gray-900 dark:hover:bg-slate-800 dark:text-slate-100"
               @click="emit('add-to-collection')"
             >
               <Icon icon="material-symbols:create-new-folder" class="text-base" />
@@ -157,7 +157,7 @@ const someStarred = computed(() =>
               <span>Remove from Collection</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-gray-200 my-1" />
+            <DropdownMenuSeparator class="h-px bg-gray-200 my-1 dark:bg-slate-700" />
 
             <!-- Delete -->
             <DropdownMenuItem
@@ -175,7 +175,7 @@ const someStarred = computed(() =>
 
       <!-- Clear Selection -->
       <button
-        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover"
+        class="px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 scale-on-hover dark:hover:bg-slate-800 dark:text-slate-300"
         @click="emit('deselect-all')"
         title="Clear selection"
       >

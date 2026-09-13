@@ -65,30 +65,30 @@ function toggleTag(name: string): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-gray-300 flex items-center justify-between gap-2">
-      <h3 class="text-sm font-semibold flex items-center gap-2 text-gray-900">
+  <div class="flex flex-col h-full bg-white/60 backdrop-blur-sm rounded-xl border border-gray-300 overflow-hidden dark:border-slate-700">
+    <div class="flex-shrink-0 px-4 py-3 bg-orange-50/50 border-b border-gray-300 flex items-center justify-between gap-2 dark:border-slate-700">
+      <h3 class="text-sm font-semibold flex items-center gap-2 text-gray-900 dark:text-slate-100">
         <Icon icon="material-symbols:video-library" class="text-orange-500" />
         Clip Library
       </h3>
-      <span class="text-xs text-gray-500">{{ clips.length }}</span>
+      <span class="text-xs text-gray-500 dark:text-slate-400">{{ clips.length }}</span>
     </div>
 
-    <div class="flex-shrink-0 p-3 space-y-2 border-b border-gray-200">
+    <div class="flex-shrink-0 p-3 space-y-2 border-b border-gray-200 dark:border-slate-700">
       <div class="relative">
         <Icon
           icon="material-symbols:search"
-          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none"
+          class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none dark:text-slate-500"
         />
         <input
           v-model="search"
           type="search"
           placeholder="Search clips and tags"
-          class="w-full pl-9 pr-8 py-2 text-sm rounded-lg bg-white/80 border border-gray-300 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+          class="w-full pl-9 pr-8 py-2 text-sm rounded-lg bg-white/80 border border-gray-300 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/40 dark:border-slate-700"
         />
         <button
           v-if="search"
-          class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-700"
+          class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-700 dark:text-slate-500"
           @click="search = ''"
         >
           <Icon icon="material-symbols:close" class="text-sm" />
@@ -97,7 +97,7 @@ function toggleTag(name: string): void {
 
       <select
         v-model="selectedGame"
-        class="w-full px-2.5 py-2 text-sm rounded-lg bg-white/80 border border-gray-300 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+        class="w-full px-2.5 py-2 text-sm rounded-lg bg-white/80 border border-gray-300 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/40 dark:border-slate-700"
       >
         <option value="">All games</option>
         <option v-for="game in games" :key="game.game" :value="game.game">
@@ -126,7 +126,7 @@ function toggleTag(name: string): void {
             v-model="tagSearch"
             type="search"
             placeholder="Find a tag"
-            class="w-full px-2.5 py-1.5 text-sm rounded-md bg-white/80 border border-gray-300 focus:border-orange-500 focus:outline-none"
+            class="w-full px-2.5 py-1.5 text-sm rounded-md bg-white/80 border border-gray-300 focus:border-orange-500 focus:outline-none dark:border-slate-700"
           />
           <div class="max-h-32 overflow-y-auto flex flex-wrap gap-1.5">
             <button
@@ -140,7 +140,7 @@ function toggleTag(name: string): void {
             >
               {{ tag.name }}
             </button>
-            <span v-if="visibleTags.length === 0" class="text-xs text-gray-500 px-1">No tags match</span>
+            <span v-if="visibleTags.length === 0" class="text-xs text-gray-500 px-1 dark:text-slate-400">No tags match</span>
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ function toggleTag(name: string): void {
 
       <button
         v-if="hasFilters"
-        class="w-full py-1.5 text-xs text-gray-600 hover:text-orange-600 transition-colors"
+        class="w-full py-1.5 text-xs text-gray-600 hover:text-orange-600 transition-colors dark:text-slate-400"
         @click="emit('clear-filters')"
       >
         Clear filters
@@ -175,8 +175,8 @@ function toggleTag(name: string): void {
         <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
           <Icon icon="material-symbols:search-off" class="text-2xl text-orange-400" />
         </div>
-        <p class="text-sm font-medium text-gray-700">No clips found</p>
-        <p class="text-xs mt-1 text-gray-500">
+        <p class="text-sm font-medium text-gray-700 dark:text-slate-300">No clips found</p>
+        <p class="text-xs mt-1 text-gray-500 dark:text-slate-400">
           {{ hasFilters ? 'Try a different search or filter' : 'Record something first' }}
         </p>
       </div>
@@ -190,11 +190,11 @@ function toggleTag(name: string): void {
       >
         <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-white/85 backdrop-blur-sm py-1 -mx-0.5 rounded">
           <Icon icon="material-symbols:label" class="text-orange-500 text-base flex-shrink-0" />
-          <span class="text-sm font-semibold text-gray-900 truncate">
+          <span class="text-sm font-semibold text-gray-900 truncate dark:text-slate-100">
             {{ getGameDisplayName(group.game) }}
           </span>
-          <span class="text-xs text-gray-500 flex-shrink-0">{{ group.displayDate }}</span>
-          <span class="ml-auto text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0">
+          <span class="text-xs text-gray-500 flex-shrink-0 dark:text-slate-400">{{ group.displayDate }}</span>
+          <span class="ml-auto text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0 dark:text-slate-400 dark:bg-slate-800">
             {{ group.clips.length }}
           </span>
         </header>
@@ -222,7 +222,7 @@ function toggleTag(name: string): void {
             </div>
           </div>
 
-          <span class="min-w-0 flex-1 text-xs text-gray-600 truncate text-left">
+          <span class="min-w-0 flex-1 text-xs text-gray-600 truncate text-left dark:text-slate-400">
             {{ entry.clip.displayName || entry.clip.filename }}
           </span>
 
@@ -234,7 +234,7 @@ function toggleTag(name: string): void {
 
         <button
           v-else
-          class="w-full group relative rounded-lg overflow-hidden bg-white/80 hover:bg-white transition-all border border-gray-300 hover:border-orange-500/50 cursor-pointer"
+          class="w-full group relative rounded-lg overflow-hidden bg-white/80 hover:bg-white transition-all border border-gray-300 hover:border-orange-500/50 cursor-pointer dark:border-slate-700"
           @click="emit('add-to-timeline', entry.clip)"
         >
           <div class="aspect-video relative">
@@ -253,7 +253,7 @@ function toggleTag(name: string): void {
           </div>
 
           <div class="p-2.5 space-y-1.5">
-            <div class="text-sm font-medium text-gray-900 line-clamp-2 text-left leading-snug">
+            <div class="text-sm font-medium text-gray-900 line-clamp-2 text-left leading-snug dark:text-slate-100">
               {{ entry.clip.displayName || entry.clip.filename }}
             </div>
 
@@ -267,13 +267,13 @@ function toggleTag(name: string): void {
               </span>
               <span
                 v-if="entry.clip.tags.length > 3"
-                class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400"
               >
                 +{{ entry.clip.tags.length - 3 }}
               </span>
             </div>
 
-            <div class="text-xs text-gray-600 text-left">
+            <div class="text-xs text-gray-600 text-left dark:text-slate-400">
               {{ formatBytes(entry.clip.sizeBytes) }}
             </div>
           </div>
@@ -283,7 +283,7 @@ function toggleTag(name: string): void {
 
       <button
         v-if="hasMore"
-        class="w-full py-2.5 rounded-lg text-sm font-medium bg-white/80 border border-gray-300 hover:border-orange-500/60 text-gray-700 transition-colors flex items-center justify-center gap-1.5"
+        class="w-full py-2.5 rounded-lg text-sm font-medium bg-white/80 border border-gray-300 hover:border-orange-500/60 text-gray-700 transition-colors flex items-center justify-center gap-1.5 dark:border-slate-700 dark:text-slate-300"
         :disabled="loading"
         @click="emit('load-more')"
       >

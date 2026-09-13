@@ -117,22 +117,22 @@ async function createAndAddCollection() {
     <!-- Add to Collection -->
     <BasePopover side="bottom" :side-offset="8">
       <template #trigger>
-        <button class="flex items-center gap-2 text-sm text-gray-600 hover:text-orange-600 transition-colors">
+        <button class="flex items-center gap-2 text-sm text-gray-600 hover:text-orange-600 transition-colors dark:text-slate-400">
           <Icon icon="material-symbols:add-circle-rounded" class="text-lg" />
           <span>{{ clipCollections.length > 0 ? 'Add to another collection' : 'Add to collection' }}</span>
         </button>
       </template>
       
       <div class="flex flex-col gap-2 min-w-[280px] max-h-[400px] overflow-auto">
-        <div class="sticky top-0 bg-white pb-2 border-b border-gray-200 z-10">
-          <h3 class="text-sm font-bold text-gray-900 mb-2">Add to Collection</h3>
+        <div class="sticky top-0 bg-white pb-2 border-b border-gray-200 z-10 dark:bg-slate-900 dark:border-slate-700">
+          <h3 class="text-sm font-bold text-gray-900 mb-2 dark:text-slate-100">Add to Collection</h3>
           
           <!-- Create New Collection -->
           <div class="flex gap-2">
             <input
               v-model="newCollectionName"
               placeholder="New collection..."
-              class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500/50"
+              class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500/50 dark:border-slate-700"
               @keyup.enter="createAndAddCollection"
             />
             <button
@@ -159,12 +159,12 @@ async function createAndAddCollection() {
           >
             <Icon icon="material-symbols:folder-special-rounded" class="text-lg text-purple-600" />
             <span class="text-sm font-medium flex-1">{{ collection.name }}</span>
-            <span class="text-xs text-gray-500">{{ collection.clipCount }} clips</span>
+            <span class="text-xs text-gray-500 dark:text-slate-400">{{ collection.clipCount }} clips</span>
           </button>
         </div>
         
-        <div v-else class="text-center py-6 text-sm text-gray-500">
-          <Icon icon="material-symbols:folder-off-rounded" class="text-3xl mb-2 text-gray-400" />
+        <div v-else class="text-center py-6 text-sm text-gray-500 dark:text-slate-400">
+          <Icon icon="material-symbols:folder-off-rounded" class="text-3xl mb-2 text-gray-400 dark:text-slate-500" />
           <p>No other collections available</p>
         </div>
       </div>

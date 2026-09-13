@@ -9,6 +9,12 @@ import {
   type EditorDraftAudio,
   type EditorDraftClip,
 } from '../services/editorDraftsDb';
+import {
+  createProject,
+  deleteProject,
+  listProjects,
+  updateProject,
+} from '../services/projects';
 import type { TimelineAudio, TimelineClip } from '../types/editor';
 
 /** Writing on every drag frame would hammer IndexedDB; a beat of quiet is enough. */
@@ -17,6 +23,8 @@ const AUTOSAVE_DEBOUNCE_MS = 800;
 export interface ActiveDraft {
   id: string;
   name: string;
+  /** Set when this draft is also a project in the library. */
+  serverId?: number;
 }
 
 function toDraftClips(clips: readonly TimelineClip[]): EditorDraftClip[] {
@@ -72,13 +80,45 @@ export function useEditorDrafts(
 
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** Named drafts only — the rolling autosave is the resume banner's business. */
+  /**
+   * Named drafts only — the rolling autosave is the resume banner's business.
+   *
+   * Local records first, then anything the library holds that this browser has
+   * never seen: a draft saved on another machine, or one that outlived a
+   * cleared IndexedDB. The server being unreachable is not fatal; the local
+   * list still works, which is the point of keeping both.
+   */
   async function loadDrafts(): Promise<void> {
+    let local: EditorDraft[] = [];
     try {
-      drafts.value = (await listDrafts()).filter((draft) => draft.id !== AUTOSAVE_ID);
+      local = (await listDrafts()).filter((draft) => draft.id !== AUTOSAVE_ID);
     } catch (error) {
       console.error('Failed to read editor drafts:', error);
     }
+
+    try {
+      const remote = await listProjects();
+      const known = new Set(local.map((draft) => draft.serverId).filter(Boolean));
+
+      const remoteOnly = remote
+        .filter((project) => !known.has(project.id))
+        .map(
+          (project): EditorDraft => ({
+            id: `server-${project.id}`,
+            name: project.name,
+            updatedAt: project.updatedAt,
+            clips: project.timeline.clips ?? [],
+            audio: project.timeline.audio ?? [],
+            serverId: project.id,
+          }),
+        );
+
+      local = [...local, ...remoteOnly].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    } catch (error) {
+      console.error('Failed to read saved projects from the library:', error);
+    }
+
+    drafts.value = local;
   }
 
   /**
@@ -99,17 +139,34 @@ export function useEditorDrafts(
     const target = activeDraft.value;
     const updatedAt = new Date().toISOString();
 
+    const draftClips = toDraftClips(clips.value);
+    const draftAudio = toDraftAudio(audio.value);
+
     try {
       await putDraft({
         id: target?.id ?? AUTOSAVE_ID,
         name: target?.name ?? 'Autosave',
         updatedAt,
-        clips: toDraftClips(clips.value),
-        audio: toDraftAudio(audio.value),
+        clips: draftClips,
+        audio: draftAudio,
+        serverId: target?.serverId,
       });
     } catch (error) {
       console.error('Failed to autosave the timeline:', error);
       return;
+    }
+
+    // A named draft that lives in the library is kept up to date there too, on
+    // the same debounce. The rolling autosave stays local — it is a scratch
+    // record, not something worth a round trip every beat.
+    if (target?.serverId) {
+      try {
+        await updateProject(target.serverId, {
+          timeline: { clips: draftClips, audio: draftAudio },
+        });
+      } catch (error) {
+        console.error('Could not update this project in the library:', error);
+      }
     }
 
     // Keep the listed timestamp honest without re-reading the store every beat.
@@ -121,7 +178,9 @@ export function useEditorDrafts(
 
   function setActiveDraft(draft: EditorDraft | null): void {
     activeDraft.value =
-      draft && draft.id !== AUTOSAVE_ID ? { id: draft.id, name: draft.name } : null;
+      draft && draft.id !== AUTOSAVE_ID
+        ? { id: draft.id, name: draft.name, serverId: draft.serverId }
+        : null;
   }
 
   /** Stop tracking a draft; further edits go back to the rolling autosave. */
@@ -141,6 +200,18 @@ export function useEditorDrafts(
     };
 
     try {
+      // Push to the library first so the id can be stored with the local copy;
+      // a failure there still leaves a perfectly good local draft.
+      try {
+        const project = await createProject({
+          name: draft.name,
+          timeline: { clips: draft.clips, audio: draft.audio },
+        });
+        draft.serverId = project.id;
+      } catch (error) {
+        console.error('Could not save this draft to the library:', error);
+      }
+
       await putDraft(draft);
       // Editing continues in the draft just saved, not in the autosave.
       setActiveDraft(draft);
@@ -174,7 +245,20 @@ export function useEditorDrafts(
   }
 
   async function removeDraft(id: string): Promise<void> {
+    // Deleting has to reach both copies, or a draft removed here would reappear
+    // from the library on the next load.
+    const draft = drafts.value.find((d) => d.id === id);
+
     await deleteDraft(id);
+
+    if (draft?.serverId) {
+      try {
+        await deleteProject(draft.serverId);
+      } catch (error) {
+        console.error('Could not remove this project from the library:', error);
+      }
+    }
+
     if (activeDraft.value?.id === id) activeDraft.value = null;
     if (resumable.value?.id === id) resumable.value = null;
     await loadDrafts();

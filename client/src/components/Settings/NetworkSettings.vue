@@ -37,10 +37,10 @@ function onToggle(value: boolean): void {
       <p class="text-sm text-muted-500">Control how clips reach your browser</p>
     </div>
 
-    <div class="p-4 bg-white rounded-lg border border-gray-200 space-y-3">
+    <div class="p-4 bg-white rounded-lg border border-gray-200 space-y-3 dark:bg-slate-900 dark:border-slate-700">
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <div class="font-medium text-gray-900">Clips are streaming from</div>
+          <div class="font-medium text-gray-900 dark:text-slate-100">Clips are streaming from</div>
           <p class="text-sm text-muted-500 mt-1 font-mono break-all">{{ activeMediaOrigin }}</p>
         </div>
         <span
@@ -67,11 +67,11 @@ function onToggle(value: boolean): void {
       </p>
     </div>
 
-    <div class="p-4 bg-white rounded-lg border border-gray-200 space-y-3">
+    <div class="p-4 bg-white rounded-lg border border-gray-200 space-y-3 dark:bg-slate-900 dark:border-slate-700">
       <div class="flex items-center justify-between">
-        <div class="font-medium text-gray-900">Detected local addresses</div>
+        <div class="font-medium text-gray-900 dark:text-slate-100">Detected local addresses</div>
         <button
-          class="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+          class="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           :disabled="detecting"
           @click="redetect"
         >
@@ -96,7 +96,7 @@ function onToggle(value: boolean): void {
           class="flex items-center justify-between gap-3 text-sm"
         >
           <div class="min-w-0">
-            <div class="font-mono text-gray-900 break-all">{{ endpoint.url }}</div>
+            <div class="font-mono text-gray-900 break-all dark:text-slate-100">{{ endpoint.url }}</div>
             <div class="text-xs text-muted-500">{{ endpoint.iface }}</div>
           </div>
           <span

@@ -204,7 +204,7 @@ onBeforeUnmount(stopDrag);
       />
 
       <div class="absolute top-1 left-2 right-2 flex items-center justify-between gap-2">
-        <div class="text-[10px] font-semibold text-gray-900 flex items-center gap-1 bg-white/85 backdrop-blur-sm px-1.5 py-0.5 rounded min-w-0">
+        <div class="text-[10px] font-semibold text-gray-900 flex items-center gap-1 bg-white/85 backdrop-blur-sm px-1.5 py-0.5 rounded min-w-0 dark:text-slate-100">
           <Icon
             :icon="item.muted ? 'material-symbols:music-off' : 'material-symbols:music-note'"
             class="text-xs flex-shrink-0"
@@ -221,10 +221,10 @@ onBeforeUnmount(stopDrag);
       </div>
 
       <div class="absolute bottom-1 left-2 right-2 flex items-end justify-between">
-        <div class="text-[10px] font-mono font-medium text-gray-900 bg-white/85 backdrop-blur-sm px-1.5 py-0.5 rounded">
+        <div class="text-[10px] font-mono font-medium text-gray-900 bg-white/85 backdrop-blur-sm px-1.5 py-0.5 rounded dark:text-slate-100">
           {{ formatTime(item.duration) }}
         </div>
-        <div class="text-[10px] font-mono text-gray-700 bg-white/85 backdrop-blur-sm px-1.5 py-0.5 rounded">
+        <div class="text-[10px] font-mono text-gray-700 bg-white/85 backdrop-blur-sm px-1.5 py-0.5 rounded dark:text-slate-300">
           {{ volumePercent }}%
         </div>
       </div>

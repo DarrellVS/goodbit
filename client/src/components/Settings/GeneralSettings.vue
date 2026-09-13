@@ -1,9 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useConfiguration } from '../../composables/useConfiguration';
+import { useTheme, type ThemeChoice } from '../../composables/useTheme';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
 
 const config = useConfiguration();
+
+const { theme: themeChoice, setTheme } = useTheme();
+
+// SettingSelect speaks in strings; the theme is a narrower union.
+const theme = computed({
+  get: () => themeChoice.value as string,
+  set: (value: string | number) => setTheme(String(value) as ThemeChoice),
+});
+
+const themeOptions = [
+  { value: 'system', label: 'Match my system' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
 
 const pageSizeOptions = [
   { value: 10, label: '10' },
@@ -33,6 +49,13 @@ const dateFormatOptions = [
     </div>
 
     <div class="space-y-4">
+      <SettingSelect
+        v-model="theme"
+        label="Appearance"
+        description="Follow the system, or pick a side"
+        :options="themeOptions"
+      />
+
       <SettingSelect
         v-model="config.public.value.viewMode"
         label="Default View Mode"

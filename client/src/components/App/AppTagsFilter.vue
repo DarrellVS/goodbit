@@ -41,7 +41,7 @@ function handleRemoveTag(tagName: string): void {
         class="flex items-center gap-2"
       >
         <button
-          class="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors"
+          class="flex-1 text-left rounded-lg border border-gray-200 px-3 py-2.5 bg-white/5 hover:bg-white/10 transition-colors dark:border-slate-700"
           :class="{ 'ring-2 ring-orange-500/50 bg-orange-500/10 border-orange-500/30': selectedTags.includes(tag.name) }"
           @click="toggleTag(tag.name)"
         >
@@ -49,7 +49,7 @@ function handleRemoveTag(tagName: string): void {
           <span v-if="selectedTags.includes(tag.name)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
         </button>
         <button
-          class="p-2 rounded-lg border border-gray-200 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
+          class="p-2 rounded-lg border border-gray-200 bg-white/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group dark:border-slate-700"
           @click.stop="handleRemoveTag(tag.name)"
           title="Delete tag"
         >
