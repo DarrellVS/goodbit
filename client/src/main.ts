@@ -8,6 +8,7 @@ import './animations.css';
 import './tooltip.css';
 import { router } from './router';
 import { useAuthStore } from './stores/auth';
+import { registerServiceWorker } from './utils/serviceWorker';
 
 const app = createApp(App);
 app.use(createPinia());
@@ -24,11 +25,7 @@ const auth = useAuthStore();
 auth.init().then(() => {
   app.use(router);
   app.mount('#app');
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js');
-    });
-  }
+  window.addEventListener('load', registerServiceWorker);
 });
 
 

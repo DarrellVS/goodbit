@@ -8,6 +8,9 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      // src/utils/serviceWorker.ts registers the worker and owns the update flow,
+      // so don't also inject a bare registerSW.js into index.html.
+      injectRegister: null,
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}'],
