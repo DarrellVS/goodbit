@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="h-full grid grid-cols-[256px_1fr] grid-rows-1"
+    class="h-full min-h-0 overflow-hidden grid grid-cols-[256px_1fr] grid-rows-1"
     @dragenter="fileImport.handleDragEnter"
     @dragleave="fileImport.handleDragLeave"
     @dragover="fileImport.handleDragOver"

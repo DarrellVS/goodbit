@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, Tray, shell, nativeImage } from 'electron';
 import { join } from 'node:path';
+import { mkdirSync } from 'node:fs';
 import { initDatabase } from './data-source.js';
 import { isConfigured, loadSettings, saveSettings, userDataDir } from './settings.js';
 import { startServices, stopServices } from './startup.js';
@@ -35,13 +36,26 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
 /**
+ * Redirect the whole profile before anything else runs.
+ *
+ * This has to happen here, not just in settings.ts: Electron derives the
+ * single-instance lock and all of Chromium's state from `userData`, so setting
+ * it only for our own files left a test run sharing a lock — and a cache —
+ * with whatever install was already running, and being turned away by it.
+ */
+const dataOverride = process.env.GOODBIT_USER_DATA;
+if (dataOverride) {
+  mkdirSync(dataOverride, { recursive: true });
+  app.setPath('userData', dataOverride);
+}
+
+/**
  * One service, or two watchers fight over one SQLite file.
  *
- * The lock follows GOODBIT_USER_DATA, so a test run with its own data folder
- * can launch beside the tray app instead of being turned away by it.
+ * Scoped by `userData` above, so a test with its own profile launches beside
+ * the tray app rather than being refused by it.
  */
-const lockKey = process.env.GOODBIT_USER_DATA ?? 'default';
-if (!app.requestSingleInstanceLock({ key: lockKey })) {
+if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
 

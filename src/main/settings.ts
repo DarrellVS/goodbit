@@ -39,10 +39,9 @@ let cached: Settings | null = null;
 
 /** `%APPDATA%/GoodBit` on Windows. Everything the app owns lives under here. */
 export function userDataDir(): string {
-  // Tests and smoke runs point this elsewhere so they cannot touch the real
-  // library — the single-instance lock follows it too, in index.ts.
-  const override = process.env.GOODBIT_USER_DATA;
-  const dir = override ? override : app.getPath('userData');
+  // index.ts already redirected app.getPath('userData') when the override is
+  // set, so asking Electron is enough and both agree by construction.
+  const dir = app.getPath('userData');
   mkdirSync(dir, { recursive: true });
   return dir;
 }

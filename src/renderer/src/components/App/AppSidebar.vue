@@ -31,7 +31,12 @@ const emit = defineEmits<Emits>();
       </div>
     </div>
 
-    <nav class="flex-1 px-3 space-y-6">
+    <!--
+      min-h-0 and its own scroll: a flex child defaults to min-height:auto, so a
+      long games or collections list grew the sidebar past the window instead of
+      scrolling, and the whole page picked up a second scrollbar.
+    -->
+    <nav class="flex-1 min-h-0 overflow-y-auto px-3 space-y-6">
       <div class="space-y-1">
         <SidebarSectionHeader title="MAIN MENU" />
       

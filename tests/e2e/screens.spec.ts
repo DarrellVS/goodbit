@@ -155,3 +155,48 @@ test.describe('every screen, in both palettes', () => {
     });
   }
 });
+
+/**
+ * The window is the viewport; only panes scroll.
+ *
+ * A long games list grew the sidebar past the window instead of scrolling
+ * inside it, so the page itself picked up a second scrollbar next to the
+ * content one. Invisible to every other check — the markup was valid and
+ * nothing errored.
+ */
+test.describe('layout', () => {
+  let ctx: TestApp;
+
+  test.beforeAll(async () => {
+    ctx = await launchApp();
+    // Enough games that the sidebar list is taller than the window.
+    for (let i = 0; i < 14; i++) seedClips(ctx.videosRoot, `Game${i}`, 1);
+    await ctx.page.waitForTimeout(10000);
+  });
+
+  test.afterAll(async () => {
+    await ctx?.close();
+  });
+
+  test('the page itself never scrolls', async () => {
+    await ctx.page.evaluate(() => {
+      window.location.hash = '#/';
+    });
+    await ctx.page.waitForTimeout(2500);
+
+    const overflow = await ctx.page.evaluate(() => ({
+      body: document.body.scrollHeight - document.body.clientHeight,
+      root: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      // The sidebar must be no taller than the window it sits in.
+      sidebarOverflow: (() => {
+        const aside = document.querySelector('aside');
+        if (!aside) return 0;
+        return Math.round(aside.getBoundingClientRect().height - window.innerHeight);
+      })(),
+    }));
+
+    expect(overflow.body).toBeLessThanOrEqual(1);
+    expect(overflow.root).toBeLessThanOrEqual(1);
+    expect(overflow.sidebarOverflow).toBeLessThanOrEqual(1);
+  });
+});
