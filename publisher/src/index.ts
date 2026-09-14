@@ -53,15 +53,34 @@ app.get('/:filename', (req, res) => {
   let displayName = filename;
   let game = '';
   
+  let publishedAt = '';
+
   if (fs.existsSync(metaPath)) {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
       displayName = meta.displayName || filename;
       game = meta.game || '';
+      publishedAt = meta.publishedAt || '';
     } catch (e) {
       // Ignore parsing errors
     }
   }
+
+  // The page names a date and a size. Both come off the file itself rather
+  // than out of a probe: an ffprobe per page view is a lot to pay for one
+  // line of grey text, and the length the player works out for itself once
+  // its metadata lands.
+  const stat = fs.statSync(filePath);
+  const shown = publishedAt ? new Date(publishedAt) : stat.mtime;
+  const dateLabel = Number.isNaN(shown.getTime())
+    ? ''
+    : shown.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const sizeLabel = formatBytes(stat.size);
+
+    // Where the mark and the source link point. Both are the project's own
+  // pages, not anything this server hosts.
+  const SITE_URL = 'https://darrellvs.github.io/goodbit/';
+  const REPO_URL = 'https://github.com/DarrellVS/goodbit';
 
   const baseUrl = process.env.PUBLIC_BASE_URL || req.protocol + '://' + req.get('host');
   const videoUrl = `${baseUrl}/media/${encodeURIComponent(filename)}`;
@@ -101,135 +120,209 @@ app.get('/:filename', (req, res) => {
     
     <title>${escapeHtml(title)}</title>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+    >
+
     <style>
-      * { 
-        margin: 0; 
-        padding: 0; 
-        box-sizing: border-box; 
+      /*
+       * A shared clip, in the website's design language.
+       *
+       * Same tokens, same fonts, same square corners, hairlines instead of
+       * shadows and timecodes set in mono, because a link someone opens from
+       * Discord should look like it came from the same project as the pages
+       * that describe the app. Kept in step with site/assets/css/style.css by
+       * hand: this file cannot import it, the publisher serves media and this
+       * page and nothing else.
+       */
+      :root {
+        --bg: #08090a;
+        --panel: #0e1012;
+        --panel-2: #14171a;
+        --rule: #20242a;
+        --rule-soft: #171b1f;
+        --ink: #f4f5f6;
+        --ink-2: #9aa1aa;
+        --ink-3: #6d757e;
+        --accent: #f97316;
+        --accent-soft: #ffb066;
+
+        --wrap: 1180px;
+        --rail: 108px;
+
+        --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+        --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+        color-scheme: dark;
       }
-      
-      @keyframes float1 {
-        0% { cx: 80%; cy: 20%; }
-        25% { cx: 75%; cy: 35%; }
-        50% { cx: 85%; cy: 60%; }
-        75% { cx: 70%; cy: 45%; }
-        100% { cx: 80%; cy: 20%; }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f6f5f3;
+          --panel: #ffffff;
+          --panel-2: #f0eeea;
+          --rule: #dcd8d2;
+          --rule-soft: #e8e5e0;
+          --ink: #14161a;
+          --ink-2: #4e545c;
+          --ink-3: #757c85;
+          --accent: #d85a06;
+          --accent-soft: #b44a05;
+
+          color-scheme: light;
+        }
       }
-      
-      @keyframes float2 {
-        0% { cx: 20%; cy: 70%; }
-        25% { cx: 25%; cy: 50%; }
-        50% { cx: 15%; cy: 30%; }
-        75% { cx: 30%; cy: 60%; }
-        100% { cx: 20%; cy: 70%; }
-      }
-      
-      @keyframes float3 {
-        0% { cx: 50%; cy: 15%; }
-        33% { cx: 65%; cy: 70%; }
-        66% { cx: 35%; cy: 75%; }
-        100% { cx: 50%; cy: 15%; }
-      }
-      
-      @keyframes glow {
-        0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 60px rgba(139, 92, 246, 0.1); }
-        50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 0 80px rgba(139, 92, 246, 0.2); }
-      }
-      
+
+      *,
+      *::before,
+      *::after { box-sizing: border-box; }
+
       body {
-        background: linear-gradient(135deg, #0f0f1e 0%, #1a0f2e 100%);
-        color: #fff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 400 clamp(0.95rem, 0.9rem + 0.22vw, 1.05rem) / 1.62 var(--body), sans-serif;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 20px;
-        overflow: hidden;
-        position: relative;
       }
-      
-      .background {
+
+      img, svg, video { max-width: 100%; display: block; }
+
+      h1 {
+        font-family: var(--display), sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.18;
+        font-size: clamp(1.15rem, 0.95rem + 0.8vw, 1.6rem);
+        margin: 0;
+        /* A display name can be a filename, which has nowhere to break. */
+        overflow-wrap: anywhere;
+      }
+
+      .wrap {
+        width: min(100% - 2.5rem, var(--wrap));
+        margin-inline: auto;
+      }
+
+      /*
+       * The ruler. A repeating hairline pattern down the left edge, the way the
+       * editor's timeline marks seconds. Decorative, so it is hidden from
+       * assistive tech and dropped entirely when there is no room for it.
+       */
+      .rail {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        z-index: 0;
-      }
-      
-      .background svg {
-        width: 100%;
-        height: 100%;
-        filter: blur(100px);
-      }
-      
-      .blob1 {
-        fill: #8b5cf6;
-        animation: float1 20s ease-in-out infinite;
-      }
-      
-      .blob2 {
-        fill: #6366f1;
-        animation: float2 18s ease-in-out infinite;
-      }
-      
-      .blob3 {
-        fill: #a78bfa;
-        animation: float3 22s ease-in-out infinite;
-      }
-      
-      .container {
-        max-width: 1400px;
-        width: 100%;
-        position: relative;
+        inset: 56px auto 0 0;
+        width: var(--rail);
+        border-right: 1px solid var(--rule-soft);
+        background: repeating-linear-gradient(
+            to bottom,
+            var(--rule-soft) 0 1px,
+            transparent 1px 100%
+          )
+          right / 12px 24px no-repeat;
+        background-position: right 0 top 0;
+        background-size: 10px 100%;
+        pointer-events: none;
         z-index: 1;
       }
-      
-      .header {
-        text-align: center;
-        margin-bottom: 2rem;
+
+      .rail::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 0 auto;
+        width: 9px;
+        background-image: repeating-linear-gradient(
+          to bottom,
+          var(--rule) 0 1px,
+          transparent 1px 22px
+        );
       }
-      
-      h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, #fff, #a78bfa, #8b5cf6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        line-height: 1.2;
+
+      @media (max-width: 1340px) {
+        .rail { display: none; }
       }
-      
-      .game-tag {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        background: rgba(139, 92, 246, 0.15);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 20px;
-        font-size: 0.9rem;
-        color: #c4b5fd;
-        font-weight: 500;
-        backdrop-filter: blur(10px);
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--bg);
+        border-bottom: 1px solid var(--rule);
       }
-      
-      .video-wrapper {
-        position: relative;
+
+      .site-header .wrap {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-height: 56px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-family: var(--display), sans-serif;
+        font-weight: 600;
+        font-size: 1.02rem;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+
+      .brand svg { width: 24px; height: 24px; }
+
+      .site-nav {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: clamp(0.75rem, 1.8vw, 1.5rem);
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        min-width: 0;
+      }
+
+      .site-nav a {
+        color: var(--ink-2);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .site-nav a:hover { color: var(--ink); }
+
+      .site-nav .cta {
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 0.34rem 0.7rem;
+      }
+
+      .site-nav .cta:hover {
+        background: var(--accent);
+        color: #000;
+      }
+
+      main {
+        flex: 1;
+        padding: clamp(1.6rem, 4vw, 3rem) 0 clamp(2rem, 5vw, 3.6rem);
+      }
+
+      /* Hairlines, not shadows. */
+      .player {
+        border: 1px solid var(--rule);
         background: #000;
-        border-radius: 16px;
-        overflow: hidden;
-        animation: glow 3s ease-in-out infinite;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(139, 92, 246, 0.2);
       }
-      
+
       video {
         width: 100%;
-        display: block;
         /*
          * Black, and the wrapper behind it black too. Until a frame is
          * decoded the element paints its own surface, and the default is the
@@ -238,103 +331,231 @@ app.get('/:filename', (req, res) => {
          */
         background: #000;
       }
-      
-      video::-webkit-media-controls-panel {
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+
+      .below {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: clamp(1rem, 3vw, 2.4rem);
+        border-top: 1px solid var(--rule-soft);
+        margin-top: 1.4rem;
+        padding-top: 1.1rem;
       }
-      
-      .controls-hint {
-        margin-top: 1.5rem;
-        text-align: center;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 0.9rem;
+
+      /* The site's own small-caps mono label, with the game standing out. */
+      .tag {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        margin-top: 0.6rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.7rem;
       }
-      
-      .controls-hint kbd {
-        display: inline-block;
-        padding: 0.25rem 0.5rem;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 0.85rem;
-        margin: 0 0.25rem;
+
+      .tag .on { color: var(--accent); }
+      .tag [hidden] { display: none; }
+
+      .actions {
+        display: flex;
+        gap: 0.6rem;
+        flex-shrink: 0;
       }
-      
-      @media (max-width: 768px) {
-        h1 {
-          font-size: 1.75rem;
-        }
-        
-        .game-tag {
-          font-size: 0.8rem;
-          padding: 0.4rem 0.8rem;
-        }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        /*
+         * A height rather than symmetric padding: one of these is a button and
+         * the other is a link, and their line boxes do not agree, so the pair
+         * came out a pixel apart.
+         */
+        height: 46px;
+        padding: 0 1.15rem;
+        border: 1px solid var(--rule);
+        background: transparent;
+        color: var(--ink);
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.12s linear, border-color 0.12s linear, color 0.12s linear;
+      }
+
+      .button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .button svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #000;
+        font-weight: 600;
+      }
+
+      .button.primary:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent-soft);
+        color: #000;
+      }
+
+      .hint {
+        margin: 1.4rem 0 0;
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        color: var(--ink-3);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      kbd {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        padding: 0.16rem 0.4rem;
+        border: 1px solid var(--rule);
+        background: var(--panel);
+        color: var(--ink-2);
+      }
+
+      @media (max-width: 860px) {
+        .below { flex-direction: column; }
+        .actions { width: 100%; }
+        .button { flex: 1; justify-content: center; }
+      }
+
+      @media (max-width: 620px) {
+        .site-nav [data-optional] { display: none; }
       }
     </style>
   </head>
   <body>
-    <div class="background">
-      <svg xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="gooey">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="25" result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 35 -15
-            " result="gooey" />
-            <feComposite in="SourceGraphic" in2="gooey" operator="atop"/>
-          </filter>
-        </defs>
-        <g filter="url(#gooey)" opacity="0.6">
-          <circle class="blob1" cx="80%" cy="20%" r="250" />
-          <circle class="blob2" cx="20%" cy="70%" r="220" />
-          <circle class="blob3" cx="50%" cy="30%" r="200" />
-        </g>
-      </svg>
-    </div>
-    
-    <div class="container">
-      <div class="header">
-        <h1>${escapeHtml(displayName)}</h1>
-        ${game ? `<div class="game-tag">${escapeHtml(game)}</div>` : ''}
+    <div class="rail" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="${SITE_URL}">
+          <!--
+            The app's own mark, drawn rather than fetched. This server serves
+            media and this page; an <img> would mean an asset route for one
+            24 pixel square.
+          -->
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect width="24" height="24" rx="5.2" fill="#f57c20"/>
+            <g fill="#ffab70">
+              <rect x="2.8" y="8.7" width="3.5" height="6.8" rx="1"/>
+              <rect x="6.9" y="8.7" width="3.5" height="6.8" rx="1"/>
+              <rect x="17.7" y="8.7" width="3.5" height="6.8" rx="1"/>
+            </g>
+            <rect x="11.1" y="6.6" width="6" height="10.9" rx="1.5" fill="#fff"/>
+          </svg>
+          GoodBit
+        </a>
+
+        <nav class="site-nav" aria-label="Links">
+          <a href="${SITE_URL}" data-optional>The app</a>
+          <a href="${REPO_URL}" target="_blank" rel="noopener">Source</a>
+          <a class="cta" href="${videoUrl}" download>Download</a>
+        </nav>
       </div>
-      
-      <div class="video-wrapper">
-        <video id="video" controls preload="metadata" poster="${thumbnailUrl}">
-          <source src="${videoUrl}" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <div class="player">
+          <video id="video" controls preload="metadata" poster="${thumbnailUrl}">
+            <source src="${videoUrl}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="below">
+          <div>
+            <h1>${escapeHtml(displayName)}</h1>
+            <p class="tag">
+              ${game ? `<span class="on">${escapeHtml(game)}</span>` : ''}
+              <span id="duration" hidden></span>
+              <span>${dateLabel}</span>
+              <span>${sizeLabel}</span>
+            </p>
+          </div>
+
+          <div class="actions">
+            <button class="button" id="copy" type="button">
+              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+              <span id="copy-label">Copy link</span>
+            </button>
+            <a class="button primary" href="${videoUrl}" download>
+              <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              Download
+            </a>
+          </div>
+        </div>
+
+        <p class="hint"><kbd>Space</kbd> play <kbd>F</kbd> fullscreen</p>
       </div>
-      
-      <div class="controls-hint">
-        <kbd>Space</kbd> to play/pause • <kbd>F</kbd> for fullscreen
-      </div>
-    </div>
-    
+    </main>
+
     <script>
       const video = document.getElementById('video');
-      
-      document.addEventListener('keydown', (e) => {
-        // Space for play/pause
-        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          if (video.paused) {
-            video.play();
-          } else {
-            video.pause();
-          }
+
+      // The length is not in the metadata file, and probing for it would cost
+      // an ffprobe per page view. The player already knows.
+      video.addEventListener('loadedmetadata', () => {
+        if (!Number.isFinite(video.duration)) return;
+        const total = Math.round(video.duration);
+        const mins = Math.floor(total / 60);
+        const secs = String(total % 60).padStart(2, '0');
+        const label = document.getElementById('duration');
+        label.textContent = mins + ':' + secs;
+        label.hidden = false;
+      });
+
+      const copyButton = document.getElementById('copy');
+      const copyLabel = document.getElementById('copy-label');
+      let copyTimer = null;
+
+      copyButton.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          copyLabel.textContent = 'Copied';
+        } catch {
+          copyLabel.textContent = 'Press Ctrl+C';
         }
-        
-        // F for fullscreen
-        if (e.code === 'KeyF' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => { copyLabel.textContent = 'Copy link'; }, 1600);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        const typing = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+        if (typing) return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (video.paused) video.play(); else video.pause();
+        }
+
+        if (e.code === 'KeyF') {
           e.preventDefault();
           if (!document.fullscreenElement) {
-            video.requestFullscreen().catch(err => {
-              console.log('Fullscreen error:', err);
-            });
+            video.requestFullscreen().catch((err) => console.log('Fullscreen error:', err));
           } else {
             document.exitFullscreen();
           }
@@ -346,6 +567,14 @@ app.get('/:filename', (req, res) => {
 });
 
 // Helper to escape HTML entities
+/** Megabytes once a clip is past a megabyte, which all of them are. */
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
+  return `${mb.toFixed(1)} MB`;
+}
+
 function escapeHtml(unsafe: string): string {
   return unsafe
     .replace(/&/g, "&amp;")
