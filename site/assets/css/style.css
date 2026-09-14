@@ -455,8 +455,18 @@ section {
 }
 
 @media (min-width: 60rem) {
+  /*
+   * The screenshot gets the wider column, whichever side it is on. Moving the
+   * figure with `order` alone left it in the *narrow* column on flipped rows,
+   * so every other screenshot came out a third smaller and unreadable; the
+   * widths have to swap with it.
+   */
   .track {
     grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .track.flip {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   }
 
   .track.flip > .frame {
