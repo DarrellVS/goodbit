@@ -61,7 +61,39 @@ async function scrollActiveIntoView(): Promise<void> {
   await nextTick();
   const list = listRef.value;
   const active = list?.querySelector<HTMLElement>('[data-active="true"]');
-  active?.scrollIntoView({ block: 'nearest' });
+  if (!list || !active) return;
+
+  // Scroll this list and nothing else. `scrollIntoView` walks every scrollable
+  // ancestor, so pressing an arrow key scrolled the library sitting behind the
+  // dialog too.
+  const listBox = list.getBoundingClientRect();
+  const activeBox = active.getBoundingClientRect();
+  // Keep a group heading visible when landing on the first row under it.
+  const headroom = 28;
+
+  if (activeBox.top - headroom < listBox.top) {
+    list.scrollTop -= listBox.top - activeBox.top + headroom;
+  } else if (activeBox.bottom > listBox.bottom) {
+    list.scrollTop += activeBox.bottom - listBox.bottom;
+  }
+}
+
+/**
+ * Whether the pointer has genuinely moved, rather than the list having scrolled
+ * underneath it.
+ *
+ * A browser fires `mousemove` at the same coordinates when content scrolls
+ * under a stationary pointer. Each row used that to claim the selection, so a
+ * keyboard press moved the highlight one row, the list scrolled, and the row
+ * now under the cursor stole it straight back. Every second item was
+ * unreachable.
+ */
+let lastPointer = { x: -1, y: -1 };
+
+function pointerPicked(index: number, event: MouseEvent): void {
+  if (event.clientX === lastPointer.x && event.clientY === lastPointer.y) return;
+  lastPointer = { x: event.clientX, y: event.clientY };
+  activeIndex.value = index;
 }
 
 async function run(command: Command): Promise<void> {
@@ -80,10 +112,7 @@ function runActive(): void {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-none overflow-hidden modal-content-animate"
-        @keydown.down.prevent="move(1)"
-        @keydown.up.prevent="move(-1)"
-        @keydown.enter.prevent="runActive"
+        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-none overflow-hidden panel-drop-animate"
       >
         <DialogTitle class="sr-only">Command palette</DialogTitle>
 
@@ -94,7 +123,10 @@ function runActive(): void {
             v-model="query"
             type="text"
             placeholder="Jump to a game, a collection, a page…"
-            class="flex-1 py-3.5 text-sm outline-none placeholder:text-muted-400"
+            class="flex-1 py-3.5 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-400"
+            @keydown.down.prevent="move(1)"
+            @keydown.up.prevent="move(-1)"
+            @keydown.enter.prevent="runActive"
           />
           <kbd class="text-[10px] font-mono text-muted-400 border border-border rounded px-1.5 py-0.5">
             esc
@@ -120,7 +152,7 @@ function runActive(): void {
               :class="row.index === activeIndex ? 'bg-orange-500/8 text-orange-900' : 'text-muted-700 hover:bg-muted-50'"
               :data-active="row.index === activeIndex"
               @click="run(row.command)"
-              @mousemove="activeIndex = row.index"
+              @mousemove="pointerPicked(row.index, $event)"
             >
               <Icon
                 :icon="row.command.icon ?? 'material-symbols:chevron-right'"

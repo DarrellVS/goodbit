@@ -1,11 +1,15 @@
 import express from 'express';
 import type { Server } from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
+import { rmSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { SESSION_HEADER, sessionSecret } from './ipc/apiBridge.js';
 
 /**
- * The API, bound to loopback only.
+ * The API, on a socket with no address.
  *
  * Reached only by the IPC bridge in the same process, never by the renderer.
  * The Express router is kept rather than rewritten into forty IPC channels,
@@ -18,12 +22,29 @@ import { SESSION_HEADER, sessionSecret } from './ipc/apiBridge.js';
  *   so a page served over the internet could reach the server on the LAN.
  * - **The public endpoints** and the spoofable `::1` check that guarded them.
  *
- * Binding to 127.0.0.1 on port 0 is deliberate: the OS picks a free port, so
- * two installs cannot collide, and nothing outside the machine can reach it.
+ * There is no TCP port. It used to bind 127.0.0.1 on an OS-chosen port, which
+ * nothing outside the machine could reach but every other program on it could,
+ * so the per-launch secret was the only thing standing between this API and
+ * anything else running as the same user. That is defence rather than absence.
+ *
+ * It listens on a named pipe on Windows and a Unix socket elsewhere, at a path
+ * nobody else is told. The socket is not addressable from the network at all,
+ * and the filesystem permissions are the operating system's rather than ours.
+ * The secret header stays, because two locks are better than one.
  */
 export interface LocalServer {
-  port: number;
+  /** Named pipe on Windows, Unix domain socket elsewhere. */
+  socketPath: string;
   close: () => Promise<void>;
+}
+
+/** Somewhere only this launch knows about. */
+function socketPathForThisLaunch(): string {
+  const id = randomUUID();
+  // Windows pipes live in their own namespace rather than on disk, so there is
+  // nothing to clean up afterwards.
+  if (process.platform === 'win32') return `\\\\.\\pipe\\goodbit-${id}`;
+  return path.join(os.tmpdir(), `goodbit-${id}.sock`);
 }
 
 export function createApiApp(): express.Express {
@@ -56,21 +77,26 @@ export function createApiApp(): express.Express {
 export function startLocalServer(): Promise<LocalServer> {
   const app = createApiApp();
 
-  return new Promise((resolve, reject) => {
-    // Port 0: let the OS choose. Loopback: unreachable from the network.
-    const server: Server = app.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      if (address === null || typeof address === 'string') {
-        return reject(new Error('Could not determine the local API port'));
-      }
+  const socketPath = socketPathForThisLaunch();
 
-      console.log(`[api] listening on 127.0.0.1:${address.port}`);
+  return new Promise((resolve, reject) => {
+    // A socket rather than a port, so there is nothing for another program on
+    // this machine to connect to even if it knew the secret.
+    const server: Server = app.listen(socketPath, () => {
+      console.log(`[api] listening on ${socketPath}`);
 
       resolve({
-        port: address.port,
+        socketPath,
         close: () =>
           new Promise<void>((done) => {
-            server.close(() => done());
+            server.close(() => {
+              // Windows pipes disappear with the process. A Unix socket is a
+              // file, and a stale one stops the next launch from binding.
+              if (process.platform !== 'win32') {
+                rmSync(socketPath, { force: true });
+              }
+              done();
+            });
           }),
       });
     });

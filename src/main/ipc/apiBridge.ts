@@ -18,10 +18,11 @@ import { startLocalServer, type LocalServer } from '../server.js';
  * real one runs against an object with no socket behind it. Relaying to a real
  * server keeps Express on the objects it expects.
  *
- * The listener is on 127.0.0.1 at a port the OS picks, which any other process
- * on the machine can still reach, so every request must carry a secret
- * generated fresh at launch. The renderer never sees it; only this module and
- * the server do.
+ * The listener is a named pipe on Windows and a Unix socket elsewhere, at a
+ * path generated fresh each launch, so there is no port for another program on
+ * the machine to find. Every request still carries a secret generated at the
+ * same time, because one lock is a single point of failure. The renderer sees
+ * neither; only this module and the server do.
  */
 
 export interface ApiRequest {
@@ -75,8 +76,9 @@ function relay(request: ApiRequest): Promise<ApiResponse> {
 
     const outbound = httpRequest(
       {
-        host: '127.0.0.1',
-        port: server.port,
+        // A named pipe on Windows, a Unix socket elsewhere. See :
+        // there is no TCP port to connect to any more.
+        socketPath: server.socketPath,
         method: (request.method || 'GET').toUpperCase(),
         path: `/api${request.path}${qs ? `?${qs}` : ''}`,
         headers: {

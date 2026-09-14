@@ -360,6 +360,46 @@ textarea:focus {
 }
 
 /* Content slide-up + scale animation */
+/*
+ * For a panel centred horizontally and pinned near the top, rather than centred
+ * on both axes.
+ *
+ * `modal-content-show` animates `translate(-50%, -50%)`, which lifts an element
+ * by half its own height. The command palette sits at 15% from the top and only
+ * shifts on X, so for the length of that animation it hung too high and then
+ * snapped down when the class took its own transform back.
+ */
+@keyframes panel-drop-show {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes panel-drop-hide {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(0.99);
+  }
+}
+
+.panel-drop-animate {
+  animation: panel-drop-show 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel-drop-animate[data-state='closed'] {
+  animation: panel-drop-hide 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
 @keyframes modal-content-show {
   from {
     opacity: 0;
@@ -436,6 +476,7 @@ textarea:focus {
   /* Disable Radix animations */
   .modal-overlay-animate,
   .modal-content-animate,
+  .panel-drop-animate,
   .modal-content-scale {
     animation: none !important;
   }
