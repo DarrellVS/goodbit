@@ -23,7 +23,9 @@ carryOverKey('filmpje-public-config', CONFIG_KEY);
 
 const publicConfig = useLocalStorage<PublicConfig>(CONFIG_KEY, {
   viewMode: 'grouped',
-  pageSize: 15,
+  // Fifteen put a 41 clip library on three pages, which broke select-all and
+  // made every whole-library action a per-page chore.
+  pageSize: 50,
   autoPlayOnHover: true,
   hoverScrub: true,
   showMetadata: true,

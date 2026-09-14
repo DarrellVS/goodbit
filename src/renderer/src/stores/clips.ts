@@ -13,11 +13,30 @@ interface ClipsState {
   selectedTags: string[];
   publishedFilter: boolean | null;
   starredFilter: boolean;
+  /** How the list is ordered. See `SORTS` in `routes/clips.ts`. */
+  sort: ClipSort;
   loading: boolean;
   abortController: AbortController | null;
   requestId: number;
 }
 
+/**
+ * The orders the library can be shown in.
+ *
+ * Kept in step with `SORTS` in `src/main/routes/clips.ts`; the server falls
+ * back to newest for anything it does not know.
+ */
+export type ClipSort = 'newest' | 'oldest' | 'longest' | 'shortest' | 'largest' | 'smallest' | 'name';
+
+export const CLIP_SORTS: ReadonlyArray<{ value: ClipSort; label: string }> = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'longest', label: 'Longest first' },
+  { value: 'shortest', label: 'Shortest first' },
+  { value: 'largest', label: 'Biggest file first' },
+  { value: 'smallest', label: 'Smallest file first' },
+  { value: 'name', label: 'Name, A to Z' },
+];
 interface ClipsResponse {
   items: Clip[];
   total: number;
@@ -36,6 +55,7 @@ export const useClipsStore = defineStore('clips', {
     selectedTags: [],
     publishedFilter: null,
     starredFilter: false,
+    sort: 'newest',
     loading: false,
     abortController: null,
     requestId: 0,
@@ -77,6 +97,7 @@ export const useClipsStore = defineStore('clips', {
         if (this.selectedTags.length) params.tags = this.selectedTags.join(',');
         if (this.publishedFilter !== null) params.published = String(this.publishedFilter);
         if (this.starredFilter) params.starred = 'true';
+        if (this.sort !== 'newest') params.sort = this.sort;
 
         const { data } = await axios.get<ClipsResponse>('/api/clips', { 
           params,
@@ -131,6 +152,14 @@ export const useClipsStore = defineStore('clips', {
 
     setSearch(query: string): void {
       this.searchText = query;
+      this.page = 1;
+      void this.fetchClips(false);
+    },
+
+    /** Re-order the whole library, which means starting again at page one. */
+    setSort(sort: ClipSort): void {
+      if (this.sort === sort) return;
+      this.sort = sort;
       this.page = 1;
       void this.fetchClips(false);
     },

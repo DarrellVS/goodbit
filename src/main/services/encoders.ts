@@ -203,6 +203,30 @@ export function encoderArgs(
 }
 
 /**
+ * Just how long a file is, without reading everything else about it.
+ *
+ * `probeVideo` asks for every stream and the whole format block, which is the
+ * right call before an encode and the wrong one when the library needs a
+ * duration for each of several hundred clips. Returns null rather than throwing
+ * for a file that cannot be read, since a missing duration is worth less than a
+ * failed scan.
+ */
+export async function probeDurationSec(filePath: string): Promise<number | null> {
+  try {
+    const { stdout } = await execFileAsync(FFPROBE, [
+      '-v', 'error',
+      '-show_entries', 'format=duration',
+      '-of', 'default=nw=1:nk=1',
+      filePath,
+    ]);
+    const seconds = Number(stdout.trim());
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Whether a file opens with frames ffmpeg has already marked as throwaway.
  *
  * A stream copy that starts in the middle of a group of pictures leaves them

@@ -1,5 +1,4 @@
 import express from 'express';
-import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import multer from 'multer';
 import { In } from 'typeorm';
@@ -50,15 +49,38 @@ const upload = multer({ storage: multer.memoryStorage() });
 export const clipsRouter = express.Router();
 
 clipsRouter.get('/', asyncHandler(async (req, res) => {
-  const { game, q, tags, published, starred, includeHidden, page = '1', pageSize = '50' } = req.query as Record<string, string>;
+  const { game, q, tags, published, starred, includeHidden, sort, page = '1', pageSize = '50' } = req.query as Record<string, string>;
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
   const pageSz = Math.min(Math.max(parseInt(pageSize || '50', 10) || 50, 1), 200);
 
   const repo = AppDataSource.getRepository(Clip);
+  /*
+   * How the library is ordered.
+   *
+   * There was no sort at all: newest first was the only order on offer, and
+   * ordering was by `createdAt`, when the row was written, so every clip that
+   * was already on disk when GoodBit was installed shared one scan's timestamp
+   * and the library came back in no particular order.
+   *
+   * `fileModifiedAt` is the recording's own date. `createdAt` breaks ties for
+   * two recordings that really do share one.
+   */
+  const SORTS: Record<string, [string, 'ASC' | 'DESC']> = {
+    newest: ['clip.fileModifiedAt', 'DESC'],
+    oldest: ['clip.fileModifiedAt', 'ASC'],
+    longest: ['clip.durationSec', 'DESC'],
+    shortest: ['clip.durationSec', 'ASC'],
+    largest: ['clip.sizeBytes', 'DESC'],
+    smallest: ['clip.sizeBytes', 'ASC'],
+    name: ['clip.filename', 'ASC'],
+  };
+  const [sortColumn, sortDirection] = SORTS[String(sort)] ?? SORTS.newest;
+
   let qb = repo
     .createQueryBuilder('clip')
     .leftJoinAndSelect('clip.tags', 'tag')
-    .orderBy('clip.createdAt', 'DESC');
+    .orderBy(sortColumn, sortDirection)
+    .addOrderBy('clip.createdAt', 'DESC');
 
   if (game && game.length > 0) {
     // An explicit game filter is an explicit request for that folder, so it wins

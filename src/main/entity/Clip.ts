@@ -30,6 +30,17 @@ export class Clip {
   @Column({ type: 'integer' })
   sizeBytes!: number;
 
+  /**
+   * How long the recording is, in seconds.
+   *
+   * Stored rather than probed on demand because the library needs it on every
+   * tile at once, and it is the first thing anyone wants when deciding what to
+   * cut. Nullable: it is filled in by the scan, so rows that predate this
+   * column simply have not been probed yet.
+   */
+  @Column({ type: 'float', nullable: true })
+  durationSec?: number | null;
+
   @Column({ type: 'datetime' })
   fileModifiedAt!: Date;
 

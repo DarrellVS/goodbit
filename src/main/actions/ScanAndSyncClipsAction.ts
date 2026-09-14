@@ -5,6 +5,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
+import { probeDurationSec } from '../services/encoders.js';
 
 export type ScanResult = {
   added: number;
@@ -71,6 +72,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           filename,
           extension,
           sizeBytes: stat.size,
+          durationSec: await probeDurationSec(absPath),
           fileModifiedAt: stat.mtime,
           displayName: null,
         });
@@ -86,6 +88,9 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           existing.game !== game
         ) {
           existing.sizeBytes = stat.size;
+          // The file moved or changed, so whatever length was recorded for it
+          // is about something else now.
+          existing.durationSec = await probeDurationSec(absPath);
           existing.fileModifiedAt = stat.mtime;
           existing.relPath = rel;
           existing.filename = filename;
@@ -93,6 +98,11 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           existing.game = game;
           await clipRepo.save(existing);
           updated += 1;
+        } else if (existing.durationSec == null) {
+          // Written before this column existed. Fill it in once, quietly: the
+          // file has not changed, so this is not an update worth counting.
+          existing.durationSec = await probeDurationSec(absPath);
+          if (existing.durationSec != null) await clipRepo.save(existing);
         }
       }
     }
