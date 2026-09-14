@@ -39,7 +39,12 @@ jobs:
       # electron-builder names the draft after the version alone, so the list
       # read "GoodBit 1.3.2" down to "1.3.3" and "1.3.4" once nobody renamed
       # them by hand. The tag is the only input, so this cannot drift again.
+      # bash, not the runner's default pwsh: ${TAG#v} is a shell parameter
+      # expansion, and PowerShell reads it as an empty variable, so the step
+      # asked to rename a release with no tag and failed with "release not
+      # found".
       - name: Name it after the app
+        shell: bash
         run: gh release edit "$TAG" --title "GoodBit ${TAG#v}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
