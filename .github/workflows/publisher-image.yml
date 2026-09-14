@@ -13,39 +13,61 @@ on:
 jobs:
   image:
     runs-on: ubuntu-latest
-    # Without credentials this would fail on every tag and teach everyone to
-    # ignore a red cross. The two names are repository variables and the token
-    # is the one secret; until all three exist, this skips itself.
-    if: ${{ vars.PUBLISHER_IMAGE != '' }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: What to call it
-        id: meta
+      # A missing credential must not fail the run: a red cross on every
+      # release for a repository that has not been given Docker Hub access
+      # teaches everyone to ignore red crosses. It says so and stops instead.
+      #
+      # This is a step rather than a job-level `if` because the `secrets`
+      # context is not available there, only `vars` and `github` are.
+      - name: Are the credentials here?
+        id: creds
+        env:
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE: ${{ secrets.PUBLISHER_IMAGE }}
         run: |
-          echo "image=${{ vars.PUBLISHER_IMAGE }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_TOKEN" ] && [ -n "$IMAGE" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Docker Hub credentials, so no image was pushed. Set DOCKERHUB_USERNAME, DOCKERHUB_TOKEN and PUBLISHER_IMAGE as repository secrets."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.ready == 'true'
+
+      - name: Which version is this
+        id: meta
+        if: steps.creds.outputs.ready == 'true'
+        run: |
           version="${GITHUB_REF_NAME#v}"
           if [ "$version" = "$GITHUB_REF_NAME" ]; then version="edge"; fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
+        if: steps.creds.outputs.ready == 'true'
+
       - uses: docker/setup-buildx-action@v3
+        if: steps.creds.outputs.ready == 'true'
 
       - uses: docker/login-action@v3
+        if: steps.creds.outputs.ready == 'true'
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build for both processors and push
+        if: steps.creds.outputs.ready == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./publisher
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
-            ${{ steps.meta.outputs.image }}:latest
+            ${{ secrets.PUBLISHER_IMAGE }}:${{ steps.meta.outputs.version }}
+            ${{ secrets.PUBLISHER_IMAGE }}:latest
           # Layers are cached between runs, so a release that changed nothing
           # in publisher/ costs a few seconds rather than a few minutes.
           cache-from: type=gha
