@@ -12,7 +12,7 @@
  * Writes into tmp/icons/, which is not committed: these are for choosing from,
  * not for shipping. The chosen one gets copied to build/icon.png.
  */
-import { app, BrowserWindow, nativeImage } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -32,17 +32,16 @@ const PAPER = '#ffffff';
 const ICONS = [
   {
     name: '1-peak',
-    about: 'One bar standing clear of the rest: literally what the analysis looks for.',
+    about: 'One bar standing clear of the rest: what the analysis actually looks for.',
     svg: `
       <rect width="512" height="512" rx="96" fill="${ORANGE}"/>
       <g fill="${PAPER}">
-        <rect x="96"  y="268" width="40" height="72"  rx="20"/>
-        <rect x="156" y="244" width="40" height="120" rx="20"/>
-        <rect x="216" y="132" width="40" height="344" rx="20" />
-        <rect x="276" y="236" width="40" height="136" rx="20"/>
-        <rect x="336" y="264" width="40" height="80"  rx="20"/>
+        <rect x="96"  y="220" width="44" height="72"  rx="22"/>
+        <rect x="158" y="188" width="44" height="136" rx="22"/>
+        <rect x="220" y="104" width="44" height="304" rx="22"/>
+        <rect x="282" y="180" width="44" height="152" rx="22"/>
+        <rect x="344" y="216" width="44" height="80"  rx="22"/>
       </g>
-      <circle cx="236" cy="96" r="26" fill="${PAPER}"/>
     `,
   },
   {
@@ -62,90 +61,139 @@ const ICONS = [
     about: 'A filmstrip where one frame is lit: the good bit, found inside the rest.',
     svg: `
       <rect width="512" height="512" rx="96" fill="${INK}"/>
-      <g fill="#ffffff" opacity="0.22">
-        <rect x="64"  y="176" width="88" height="160" rx="16"/>
-        <rect x="160" y="176" width="88" height="160" rx="16"/>
-        <rect x="360" y="176" width="88" height="160" rx="16"/>
+      <g fill="${PAPER}" opacity="0.30">
+        <rect x="56"  y="184" width="80" height="144" rx="18"/>
+        <rect x="148" y="184" width="80" height="144" rx="18"/>
+        <rect x="376" y="184" width="80" height="144" rx="18"/>
       </g>
-      <rect x="256" y="152" width="96" height="208" rx="20" fill="${ORANGE}"/>
-      <rect x="256" y="152" width="96" height="208" rx="20" fill="none" stroke="${PAPER}" stroke-width="12"/>
+      <rect x="244" y="144" width="120" height="224" rx="26" fill="${ORANGE}"/>
     `,
   },
   {
-    name: '4-keycap',
-    about: 'The replay key. You pressed it for a reason — that is the whole pitch.',
+    name: '4-window',
+    about: 'Thirty seconds of recording, with the stretch worth keeping lit inside it.',
     svg: `
       <rect width="512" height="512" rx="96" fill="${INK}"/>
-      <rect x="88" y="88" width="336" height="336" rx="72" fill="${ORANGE}"/>
-      <rect x="88" y="88" width="336" height="300" rx="72" fill="${DEEP}" opacity="0.0"/>
-      <g fill="${PAPER}">
-        <rect x="184" y="180" width="36" height="152" rx="18"/>
-        <path d="M300 180 L300 332 L240 256 Z"/>
-      </g>
+      <rect x="56" y="200" width="400" height="112" rx="34" fill="${PAPER}" opacity="0.22"/>
+      <rect x="236" y="216" width="152" height="80" rx="22" fill="${ORANGE}"/>
     `,
   },
   {
-    name: '5-cut',
-    about: 'A clip with its ends taken off — what you keep, and what you do not.',
+    name: '5-peak-in-brackets',
+    about: 'Both ideas at once: the moment that stands out, and the cut closing on it.',
     svg: `
       <rect width="512" height="512" rx="96" fill="${ORANGE}"/>
-      <rect x="72" y="208" width="368" height="96" rx="28" fill="${PAPER}" opacity="0.28"/>
-      <rect x="168" y="180" width="176" height="152" rx="32" fill="${PAPER}"/>
-      <g fill="${ORANGE}">
-        <circle cx="216" cy="256" r="16"/>
-        <circle cx="296" cy="256" r="16"/>
+      <g fill="none" stroke="${PAPER}" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" opacity="0.55">
+        <path d="M148 136 H104 V376 H148"/>
+        <path d="M364 136 H408 V376 H364"/>
+      </g>
+      <g fill="${PAPER}">
+        <rect x="196" y="224" width="40" height="64"  rx="20"/>
+        <rect x="256" y="152" width="40" height="208" rx="20"/>
+        <rect x="316" y="216" width="40" height="80"  rx="20"/>
       </g>
     `,
   },
   {
-    name: '6-mark',
-    about: 'A G cut open like a timeline, with the kept stretch marked in white.',
+    name: '6-buffer',
+    about: 'The replay buffer as a ring, with the slice worth keeping lit up on it.',
+    svg: `
+      <rect width="512" height="512" rx="96" fill="${ORANGE}"/>
+      <circle cx="256" cy="256" r="130" fill="none" stroke="${PAPER}" stroke-width="52" opacity="0.34"/>
+      <path d="M348 164 A130 130 0 0 1 348 348"
+            fill="none" stroke="${PAPER}" stroke-width="52" stroke-linecap="round"/>
+      <circle cx="256" cy="256" r="34" fill="${PAPER}"/>
+    `,
+  },
+  {
+    name: '3b-strip-orange',
+    about: 'The filmstrip, the other way round: orange ground, the kept frame in white.',
+    svg: `
+      <rect width="512" height="512" rx="96" fill="${ORANGE}"/>
+      <g fill="${PAPER}" opacity="0.34">
+        <rect x="56"  y="184" width="80" height="144" rx="18"/>
+        <rect x="148" y="184" width="80" height="144" rx="18"/>
+        <rect x="376" y="184" width="80" height="144" rx="18"/>
+      </g>
+      <rect x="244" y="144" width="120" height="224" rx="26" fill="${PAPER}"/>
+    `,
+  },
+  {
+    name: '7-reel',
+    about: 'Both at once: the buffer as a reel of frames going round, one of them kept.',
     svg: `
       <rect width="512" height="512" rx="96" fill="${INK}"/>
-      <path d="M352 176 A112 112 0 1 0 352 336 V264 H272"
-            fill="none" stroke="${ORANGE}" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M352 176 A112 112 0 0 0 208 160"
-            fill="none" stroke="${PAPER}" stroke-width="56" stroke-linecap="round"/>
+      <g>
+        <g transform="rotate(0 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${ORANGE}"/></g>
+        <g transform="rotate(45 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+        <g transform="rotate(90 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+        <g transform="rotate(135 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+        <g transform="rotate(180 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+        <g transform="rotate(225 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+        <g transform="rotate(270 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+        <g transform="rotate(315 256 256)"><rect x="210" y="44" width="92" height="124" rx="24" fill="${PAPER}" opacity="0.32"/></g>
+      </g>
+    `,
+  },
+  {
+    name: '8-ring-strip',
+    about: 'Both at once: a strip of frames threaded through the ring the buffer goes round.',
+    svg: `
+      <rect width="512" height="512" rx="96" fill="${INK}"/>
+      <circle cx="256" cy="256" r="158" fill="none" stroke="${PAPER}" stroke-width="28" opacity="0.30"/>
+      <g fill="${PAPER}" opacity="0.42">
+        <rect x="88"  y="204" width="84" height="104" rx="20"/>
+        <rect x="340" y="204" width="84" height="104" rx="20"/>
+      </g>
+      <rect x="196" y="170" width="120" height="172" rx="28" fill="${ORANGE}"/>
     `,
   },
 ];
 
 const SIZES = [512, 128, 48, 32, 16];
 
-async function render(svg, size) {
-  const markup =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="${size}" height="${size}">${svg}</svg>`;
+/**
+ * Rasterise one SVG at full size.
+ *
+ * Through a file rather than a `data:` URL, and through one window reused for
+ * every icon: a fresh transparent offscreen window per render failed to load
+ * every second time with ERR_FAILED. The smaller sizes come from resizing this
+ * one image, which is also closer to what Windows does with an icon anyway.
+ */
+async function render(win, svg) {
   const html =
     `<!doctype html><meta charset="utf-8">` +
     `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style>` +
-    markup;
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">${svg}</svg>`;
 
-  const win = new BrowserWindow({
-    width: size,
-    height: size,
-    show: false,
-    frame: false,
-    transparent: true,
-    webPreferences: { offscreen: true },
-  });
-  await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
-  // One frame is not always painted yet when load resolves.
-  await new Promise((r) => setTimeout(r, 120));
-  const image = await win.webContents.capturePage();
-  win.destroy();
-  return image;
+  const file = join(OUT, '.render.html');
+  writeFileSync(file, html, 'utf-8');
+  await win.loadFile(file);
+  // One frame is not always painted yet when the load resolves.
+  await new Promise((r) => setTimeout(r, 150));
+  return win.webContents.capturePage();
 }
 
 app.whenReady().then(async () => {
   mkdirSync(OUT, { recursive: true });
 
+  const canvas = new BrowserWindow({
+    width: 512,
+    height: 512,
+    show: false,
+    frame: false,
+    transparent: true,
+    webPreferences: { offscreen: true },
+  });
+
   const rows = [];
   for (const icon of ICONS) {
     const dir = join(OUT, icon.name);
     mkdirSync(dir, { recursive: true });
+    const full = await render(canvas, icon.svg);
     const tiles = [];
     for (const size of SIZES) {
-      const image = await render(icon.svg, size);
+      const image = size === 512 ? full : full.resize({ width: size, height: size, quality: 'best' });
       writeFileSync(join(dir, `${size}.png`), image.toPNG());
       tiles.push({ size, image });
     }
@@ -154,6 +202,7 @@ app.whenReady().then(async () => {
     rows.push({ icon, tiles });
     console.log(`${icon.name}  —  ${icon.about}`);
   }
+  canvas.destroy();
 
   // One sheet: every candidate as a row, every size as a column, on both a
   // light and a dark ground because a taskbar can be either.

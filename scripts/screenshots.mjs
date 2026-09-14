@@ -61,6 +61,17 @@ const LIBRARY = [
   { game: 'Phasmophobia', take: 1 },
 ];
 
+/**
+ * The recording the clip and trim shots are taken of.
+ *
+ * Picked rather than left to whichever clip happens to be newest, because this
+ * one has a kill in it that the Battlefield module finds — so the trim page in
+ * the screenshot shows the suggestion banner saying *why*, which is the part
+ * worth photographing. Always copied in, whether or not it is recent enough to
+ * make the `take` above.
+ */
+const FEATURED = { game: 'Battlefield 6', file: 'Battlefield 6_27.08.2026_20-56-01.mp4' };
+
 const VIDEO = /\.(mp4|mov|mkv)$/i;
 
 function seed(videosRoot) {
@@ -74,12 +85,18 @@ function seed(videosRoot) {
       continue;
     }
 
+    const wanted = FEATURED.game === game ? FEATURED.file : null;
     const files = readdirSync(from)
       .filter((name) => VIDEO.test(name))
       .map((name) => ({ name, at: statSync(join(from, name)).mtimeMs }))
       // Newest first, so the site shows what is actually being played.
       .sort((a, b) => b.at - a.at)
       .slice(0, take);
+
+    // The featured one goes in whether or not it made the cut above.
+    if (wanted && existsSync(join(from, wanted)) && !files.some((f) => f.name === wanted)) {
+      files.push({ name: wanted, at: statSync(join(from, wanted)).mtimeMs });
+    }
 
     if (files.length === 0) continue;
 
@@ -148,6 +165,30 @@ const TAGS = {
   Phasmophobia: [['jumpscare', 'funny']],
 };
 
+/**
+ * Names for the demo clips, per game.
+ *
+ * A wall of `Battlefield 6_30.08.2026_13-17-24.mp4` is what the app is for
+ * getting away from, so photographing one sells the opposite of the point. The
+ * recordings themselves are never renamed — a display name is a database field
+ * — and this library is thrown away afterwards.
+ */
+const NAMES = {
+  'Battlefield 6': [
+    'Last one standing',
+    'Rocket, then silence',
+    'Whole squad on the point',
+    'He really did not expect that',
+    'Tank, from the rooftop',
+  ],
+  'Ready Or Not': ['Breach and clear, eventually', 'Nobody got hit', 'Flashbang, then regret'],
+  forzahorizon6: ['Held the drift all the way', 'Missed the wall by nothing', 'Off the ramp'],
+  Phasmophobia: ['It followed us out'],
+};
+
+/** What the featured recording is called, since the trim shot is about it. */
+const FEATURED_NAME = 'Caught him coming up the steps';
+
 /** The collection that appears on the clip page, and in the sidebar. */
 const COLLECTION = 'Best of the month';
 
@@ -160,7 +201,7 @@ const COLLECTION = 'Best of the month';
  */
 async function dressTheLibrary(page) {
   const applied = await page.evaluate(
-    async ({ tags, collectionName }) => {
+    async ({ tags, names, collectionName, featured, featuredName }) => {
       const api = (method, path, body) => window.goodbit.apiRequest({ method, path, body });
 
       const clips = (
@@ -173,6 +214,7 @@ async function dressTheLibrary(page) {
 
       const used = {};
       let tagged = 0;
+      let named = 0;
 
       for (const clip of clips) {
         const list = tags[clip.game];
@@ -184,6 +226,13 @@ async function dressTheLibrary(page) {
         const wanted = list[index % list.length];
         await api('PATCH', `/clips/${clip.id}`, { tags: wanted });
         tagged++;
+
+        const pool = names[clip.game];
+        const displayName = clip.filename === featured ? featuredName : pool?.[index % pool.length];
+        if (displayName) {
+          await api('PATCH', `/clips/${clip.id}`, { displayName });
+          named++;
+        }
       }
 
       const collection = (await api('POST', '/collections', { name: collectionName })).body;
@@ -196,12 +245,18 @@ async function dressTheLibrary(page) {
       // One starred clip, so the Starred tab is not empty either.
       if (clips[1]) await api('POST', `/clips/${clips[1].id}/star`, undefined);
 
-      return { tagged, collected: picked.length };
+      return { tagged, named, collected: picked.length };
     },
-    { tags: TAGS, collectionName: COLLECTION },
+    {
+      tags: TAGS,
+      names: NAMES,
+      collectionName: COLLECTION,
+      featured: FEATURED.file,
+      featuredName: FEATURED_NAME,
+    },
   );
 
-  console.log(`  tagged ${applied.tagged} clips, collected ${applied.collected}`);
+  console.log(`  named and tagged ${applied.named} of ${applied.tagged} clips, collected ${applied.collected}`);
 }
 
 /**
@@ -212,6 +267,26 @@ async function dressTheLibrary(page) {
  * `complete` false, while one that failed leaves it true. So both are re-fetched
  * into an `Image` and the question asked is whether there are pixels.
  */
+/**
+ * Wait for the suggestion banner to stop saying it is working.
+ *
+ * On a game whose HUD gets read this is a few seconds of ffmpeg, and a
+ * screenshot taken before it lands shows a spinner instead of the answer.
+ */
+async function waitForSuggestion(page, timeout = 30000) {
+  const until = Date.now() + timeout;
+  while (Date.now() < until) {
+    const settled = await page.evaluate(() => {
+      const text = document.body.innerText;
+      if (/Listening/i.test(text)) return false;
+      return /worth keeping|loudest stretch/i.test(text);
+    });
+    if (settled) return;
+    await page.waitForTimeout(500);
+  }
+  console.warn('  no suggestion appeared in time; shooting anyway');
+}
+
 async function waitForStrips(page, timeoutMs = 120_000) {
   const deadline = Date.now() + timeoutMs;
 
@@ -355,22 +430,27 @@ async function main() {
   await go('#/stats');
   await shoot('stats');
 
-  const firstClip = await page.evaluate(async () => {
+  // The featured recording if it is in there, else whatever is newest.
+  const subject = await page.evaluate(async (wanted) => {
     const answer = await window.goodbit.apiRequest({
       method: 'GET',
       path: '/clips',
-      query: { pageSize: 1 },
+      query: { pageSize: 100 },
     });
-    return answer.body.items[0].id;
-  });
+    const items = answer.body.items;
+    return (items.find((c) => c.filename === wanted) ?? items[0]).id;
+  }, FEATURED.file);
 
-  await go(`#/clips/${firstClip}`);
+  await go(`#/clips/${subject}`);
   await shoot('clip');
 
-  await go(`#/trim/${firstClip}`, 4000);
+  await go(`#/trim/${subject}`, 4000);
   // Same story as the editor: the strip is generated on demand, and for a real
   // 3440x1440 recording that is ten seconds of ffmpeg.
   await waitForStrips(page);
+  // And the suggestion takes a moment of its own on a game whose HUD is read,
+  // which is the whole reason this clip was chosen.
+  await waitForSuggestion(page);
   await shoot('trim');
 
   await go('#/editor', 4000);

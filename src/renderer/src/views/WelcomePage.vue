@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseToggle from '../components/Base/BaseToggle.vue';
+import AppMark from '../components/App/AppMark.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -51,9 +52,7 @@ async function finish(): Promise<void> {
   <div class="h-full overflow-auto flex items-center justify-center p-8">
     <div class="w-full max-w-lg space-y-8">
       <div class="text-center space-y-3">
-        <div class="w-14 h-14 rounded-2xl bg-orange-500 mx-auto flex items-center justify-center">
-          <Icon icon="material-symbols:play-arrow-rounded" class="text-white text-3xl" />
-        </div>
+        <AppMark :size="56" class="mx-auto" />
         <h1 class="text-2xl font-bold text-foreground">Welcome to GoodBit</h1>
         <p class="text-sm text-muted-500">
           Point it at the folder OBS records into. It watches from there, and finds the good bit.

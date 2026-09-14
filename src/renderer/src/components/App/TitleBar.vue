@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
+import AppMark from './AppMark.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTheme } from '../../composables/useTheme';
 
@@ -48,9 +49,7 @@ watch(
     </button>
 
     <div class="flex items-center gap-2 min-w-0">
-      <div class="w-5 h-5 rounded bg-orange-500 flex items-center justify-center flex-shrink-0">
-        <Icon icon="material-symbols:play-arrow-rounded" class="text-white text-sm" />
-      </div>
+      <AppMark :size="20" />
       <span class="text-[13px] font-semibold text-foreground truncate">{{ APP_NAME }}</span>
     </div>
 
