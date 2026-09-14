@@ -119,9 +119,18 @@ export function useHoverScrub(videoEl: Ref<HTMLVideoElement | null>, enabled: Re
 
     if (!isScrubbing.value) {
       isScrubbing.value = true;
-      // Freeze playback so the frame under the cursor is the frame you see.
-      wasPlaying = !video.paused && !video.ended;
-      if (wasPlaying) video.pause();
+
+      /*
+       * Freeze playback so the frame under the cursor is the frame you see, and
+       * remember whether to start it again afterwards.
+       *
+       * A clip sitting at its own end counts as playing. It only got there by
+       * playing, and scrubbing back into it is a request to watch that part, so
+       * excluding `ended` here left a finished clip frozen on whatever frame
+       * you dragged to.
+       */
+      wasPlaying = !video.paused || video.ended;
+      if (!video.paused) video.pause();
     }
 
     const fraction = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
