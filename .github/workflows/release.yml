@@ -35,3 +35,12 @@ jobs:
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # electron-builder names the draft after the version alone, so the list
+      # read "GoodBit 1.3.2" down to "1.3.3" and "1.3.4" once nobody renamed
+      # them by hand. The tag is the only input, so this cannot drift again.
+      - name: Name it after the app
+        run: gh release edit "$TAG" --title "GoodBit ${TAG#v}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
