@@ -51,6 +51,7 @@ import { RouterView, useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
+import { useToastStore } from '../stores/toast';
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useFileImport } from '../composables/useFileImport';
 import AppHeader from '../components/App/AppHeader.vue';
@@ -61,10 +62,12 @@ import CommandPalette from '../components/App/CommandPalette.vue';
 import { useServiceEvents } from '../composables/useServiceEvents';
 import { usePublishProgress } from '../composables/usePublishProgress';
 import { useCollectionsStore } from '../stores/collections';
+import { rememberScrollFor, restoreScrollFor } from '../utils/scroll';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
 const clipsStore = useClipsStore();
+const toastStore = useToastStore();
 const fileImport = useFileImport();
 const selectedGame = ref('');
 const searchText = ref('');
@@ -80,12 +83,47 @@ function selectGame(g: string): void {
   selectedGame.value = g;
 }
 
+/**
+ * Re-read the videos folder, and say what came of it.
+ *
+ * This used to spin the icon and stop. A scan that found nothing looked exactly
+ * like a scan that never ran, and because there was no `catch`, so did one that
+ * threw. On a screen full of recordings somebody cannot replace, the loudest
+ * button in the app has to report back.
+ */
 async function rescan(): Promise<void> {
   isRescanLoading.value = true;
   try {
-    await rescanGames();
+    const result = await rescanGames();
     clipsStore.resetPagination();
     await Promise.all([gamesStore.fetchGames(), clipsStore.fetchClips(false)]);
+
+    const clips = (n: number): string => `${n} clip${n === 1 ? '' : 's'}`;
+
+    // The guard fired, which means the folder looked wrong rather than empty.
+    // Nothing was deleted, and that is the part worth saying out loud.
+    if (result.pruneSkipped) {
+      toastStore.warning(
+        `Nothing was removed, because ${result.pruneSkipped.reason}. Your library is untouched.`,
+        'Scanned, but something looks off',
+      );
+      return;
+    }
+
+    const changes: string[] = [];
+    if (result.added) changes.push(`${clips(result.added)} added`);
+    if (result.updated) changes.push(`${clips(result.updated)} updated`);
+    if (result.removed) changes.push(`${clips(result.removed)} no longer on disk`);
+
+    toastStore.success(
+      changes.length ? `${changes.join(', ')}. ${clips(result.total)} in all.` : `Nothing new. ${clips(result.total)} in all.`,
+      'Scanned',
+    );
+  } catch (error) {
+    toastStore.error(
+      (error as Error).message || 'The videos folder could not be read.',
+      'Could not scan',
+    );
   } finally {
     isRescanLoading.value = false;
   }
@@ -115,6 +153,22 @@ function handlePaletteKey(event: KeyboardEvent): void {
   event.preventDefault();
   showCommandPalette.value = !showCommandPalette.value;
 }
+
+/*
+ * Every screen remembers where it was scrolled to.
+ *
+ * Leaving the library for Settings and coming back used to land at the top,
+ * which after scrolling through several weeks of recordings means doing the
+ * whole journey again.
+ */
+router.beforeEach((_to, from) => {
+  rememberScrollFor(from.fullPath);
+  return true;
+});
+
+router.afterEach((to) => {
+  restoreScrollFor(to.fullPath);
+});
 
 onMounted(() => document.addEventListener('keydown', handlePaletteKey));
 onBeforeUnmount(() => document.removeEventListener('keydown', handlePaletteKey));

@@ -27,7 +27,9 @@ export function useClipGrouping(clips: Ref<Clip[]>) {
     const groupOrder: string[] = [];
 
     clips.value.forEach((clip, globalIndex) => {
-      const date = new Date(clip.createdAt ?? new Date());
+      // The day a clip belongs to is the day it was recorded, not the day it was
+      // indexed, or a library that predates the install collapses into one group.
+      const date = new Date(clip.fileModifiedAt ?? clip.createdAt ?? new Date());
       const dateKey = date.toISOString().split('T')[0];
       const groupKey = `${dateKey}-${clip.game}`;
 

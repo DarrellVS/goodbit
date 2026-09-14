@@ -14,8 +14,23 @@ export async function fetchGames(includeHidden = false): Promise<Game[]> {
   return data;
 }
 
-export async function rescanGames(): Promise<void> {
-  await axios.post('/api/scan');
+/** What a scan found, so the window can say so rather than just spinning. */
+export interface ScanResult {
+  added: number;
+  updated: number;
+  removed: number;
+  total: number;
+  /**
+   * Present when pruning was refused because the folder looked wrong rather
+   * than emptied, an unmounted drive being the usual cause. Worth telling
+   * somebody about: their library is intact but the scan did not trust itself.
+   */
+  pruneSkipped?: { reason: string; wouldHaveRemoved: number };
+}
+
+export async function rescanGames(): Promise<ScanResult> {
+  const { data } = await axios.post<ScanResult>('/api/scan');
+  return data;
 }
 
 export async function updateGameName(gameName: string, displayName: string | null): Promise<void> {
