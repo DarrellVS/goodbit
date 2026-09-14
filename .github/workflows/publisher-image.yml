@@ -4,10 +4,17 @@ name: Publisher image
 # them to clone a repository and build a container first is a wall in front of
 # an optional feature. This pushes a ready image for both processors people
 # actually have: a NAS or a Pi is arm64, everything else is amd64.
+#
+# Only when the publisher itself changes. It used to run on every release tag,
+# which rebuilt an identical image for a release that had touched nothing in
+# `publisher/` — the app and the publisher are versioned and shipped
+# separately, and there is no reason for one to drag the other along.
 on:
   push:
-    tags: ['v*']
-  # For rebuilding without cutting a release, or for the first push.
+    branches: [main]
+    paths:
+      - 'publisher/**'
+      - '.github/workflows/publisher-image.yml'
   workflow_dispatch:
 
 jobs:
@@ -15,9 +22,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # A missing credential must not fail the run: a red cross on every
-      # release for a repository that has not been given Docker Hub access
-      # teaches everyone to ignore red crosses. It says so and stops instead.
+      # A missing credential must not fail the run: a red cross on every push
+      # for a fork that has no Docker Hub access teaches everyone to ignore red
+      # crosses. It says so and stops instead.
       #
       # This is a step rather than a job-level `if` because the `secrets`
       # context is not available there, only `vars` and `github` are.
@@ -41,9 +48,9 @@ jobs:
       - name: Which version is this
         id: meta
         if: steps.creds.outputs.ready == 'true'
+        # The publisher's own version, not the app's: they ship separately.
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          if [ "$version" = "$GITHUB_REF_NAME" ]; then version="edge"; fi
+          version=$(node -p "require('./publisher/package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
@@ -68,7 +75,9 @@ jobs:
           tags: |
             ${{ secrets.PUBLISHER_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ secrets.PUBLISHER_IMAGE }}:latest
-          # Layers are cached between runs, so a release that changed nothing
-          # in publisher/ costs a few seconds rather than a few minutes.
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Layers are cached between runs, so a change to one source file does
+          # not reinstall the dependencies again — which matters most for
+          # arm64, where every command runs under emulation. Scoped by name so
+          # it cannot collide with another workflow's cache in this repository.
+          cache-from: type=gha,scope=publisher
+          cache-to: type=gha,mode=max,scope=publisher
