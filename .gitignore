@@ -147,3 +147,9 @@ playwright-report/
 dist-release/
 tmp/
 release-check/
+
+# The Library mockup page and its screenshots: a megabyte of base64 thumbnails
+# and stills, regenerable from the scripts beside them. The written findings in
+# design/library-mockups/*.md are the part worth keeping.
+design/library-mockups/index.html
+design/library-mockups/shots/
