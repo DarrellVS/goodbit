@@ -19,19 +19,29 @@
       </div>
     </header>
     
-    <div class="relative h-32 rounded-xl overflow-visible border border-border">
-      <img 
-        :src="frameStripSource" 
-        alt="Video frames" 
-        class="w-full h-full object-cover pointer-events-none select-none rounded-xl" 
+    <div ref="strip" class="relative h-32 rounded-xl overflow-visible border border-border">
+      <img
+        :src="frameStripSource"
+        alt="Video frames"
+        class="w-full h-full object-cover pointer-events-none select-none rounded-xl"
         draggable="false"
       />
-      
-      <BaseRangeSlider 
-        v-model="model" 
-        :max="maxDuration" 
-        :step="0.1" 
-        :min-steps-between-thumbs="1" 
+
+      <!--
+        Anywhere that is not a handle moves the playhead. This sits under the
+        slider, so grabbing a handle still trims and everything else scrubs.
+      -->
+      <div
+        class="absolute inset-0 z-40 cursor-pointer rounded-xl"
+        title="Click or drag to move the playhead"
+        @pointerdown="startScrub"
+      />
+
+      <BaseRangeSlider
+        v-model="model"
+        :max="maxDuration"
+        :step="0.1"
+        :min-steps-between-thumbs="1"
       />
       
       <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
@@ -101,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseRangeSlider from '../Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
@@ -124,14 +135,51 @@ interface Props {
   isPlaying: boolean;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 interface Emits {
   (e: 'save'): void;
   (e: 'toggle-playback'): void;
+  (e: 'seek', time: number): void;
 }
 
-defineEmits<Emits>();
+const emit = defineEmits<Emits>();
+
+const strip = ref<HTMLElement | null>(null);
+
+/** Where along the strip a pointer is, in seconds. */
+function timeAt(event: PointerEvent): number {
+  const box = strip.value?.getBoundingClientRect();
+  if (!box || box.width === 0) return 0;
+
+  const fraction = (event.clientX - box.left) / box.width;
+  return Math.max(0, Math.min(1, fraction)) * props.maxDuration;
+}
+
+/**
+ * Click to place the playhead, drag to scrub.
+ *
+ * The pointer is captured, so a drag that wanders off the strip — or off the
+ * window — keeps scrubbing and still ends cleanly.
+ */
+function startScrub(event: PointerEvent): void {
+  if (event.button !== 0) return;
+
+  const target = event.currentTarget as HTMLElement;
+  target.setPointerCapture?.(event.pointerId);
+  emit('seek', timeAt(event));
+
+  const move = (moved: PointerEvent): void => emit('seek', timeAt(moved));
+  const stop = (): void => {
+    target.removeEventListener('pointermove', move);
+    target.removeEventListener('pointerup', stop);
+    target.removeEventListener('pointercancel', stop);
+  };
+
+  target.addEventListener('pointermove', move);
+  target.addEventListener('pointerup', stop);
+  target.addEventListener('pointercancel', stop);
+}
 
 const model = defineModel<TimeRange>({ required: true });
 </script>

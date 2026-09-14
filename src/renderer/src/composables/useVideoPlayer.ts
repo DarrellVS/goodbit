@@ -82,6 +82,22 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
     currentTime.value = video.currentTime;
   }
 
+  /**
+   * Move the playhead anywhere in the clip.
+   *
+   * Scrubbing the frame strip is how you decide *where* the trim should go, so
+   * it cannot be confined to where the trim currently is. Playback still loops
+   * the range, so pressing play after scrubbing outside it returns you to it.
+   */
+  function scrubTo(time: number): void {
+    const video = videoElement.value;
+    if (!video) return;
+
+    const limit = Number.isFinite(video.duration) ? video.duration : time;
+    video.currentTime = Math.min(Math.max(time, 0), limit);
+    currentTime.value = video.currentTime;
+  }
+
   const handleKeydown = (event: KeyboardEvent) => {
     if (event.code !== 'Space' && event.key !== ' ') return;
 
@@ -140,6 +156,7 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
     isPlaying,
     togglePlayback,
     seek,
+    scrubTo,
     handleTimeUpdate,
     handleLoadedMetadata,
   };

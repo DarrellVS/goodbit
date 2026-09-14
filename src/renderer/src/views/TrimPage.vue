@@ -42,6 +42,7 @@
         :is-playing="isPlaying"
         @save="handleSave"
         @toggle-playback="togglePlayback"
+        @seek="scrubTo"
       />
     </main>
   </div>
@@ -91,7 +92,7 @@ const videoElement = computed(() =>
   videoPreviewRef.value?.videoElement ?? null
 );
 
-const { currentTime, isPlaying, togglePlayback, seek } = useVideoPlayer({
+const { currentTime, isPlaying, togglePlayback, seek, scrubTo } = useVideoPlayer({
   videoElement,
   range,
 });
