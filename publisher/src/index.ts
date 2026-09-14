@@ -90,6 +90,22 @@ app.get('/:filename', (req, res) => {
   // Title with game name if available
   const title = game ? `${displayName} | ${game}` : displayName;
   
+  /*
+   * This page is generated per request, and must never be cached.
+   *
+   * Its URL ends in .mp4, because it is named after the clip, and a CDN reads
+   * that extension and files the response under static assets: Cloudflare
+   * cached the HTML at the edge and went on serving a page from before the
+   * redesign. Publishing purges the URL it just wrote, so a new clip looked
+   * right while every clip already published looked old, and a hard refresh
+   * could not fix it because the browser was not the one holding the copy.
+   *
+   * The media route beside this one has said the same thing all along.
+   */
+  res.setHeader('Cache-Control', 'no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   // Serve HTML with Open Graph meta tags for Discord embed
   res.send(`<!DOCTYPE html>
 <html lang="en">
