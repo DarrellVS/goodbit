@@ -37,7 +37,10 @@ export const router = createRouter({
           component: ClipsPage,
           meta: { 
             title: 'My Library',
-            subtitle: 'Browse and manage your video clips'
+            // The one line the app gets to explain itself on launch. It used
+            // to describe the grid people were already looking at, and never
+            // mentioned the thing the product is named after.
+            subtitle: 'Everything OBS recorded. Open one and GoodBit points at the good bit.'
           }
         },
         { 
@@ -46,7 +49,7 @@ export const router = createRouter({
           component: TodaysClipsPage,
           meta: { 
             title: "Today's Clips",
-            subtitle: 'Clips captured today'
+            subtitle: 'Review what you recorded today, one at a time'
           }
         },
         { 
@@ -55,7 +58,11 @@ export const router = createRouter({
           component: TagPatternsPage,
           meta: { 
             title: 'Smart Tag Patterns',
-            subtitle: 'Manage automatic tag suggestions'
+            // Says what is matched and when, because the old subtitle,
+            // "Manage automatic tag suggestions", implied tags were being
+            // applied on their own. They are not: these only ever offer a tag
+            // in the tag popover, and only for words you have written.
+            subtitle: 'Words that offer a tag when you open the tag box on a clip'
           }
         },
         { 

@@ -62,9 +62,15 @@ function editDayInEditor(group: DayGroup): void {
   void router.push({ path: '/editor', query: { clips: ids.join(',') } });
 }
 
-/** When a clip happened. Falls back to the file's own date if it was never set. */
+/**
+ * When a clip happened, which is the file's own date.
+ *
+ * `createdAt` is when the row was written, so it is the install date for every
+ * clip that was already on disk, and only a fallback for a row that somehow
+ * has no file date.
+ */
 function time(clip: Clip): number {
-  const stamp = clip.createdAt ?? clip.fileModifiedAt;
+  const stamp = clip.fileModifiedAt ?? clip.createdAt;
   return stamp ? new Date(stamp).getTime() : 0;
 }
 </script>
@@ -102,7 +108,7 @@ function time(clip: Clip): number {
           @click="editDayInEditor(group)"
         >
           <Icon icon="material-symbols:movie-edit" class="text-base" />
-          Edit day
+          Open this day in the editor
         </button>
       </div>
 

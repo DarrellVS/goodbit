@@ -9,9 +9,6 @@ import {
   MenubarPortal,
   MenubarRoot,
   MenubarSeparator,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
   MenubarTrigger,
 } from 'radix-vue';
 import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
@@ -84,38 +81,27 @@ async function handleMoveToGame(targetGame: string) {
           align="end"
           :side-offset="8"
         >
-          <!-- Edit Submenu -->
-          <MenubarSub>
-            <MenubarSubTrigger
-              class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none data-[state=open]:bg-muted-100"
-            >
-              <div class="flex items-center gap-2">
-                <Icon icon="material-symbols:edit" class="text-base" />
-                <span>Edit</span>
-              </div>
-              <Icon icon="material-symbols:chevron-right" class="text-base text-muted-400" />
-            </MenubarSubTrigger>
-            <MenubarPortal>
-              <MenubarSubContent
-                class="min-w-[180px] bg-card rounded-lg p-1 shadow-lg border border-border outline-none z-50"
-              >
-                <MenubarItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
-                  @click="onTrim"
-                >
-                  <Icon icon="material-symbols:content-cut" class="text-base" />
-                  <span>Trim</span>
-                </MenubarItem>
-                <MenubarItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
-                  @click="onAdvancedEdit"
-                >
-                  <Icon icon="material-symbols:video-settings" class="text-base" />
-                  <span>Advanced Edit</span>
-                </MenubarItem>
-              </MenubarSubContent>
-            </MenubarPortal>
-          </MenubarSub>
+          <!--
+            Trim sits at the top, not behind a submenu.
+
+            It used to be two levels down under "Edit", which opens on hover,
+            and no tester found it. Cutting a clip down is the thing this app
+            is for, so it is the first item in its own menu.
+          -->
+          <MenubarItem
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+            @click="onTrim"
+          >
+            <Icon icon="material-symbols:content-cut" class="text-base" />
+            <span>Trim to the good bit</span>
+          </MenubarItem>
+          <MenubarItem
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+            @click="onAdvancedEdit"
+          >
+            <Icon icon="material-symbols:video-settings" class="text-base" />
+            <span>Open in the editor</span>
+          </MenubarItem>
 
           <MenubarSeparator class="h-px bg-muted-200 my-1" />
 

@@ -116,7 +116,7 @@ watch(
           <div>
             <DialogTitle class="text-xl font-bold text-foreground mb-1">Drafts</DialogTitle>
             <DialogDescription class="text-sm text-muted-600">
-              Kept in this browser, export one to a file to move it somewhere else
+              Kept on this computer, export one to a file to move it somewhere else
             </DialogDescription>
           </div>
 

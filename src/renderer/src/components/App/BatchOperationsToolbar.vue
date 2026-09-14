@@ -113,7 +113,7 @@ const someStarred = computed(() =>
               @click="emit('open-in-editor')"
             >
               <Icon icon="material-symbols:movie-edit" class="text-base" />
-              <span>Open in Advanced Editor</span>
+              <span>Open in the editor</span>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator class="h-px bg-muted-200 my-1" />

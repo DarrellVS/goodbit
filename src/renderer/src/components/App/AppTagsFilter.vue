@@ -33,7 +33,9 @@ function handleRemoveTag(tagName: string): void {
 <template>
   <div class="flex flex-col gap-3 max-h-72 overflow-auto min-w-[280px]">
     <div class="text-sm font-semibold">Filter by Tags</div>
-    <div v-if="tags.length === 0" class="text-muted-400 text-sm py-4 text-center">No tags yet</div>
+    <div v-if="tags.length === 0" class="text-muted-400 text-sm py-4 px-3 text-center">
+      No tags yet. Hover a clip, choose Manage tags, and the ones you make show up here to filter by.
+    </div>
     <div v-else class="space-y-1">
       <div
         v-for="tag in tags"

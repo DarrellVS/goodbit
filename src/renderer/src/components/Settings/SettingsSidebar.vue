@@ -65,11 +65,20 @@ function selectSection(sectionId: string): void {
       </button>
       <button
         class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/8 transition-colors text-sm text-red-600"
+        title="Puts every setting on this screen back the way it came. Your clips, tags, stars and collections are not touched."
         @click="emit('reset')"
       >
         <Icon icon="material-symbols:restart-alt" />
         Reset to Defaults
       </button>
+      <!--
+        Somebody who cannot tell whether this wipes their tags will not press
+        it, and somebody who presses it expecting a wipe is worse off. Say
+        which it is.
+      -->
+      <p class="px-3 pt-1 text-xs text-muted-500">
+        Settings only. Your clips, tags, stars and collections stay as they are.
+      </p>
     </div>
   </aside>
 </template>

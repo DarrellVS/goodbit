@@ -35,6 +35,83 @@ const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
 const loading = computed(() => clipsStore.loading);
 const isEmpty = computed(() => !loading.value && !clips.value.length);
+
+/**
+ * Which kind of nothing this is.
+ *
+ * One message used to cover three situations, and it told somebody with
+ * forty-one clips to "try adding some clips to your library". Each of these
+ * has a different cause and a different way out, so each says its own.
+ */
+const narrowed = computed(
+  () =>
+    Boolean(clipsStore.searchText) ||
+    clipsStore.selectedTags.length > 0 ||
+    Boolean(clipsStore.selectedGame) ||
+    activeFilter.value !== 'videos',
+);
+
+const emptyState = computed(() => {
+  if (clipsStore.searchText) {
+    return {
+      icon: 'material-symbols:search-off',
+      title: `Nothing matches “${clipsStore.searchText}”`,
+      description: 'Search looks at clip names, the dates in them, and your tags.',
+      actionLabel: 'Clear the search',
+    };
+  }
+
+  if (activeFilter.value === 'starred') {
+    return {
+      icon: 'material-symbols:star-outline',
+      title: 'Nothing starred yet',
+      description: 'Hover a clip and press the star to keep it here.',
+      actionLabel: 'Show every clip',
+    };
+  }
+
+  if (activeFilter.value === 'published' || activeFilter.value === 'not-published') {
+    return {
+      icon: 'material-symbols:cloud-off',
+      title:
+        activeFilter.value === 'published' ? 'Nothing published yet' : 'Everything here is published',
+      description:
+        'Publishing puts a copy behind a public link, and needs a publisher set up under Settings, App.',
+      actionLabel: 'Show every clip',
+    };
+  }
+
+  if (narrowed.value) {
+    return {
+      icon: 'material-symbols:filter-alt-off',
+      title: 'Nothing left after those filters',
+      description: 'The clips are still there. The filters on this screen are hiding them.',
+      actionLabel: 'Clear the filters',
+    };
+  }
+
+  return {
+    icon: 'material-symbols:video-library',
+    title: 'No clips yet',
+    description:
+      'Record something in OBS into your clips folder and it turns up here on its own. If clips are already there, a scan will find them.',
+    actionLabel: 'Scan the folder',
+  };
+});
+
+function handleEmptyAction(): void {
+  if (clipsStore.searchText) {
+    clipsStore.setSearch('');
+    return;
+  }
+  if (narrowed.value) {
+    activeFilter.value = 'videos';
+    clipsStore.setGame('');
+    clipsStore.setTags([]);
+    return;
+  }
+  void clipsStore.fetchClips(false);
+}
 const currentPage = computed(() => clipsStore.page);
 const totalPages = computed(() => clipsStore.totalPages);
 
@@ -136,6 +213,11 @@ onMounted(() => {
         :clips="clips"
         :view-mode="config.public.value.viewMode"
         :is-empty="isEmpty"
+        :empty-icon="emptyState.icon"
+        :empty-title="emptyState.title"
+        :empty-description="emptyState.description"
+        :empty-action-label="emptyState.actionLabel"
+        @empty-action="handleEmptyAction"
         :get-video-url="getVideoUrl"
         :get-thumb-url="getThumbUrl"
         :is-selection-mode="isSelectionMode"

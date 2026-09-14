@@ -129,7 +129,7 @@ async function copy(): Promise<void> {
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-sm flex flex-col outline-none modal-content-animate"
       >
         <div class="p-6 border-b border-border">
-          <DialogTitle class="text-xl font-bold text-foreground mb-1">Send to my phone</DialogTitle>
+          <DialogTitle class="text-xl font-bold text-foreground mb-1">Share on your wifi</DialogTitle>
           <DialogDescription class="text-sm text-muted-600 truncate">{{ title }}</DialogDescription>
         </div>
 

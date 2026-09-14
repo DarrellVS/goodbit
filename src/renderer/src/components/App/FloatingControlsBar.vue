@@ -98,7 +98,7 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
         key="selection-empty"
         class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4"
       >
-        <span class="text-sm text-muted-500">Select clips to perform actions</span>
+        <span class="text-sm text-muted-500">Pick clips to star, tag, publish, move or delete together</span>
         <div class="flex-1"></div>
         <button
           class="px-3 py-1.5 rounded-lg hover:bg-muted-100 transition-colors flex items-center gap-2 text-sm font-medium text-muted-700 scale-on-hover"

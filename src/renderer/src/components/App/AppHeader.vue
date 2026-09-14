@@ -34,7 +34,7 @@ defineEmits<{
               id="global-search-input"
               type="text"
               :value="search"
-              placeholder="Search your video, recent, tags, idea"
+              placeholder="Search names, dates and tags"
               class="pl-10 pr-4 py-2.5 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-400 outline-none focus:ring-2 focus:ring-orange-500/50 transition w-96"
               @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
             />

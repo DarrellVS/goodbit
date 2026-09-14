@@ -11,6 +11,7 @@ interface Props {
   emptyIcon?: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  emptyActionLabel?: string;
   getVideoUrl: (clip: Clip) => string;
   getThumbUrl: (clip: Clip) => string;
   collectionId?: number;
@@ -20,12 +21,14 @@ interface Props {
 interface Emits {
   (e: 'clip-updated', clip: Clip): void;
   (e: 'clip-deleted'): void;
+  (e: 'empty-action'): void;
 }
 
 withDefaults(defineProps<Props>(), {
   emptyIcon: 'material-symbols:video-library',
   emptyTitle: 'No clips found',
   emptyDescription: 'Try adjusting your filters or adding some clips to your library.',
+  emptyActionLabel: '',
   isSelectionMode: false,
 });
 
@@ -38,6 +41,8 @@ const emit = defineEmits<Emits>();
     :icon="emptyIcon"
     :title="emptyTitle"
     :description="emptyDescription"
+    :action-label="emptyActionLabel"
+    @action="emit('empty-action')"
   />
 
   <ClipsGrid

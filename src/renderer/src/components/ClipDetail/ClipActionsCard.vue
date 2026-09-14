@@ -61,13 +61,13 @@ async function copyPublicUrl(): Promise<void> {
       @click="emit('share')"
     >
       <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 flex-shrink-0" />
-      <span class="text-sm font-medium text-foreground">Send to my phone</span>
+      <span class="text-sm font-medium text-foreground">Share on your wifi</span>
     </button>
 
     <ClipStarButton variant="row" :clip="clip" @updated="emit('updated', $event)" />
 
     <div class="pt-1 flex items-center justify-between">
-      <span class="text-xs text-muted-500">Open, trim, publish, delete…</span>
+      <span class="text-xs text-muted-500">Trim, publish, move, delete</span>
       <ClipActionsMenu
         :clip="clip"
         @updated="emit('updated', $event)"

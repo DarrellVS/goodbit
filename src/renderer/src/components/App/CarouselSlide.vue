@@ -24,7 +24,11 @@ function handleRename(name: string): void {
 }
 
 function handleDelete(): void {
-  toastStore.confirm('This action cannot be undone.', () => emit('delete'), 'Delete this clip?');
+  toastStore.confirm(
+    'It goes to the Recycle Bin, so you can still get it back from there.',
+    () => emit('delete'),
+    'Move this clip to the Recycle Bin?',
+  );
 }
 </script>
 

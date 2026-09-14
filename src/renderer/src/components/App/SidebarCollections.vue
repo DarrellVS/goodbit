@@ -30,19 +30,28 @@ const {
       @action="actions.startCreateCollection"
     />
 
-    <SidebarCreateInput
-      v-if="showCreateInput"
-      v-model="createInputValue"
-      placeholder="Collection name"
-      @submit="actions.createCollection"
-      @cancel="showCreateInput = false"
-    />
+    <!--
+      A name is asked for first, so say what is being named. A collection is a
+      list you make by hand, and clips can sit in several at once.
+    -->
+    <div v-if="showCreateInput">
+      <SidebarCreateInput
+        v-model="createInputValue"
+        placeholder="Name it, then press Enter"
+        @submit="actions.createCollection"
+        @cancel="showCreateInput = false"
+      />
+      <p class="px-3 pb-2 pt-1 text-xs text-muted-500">
+        A shelf you fill yourself, like "TikTok queue". A clip can sit on several, and nothing
+        moves on disk.
+      </p>
+    </div>
 
     <SidebarEmptyState
       v-if="!items.length && !showCreateInput"
       icon="material-symbols:folder-off"
       message="No collections yet"
-      action-text="Create your first"
+      action-text="Make one"
       @action="actions.startCreateCollection"
     />
 
