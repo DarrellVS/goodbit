@@ -16,25 +16,34 @@
     <SliderTrack class="relative w-full h-full">
       <SliderRange class="absolute h-full bg-primary/20" />
     </SliderTrack>
+    <!--
+      The thumb itself has no width on purpose.
+      Radix positions a thumb by percentage and then pulls it back inside the
+      track by a share of its own width, so a wide thumb lands visibly short of
+      0% and past 100% — the handle sat several pixels away from the edge of the
+      strip it was supposed to mark. A zero-width thumb is positioned exactly,
+      and the parts you can see and grab hang off it.
+    -->
     <SliderThumb
       v-for="(value, i) in model"
       :key="i"
       :aria-label="i === 0 ? 'Start time' : 'End time'"
       :title="i === 0 ? 'Drag to move the start' : 'Drag to move the end'"
-      class="group relative block h-full w-4 -mx-2 cursor-ew-resize outline-none pointer-events-auto touch-none"
+      class="group relative block h-full w-0 outline-none pointer-events-auto touch-none"
     >
       <!--
-        The visible handle is a hairline; the element around it is four times
-        wider so it can actually be grabbed. A one-pixel target is why the strip
-        behind it kept getting hit instead.
+        A hairline you can see, and a target eight times wider you can hit. A
+        one-pixel target is why the strip behind it kept getting grabbed instead.
       -->
+      <div class="absolute inset-y-0 -left-2 -right-2 cursor-ew-resize" />
       <div
-        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] bg-orange-500 rounded-sm shadow-[0_0_0_1px_rgba(0,0,0,0.35)] transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-orange-400"
+        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] bg-orange-500 rounded-sm shadow-[0_0_0_1px_rgba(0,0,0,0.35)] pointer-events-none transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-orange-400"
       />
 
       <div
         :class="[
-          'absolute left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
+          // The thumb has no width, so the label centres on its left edge.
+          'absolute left-0 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
           i === 0 ? '-top-1 rounded-t' : '-bottom-1 rounded-b',
         ]"
       >

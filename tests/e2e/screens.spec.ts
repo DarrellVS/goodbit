@@ -276,6 +276,46 @@ test.describe('layout', () => {
     ).toBeLessThanOrEqual(room.window);
   });
 
+  test('the trim handles sit exactly where they say they do', async () => {
+    const id = await ctx.page.evaluate(async () => {
+      const answer = await window.goodbit!.apiRequest({
+        method: 'GET',
+        path: '/clips',
+        query: { pageSize: 1 },
+      });
+      return (answer.body as { items: Array<{ id: number }> }).items[0].id;
+    });
+
+    await ctx.page.evaluate((clipId) => {
+      window.location.hash = `#/trim/${clipId}`;
+    }, id);
+    await ctx.page.waitForTimeout(3000);
+
+    // The range opens on the whole clip, so both handles are at the extremes —
+    // which is exactly where a mispositioned one shows up. Radix pulls a thumb
+    // back inside the track by a share of its own width, so a thumb with any
+    // width at all lands short of the edge it is marking.
+    const offsets = await ctx.page.evaluate(() => {
+      const strip = document.querySelector('img[src*="media/strip"]')?.parentElement;
+      const thumbs = Array.from(document.querySelectorAll('[role="slider"]'));
+      if (!strip || thumbs.length < 2) return null;
+
+      const track = strip.getBoundingClientRect();
+      const [start, end] = thumbs.map((t) => t.getBoundingClientRect());
+
+      return {
+        startOff: Math.round(start.left - track.left),
+        endOff: Math.round(end.left - track.right),
+      };
+    });
+
+    expect(offsets, 'the strip or its handles were not found').not.toBeNull();
+    expect(Math.abs(offsets!.startOff), `start handle is ${offsets!.startOff}px from the left edge`)
+      .toBeLessThanOrEqual(2);
+    expect(Math.abs(offsets!.endOff), `end handle is ${offsets!.endOff}px from the right edge`)
+      .toBeLessThanOrEqual(2);
+  });
+
   test('dark mode has no pale surfaces left over from light', async () => {
     await ctx.page.evaluate(() => localStorage.setItem('goodbit-theme', 'dark'));
     await ctx.page.reload();

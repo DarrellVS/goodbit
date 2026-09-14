@@ -11,7 +11,7 @@ import { cacheDir as cacheDirFor } from '../services/cachePaths.js';
  * Bumped whenever the rule changes, so cached answers from an older one are
  * ignored rather than served for ever.
  */
-const ANALYSIS_VERSION = 2;
+const ANALYSIS_VERSION = 3;
 
 export type EnsureClipSuggestionsInput = { clipId: number; windowSec?: number; refresh?: boolean };
 

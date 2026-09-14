@@ -306,3 +306,101 @@ export function ruleV3(clip, windowSec = 10, config = V3) {
     spreadLu: r(shaped.spreadLu),
   };
 }
+
+/* ----------------------------------------------------------------- v4 */
+
+export const V4 = {
+  ...V3,
+  /**
+   * How long a moment is, for ranking.
+   *
+   * Not a single 100 ms sample, which lets one door slam beat a firefight, and
+   * not the whole ten second window, which was the bug: averaging over the
+   * window makes a long mild stretch outscore a short loud one. A clip of
+   * Unrailed peaks at 2.15 around 24 s and idles near 1.5 from 4 to 8 s, and
+   * the ten second mean preferred the idle.
+   */
+  MOMENT_SEC: 1.5,
+};
+
+/**
+ * Find the moment, then build the window around it.
+ *
+ * v3 scored every possible window by its mean and took the best, which is a
+ * question about averages when the thing being looked for is a spike.
+ */
+export function ruleV4(clip, windowSec = 10, config = V4) {
+  const shaped = normalise(clip.full);
+  if (!shaped) return { confident: false, reason: 'this clip is silent' };
+
+  const durationSec = clip.durationSec;
+  const n = shaped.z.length;
+
+  if (durationSec < windowSec * config.MIN_ROOM) {
+    return { confident: false, reason: 'this clip is already about as short as the suggestion' };
+  }
+
+  const win = Math.max(1, Math.round(Math.min(windowSec, durationSec * 0.8) / HOP));
+  if (win >= n) return { confident: false, reason: 'this clip is too short to suggest anything' };
+
+  // A moment is a second and a half of sound, not an instant and not ten
+  // seconds. Rolling mean over that, from the unclipped scores.
+  const span = Math.max(1, Math.round(config.MOMENT_SEC / HOP));
+  const prefix = [0];
+  for (let i = 0; i < n; i++) prefix.push(prefix[i] + shaped.z[i]);
+
+  const moment = [];
+  for (let i = 0; i < n; i++) {
+    const from = Math.max(0, i - Math.floor(span / 2));
+    const to = Math.min(n, from + span);
+    moment.push((prefix[to] - prefix[from]) / (to - from));
+  }
+
+  // The same thumb on the scale as before, applied to the moment rather than
+  // to a window average.
+  let bestIndex = 0;
+  let bestWeighted = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const position = i / n;
+    const lateness = Math.max(0, position - (1 - config.RECENCY_TAIL)) / config.RECENCY_TAIL;
+    const weighted = moment[i] * (1 + config.RECENCY_WEIGHT * lateness);
+    if (weighted > bestWeighted) {
+      bestWeighted = weighted;
+      bestIndex = i;
+    }
+  }
+
+  // The loudest instant inside that moment is what the window is built around.
+  let peakIndex = bestIndex;
+  const from = Math.max(0, bestIndex - span);
+  const to = Math.min(n, bestIndex + span);
+  for (let i = from; i < to; i++) if (shaped.z[i] > shaped.z[peakIndex]) peakIndex = i;
+
+  const peakZ = shaped.z[peakIndex];
+  const reasons = [];
+  if (shaped.spreadLu < config.MIN_SPREAD_LU) reasons.push('flat');
+  if (peakZ < config.MIN_PEAK_Z) reasons.push('nothing stands out');
+
+  let onset = peakIndex;
+  while (onset > 0 && shaped.z[onset - 1] >= peakZ * config.ONSET_FRACTION) onset--;
+
+  const onsetSec = clip.t0 + onset * HOP;
+  const peakSec = clip.t0 + peakIndex * HOP;
+  const length = win * HOP;
+
+  let end = Math.min(durationSec, Math.max(0, onsetSec - config.LEAD_IN) + length);
+  // Never cut the payoff off: the peak, plus a moment, has to be inside.
+  end = Math.max(end, Math.min(durationSec, peakSec + config.TAIL_ROOM));
+  // And the window is always the length that was asked for, sliding back off
+  // the end of the clip when there is no room in front of it.
+  const start = Math.max(0, end - length);
+
+  return {
+    confident: reasons.length === 0,
+    reason: reasons.length ? reasons.join(', ') : null,
+    window: { start: r(start), end: r(end) },
+    peakAt: r(peakSec),
+    peakZ: r(peakZ, 2),
+    spreadLu: r(shaped.spreadLu),
+  };
+}

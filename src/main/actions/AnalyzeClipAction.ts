@@ -54,6 +54,14 @@ const MIN_ROOM = 1.4;
 const HOP = 0.1;
 
 /**
+ * How long a moment is, for ranking.
+ *
+ * Not a single 100 ms sample, which lets one door slam beat a firefight, and
+ * not the whole window, which was the bug this replaced.
+ */
+const MOMENT_SEC = 1.5;
+
+/**
  * How much to favour the end of the clip, and how much of it counts as the end.
  *
  * A replay buffer is saved *after* something happened, so the something is near
@@ -156,20 +164,35 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
 
     // A window longer than the clip is meaningless; keep it inside the clip.
     const effectiveWindow = Math.min(windowSec, durationSec * 0.8);
-    const win = Math.max(1, Math.round(effectiveWindow / HOP));
 
+    const n = raw.length;
     const prefix = [0];
-    for (let i = 0; i < score.length; i++) prefix.push(prefix[i] + score[i]);
+    for (let i = 0; i < n; i++) prefix.push(prefix[i] + raw[i]);
 
-    // Every window is judged on its own content and then tilted towards the end
-    // of the clip, for the reason given at RECENCY_WEIGHT.
+    // Find the moment, then build the window around it.
+    //
+    // The previous version scored every possible ten second window by its mean
+    // and took the best, which asks a question about averages when the thing
+    // being looked for is a spike: a long mild stretch beats a short loud one.
+    // A clip of Unrailed peaks at 2.15 around 24 s and idles near 1.5 from 4 to
+    // 8 s, and the window mean preferred the idle — the suggestion opened on
+    // nothing while the moment everyone reacted to sat outside it.
+    const span = Math.max(1, Math.round(MOMENT_SEC / HOP));
+    const moment: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const from = Math.max(0, i - Math.floor(span / 2));
+      const to = Math.min(n, from + span);
+      moment.push((prefix[to] - prefix[from]) / (to - from));
+    }
+
+    // The same thumb on the scale as before, applied to the moment rather than
+    // to a window average. See RECENCY_WEIGHT.
     let bestIndex = 0;
-    let bestWeighted = -1;
-    for (let i = 0; i + win <= score.length; i++) {
-      const mean = (prefix[i + win] - prefix[i]) / win;
-      const centre = (i + win / 2) / score.length;
-      const lateness = Math.max(0, centre - (1 - RECENCY_TAIL)) / RECENCY_TAIL;
-      const weighted = mean * (1 + RECENCY_WEIGHT * lateness);
+    let bestWeighted = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const position = i / n;
+      const lateness = Math.max(0, position - (1 - RECENCY_TAIL)) / RECENCY_TAIL;
+      const weighted = moment[i] * (1 + RECENCY_WEIGHT * lateness);
 
       if (weighted > bestWeighted) {
         bestWeighted = weighted;
@@ -177,10 +200,10 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
       }
     }
 
-    // How far the loudest moment inside the winner stands above the clip's own
-    // normal. Everything hangs off this; see MIN_PEAK_Z.
+    // The loudest instant inside that moment is what the window is built
+    // around. Everything hangs off how far it stands out; see MIN_PEAK_Z.
     let peakIndex = bestIndex;
-    for (let i = bestIndex; i < Math.min(raw.length, bestIndex + win); i++) {
+    for (let i = Math.max(0, bestIndex - span); i < Math.min(n, bestIndex + span); i++) {
       if (raw[i] > raw[peakIndex]) peakIndex = i;
     }
     const peakZ = raw[peakIndex];
@@ -206,13 +229,12 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
       durationSec: round(durationSec),
       window: confident
         ? place(
-            bestIndex * HOP,
             effectiveWindow,
             durationSec,
             // The unclipped scores: a knock and an explosion both saturate at
             // 1, and asking a saturated signal where the loud part starts gets
             // you the knock.
-            onsetWithin(raw, bestIndex, win) * HOP,
+            onsetBefore(raw, peakIndex) * HOP,
             peakIndex * HOP,
           )
         : null,
@@ -249,65 +271,45 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
 }
 
 /**
- * Where the loud part starts — meaning the part that made this window win.
+ * Where the loud part starts.
  *
- * Found by walking *backwards* from the loudest moment rather than forwards
- * from the window's edge. Forwards finds the first loud thing of any kind, and
- * a window that contains a door slamming and then an explosion would report the
- * door. Backwards finds the beginning of the explosion.
+ * Found by walking *backwards* from the loudest instant. Forwards from some
+ * earlier edge finds the first loud thing of any kind, so a stretch containing a
+ * door slamming and then an explosion would report the door. Backwards finds
+ * the beginning of the explosion.
  *
- * Measured against the window's own peak rather than an absolute level, so it
- * means the same thing in a quiet game and a loud one.
+ * Measured against the peak itself rather than an absolute level, so it means
+ * the same thing in a quiet game and a loud one.
  */
-function onsetWithin(score: number[], bestIndex: number, win: number): number {
-  const end = Math.min(score.length, bestIndex + win);
-
-  let peak = 0;
-  let peakIndex = bestIndex;
-  for (let i = bestIndex; i < end; i++) {
-    if (score[i] > peak) {
-      peak = score[i];
-      peakIndex = i;
-    }
-  }
-  if (peak <= 0) return bestIndex;
+function onsetBefore(score: number[], peakIndex: number): number {
+  const peak = score[peakIndex];
+  if (!(peak > 0)) return peakIndex;
 
   let onset = peakIndex;
-  while (onset > bestIndex && score[onset - 1] >= peak * ONSET_FRACTION) onset--;
+  while (onset > 0 && score[onset - 1] >= peak * ONSET_FRACTION) onset--;
   return onset;
 }
 
 /**
- * Open the window a beat before the loud part, and do not cut off the payoff.
+ * Open the window a beat before the loud part, and never cut off the payoff.
  *
- * The lead-in only ever moves the window as far back as the onset asks for.
- * The first version slid every window back by `LEAD_IN` unconditionally, which
- * was wrong whenever the best window already started well ahead of the action:
- * a burst at 17 s inside an 11–21 s window came back as 8.5–18.5 s, sliding off
- * the very thing it was pointing at.
+ * Three things have to hold at once: the window opens `LEAD_IN` before the
+ * sound starts, because the sound is the reaction and its cause came first; the
+ * peak plus a moment stays inside it, because the peak is so often near the end
+ * of the clip; and it is the length that was asked for, sliding back off the end
+ * of the clip when there is no room in front of it.
  *
- * Then the window is pushed forward if it would end before the peak plus a
- * moment, which matters because the peak is so often near the end of the clip.
- *
- * Sliding rather than stretching throughout: the caller asked for a window of a
- * given length and should get one.
+ * That last one was missing and produced three second suggestions on clips
+ * whose moment was at the very end.
  */
 function place(
-  start: number,
   length: number,
   durationSec: number,
   onset: number,
   peak: number,
 ): { start: number; end: number } {
-  const wanted = onset - LEAD_IN;
-  let from = Math.max(0, Math.min(start, wanted));
-  let end = Math.min(durationSec, from + length);
-
-  const mustReach = Math.min(durationSec, peak + TAIL_ROOM);
-  if (end < mustReach) {
-    end = mustReach;
-    from = Math.max(0, end - length);
-  }
+  let end = Math.min(durationSec, Math.max(0, onset - LEAD_IN) + length);
+  end = Math.max(end, Math.min(durationSec, peak + TAIL_ROOM));
 
   return { start: round(Math.max(0, end - length)), end: round(end) };
 }
