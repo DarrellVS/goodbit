@@ -146,3 +146,4 @@ playwright-report/
 
 dist-release/
 tmp/
+release-check/

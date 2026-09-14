@@ -46,9 +46,10 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
   a snapshot and the snapshot is read back — integrity check and row count — so an update that goes
   wrong is an inconvenience rather than a loss. Settings → Advanced lists them.
 - **Learns from what you keep.** Every trim records where you cut next to what was suggested, and a
-  *Wrong* button on the banner records the one thing it cannot infer. With enough of those,
-  `scripts/train-highlights.mjs` fits a small readable model to your decisions and the app uses it
-  instead of the built-in threshold. Nothing leaves the machine.
+  *Wrong* button on the banner records the one thing it cannot infer. Once there are enough, the app
+  fits a small readable model to your decisions by itself, uses it instead of the built-in
+  threshold, and keeps refitting as you go. Settings shows how it is doing and can put the rule
+  back. Nothing leaves the machine.
 
 ## Install
 

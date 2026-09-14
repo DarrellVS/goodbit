@@ -1,3 +1,5 @@
+// First, and on its own line: see the file. Reordering this is a crash on install.
+import './bootstrap.js';
 import { app, BrowserWindow, Menu, Tray, shell, nativeImage } from 'electron';
 import { join } from 'node:path';
 import { mkdirSync } from 'node:fs';

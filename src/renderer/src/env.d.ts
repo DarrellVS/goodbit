@@ -58,6 +58,7 @@ interface AppSettingsWire {
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   migratedFromWebApp: boolean;
+  learnFromTrims?: boolean;
 }
 
 interface BackupFileWire {

@@ -1,7 +1,7 @@
 {
   "name": "goodbit",
   "productName": "GoodBit",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Finds the good bit in your game clips, and keeps it.",
   "author": "Darrell van Swinderen",
   "private": true,
@@ -16,11 +16,12 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "rebuild": "electron-rebuild -f -w sqlite3",
     "postinstall": "electron-builder install-app-deps",
-    "build:win": "npm run check:pre-release && electron-builder --win",
+    "build:win": "npm run check:pre-release && electron-builder --win && npm run check:packaged",
     "test:e2e": "npm run build && playwright test",
     "check": "npm run typecheck",
     "check:pre-release": "npm run check && npm run test:e2e",
-    "test:e2e:packaged": "playwright test"
+    "test:e2e:packaged": "playwright test",
+    "check:packaged": "node scripts/smoke-packaged.mjs"
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0",

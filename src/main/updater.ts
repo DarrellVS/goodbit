@@ -74,8 +74,11 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
 
     // Before the first release exists there is no feed to read, and GitHub
     // answers 404 for a repository it will not confirm either way. That is the
-    // normal state of a new install, not something to report as a failure.
-    const noFeedYet = /404/.test(message) || /releases\.atom/.test(message);
+    // normal state of a new install, not something to report as a failure. Nor
+    // is a build with no `app-update.yml` at all — the portable exe, or an
+    // unpacked directory build — which has nothing to update from.
+    const noFeedYet =
+      /404/.test(message) || /releases\.atom/.test(message) || /app-update\.yml/.test(message);
     if (noFeedYet) {
       publish(getWindow, { status: 'idle' });
       return;
@@ -85,7 +88,14 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
     publish(getWindow, { status: 'error', message });
   });
 
-  void autoUpdater.checkForUpdates();
+  // `checkForUpdates` both emits 'error' and rejects, so an unhandled rejection
+  // was logged on every start of a build without a feed. The event handler
+  // above is the one place failures are dealt with; the rejection is expected.
+  const check = (): void => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  };
+
+  check();
   // A window left open for days should still notice a release.
-  setInterval(() => void autoUpdater.checkForUpdates(), 6 * 60 * 60 * 1000);
+  setInterval(check, 6 * 60 * 60 * 1000);
 }

@@ -30,6 +30,8 @@ export interface HighlightModel {
   threshold: number;
   trainedAt?: string;
   examples?: number;
+  /** Accuracy on the fifth of examples it was not fitted to. */
+  heldOutAccuracy?: number;
 }
 
 const FILE = 'highlight-model.json';

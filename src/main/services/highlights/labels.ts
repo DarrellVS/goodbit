@@ -1,6 +1,7 @@
 import { AppDataSource } from '../../data-source.js';
 import { HighlightLabel } from '../../entity/HighlightLabel.js';
 import { loadModel } from './model.js';
+import { loadSettings } from '../../settings.js';
 
 /**
  * Keeping what people decide, so it can be learned from later.
@@ -83,7 +84,12 @@ async function write(input: {
     await repo.save(row);
   } catch (error) {
     console.error('[highlights] could not record a label:', error);
+    return;
   }
+
+  // Each new label is a chance to learn from all of them. Not awaited: the
+  // trim that produced it is already done, and a fit takes milliseconds anyway.
+  void import('./train.js').then((m) => m.refitIfDue());
 }
 
 export interface LabelSummary {
@@ -94,24 +100,38 @@ export interface LabelSummary {
   /** How many are usable for training: they say where a person actually cut. */
   withRanges: number;
   /** The trained model in use, if there is one. */
-  model: { trainedAt: string | null; examples: number | null } | null;
+  model: { trainedAt: string | null; examples: number | null; heldOutAccuracy: number | null } | null;
+  /** How many labels can actually be learned from: a decision with a suggestion on screen. */
+  usable: number;
+  /** The floor before a model is fitted at all. */
+  needed: number;
+  /** Whether fitting happens on its own as labels arrive. */
+  automatic: boolean;
 }
 
 export async function summarise(): Promise<LabelSummary> {
   const model = loadModel();
+  const { MIN_EXAMPLES, toExample } = await import('./train.js');
   const empty: LabelSummary = {
     total: 0,
     trims: 0,
     accepted: 0,
     rejected: 0,
     withRanges: 0,
-    model: model ? { trainedAt: model.trainedAt ?? null, examples: model.examples ?? null } : null,
+    usable: 0,
+    needed: MIN_EXAMPLES,
+    automatic: loadSettings().learnFromTrims !== false,
+    model: model
+      ? {
+          trainedAt: model.trainedAt ?? null,
+          examples: model.examples ?? null,
+          heldOutAccuracy: model.heldOutAccuracy ?? null,
+        }
+      : null,
   };
 
   try {
-    const rows = await AppDataSource.getRepository(HighlightLabel).find({
-      select: { source: true, chosenStartSec: true },
-    });
+    const rows = await AppDataSource.getRepository(HighlightLabel).find();
 
     return rows.reduce((acc, row) => {
       acc.total++;
@@ -119,6 +139,7 @@ export async function summarise(): Promise<LabelSummary> {
       if (row.source === 'accepted') acc.accepted++;
       if (row.source === 'rejected') acc.rejected++;
       if (row.chosenStartSec !== null) acc.withRanges++;
+      if (toExample(row) !== null) acc.usable++;
       return acc;
     }, empty);
   } catch {

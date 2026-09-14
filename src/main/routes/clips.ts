@@ -384,9 +384,29 @@ clipsRouter.get('/suggestions/labels', asyncHandler(async (_req, res) => {
   res.json(await summarise());
 }));
 
-/** Every label, for `scripts/train-highlights.mjs`. */
+/** Every label, for anyone who wants to fit something of their own offline. */
 clipsRouter.get('/suggestions/labels/export', asyncHandler(async (_req, res) => {
   res.json(await exportLabels());
+}));
+
+/**
+ * Fit the model now, to everything recorded so far. Normally this happens on
+ * its own as labels arrive; this is the button for people who want to see it.
+ */
+clipsRouter.post('/suggestions/model/fit', asyncHandler(async (_req, res) => {
+  const { fitNow } = await import('../services/highlights/train.js');
+  const outcome = await fitNow();
+  res.json(
+    outcome.fitted
+      ? { fitted: true, report: outcome.report }
+      : { fitted: false, reason: outcome.reason, examples: outcome.examples },
+  );
+}));
+
+/** Back to the built-in rule. The labels stay; only the fitted weights go. */
+clipsRouter.delete('/suggestions/model', asyncHandler(async (_req, res) => {
+  const { forgetLearnedModel } = await import('../services/highlights/train.js');
+  res.json({ removed: forgetLearnedModel() });
 }));
 
 clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {

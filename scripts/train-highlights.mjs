@@ -1,11 +1,15 @@
 /**
- * Fit a model to what you actually kept.
+ * Fit a model to what you actually kept — offline.
+ *
+ * **The app does this itself.** Once sixty decisions have been recorded it fits
+ * the same logistic regression in the main process (`services/highlights/train.ts`),
+ * uses it, and refits as more arrive; Settings → Advanced shows it and can undo
+ * it. This script is the same maths for anyone who wants to experiment with the
+ * exported labels, compare fits, or fit on one machine and use on another.
  *
  * The rule that ships is hand-made and its threshold was set by looking at ten
- * clips. This replaces that judgement with yours: every trim recorded by the
- * app says where a person cut a clip, every rejection says a suggestion was
- * wrong, and a logistic regression over the same features the app computes
- * turns those into weights.
+ * clips. A fit replaces that judgement with yours: every trim says where a
+ * person cut a clip, every rejection says a suggestion was wrong.
  *
  *   node scripts/train-highlights.mjs --labels labels.json
  *   node scripts/train-highlights.mjs --labels labels.json --out "%APPDATA%/GoodBit/highlight-model.json"

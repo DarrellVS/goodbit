@@ -229,7 +229,34 @@ export interface LabelSummary {
   accepted: number;
   rejected: number;
   withRanges: number;
-  model: { trainedAt: string | null; examples: number | null } | null;
+  usable: number;
+  needed: number;
+  automatic: boolean;
+  model: { trainedAt: string | null; examples: number | null; heldOutAccuracy: number | null } | null;
+}
+
+export interface FitReport {
+  examples: number;
+  positives: number;
+  trainedOn: number;
+  heldOut: number;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  weights: Array<{ feature: string; weight: number }>;
+}
+
+/** Fit the suggestion model to every label so far, and start using it. */
+export async function fitSuggestionModel(): Promise<
+  { fitted: true; report: FitReport } | { fitted: false; reason: string; examples: number }
+> {
+  const { data } = await axios.post('/api/clips/suggestions/model/fit');
+  return data;
+}
+
+/** Stop using the fitted model; the built-in rule decides again. */
+export async function forgetSuggestionModel(): Promise<void> {
+  await axios.delete('/api/clips/suggestions/model');
 }
 
 /** How much has been learned from, for the settings screen. */

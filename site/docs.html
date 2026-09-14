@@ -228,13 +228,13 @@
           that a confident suggestion pointed at nothing.
         </p>
         <p>
-          <strong>Settings → Advanced → Suggestions</strong> shows how many of these there are. Once
-          there are around sixty, export them and run
-          <code>node scripts/train-highlights.mjs --labels &lt;file&gt;</code> from the repository.
-          It fits a small, readable model to your decisions and writes
-          <code>highlight-model.json</code>; drop that into <code>%APPDATA%\GoodBit</code> and the
-          app's suggestions follow your taste instead of the built-in threshold. Nothing leaves the
-          machine at any point, and removing the file puts the built-in rule back.
+          Once there are around sixty of those, GoodBit fits a small model to them on its own and
+          starts using it instead of the built-in threshold — then refits after every twenty-five
+          new decisions, so it keeps up with you. <strong>Settings → Advanced → Suggestions</strong>
+          shows how far along it is, what the model got right on the decisions it was not shown, and
+          has a button to go back to the built-in rule. Nothing leaves the machine at any point; the
+          model is a small readable file in <code>%APPDATA%\GoodBit</code>, and you can turn the
+          automatic part off.
         </p>
 
         <h2 id="trim">Trimming</h2>

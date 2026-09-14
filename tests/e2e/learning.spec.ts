@@ -120,6 +120,42 @@ test.describe('learning from what you keep', () => {
     expect(after.rejected).toBe(before.rejected + 1);
   });
 
+  test('fitting is refused honestly until there is enough, and a model can be put back', async () => {
+    const summary = (await call('GET', '/clips/suggestions/labels')).body as {
+      usable: number;
+      needed: number;
+      automatic: boolean;
+      model: unknown;
+    };
+    expect(summary.needed).toBeGreaterThanOrEqual(60);
+    expect(summary.usable).toBeLessThan(summary.needed);
+    expect(summary.automatic).toBe(true);
+
+    const attempt = (await call('POST', '/clips/suggestions/model/fit')).body as {
+      fitted: boolean;
+      reason?: string;
+      examples?: number;
+    };
+    expect(attempt.fitted).toBe(false);
+    expect(attempt.reason).toMatch(/of 60 examples|one-sided/);
+
+    // A model placed by hand is removable from the app.
+    const modelPath = join(ctx.dataDir, 'highlight-model.json');
+    const features = ['peakZ', 'spreadLu', 'eventSec', 'position', 'durationSec', 'busyness', 'runnerUpZ'];
+    writeFileSync(
+      modelPath,
+      JSON.stringify({ version: 1, features, weights: features.map(() => 0), bias: 5, threshold: 0.5 }),
+    );
+    await ctx.page.waitForTimeout(50);
+    const withModel = (await call('GET', '/clips/suggestions/labels')).body as { model: unknown };
+    expect(withModel.model).not.toBeNull();
+
+    const removed = (await call('DELETE', '/clips/suggestions/model')).body as { removed: boolean };
+    expect(removed.removed).toBe(true);
+    const without = (await call('GET', '/clips/suggestions/labels')).body as { model: unknown };
+    expect(without.model).toBeNull();
+  });
+
   test('a model file takes over the verdict, and is ignored when it does not fit', async () => {
     const clips = (await call('GET', '/clips', undefined, { pageSize: 50, game: 'LearnGame' })).body as {
       items: Array<{ id: number; filename: string }>;

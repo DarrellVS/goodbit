@@ -31,6 +31,11 @@ export interface Settings {
    * entities, which is when a verified backup is taken. See `backup.ts`.
    */
   schemaVersion?: string;
+  /**
+   * Fit the suggestion model to your trims on its own as they accumulate.
+   * Default on; Settings → Advanced turns it off and can revert to the rule.
+   */
+  learnFromTrims?: boolean;
   /** Where the window was last, so it opens where you left it. */
   window?: WindowBounds;
 }
