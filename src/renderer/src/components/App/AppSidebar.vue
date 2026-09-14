@@ -22,14 +22,11 @@ const emit = defineEmits<Emits>();
 
 <template>
   <aside class="w-64 bg-card/5 backdrop-blur-sm border-r border-border flex flex-col h-full">
-    <div class="p-6">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-          <Icon icon="material-symbols:video-library" class="text-card text-lg" />
-        </div>
-        <h1 class="text-xl font-bold">GoodBit</h1>
-      </div>
-    </div>
+    <!--
+      No name or mark here. The title bar already carries both, a hand's width
+      above, and saying it twice is one of them wasted.
+    -->
+    <div class="h-4"></div>
 
     <!--
       min-h-0 and its own scroll: a flex child defaults to min-height:auto, so a
