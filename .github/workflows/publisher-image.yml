@@ -1,0 +1,52 @@
+name: Publisher image
+
+# The publisher is the one part of GoodBit someone else has to run, and asking
+# them to clone a repository and build a container first is a wall in front of
+# an optional feature. This pushes a ready image for both processors people
+# actually have: a NAS or a Pi is arm64, everything else is amd64.
+on:
+  push:
+    tags: ['v*']
+  # For rebuilding without cutting a release, or for the first push.
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    # Without credentials this would fail on every tag and teach everyone to
+    # ignore a red cross. Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to turn it
+    # on; until then it skips itself.
+    if: ${{ vars.PUBLISHER_IMAGE != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: What to call it
+        id: meta
+        run: |
+          echo "image=${{ vars.PUBLISHER_IMAGE }}" >> "$GITHUB_OUTPUT"
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$version" = "$GITHUB_REF_NAME" ]; then version="edge"; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build for both processors and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./publisher
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.image }}:latest
+          # Layers are cached between runs, so a release that changed nothing
+          # in publisher/ costs a few seconds rather than a few minutes.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

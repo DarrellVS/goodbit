@@ -7,7 +7,7 @@ import { launchApp, seedClips, seedSwellClip, type TestApp } from './app';
  * The features themselves, exercised through the desktop app.
  *
  * The bridge tests prove the plumbing; these prove the things the app is for
- * still work after the port — indexing, tagging, the analysis, a lossless trim,
+ * still work after the port, indexing, tagging, the analysis, a lossless trim,
  * and an export that actually lands on disk.
  */
 test.describe('features survive the port', () => {

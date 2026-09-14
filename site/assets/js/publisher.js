@@ -25,6 +25,7 @@
     port: { el: document.getElementById('f-port'), fallback: '5555' },
     data: { el: document.getElementById('f-data'), fallback: '/volume1/docker/goodbit-clips' },
     lan: { el: document.getElementById('f-lan'), fallback: '192.168.1.20' },
+    token: { el: document.getElementById('f-token'), fallback: 'paste-a-long-random-string-here' },
   };
 
   /** What the reader typed, or the placeholder, so a command is never half-written. */
@@ -66,7 +67,7 @@
 
   const compose = (v) => `services:
   publisher:
-    image: goodbit-publisher
+    image: darrellvs/goodbit-publisher:latest
     container_name: goodbit-publisher
     restart: unless-stopped
     ports:
@@ -74,6 +75,7 @@
     environment:
       PUBLIC_BASE_URL: "${v.url}"
       UPLOAD_DIR: "/data/public"
+      PUBLISH_TOKEN: "${v.token}"
     volumes:
       - "${v.data}:/data/public"`;
 
@@ -81,7 +83,9 @@
   reverse_proxy ${v.lan}:${v.port}
 }`;
 
-  const health = (v) => `curl http://localhost:${v.port}/api/health`;
+  // The address on your own network, not localhost: this is the one you will
+  // also give GoodBit, and the one to test from the machine GoodBit runs on.
+  const health = (v) => `curl http://${v.lan}:${v.port}/api/health`;
 
   /** Every command and inline example, rewritten from the current values. */
   function render() {
@@ -99,6 +103,9 @@
       '#npm-port': v.port,
       '#test-url': `${v.url}/api/health`,
       '#final-url': v.url,
+      '#lan-url': `http://${v.lan}:${v.port}`,
+      '#lan-url-2': `http://${v.lan}:${v.port}`,
+      '#token-value': v.token,
     };
 
     for (const [selector, content] of Object.entries(text)) {
@@ -219,7 +226,7 @@
         button.textContent = was;
       }, 1400);
     } catch {
-      // Clipboard refused — select it instead so ctrl+c still works.
+      // Clipboard refused, select it instead so ctrl+c still works.
       const range = document.createRange();
       range.selectNodeContents(source);
       const selection = window.getSelection();

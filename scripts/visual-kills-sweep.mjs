@@ -4,7 +4,7 @@
  * Runs the same clips twice: once searching a small window around the place
  * the icon sat in this library, once searching the whole banner box. If the
  * wide search separates kills from everything else just as cleanly, the
- * detector can drop an assumption about HUD layout — which is the assumption
+ * detector can drop an assumption about HUD layout, which is the assumption
  * most likely to be wrong on someone else's monitor.
  *
  *   node scripts/visual-kills-sweep.mjs "Battlefield 6" --limit 40

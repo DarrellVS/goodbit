@@ -3,8 +3,8 @@ import type { EditorDraft, EditorDraftAudio, EditorDraftClip } from '../services
 /**
  * Draft files: a draft on its way out of the browser and back in.
  *
- * The file is plain JSON carrying the same thing IndexedDB holds — clip ids,
- * track filenames and the edits — so a draft only replays on a machine whose
+ * The file is plain JSON carrying the same thing IndexedDB holds, clip ids,
+ * track filenames and the edits, so a draft only replays on a machine whose
  * library has those clips and whose music folder has those tracks. Restoring
  * already drops what it cannot find, so a partial match degrades rather than
  * fails.

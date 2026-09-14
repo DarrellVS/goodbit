@@ -16,7 +16,7 @@ export type GenerateFrameStripInput = {
  * The frames are spread across the whole clip, one every `duration / frames`
  * seconds. They used to be sampled at a flat `fps=1` and tiled, which on
  * anything longer than ten seconds quietly produced a strip of only the first
- * ten seconds — and both the Trim page and the editor stretch that strip across
+ * ten seconds, and both the Trim page and the editor stretch that strip across
  * the full width, so every frame sat under the wrong moment.
  *
  * Decoding is done on the GPU where there is one; these are 3440x1440 AV1 files

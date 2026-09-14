@@ -8,7 +8,7 @@ import { SESSION_HEADER, sessionSecret } from './ipc/apiBridge.js';
  * The API, bound to loopback only.
  *
  * Reached only by the IPC bridge in the same process, never by the renderer.
- * The Express router is kept rather than rewritten into forty IPC channels —
+ * The Express router is kept rather than rewritten into forty IPC channels,
  * see ipc/apiBridge.ts for why the transport moved but the routes did not.
  *
  * Three things are gone already, because none of them mean anything here:
@@ -35,7 +35,7 @@ export function createApiApp(): express.Express {
    * Only this process may call in.
    *
    * The listener is on loopback, which keeps it off the network but not away
-   * from other programs on the machine — and this API can delete clips. The
+   * from other programs on the machine, and this API can delete clips. The
    * secret is generated at launch, held in main, and never reaches the
    * renderer, so a request without it did not come from the app.
    */

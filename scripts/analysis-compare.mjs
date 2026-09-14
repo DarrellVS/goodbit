@@ -39,8 +39,8 @@ for (const clip of clips) {
   if (!b.confident) rejects.push({ clip, b });
 
   if (has('list')) {
-    const where = b.window ? `${b.window.start}-${b.window.end}` : '—';
-    const was = a.window ? `${a.window.start}-${a.window.end}` : '—';
+    const where = b.window ? `${b.window.start}-${b.window.end}` : 'unknown';
+    const was = a.window ? `${a.window.start}-${a.window.end}` : 'unknown';
     console.log(
       `${(b.confident ? 'YES' : 'no ').padEnd(4)} ${String(clip.durationSec).padStart(6)}s  ` +
         `was ${was.padStart(12)}  now ${where.padStart(12)}  ` +

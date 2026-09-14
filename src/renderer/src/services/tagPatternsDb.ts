@@ -1,7 +1,7 @@
 import type { TagPattern } from '../utils/tagSuggestions';
 
 // The web app's store, read once so its rules can be lifted into the library
-// database. Nothing is written here any more — see `useTagPatterns`.
+// database. Nothing is written here any more, see `useTagPatterns`.
 const DB_NAME = 'FilmpjeTagPatterns';
 const DB_VERSION = 1;
 const STORE_NAME = 'patterns';

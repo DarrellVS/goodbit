@@ -3,7 +3,7 @@ import BaseToggle from '../Base/BaseToggle.vue';
 
 /**
  * One row of the settings screen: what the switch is, what it does, and the
- * switch itself. The switch is `Base/BaseToggle.vue` — there is one of those
+ * switch itself. The switch is `Base/BaseToggle.vue`. There is one of those
  * in the app, not one per screen.
  */
 interface Props {

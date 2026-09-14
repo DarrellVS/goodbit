@@ -10,7 +10,7 @@ const DEFAULT_MUSIC_VOLUME = 0.35;
  * The editor's music lane.
  *
  * Deliberately simpler than the video timeline: placements are free-floating,
- * so nothing ripples and nothing reflows. Two tracks may overlap — the export
+ * so nothing ripples and nothing reflows. Two tracks may overlap, the export
  * mixes them.
  */
 export function useTimelineAudio() {
@@ -112,7 +112,7 @@ export function useTimelineAudio() {
     const duration = clampedEnd - clampedStart;
 
     // Trimming the head pins the right edge, so the handle tracks the cursor
-    // instead of sliding the whole placement — same rule as the video lane.
+    // instead of sliding the whole placement, same rule as the video lane.
     const headDelta = clampedStart - item.trimStart;
     const startTime = headDelta !== 0 ? Math.max(0, item.startTime + headDelta) : item.startTime;
 

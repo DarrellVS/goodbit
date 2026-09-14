@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { publisherBaseUrl, NO_PUBLISHER } from '../services/publisherConfig.js';
+import { publisherBaseUrl, publisherAuthHeaders, NO_PUBLISHER } from '../services/publisherConfig.js';
 import { BaseAction } from './BaseAction.js';
 
 export interface RemoteListPublishedOutput {
@@ -11,7 +11,7 @@ export class RemoteListPublishedAction extends BaseAction<void, RemoteListPublis
     const baseUrl = publisherBaseUrl();
     if (!baseUrl) throw new Error(NO_PUBLISHER);
     const url = `${baseUrl}/api/publish`;
-    const res = await axios.get(url);
+    const res = await axios.get(url, { headers: publisherAuthHeaders() });
     return res.data as RemoteListPublishedOutput;
   }
 }

@@ -11,7 +11,7 @@ import type { HighlightLabel } from '../../entity/HighlightLabel.js';
  * Logistic regression over seven features is eighty lines of arithmetic and a
  * few milliseconds, so there was never a reason for it to live in a script that
  * a person had to find, export a file for, and run. It happens here, on its
- * own, whenever there is enough new evidence — and Settings → Advanced shows
+ * own, whenever there is enough new evidence, and Settings → Advanced shows
  * what it did and offers to undo it.
  */
 
@@ -30,8 +30,8 @@ interface Example {
 /**
  * A label becomes an example of "worth suggesting" or "not".
  *
- * `accepted` — the suggestion was taken as offered. `rejected` — shown and
- * called wrong. `trim` — cut somewhere; positive if what was kept mostly
+ * `accepted`. The suggestion was taken as offered. `rejected`, shown and
+ * called wrong. `trim`, cut somewhere; positive if what was kept mostly
  * overlaps what was suggested, negative if the suggestion pointed elsewhere. A
  * trim with no suggestion on screen says nothing about the decision.
  */
@@ -223,7 +223,7 @@ export async function fitNow(): Promise<FitOutcome> {
 
 /**
  * Called after every label is written. Fits when there is enough, and again
- * whenever enough has been added since — so the model keeps up with a person
+ * whenever enough has been added since, so the model keeps up with a person
  * without them doing anything, and Settings → Advanced can say when it did.
  */
 export async function refitIfDue(): Promise<void> {

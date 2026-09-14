@@ -44,7 +44,7 @@ function isAdded(track: AudioTrack): boolean {
 /**
  * Import by path rather than by upload.
  *
- * Nothing is transferred — main reads the files off the same disk — so there is
+ * Nothing is transferred, main reads the files off the same disk, so there is
  * no progress to report, only a spinner while it copies them in.
  */
 async function upload(paths: string[]): Promise<void> {
@@ -163,7 +163,7 @@ onBeforeUnmount(stopPreview);
         <span class="text-sm font-medium text-muted-800">
           {{ uploading ? 'Adding…' : 'Add music' }}
         </span>
-        <span v-if="!uploading" class="text-xs text-muted-500">Drop files or click — mp3, wav, m4a, ogg, flac</span>
+        <span v-if="!uploading" class="text-xs text-muted-500">Drop files or click. mp3, wav, m4a, ogg, flac</span>
       </button>
 
       <!--
@@ -195,7 +195,7 @@ onBeforeUnmount(stopPreview);
       >
         <button
           class="w-full text-left px-2.5 pt-2.5 pb-1.5"
-          :title="isAdded(track) ? 'Already on the timeline — click to place another copy' : 'Add to the timeline'"
+          :title="isAdded(track) ? 'Already on the timeline. Click to place another copy' : 'Add to the timeline'"
           @click="emit('add-to-timeline', track)"
         >
           <div class="flex items-start gap-2">

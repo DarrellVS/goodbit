@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { publisherBaseUrl, NO_PUBLISHER } from '../services/publisherConfig.js';
+import { publisherBaseUrl, publisherAuthHeaders, NO_PUBLISHER } from '../services/publisherConfig.js';
 import { BaseAction } from './BaseAction.js';
 
 export interface RemoteUpdateMetadataInput {
@@ -19,10 +19,11 @@ export class RemoteUpdateMetadataAction extends BaseAction<RemoteUpdateMetadataI
     
     const url = `${baseUrl}/api/publish/${encodeURIComponent(input.filename)}/metadata`;
     
-    const { data } = await axios.patch<RemoteUpdateMetadataOutput>(url, {
-      displayName: input.displayName,
-      game: input.game,
-    });
+    const { data } = await axios.patch<RemoteUpdateMetadataOutput>(
+      url,
+      { displayName: input.displayName, game: input.game },
+      { headers: publisherAuthHeaders() },
+    );
     
     return data;
   }

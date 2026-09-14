@@ -1,5 +1,5 @@
 /**
- * Start the packaged exe the way a person does — by itself, no arguments — and
+ * Start the packaged exe the way a person does, by itself, no arguments, and
  * see whether it lives.
  *
  * The end-to-end suite launches the packaged build through Playwright, which
@@ -13,7 +13,7 @@
  *
  * Passes when, started against a throw-away data folder, the process is still
  * alive after the boot sequence and has written `schemaVersion` to its
- * settings — which only happens after the database opened.
+ * settings, which only happens after the database opened.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -66,7 +66,7 @@ let booted = false;
 while (Date.now() < deadline && exited === null) {
   await new Promise((r) => setTimeout(r, 1000));
   // Either the service says it is up, or the database has been opened and the
-  // version stamped — both only happen after the whole boot sequence.
+  // version stamped, both only happen after the whole boot sequence.
   if (output.includes('[service] ready')) {
     booted = true;
     break;

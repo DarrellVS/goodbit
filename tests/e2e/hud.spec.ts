@@ -11,7 +11,7 @@ import { launchApp, seedClips, type TestApp } from './app';
  * a few frames a second and looks for what that game shows when something
  * happens. Battlefield's own kill banner is the first one, and this checks the
  * whole path: the module is registered, a game with no module is never
- * decoded, and — where a real recording is available — a clip with a kill in
+ * decoded, and, where a real recording is available, a clip with a kill in
  * it comes back with the kill as the grounds.
  */
 test.describe('what the screen gives away', () => {
@@ -34,7 +34,7 @@ test.describe('what the screen gives away', () => {
    *
    * Not a fixture that can be generated: the point is the game's own HUD.
    * Absent on any machine but the one this was built on, so the test that
-   * needs it skips rather than fails — the rest still runs everywhere.
+   * needs it skips rather than fails. The rest still runs everywhere.
    */
   const REAL_CLIP = join(homedir(), 'Videos', 'Battlefield 6', 'Battlefield 6_22.08.2026_15-43-01.mp4');
   const hasRealClip = existsSync(REAL_CLIP);
@@ -99,8 +99,13 @@ test.describe('what the screen gives away', () => {
     expect(body.watchesScreen).toBe(true);
     expect(body.confident).toBe(true);
     expect(body.basis).toBe('hud');
-    // The grounds are shown to the user, so they have to read as a sentence.
-    expect(body.evidence).toMatch(/kill/i);
+    // The grounds are shown to the person looking at the suggestion, so they
+    // have to read as a sentence rather than as a field name. What it must not
+    // do is explain where the app read it from, which is the app's business.
+    expect(body.evidence).toBeTruthy();
+    expect(body.evidence!.length).toBeGreaterThan(10);
+    expect(body.evidence).toBe(body.evidence!.toLowerCase());
+    expect(body.evidence).not.toMatch(/banner|template|HUD/i);
 
     expect(body.events.length).toBeGreaterThan(0);
     const kill = body.events[0];

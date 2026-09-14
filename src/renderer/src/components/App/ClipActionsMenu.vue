@@ -197,7 +197,7 @@ async function handleMoveToGame(targetGame: string) {
             <!--
               The other choice, whichever way the setting is pointed. Either
               way the file on disk is untouched; only the copy behind the link
-              differs. Not offered once a clip is published — the file up there
+              differs. Not offered once a clip is published. The file up there
               is the file.
             -->
             <MenubarItem

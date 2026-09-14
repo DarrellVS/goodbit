@@ -4,7 +4,7 @@ import { useToastStore } from '../stores/toast';
 /**
  * Serving one clip to the local network, from the renderer's point of view.
  *
- * Only one share exists at a time — starting another replaces it — so this is
+ * Only one share exists at a time, starting another replaces it, so this is
  * state about "the share", not about a particular clip. Whoever asks gets the
  * whole picture and decides whether the running share is theirs.
  */

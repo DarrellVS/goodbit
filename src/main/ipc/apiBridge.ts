@@ -19,7 +19,7 @@ import { startLocalServer, type LocalServer } from '../server.js';
  * server keeps Express on the objects it expects.
  *
  * The listener is on 127.0.0.1 at a port the OS picks, which any other process
- * on the machine can still reach — so every request must carry a secret
+ * on the machine can still reach, so every request must carry a secret
  * generated fresh at launch. The renderer never sees it; only this module and
  * the server do.
  */

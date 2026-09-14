@@ -14,12 +14,12 @@ import '../services/highlights/games/index.js';
  * itself confirming what happened, which is both a better anchor for where the
  * moment is and the only way a suggestion can say *why* it is being made.
  *
- * This runs only for games that have a module with boxes to watch — every
+ * This runs only for games that have a module with boxes to watch, every
  * other clip is never decoded, which is what keeps the cost off the library as
  * a whole. For the games that do, it costs about an eighth of a second per
  * second of footage with a GPU, so a half-minute clip is around three seconds.
  * That is far more than listening, so the answer is cached beside the other
- * derived files and keyed by the clip's own mtime — a trimmed clip re-reads
+ * derived files and keyed by the clip's own mtime, a trimmed clip re-reads
  * itself, everything else reads once.
  */
 
@@ -35,8 +35,8 @@ const HUD_VERSION = 1;
  *
  * A banner holds for two or three seconds, and the rule wants two samples
  * inside one before it believes anything, so four a second leaves room to
- * spare. Raising it does not make the decode cheaper — every frame is decoded
- * either way — but it does make the matching cost more for nothing.
+ * spare. Raising it does not make the decode cheaper. Every frame is decoded
+ * either way, but it does make the matching cost more for nothing.
  */
 const FPS = 4;
 
@@ -55,7 +55,7 @@ export interface WatchClipHudOutput {
    * How long the clip is, as the video stream reports it.
    *
    * Carried because the listening half gives up on a clip too short to suggest
-   * anything and then knows no duration at all — while the screen may still
+   * anything and then knows no duration at all, while the screen may still
    * have something to point at, and a window cannot be placed without one.
    */
   durationSec: number;

@@ -227,7 +227,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
    * Cut one segment and make it match every other segment.
    *
    * Three things happen here that did not before. The source is decoded on the
-   * GPU where there is one — these are 3440x1440 AV1 files and software
+   * GPU where there is one, these are 3440x1440 AV1 files and software
    * decoding them runs at 0.44x realtime, so this is the single biggest cost in
    * the whole export. An HDR source is tone mapped, without which the PQ curve
    * is read as sRGB and the result is the grey, washed-out picture the exports

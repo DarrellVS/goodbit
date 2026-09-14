@@ -16,8 +16,8 @@ import type { SampledRegion } from './vision/sample.js';
  * events, and adjust the verdict the general rule would reach.
  *
  * **Adding one is a measuring job, not a guessing one.** Every tweak that
- * suggested itself from the armchair — shorter lead-in for racing, a higher
- * bar for shooters — was a guess, and guesses aimed at one game are exactly
+ * suggested itself from the armchair, shorter lead-in for racing, a higher
+ * bar for shooters, was a guess, and guesses aimed at one game are exactly
  * what produced suggestions that pointed at nothing. `scripts/visual-*.mjs`
  * is the bench: it renders what a candidate rule actually picked, and no rule
  * belongs here until those contact sheets show the thing it claims to find.
@@ -39,7 +39,7 @@ export interface GameRefinement {
 /**
  * Something the game itself said happened, and when.
  *
- * This is the strongest evidence there is — stronger than loudness, which can
+ * This is the strongest evidence there is, stronger than loudness, which can
  * only report that a clip got loud. A kill banner is the game confirming a
  * kill, so a suggestion built on one can say *why* it is being made.
  */
@@ -49,7 +49,7 @@ export interface GameEvent {
   /** When it happened, in seconds from the start of the clip. */
   atSec: number;
   /**
-   * When it finished, for something that took a while — three kills in nine
+   * When it finished, for something that took a while, three kills in nine
    * seconds is one event nine seconds long, and the window has to fit it.
    */
   untilSec?: number;

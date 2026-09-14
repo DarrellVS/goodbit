@@ -4,8 +4,8 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 
  * What a person decided about where the good bit is.
  *
  * Every trim is a human answering exactly the question the analysis is trying
- * to answer — out of these thirty seconds, these six are the ones worth
- * keeping — and until now that answer was thrown away the moment the file was
+ * to answer, out of these thirty seconds, these six are the ones worth
+ * keeping, and until now that answer was thrown away the moment the file was
  * swapped. So was every time someone looked at a suggestion and ignored it.
  *
  * These rows are the only supervision this problem will ever have, and they
@@ -35,9 +35,9 @@ export class HighlightLabel {
   /**
    * How the label came about.
    *
-   * `trim` — the strongest signal: someone cut the clip themselves.
-   * `accepted` — they took the suggestion as offered.
-   * `rejected` — they were shown a suggestion and said it was wrong.
+   * `trim`. The strongest signal: someone cut the clip themselves.
+   * `accepted`. They took the suggestion as offered.
+   * `rejected`. They were shown a suggestion and said it was wrong.
    */
   @Index()
   @Column('text')

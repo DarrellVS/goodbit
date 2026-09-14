@@ -6,7 +6,7 @@ const { autoUpdater } = electronUpdater;
 /**
  * Updates, the way ApexCut does them: electron-updater against GitHub releases.
  *
- * The renderer shows a banner and decides when to restart — a build that
+ * The renderer shows a banner and decides when to restart, a build that
  * installs itself mid-edit is exactly the behaviour the service worker had, and
  * why it was replaced. Downloading happens on its own; applying does not.
  */
@@ -20,7 +20,7 @@ export type UpdateState =
 
 let state: UpdateState = { status: 'idle' };
 
-/** A check on demand — the tray asks for one. The window's banner shows the result. */
+/** A check on demand. The tray asks for one. The window's banner shows the result. */
 export function checkForUpdatesNow(): void {
   if (!app.isPackaged) return;
   autoUpdater.checkForUpdates().catch(() => {});
@@ -81,8 +81,8 @@ export function registerUpdater(getWindow: () => BrowserWindow | null): void {
     // Before the first release exists there is no feed to read, and GitHub
     // answers 404 for a repository it will not confirm either way. That is the
     // normal state of a new install, not something to report as a failure. Nor
-    // is a build with no `app-update.yml` at all — the portable exe, or an
-    // unpacked directory build — which has nothing to update from.
+    // is a build with no `app-update.yml` at all. The portable exe, or an
+    // unpacked directory build, which has nothing to update from.
     const noFeedYet =
       /404/.test(message) || /releases\.atom/.test(message) || /app-update\.yml/.test(message);
     if (noFeedYet) {

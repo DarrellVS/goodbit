@@ -8,7 +8,7 @@
  * wraps it in `Settings/SettingToggle.vue` rather than drawing its own.
  *
  * A button with `role="switch"` rather than an `<input type="checkbox">`,
- * because the visual is a track and a knob, not a box — and screen readers
+ * because the visual is a track and a knob, not a box, and screen readers
  * should hear what is drawn.
  */
 interface Props {

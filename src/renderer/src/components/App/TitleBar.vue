@@ -8,8 +8,8 @@ import { useTheme } from '../../composables/useTheme';
 /**
  * The window's own title bar.
  *
- * Windows still draws minimise, maximise and close — `titleBarStyle: 'hidden'`
- * with an overlay, rather than `frame: false` — so the snap layouts that appear
+ * Windows still draws minimise, maximise and close, `titleBarStyle: 'hidden'`
+ * with an overlay, rather than `frame: false`, so the snap layouts that appear
  * on hovering maximise keep working, along with the system double-click and
  * drag behaviour. What is drawn here is everything to the left of those.
  *

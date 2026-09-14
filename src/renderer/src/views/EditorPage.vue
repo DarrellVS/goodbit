@@ -249,7 +249,7 @@ async function handleExportConfirm(name: string, options: ExportOptions): Promis
 /**
  * Rebuild a timeline from a draft.
  *
- * Only ids and edits were stored, so the media URLs are built fresh here — and
+ * Only ids and edits were stored, so the media URLs are built fresh here, and
  * anything that has since been deleted from disk simply drops out, with a count
  * rather than a silent gap.
  */
@@ -345,7 +345,7 @@ async function handleSaveDraft(name: string): Promise<void> {
 async function handleImportDraft(payload: DraftFilePayload): Promise<void> {
   try {
     const draft = await importDraft(payload);
-    toastStore.success(`Imported "${draft.name}" — open it to load it onto the timeline`);
+    toastStore.success(`Imported "${draft.name}", open it to load it onto the timeline`);
   } catch (error) {
     console.error('Failed to import the draft:', error);
     toastStore.error('Please try again.', 'Could not import the draft');
@@ -387,7 +387,7 @@ function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'
  * The suggested window for whichever clip is selected.
  *
  * A window longer than the clip on the timeline would trim to nothing, so it is
- * clamped — the analysis measured the file, and the file can have been trimmed
+ * clamped. The analysis measured the file, and the file can have been trimmed
  * since.
  */
 const selectedHighlight = computed(() => {
@@ -450,7 +450,7 @@ async function trimAllToHighlights(): Promise<void> {
       .filter((target): target is { id: string; start: number; end: number } => target !== null);
 
     if (targets.length === 0) {
-      toastStore.info('Nothing to trim — these clips are already on their highlights, or have none');
+      toastStore.info('Nothing to trim: these clips are already on their highlights, or have none');
       return;
     }
 
@@ -461,7 +461,7 @@ async function trimAllToHighlights(): Promise<void> {
     const untouched = lane.length - targets.length;
     toastStore.success(
       `Trimmed ${targets.length} ${pluralize(targets.length, 'clip')} to their highlights` +
-        (untouched > 0 ? ` — ${untouched} left alone` : '')
+        (untouched > 0 ? `, ${untouched} left alone` : '')
     );
   } finally {
     trimmingAll.value = false;
@@ -643,7 +643,7 @@ watch(
               <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
               <button
                 class="text-muted-400 hover:text-muted-700 transition-colors"
-                title="Stop editing this draft — further changes go to the autosave"
+                title="Stop editing this draft. Further changes go to the autosave"
                 @click="detachDraft"
               >
                 <Icon icon="material-symbols:close" class="text-xs" />

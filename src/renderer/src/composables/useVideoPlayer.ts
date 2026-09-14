@@ -9,8 +9,8 @@ interface VideoPlayerOptions {
 /**
  * Plays the trim range on loop, and reports where it is.
  *
- * The preview has no native controls of its own — the timeline below it is the
- * transport — so this is also where the playhead and the play/pause state that
+ * The preview has no native controls of its own. The timeline below it is the
+ * transport, so this is also where the playhead and the play/pause state that
  * page draws come from.
  */
 export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoPlayerOptions) {
@@ -72,7 +72,7 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
     }
   }
 
-  /** Move the playhead, clamped to the trim range — outside it there is nothing to see. */
+  /** Move the playhead, clamped to the trim range, outside it there is nothing to see. */
   function seek(time: number): void {
     const video = videoElement.value;
     if (!video) return;
@@ -120,7 +120,7 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
   });
 
   // The element belongs to a child component, so it arrives a tick after this
-  // composable is set up — and can be replaced if the source changes.
+  // composable is set up, and can be replaced if the source changes.
   watch(
     videoElement,
     (video, previous) => {

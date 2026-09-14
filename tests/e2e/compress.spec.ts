@@ -57,6 +57,8 @@ interface FakePublisher {
   url: string;
   dir: string;
   received: Array<{ filename: string; sizeBytes: number; path: string; displayName?: string }>;
+  /** What it will accept as a publish token, the way the real one does. */
+  token: string;
   close: () => Promise<void>;
 }
 
@@ -70,6 +72,19 @@ async function startFakePublisher(): Promise<FakePublisher> {
       filename: (_req, file, cb) => cb(null, file.originalname),
     }),
   });
+  const TOKEN = 'a-test-publish-token';
+
+  // The real publisher refuses every write without this, so the fake one does
+  // too: otherwise the test would pass whether or not the app sent it.
+  app.post('/api/publish', (req, res, next) => {
+    const given = /^Bearer\s+(.+)$/i.exec(req.header('authorization') ?? '')?.[1];
+    if (given !== TOKEN) {
+      res.status(401).json({ message: 'Wrong or missing publish token.' });
+      return;
+    }
+    next();
+  });
+
   app.post('/api/publish', upload.single('file'), (req, res) => {
     const file = req.file!;
     received.push({
@@ -90,6 +105,7 @@ async function startFakePublisher(): Promise<FakePublisher> {
     url: `http://127.0.0.1:${port}`,
     dir,
     received,
+    token: TOKEN,
     close: async () => {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       rmSync(dir, { recursive: true, force: true });
@@ -128,7 +144,7 @@ test.describe('compressing what gets shared', () => {
     // a GOP, and with enough bytes that compressing is visible on a synthetic
     // pattern at all.
     seedClips(ctx.videosRoot, 'ShareGame', 4, 4, 6);
-    await saveSettings({ publisherBaseUrl: publisher.url });
+    await saveSettings({ publisherBaseUrl: publisher.url, publisherToken: publisher.token });
     await ctx.page.waitForTimeout(9000);
   });
 
@@ -208,6 +224,25 @@ test.describe('compressing what gets shared', () => {
     const res = await call('POST', `/clips/${clip.id}/publish`, { compress: true });
     expect(res.status).toBe(409);
     expect(publisher.received.length).toBe(countBefore);
+  });
+
+  test('a publish carries the token, and says so plainly when it is wrong', async () => {
+    await saveSettings({ publisherToken: 'not-the-right-one' });
+    try {
+      const clip = (await clips())[1];
+      const res = await call('POST', `/clips/${clip.id}/publish`, {});
+      expect(res.status).toBeGreaterThanOrEqual(400);
+
+      // What the server said, not "Request failed with status code 401": the
+      // person reading it is the one who has to go and fix the token.
+      const body = res.body as { error?: string; message?: string };
+      expect(JSON.stringify(body)).toMatch(/publish token/i);
+
+      const listed = (await clips()).find((c) => c.id === clip.id)!;
+      expect(listed.published, 'a refused upload must not be recorded as published').toBe(false);
+    } finally {
+      await saveSettings({ publisherToken: publisher.token });
+    }
   });
 
   test('asking for the original uploads the recording byte for byte', async () => {

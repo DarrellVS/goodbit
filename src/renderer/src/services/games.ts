@@ -4,7 +4,7 @@ import type { Game } from '../types/game';
 export type GameRow = Game;
 
 /**
- * Games the UI should show. Hidden games are left out unless asked for —
+ * Games the UI should show. Hidden games are left out unless asked for,
  * only the settings screen that manages hiding wants them.
  */
 export async function fetchGames(includeHidden = false): Promise<Game[]> {

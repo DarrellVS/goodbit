@@ -4,7 +4,7 @@
  * Takes the JSON `visual-scan.mjs` writes and builds contact sheets: one tile
  * per detected run, cropped to the region the rule watched, at the moment it
  * fired. A rule is only worth shipping once these sheets show the thing it
- * claims to find — numbers alone have been wrong before.
+ * claims to find, numbers alone have been wrong before.
  *
  *   node scripts/visual-verify.mjs tmp/bf6-visual.json --out tmp/verify --per-sheet 8
  *   node scripts/visual-verify.mjs tmp/bf6-visual.json --misses      # clips with no run

@@ -5,11 +5,11 @@ Guidance for Claude Code when working in this repository.
 ## What this is
 
 **GoodBit** is a single-user desktop app for game clips. It watches the folder OBS records into
-(`<videosRoot>/<GameName>/*.mp4|*.mov|*.mkv` — the top-level folder name *is* the game name), indexes
+(`<videosRoot>/<GameName>/*.mp4|*.mov|*.mkv`. The top-level folder name *is* the game name), indexes
 what appears, and provides a UI to browse, tag, annotate, trim, edit and optionally publish.
 
 Files on disk are the source of truth for *content*; the database is the source of truth for
-*metadata*. **Clips are never renamed** — `displayName` is a DB field only. Deletes go to the Recycle
+*metadata*. **Clips are never renamed**, `displayName` is a DB field only. Deletes go to the Recycle
 Bin via `shell.trashItem`, never `unlink`.
 
 It was a self-hosted web app (four packages, Express on :4000, Firebase auth, LAN streaming) until the
@@ -23,7 +23,7 @@ One electron-vite project, three builds.
 
 | Path | Role |
 |---|---|
-| `src/main` | Electron main — **the background service**. Owns the database, the folder watcher, ffmpeg, the tray. Runs whether or not a window is open |
+| `src/main` | Electron main, **the background service**. Owns the database, the folder watcher, ffmpeg, the tray. Runs whether or not a window is open |
 | `src/preload` | The typed bridge, `window.goodbit`. The only way the renderer reaches main |
 | `src/renderer` | Vue 3 + Pinia + vue-router + Tailwind |
 | `src/shared` | DTOs and constants both processes agree on, imported as `@shared/*` |
@@ -41,7 +41,7 @@ npm run build:win      # check:pre-release (typecheck + e2e) then electron-build
 node scripts/backup-db.mjs   # verified snapshot of the library database
 ```
 
-Keep `npm run typecheck` green — `build` runs it first and fails otherwise.
+Keep `npm run typecheck` green, `build` runs it first and fails otherwise.
 
 ## Where things live at runtime
 
@@ -51,7 +51,7 @@ and belong with the media.
 
 `settings.json` holds what main needs before a window exists: `videosRoot`, `audioRoot`,
 `publisherBaseUrl`, `startAtLogin`, `keepRunningInTray`. **There are no required environment
-variables** — a missing videos root opens the first-run picker rather than throwing at boot.
+variables**, a missing videos root opens the first-run picker rather than throwing at boot.
 `GOODBIT_USER_DATA` overrides the whole data directory *and the single-instance lock*, which is how
 tests run beside the installed app without touching a real library.
 
@@ -61,7 +61,7 @@ tests run beside the installed app without touching a real library.
 
 Registered at login, lives in the tray, hides on window close. `startup.ts` runs the boot sequence
 (each step isolated so one failure does not stop the rest) and then a chokidar watcher with
-`awaitWriteFinish` — **not optional**, because OBS writes for the length of the recording and
+`awaitWriteFinish`, **not optional**, because OBS writes for the length of the recording and
 indexing mid-write reads a garbage duration and a black first frame. A reconciliation sweep is the
 backstop, since filesystem events are a hint rather than a guarantee.
 
@@ -70,7 +70,7 @@ backstop, since filesystem events are a hint rather than a guarantee.
 - **Data** goes over one IPC channel (`api:request`) to a loopback listener in the same process,
   behind a secret regenerated each launch. Loopback alone is not enough: any other program on the
   machine can reach 127.0.0.1, and this API deletes clips.
-- **Media** is served by the `goodbit://` protocol straight off disk, with Range support — without
+- **Media** is served by the `goodbit://` protocol straight off disk, with Range support, without
   which `<video>` cannot seek.
 - The Express **router is kept** rather than rewritten into forty IPC channels. Faking a
   `ServerResponse` to dispatch it in-process does not work: `app.handle` reassigns the response
@@ -93,14 +93,14 @@ missing at once.
 
 Two halves, and they cost three orders of magnitude apart.
 
-`AnalyzeClipAction` **listens** — one `ebur128` pass, about 100 ms — and runs for every clip. It
+`AnalyzeClipAction` **listens**, one `ebur128` pass, about 100 ms, and runs for every clip. It
 measures; it never judges. `services/highlights/decide.ts` turns a measurement into a verdict, which
 is why the expensive half can stay cached while the bar, a game's calibration or a trained model
 change underneath it.
 
 `WatchClipHudAction` **reads the screen**, and runs only for a game with a module in
 `services/highlights/games/`. Roughly a sixth of a second per second of footage, so it is cached
-hard, keyed by the clip's own mtime, and is never triggered by indexing — only by the Trim page
+hard, keyed by the clip's own mtime, and is never triggered by indexing, only by the Trim page
 asking for suggestions. Decoding video while OBS is writing clips is the thing to avoid.
 
 Three rules hold the vision code together, and each is there because the obvious alternative was
@@ -111,13 +111,13 @@ measured and was worse:
   the same pixels at 16:9 and at 21:9; a fraction of width slides a centre element a third of the
   way across the screen when the aspect changes.
 - **Frames stay on the GPU until after they are dropped.** `-hwaccel cuda` alone copies every decoded
-  frame to system memory and only then lets `fps` throw nine tenths away — eleven gigabytes of
+  frame to system memory and only then lets `fps` throw nine tenths away, eleven gigabytes of
   transfer for a half-minute clip. `-hwaccel_output_format cuda` halves the wall time.
 - **Crop at full resolution, scale only the crop.** Scaling the frame down first blurs the HUD into
   the scenery it has to stand out from: a signal that read 0 then 6128 collapsed into noise between
   145 and 1162.
 
-A module declares boxes to sample and turns them into `GameEvent`s carrying a `reason` — a sentence
+A module declares boxes to sample and turns them into `GameEvent`s carrying a `reason`, a sentence
 shown to the user. Adding one is a **measuring job**: `scripts/visual-*.mjs` renders contact sheets
 of what a candidate rule actually picked, and `scripts/hud-check.mjs` runs the *shipped* modules over
 a real library by bundling `src/main` with esbuild, so the bench and the app cannot drift apart.
@@ -128,13 +128,13 @@ against.
 ### Encoding
 
 `services/encoders.ts` probes `h264_nvenc` / `qsv` / `amf` and `cuda` / `d3d11va` / `qsv` once per
-process, by actually encoding a tiny clip — a build can list an encoder the GPU will refuse.
+process, by actually encoding a tiny clip, a build can list an encoder the GPU will refuse.
 
 H.264 rather than HEVC: exports go to Discord and browsers. **GPU decode matters more than the
-encoder here** — these are 3440x1440 AV1 files and software decoding them runs at 0.44x realtime.
+encoder here**, these are 3440x1440 AV1 files and software decoding them runs at 0.44x realtime.
 
 **HDR sources must be tone mapped.** OBS writes PQ/bt2020; reading that as sRGB is what made every
-export grey and washed out. `TONEMAP_FILTER` (hable) is applied wherever a frame is decoded — export,
+export grey and washed out. `TONEMAP_FILTER` (hable) is applied wherever a frame is decoded, export,
 exact trims, thumbnails, frame strips, HUD sampling.
 
 **Compressing a trim and compressing a published copy are two settings.** A trim replaces the only
@@ -152,7 +152,7 @@ is untouched either way. `shareEncoderArgs` is the share preset both use.
   and read as two different controls for the same kind of decision.
 - `utils/mediaUrl.ts` is the single place media URLs are built.
 - View preferences live in localStorage via `useConfiguration()`. App settings come from main via
-  `useAppSettings()` — different things, do not merge them.
+  `useAppSettings()`, different things, do not merge them.
 
 ### Colours
 
@@ -175,18 +175,23 @@ root and database; fixtures are generated with the bundled ffmpeg. **A test must
 library.**
 
 `screens.spec.ts` walks every screen in both palettes and fails on text below 2.5:1 against its own
-*painted* background — translucent layers composited, since a tint like `bg-orange-500/10` computes to
+*painted* background, translucent layers composited, since a tint like `bg-orange-500/10` computes to
 `rgb(249 115 22 / 0.1)` and reading it as opaque orange flags every label on it.
 
 These do not run in CI (they need a desktop session, a GPU and ffmpeg). `build:win` depends on them.
 
 ## Conventions
 
+- **Never use an em dash (`unknown`).** Not in code, comments, commit messages, UI strings, docs or
+  the website. Use a comma, a colon, a semicolon, brackets or a full stop, whichever the sentence
+  actually wants; an em dash is usually a sign the sentence needed rewriting rather than
+  punctuating. An en dash (`–`) in a numeric range like `0:20 – 0:26` is correct typography and
+  stays.
 - TypeScript strict, ESM everywhere. Main imports need the `.js` extension on relative paths.
 - Vue: `<script setup lang="ts">`, typed `defineProps`/`defineEmits`, `ref` over `reactive`.
 - Tailwind utilities over custom CSS; tokens over literals.
 - Feedback through the toast store; destructive actions use `toastStore.confirm`.
-- Long work runs as a job (`services/jobs.ts`) with progress, an ETA and an `AbortController` —
+- Long work runs as a job (`services/jobs.ts`) with progress, an ETA and an `AbortController`,
   never awaited inside a handler.
 
 ## Known gaps
@@ -196,7 +201,7 @@ These do not run in CI (they need a desktop session, a GPU and ffmpeg). `build:w
   TypeORM's SQLite auto-sync resolves some schema changes by rebuilding a table.
 - No linter. Typecheck and the e2e suite are the only automated gates.
 - `publisher/` still reads its config from a `.env`; it was deliberately left alone. Setting it up
-  is documented at `site/publisher.html`, which is a wizard rather than a page — a quick start
+  is documented at `site/publisher.html`, which is a wizard rather than a page, a quick start
   and a seven-step route that writes the reader's own domain and paths into every command.
 - The app is no longer Windows-only in principle (`shell.trashItem`, `shell.showItemInFolder`), but
   nothing has been built or tested anywhere else.

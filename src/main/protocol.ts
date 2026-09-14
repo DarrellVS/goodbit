@@ -82,7 +82,7 @@ async function resolveMedia(kind: string, id: string): Promise<string | null> {
  * Serve a file, honouring a Range header.
  *
  * Electron's `net.fetch` can serve a file URL directly, but it does not do
- * partial content — so a ranged request is answered here by hand, which is what
+ * partial content, so a ranged request is answered here by hand, which is what
  * lets the player seek.
  */
 function serveFile(filePath: string, rangeHeader: string | null): Response {

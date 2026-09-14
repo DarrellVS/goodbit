@@ -5,7 +5,7 @@ import { useGamesStore } from '../stores/games';
 const MAX_VISIBLE_ITEMS = 5;
 
 /**
- * Above this many games, scrolling a list is worse than typing a name — which
+ * Above this many games, scrolling a list is worse than typing a name, which
  * is the situation at 47 of them.
  */
 const SEARCH_APPEARS_AT = 8;

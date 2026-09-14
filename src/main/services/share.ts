@@ -1,5 +1,5 @@
 /**
- * Handing a clip to your phone over the local network — no cable, no upload,
+ * Handing a clip to your phone over the local network. No cable, no upload,
  * nothing leaving the house.
  *
  * Publishing is the other way to get a clip onto a phone, but it needs a server

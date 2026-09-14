@@ -9,7 +9,7 @@ import { UpdateGameAction } from '../actions/UpdateGameAction.js';
 export const gamesRouter = express.Router();
 
 gamesRouter.get('/', asyncHandler(async (req, res) => {
-  // Hidden games are left out by default — the sidebar, filters and pickers all
+  // Hidden games are left out by default. The sidebar, filters and pickers all
   // read this list. `?includeHidden=true` is for the settings screen that manages
   // the hiding itself.
   const includeHidden = req.query.includeHidden === 'true';

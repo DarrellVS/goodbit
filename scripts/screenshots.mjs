@@ -1,8 +1,8 @@
 /**
  * The screenshots on the website, taken from the real app.
  *
- * The library it photographs is built from real recordings — the games listed
- * in `LIBRARY` below, copied out of `SOURCE_ROOT` — because a website full of
+ * The library it photographs is built from real recordings, the games listed
+ * in `LIBRARY` below, copied out of `SOURCE_ROOT`, because a website full of
  * test patterns tells you nothing about what the app looks like in use. Only
  * the first `EXCERPT_SEC` of each clip is taken, by stream copy, so this is
  * fast and the picture is the recorded picture.
@@ -65,7 +65,7 @@ const LIBRARY = [
  * The recording the clip and trim shots are taken of.
  *
  * Picked rather than left to whichever clip happens to be newest, because this
- * one has a kill in it that the Battlefield module finds — so the trim page in
+ * one has a kill in it that the Battlefield module finds, so the trim page in
  * the screenshot shows the suggestion banner saying *why*, which is the part
  * worth photographing. Always copied in, whether or not it is recent enough to
  * make the `take` above.
@@ -170,8 +170,8 @@ const TAGS = {
  *
  * A wall of `Battlefield 6_30.08.2026_13-17-24.mp4` is what the app is for
  * getting away from, so photographing one sells the opposite of the point. The
- * recordings themselves are never renamed — a display name is a database field
- * — and this library is thrown away afterwards.
+ * recordings themselves are never renamed, a display name is a database field
+ *, and this library is thrown away afterwards.
  */
 const NAMES = {
   'Battlefield 6': [
@@ -466,7 +466,7 @@ async function main() {
   await page.waitForTimeout(2000);
 
   // The strip behind a timeline block is a CSS background, generated on demand
-  // from the source clip — which for a real 3440x1440 recording takes several
+  // from the source clip, which for a real 3440x1440 recording takes several
   // seconds. Shooting before it arrives gives a picture of an empty block.
   await waitForStrips(page);
   await shoot('editor');

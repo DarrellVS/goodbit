@@ -5,7 +5,7 @@ import { loadSettings, saveSettings, type WindowBounds } from './settings.js';
  * Open the window where it was left.
  *
  * The part that needs care is restoring a position onto a screen that no longer
- * exists — unplug the second monitor and a remembered position puts the window
+ * exists, unplug the second monitor and a remembered position puts the window
  * somewhere unreachable, with no obvious way to get it back. Saved bounds are
  * checked against the displays actually attached, and ignored if they no longer
  * land on one.

@@ -10,7 +10,7 @@ import { _electron as electron, type ElectronApplication, type Page } from 'play
  *
  * Every run gets its own data directory, its own videos root and its own
  * database. `GOODBIT_USER_DATA` carries the single-instance lock with it, so a
- * test launches beside the tray app instead of being turned away by it — and
+ * test launches beside the tray app instead of being turned away by it, and
  * more importantly, never opens the real library.
  */
 
@@ -53,7 +53,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     copyFileSync(legacyDatabase, join(videosRoot, 'filmpje.db'));
   }
 
-  // Reusing a profile means keeping whatever it already stored — that is the
+  // Reusing a profile means keeping whatever it already stored, that is the
   // point of relaunching into it.
   if (configured && !existing) {
     writeFileSync(
@@ -74,7 +74,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
 
   /**
    * Normally the dev build, but GOODBIT_TEST_BINARY points the same suite at a
-   * packaged .exe — the artifact people actually install, where asar packing
+   * packaged .exe. The artifact people actually install, where asar packing
    * and native module loading can fail in ways the dev build never does.
    */
   const packaged = process.env.GOODBIT_TEST_BINARY;
@@ -142,7 +142,7 @@ export function seedClips(
  * A clip with an obvious loud moment in the middle of it.
  *
  * `seedClips` makes a constant tone, which is exactly the case the analysis is
- * built to refuse — nothing to point at. This one has somewhere to point.
+ * built to refuse. Nothing to point at. This one has somewhere to point.
  */
 export function seedSpikyClip(
   videosRoot: string,
@@ -174,7 +174,7 @@ export function seedSpikyClip(
  * A clip with nothing in it: a still picture and music that swells and fades.
  *
  * This is the shape the analysis used to be fooled by. It has plenty of dynamic
- * range — the swell is tens of LU — but nothing stands out from the rest of the
+ * range. The swell is tens of LU, but nothing stands out from the rest of the
  * clip, which is exactly what a menu screen or a loading screen looks like to
  * an ear.
  */

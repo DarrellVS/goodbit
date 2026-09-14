@@ -1,14 +1,14 @@
 /**
  * Editor drafts, stored in IndexedDB.
  *
- * The timeline is not a server-side concept — nothing exists until an export
- * writes a file — so "continue later" is purely a client concern. IndexedDB
+ * The timeline is not a server-side concept. Nothing exists until an export
+ * writes a file, so "continue later" is purely a client concern. IndexedDB
  * rather than localStorage: a draft is structured data, there can be several of
  * them, and the autosave writes on every timeline change.
  *
  * What is stored is only what cannot be re-derived: clip ids, track filenames,
- * and the edits made to them. Media URLs are deliberately left out — they carry
- * an auth token that expires and a LAN host that changes — and are rebuilt when
+ * and the edits made to them. Media URLs are deliberately left out, they carry
+ * an auth token that expires and a LAN host that changes, and are rebuilt when
  * a draft is restored.
  */
 

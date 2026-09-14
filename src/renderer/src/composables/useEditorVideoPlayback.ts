@@ -10,7 +10,7 @@ import type { TimelineClip } from '../types/editor';
  * 1. The video element is the clock. While playing, the timeline position is
  *    read *from* the element and never written back to it. Writing
  *    `currentTime` on a loop cancels the seek already in flight, so the element
- *    never finishes loading and playback sticks on a stale frame — pausing
+ *    never finishes loading and playback sticks on a stale frame, pausing
  *    releases it, because the loop stops.
  *
  * 2. Playback is double buffered. Assigning a new `src` to a video element
@@ -188,7 +188,7 @@ export function useEditorVideoPlayback(
     const offset = clip.trimStart + (timelineTime - clip.startTime);
     const idle = otherSlot(activeSlot.value);
 
-    // Already staged and decoded — swap immediately.
+    // Already staged and decoded, swap immediately.
     const staged = elementFor(idle);
     if (
       slotClipId[idle] === clip.id &&
@@ -215,7 +215,7 @@ export function useEditorVideoPlayback(
       swapTo(target, clip);
       void stageNext();
     } else {
-      // Superseded, errored or timed out — do not strand the spinner.
+      // Superseded, errored or timed out, do not strand the spinner.
       isBuffering.value = false;
     }
   }
@@ -258,7 +258,7 @@ export function useEditorVideoPlayback(
    * Move the picture to wherever the playhead now is.
    *
    * `force` marks a seek the user asked for. Without it this bails out during
-   * playback — the frame loop writes `currentTime` from the video element on
+   * playback. The frame loop writes `currentTime` from the video element on
    * every frame, so reacting to those writes would fight itself. That guard
    * also meant dragging the playhead mid-playback did nothing: the drag set
    * `currentTime`, the next frame overwrote it, and the playhead sprang back.

@@ -116,7 +116,7 @@ watch(
           <div>
             <DialogTitle class="text-xl font-bold text-foreground mb-1">Drafts</DialogTitle>
             <DialogDescription class="text-sm text-muted-600">
-              Kept in this browser — export one to a file to move it somewhere else
+              Kept in this browser, export one to a file to move it somewhere else
             </DialogDescription>
           </div>
 
@@ -148,8 +148,8 @@ watch(
             <span v-if="pendingImport.audio.length">
               · {{ pendingImport.audio.length }} track{{ pendingImport.audio.length === 1 ? '' : 's' }}
             </span>
-            — clips and music are matched by id, so anything this machine does not have is skipped when
-            you open it.
+            . Clips and music are matched by id, so anything this machine does not
+            have is skipped when you open it.
           </div>
           <div class="flex gap-2">
             <input
@@ -201,7 +201,7 @@ watch(
             Add a clip or a track before saving a draft.
           </p>
           <p v-else-if="activeId" class="text-xs text-muted-500">
-            Saving makes a separate copy — the draft you have open keeps updating on its own.
+            Saving makes a separate copy. The draft you have open keeps updating on its own.
           </p>
         </div>
 
@@ -212,7 +212,7 @@ watch(
             </div>
             <p class="text-sm font-medium text-muted-700">No saved drafts</p>
             <p class="text-xs mt-1 text-muted-500">
-              Your last session is restored automatically — this is for keeping more than one.
+              Your last session is restored automatically. This is for keeping more than one.
             </p>
           </div>
 

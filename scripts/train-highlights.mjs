@@ -1,5 +1,5 @@
 /**
- * Fit a model to what you actually kept — offline.
+ * Fit a model to what you actually kept, offline.
  *
  * **The app does this itself.** Once sixty decisions have been recorded it fits
  * the same logistic regression in the main process (`services/highlights/train.ts`),
@@ -49,9 +49,9 @@ const MIN_EXAMPLES = 60;
 /**
  * A label becomes an example of "worth suggesting" or "not".
  *
- * `accepted` — the suggestion was taken as offered: a positive.
- * `rejected` — it was shown and called wrong: a negative.
- * `trim` — someone cut somewhere else. Positive if what they kept overlaps
+ * `accepted`. The suggestion was taken as offered: a positive.
+ * `rejected`. It was shown and called wrong: a negative.
+ * `trim`, someone cut somewhere else. Positive if what they kept overlaps
  *   what was suggested, negative if the suggestion pointed somewhere else
  *   entirely; a trim with no suggestion on screen tells us nothing about the
  *   decision and is skipped.
@@ -163,7 +163,7 @@ function main() {
   if (examples.length < MIN_EXAMPLES) {
     console.error(
       `\nNot enough yet. ${MIN_EXAMPLES} is the floor and there are ${examples.length}.\n` +
-        `Keep trimming clips — every trim with a suggestion on screen is one example — and run this again.`,
+        `Keep trimming clips. Every trim with a suggestion on screen is one example, and run this again.`,
     );
     process.exit(1);
   }

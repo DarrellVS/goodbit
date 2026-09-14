@@ -4,7 +4,7 @@
  * `VACUUM INTO` rather than a file copy: the database is normally open and
  * being written by the running app, and copying the file underneath a writer
  * can capture a torn page. VACUUM INTO asks SQLite itself for the snapshot, so
- * what lands is always a valid database — and it is compacted on the way out.
+ * what lands is always a valid database, and it is compacted on the way out.
  *
  * Run before anything that touches the schema. The desktop app keeps its
  * database in %APPDATA%/GoodBit; this defaults there and still accepts a path

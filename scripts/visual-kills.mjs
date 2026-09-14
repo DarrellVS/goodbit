@@ -4,7 +4,7 @@
  * Stage one is cheap and finds *a* score banner: bright near-grey ink that
  * stays pinned to the screen while the world moves behind it. Stage two only
  * runs on those frames and asks the one question that separates a kill from a
- * spot, a spawn or a captured flag — is the icon a skull? — by matching a
+ * spot, a spawn or a captured flag, is the icon a skull?, by matching a
  * template built from confirmed kills.
  *
  *   node scripts/visual-kills.mjs "Battlefield 6" --limit 40 --json tmp/bf6-kills.json
@@ -27,7 +27,7 @@ export const TEMPLATE_SIZE = 64;
 /**
  * The box stage one watches, and where the icon sits inside it.
  *
- * In units of frame height from the middle of the frame — a HUD scales with
+ * In units of frame height from the middle of the frame, a HUD scales with
  * height and holds its place, so these land correctly at 16:9 and 21:9 alike.
  */
 export const BANNER = { anchor: 'centre', dx: -0.35, dy: 0.08, w: 0.45, h: 0.10, out: [504, 112] };
@@ -116,7 +116,7 @@ function scoreAt(window, windowWidth, patch, size, ox, oy, scaled) {
  * `window`, over a few sizes.
  *
  * Normalised, so it does not care that the icon is drawn over a bright wall in
- * one clip and a dark floor in the next — only that the shape is the shape.
+ * one clip and a dark floor in the next, only that the shape is the shape.
  *
  * Searched coarse first, at a third of the size, then refined around whatever
  * the coarse pass liked. Matching every offset at full size costs a hundred

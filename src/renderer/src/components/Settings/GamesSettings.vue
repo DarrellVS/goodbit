@@ -26,7 +26,7 @@ const hiddenCount = computed(() => games.value.filter((g) => g.hidden).length);
 async function load(): Promise<void> {
   loading.value = true;
   try {
-    // Hidden games have to be in this list — it is where they get unhidden.
+    // Hidden games have to be in this list. It is where they get unhidden.
     games.value = await fetchGames(true);
   } finally {
     loading.value = false;
@@ -53,7 +53,7 @@ onMounted(load);
     <div>
       <h2 class="text-xl font-semibold mb-1">Games</h2>
       <p class="text-sm text-muted-500">
-        Hide folders you don't want in your library — the files stay on disk, they just stop showing up
+        Hide folders you don't want in your library. The files stay on disk, they just stop showing up
         in clips, stats and the editor.
       </p>
     </div>

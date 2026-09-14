@@ -3,7 +3,7 @@
  *
  * Never fractions of width. A game lays its HUD out in units that scale with
  * screen *height* and pins each piece to an edge or to the middle, so the same
- * numbers land on the same pixels at 1920x1080 and at 3440x1440 — while a
+ * numbers land on the same pixels at 1920x1080 and at 3440x1440, while a
  * fraction of width slides a centre element a third of the way across the
  * screen when the aspect changes from 16:9 to 21:9.
  *

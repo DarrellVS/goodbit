@@ -42,7 +42,7 @@ test.describe('the trim page', () => {
 
     const field = ctx.page.getByLabel('Clip name');
     await expect(field).toBeVisible({ timeout: 10_000 });
-    // With no name, the filename is the placeholder rather than the value —
+    // With no name, the filename is the placeholder rather than the value,
     // so typing does not mean editing a filename.
     await expect(field).toHaveAttribute('placeholder', clip.filename);
     await expect(field).toHaveValue('');

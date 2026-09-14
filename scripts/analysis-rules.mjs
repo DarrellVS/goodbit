@@ -102,7 +102,7 @@ function r(n, places = 1) {
  * 3. **It can say no.** The old gate passed everything: a spread of 4 LU is
  *    nothing when the median clip spans 25. This one asks for a real lift over
  *    the clip's own normal, a real *rise* rather than a level, and a margin
- *    over the best window that does not overlap the winner — because if two
+ *    over the best window that does not overlap the winner, because if two
  *    unrelated stretches score the same, picking either is guesswork.
  */
 export function ruleV2(clip, windowSec = 10, config = V2) {
@@ -147,7 +147,7 @@ export function ruleV2(clip, windowSec = 10, config = V2) {
   for (const s of scored) if (s.weighted > best.weighted) best = s;
 
   // The best window that shares nothing with the winner. If it is nearly as
-  // good, the clip has several equally interesting moments — or none.
+  // good, the clip has several equally interesting moments, or none.
   let rival = null;
   for (const s of scored) {
     if (s.i + win <= best.i || s.i >= best.i + win) {
@@ -412,8 +412,8 @@ export const V5 = {
   /**
    * The shortest suggestion worth making.
    *
-   * The acoustic event itself is short — measured over the accepted clips, a
-   * median of 1.0 s above half its own peak and 1.6 s above a quarter — so a
+   * The acoustic event itself is short, measured over the accepted clips, a
+   * median of 1.0 s above half its own peak and 1.6 s above a quarter, so a
    * window sized to the event alone would be a jump cut. Six seconds is enough
    * for a run-up, the thing, and a beat after it.
    */

@@ -4,8 +4,8 @@ import type { ClipDTO } from '@shared/index.js';
 /**
  * Long work, tracked.
  *
- * A render of any size outlives an HTTP request — Cloudflare gives up at 100
- * seconds and answers 504 — so the work runs detached and the client polls.
+ * A render of any size outlives an HTTP request, Cloudflare gives up at 100
+ * seconds and answers 504, so the work runs detached and the client polls.
  * In-memory is enough: a restart loses the progress readout, and the file
  * either landed on disk or did not.
  *
@@ -124,7 +124,7 @@ export function cancelJob(id: string): boolean {
 /**
  * Seconds left, from how long the work has taken to get this far.
  *
- * Null until there is enough progress for the estimate to mean anything —
+ * Null until there is enough progress for the estimate to mean anything,
  * an ETA computed from 1% is noise, and a wrong number is worse than none.
  */
 export function etaSeconds(job: Job): number | null {

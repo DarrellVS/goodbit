@@ -10,7 +10,7 @@ import axios, { AxiosHeaders, type AxiosAdapter, type AxiosResponse } from 'axio
  * components above them are untouched; only the transport moved.
  *
  * There is no HTTP server any more. A port on 127.0.0.1 is reachable by every
- * other process on the machine — for an API that can delete clips, that is a
+ * other process on the machine, for an API that can delete clips, that is a
  * surface an installed app has no reason to expose.
  *
  * The Firebase token interceptor is gone with it: there is nobody to

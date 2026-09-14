@@ -11,7 +11,7 @@ interface Props {
 const props = defineProps<Props>();
 
 /**
- * ffprobe reports the frame rate as a fraction — `30/1`, `60000/1001` — which
+ * ffprobe reports the frame rate as a fraction, `30/1`, `60000/1001`, which
  * is exact and unreadable. Divided out and rounded to one place, 29.97 stays
  * 29.97 and 30 stays 30.
  */

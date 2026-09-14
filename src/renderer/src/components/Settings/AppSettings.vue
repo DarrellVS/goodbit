@@ -8,7 +8,7 @@ import { useToastStore } from '../../stores/toast';
 import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
 
 /**
- * The settings the app itself runs on — folders, the publisher, autostart —
+ * The settings the app itself runs on, folders, the publisher, autostart,
  * plus what the machine can actually do.
  *
  * The health panel exists because everything below it fails silently otherwise:
@@ -35,12 +35,15 @@ async function saveCompressPublished(on: boolean): Promise<void> {
 const encoders = ref<EncoderInfo | null>(null);
 const encodersLoading = ref(true);
 const publisherUrl = ref('');
+const publisherToken = ref('');
+const showToken = ref(false);
 const publisherState = ref<'unknown' | 'checking' | 'ok' | 'unreachable'>('unknown');
 const appVersion = ref('');
 
 onMounted(async () => {
   await load();
   publisherUrl.value = settings.value.publisherBaseUrl;
+  publisherToken.value = settings.value.publisherToken ?? '';
   appVersion.value = (await window.goodbit?.app.version()) ?? '';
 
   try {
@@ -56,16 +59,19 @@ const encoderLabel = computed(() => {
   const info = encoders.value;
   if (!info) return 'could not be detected';
   const kind = info.hardware ? 'your graphics card' : 'the processor';
-  return `${info.h264} — ${kind}`;
+  return `${info.h264}, ${kind}`;
 });
 
 async function choose(key: 'videosRoot' | 'audioRoot', title: string): Promise<void> {
   const chosen = await pickFolder(key, title);
-  if (chosen) toast.success('Folder updated — rescanning');
+  if (chosen) toast.success('Folder updated, rescanning');
 }
 
 async function savePublisher(): Promise<void> {
-  await save({ publisherBaseUrl: publisherUrl.value.trim() });
+  await save({
+    publisherBaseUrl: publisherUrl.value.trim(),
+    publisherToken: publisherToken.value.trim(),
+  });
   toast.success(publisherUrl.value.trim() ? 'Publisher saved' : 'Publishing turned off');
   publisherState.value = 'unknown';
 }
@@ -149,7 +155,7 @@ async function testPublisher(): Promise<void> {
       <!--
         A different question from the one above, which is why it is a different
         switch: what goes to a public link is a copy, so shrinking it costs
-        nothing on disk. Hidden when there is no publisher — a setting for a
+        nothing on disk. Hidden when there is no publisher: a setting for a
         feature you do not have is noise.
       -->
       <SettingToggle
@@ -164,7 +170,7 @@ async function testPublisher(): Promise<void> {
         <div>
           <label class="font-medium text-foreground">Publisher</label>
           <p class="text-sm text-muted-500 mt-1">
-            Optional. A server that hosts public links for the clips you publish — leave empty and
+            Optional. A server that hosts public links for the clips you publish. Leave empty and
             publishing is simply off.
           </p>
           <!--
@@ -203,6 +209,34 @@ async function testPublisher(): Promise<void> {
           </button>
         </div>
 
+        <!--
+          Serving clips is public on purpose; writing to the publisher is not.
+          Without this the address is an open file drop under your own domain,
+          so the publisher refuses every upload until both ends have it.
+        -->
+        <div class="flex gap-2">
+          <input
+            v-model="publisherToken"
+            :type="showToken ? 'text' : 'password'"
+            placeholder="Publish token"
+            aria-label="Publish token"
+            autocomplete="off"
+            spellcheck="false"
+            class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono outline-none focus:ring-2 focus:ring-orange-500"
+            @keydown.enter="savePublisher"
+          />
+          <button
+            class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+            :title="showToken ? 'Hide the token' : 'Show the token'"
+            @click="showToken = !showToken"
+          >
+            <Icon :icon="showToken ? 'material-symbols:visibility-off' : 'material-symbols:visibility'" class="text-base" />
+          </button>
+        </div>
+        <p class="text-xs text-muted-500">
+          The same value as <code>PUBLISH_TOKEN</code> on the server. Uploads are refused without it.
+        </p>
+
         <p v-if="publisherState === 'checking'" class="text-xs text-muted-500">Checking…</p>
         <p v-else-if="publisherState === 'ok'" class="text-xs text-green-600">That address answers.</p>
         <p v-else-if="publisherState === 'unreachable'" class="text-xs text-red-600">
@@ -218,7 +252,7 @@ async function testPublisher(): Promise<void> {
         <dl class="text-sm space-y-1">
           <div class="flex justify-between gap-4">
             <dt class="text-muted-500">Version</dt>
-            <dd class="text-foreground font-mono">{{ appVersion || '—' }}</dd>
+            <dd class="text-foreground font-mono">{{ appVersion || 'unknown' }}</dd>
           </div>
           <div class="flex justify-between gap-4">
             <dt class="text-muted-500">Video encoder</dt>
@@ -235,7 +269,7 @@ async function testPublisher(): Promise<void> {
           <div class="flex justify-between gap-4">
             <dt class="text-muted-500">ffmpeg</dt>
             <dd class="text-foreground font-mono truncate">
-              {{ encoders?.ffmpegVersion ?? '—' }}
+              {{ encoders?.ffmpegVersion ?? 'unknown' }}
             </dd>
           </div>
         </dl>

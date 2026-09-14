@@ -24,7 +24,7 @@ test.describe('window state', () => {
         w.setBounds({ x: 120, y: 90, width: 1180, height: 760 });
       });
 
-      // Past the debounce, then closed — which is when it must be written.
+      // Past the debounce, then closed, which is when it must be written.
       await first.page.waitForTimeout(1200);
     } finally {
       await first.app.close();

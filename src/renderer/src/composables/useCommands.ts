@@ -164,7 +164,7 @@ export function useCommands(): ComputedRef<Command[]> {
 /**
  * Rank commands against what has been typed.
  *
- * A prefix match beats a word-start match, which beats a match anywhere — so
+ * A prefix match beats a word-start match, which beats a match anywhere, so
  * typing "set" puts Settings above anything that merely contains those letters.
  */
 export function filterCommands(commands: Command[], query: string): Command[] {

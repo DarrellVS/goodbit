@@ -8,7 +8,7 @@ export type ThemeChoice = 'system' | 'light' | 'dark';
  * Light, dark, or whatever the machine is set to.
  *
  * The choice is stored rather than kept in a store because it has to be applied
- * before anything renders — a store would settle a frame late and flash the
+ * before anything renders, a store would settle a frame late and flash the
  * wrong palette. `styles.css` holds the two token sets; all this does is decide
  * which one is on the root element.
  */
@@ -26,7 +26,7 @@ export function useTheme() {
 
   function apply(): void {
     document.documentElement.classList.toggle('dark', isDark.value);
-    // Native controls — scrollbars, form widgets — follow this rather than the
+    // Native controls, scrollbars, form widgets, follow this rather than the
     // class, and look wrong against a dark page without it.
     document.documentElement.style.colorScheme = isDark.value ? 'dark' : 'light';
   }

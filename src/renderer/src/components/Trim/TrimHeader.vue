@@ -1,7 +1,7 @@
 <template>
   <!--
     No back button: the title bar already has one, and two arrows pointing the
-    same way is one too many. Kept short — the page below it has to fit a
+    same way is one too many. Kept short. The page below it has to fit a
     preview, a timeline and a transport without scrolling.
   -->
   <header class="relative overflow-hidden border-b border-border flex-shrink-0">

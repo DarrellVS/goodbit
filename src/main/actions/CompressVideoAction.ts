@@ -29,7 +29,7 @@ export interface CompressVideoOutput {
  * Re-encode a clip to the size a shared file should be.
  *
  * One pass, GPU decode when the machine has it, tone mapped when the recording
- * is HDR — the same pipeline as an exact trim, at the share preset instead of
+ * is HDR. The same pipeline as an exact trim, at the share preset instead of
  * the edit one. Used for the trim that replaces a recording and for the copy
  * that goes to the publisher; the caller decides which file it lands on.
  */

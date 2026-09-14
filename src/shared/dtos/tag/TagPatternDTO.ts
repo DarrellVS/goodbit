@@ -14,8 +14,8 @@ export const TAG_CATEGORIES: TagCategory[] = [
 /**
  * A filename-matching rule, as it crosses the wire.
  *
- * `patterns` are regex **sources** rather than RegExp objects — those do not
- * survive JSON — and the client rebuilds them with the `i` flag. That is the
+ * `patterns` are regex **sources** rather than RegExp objects, those do not
+ * survive JSON, and the client rebuilds them with the `i` flag. That is the
  * same contract the IndexedDB version used, so the stored data ports across
  * unchanged.
  */

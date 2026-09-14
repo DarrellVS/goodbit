@@ -9,7 +9,7 @@ import type { EditorDraftAudio, EditorDraftClip } from './editorDraftsDb';
  * couch. A named draft is saved here as well, so it belongs to the library
  * rather than to one browser profile.
  *
- * The payload is the same shape the local drafts use — ids, filenames and
+ * The payload is the same shape the local drafts use, ids, filenames and
  * edits, never media URLs, which carry an expiring token and a LAN host.
  */
 export interface ProjectTimeline {

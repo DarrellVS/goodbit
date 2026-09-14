@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GoodBit — set up the publisher</title>
+    <title>Setting up the publisher | GoodBit</title>
     <meta
       name="description"
       content="Turn GoodBit clips into public links from your own server or NAS: the container, port forwarding, a reverse proxy with HTTPS, and optional Cloudflare cache purging. A quick start for people who have done this before, and a step-by-step for everyone else."
@@ -13,7 +13,7 @@
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="GoodBit" />
     <meta property="og:url" content="https://darrellvs.github.io/goodbit/publisher.html" />
-    <meta property="og:title" content="GoodBit — set up the publisher" />
+    <meta property="og:title" content="Setting up the publisher | GoodBit" />
     <meta
       property="og:description"
       content="Public links for your clips, from a server you own. Quick start, or step by step."
@@ -42,7 +42,7 @@
         </a>
         <nav class="site-nav" aria-label="Sections">
           <a href="docs.html" data-small-hide>Documentation</a>
-          <a href="https://github.com/DarrellVS/goodbit" data-optional>Source</a>
+          <a href="https://github.com/DarrellVS/goodbit" data-optional target="_blank" rel="noopener">Source</a>
           <a class="cta" href="index.html#get">Get it</a>
         </nav>
       </div>
@@ -94,20 +94,30 @@
 
           <h3>Run it</h3>
           <p>
-            There is no image on a public registry for every architecture, so build it from the repo
-            — it is a two-stage Dockerfile and takes about a minute.
+            The image is on Docker Hub, built for amd64 and arm64, so there is nothing to clone and
+            nothing to compile. Save this as <code>docker-compose.yml</code> and run
+            <code>docker compose up -d</code>.
           </p>
-          <div class="copy">
-            <button type="button" data-copy="#cmd-build">Copy</button>
-            <pre><code id="cmd-build">git clone https://github.com/DarrellVS/goodbit.git
-cd goodbit/publisher
-docker build -t goodbit-publisher .</code></pre>
-          </div>
 
           <div class="copy">
             <button type="button" data-copy="#cmd-compose-quick">Copy</button>
             <pre><code id="cmd-compose-quick"></code></pre>
           </div>
+
+          <details>
+            <summary>Or build it yourself</summary>
+            <p>
+              Same thing, from source, if you would rather not pull a stranger's container or you
+              are on a processor the image does not cover.
+            </p>
+            <div class="copy">
+              <button type="button" data-copy="#cmd-build">Copy</button>
+              <pre><code id="cmd-build">git clone https://github.com/DarrellVS/goodbit.git
+cd goodbit/publisher
+docker build -t goodbit-publisher .</code></pre>
+            </div>
+            <p>Then change <code>image:</code> in the compose file to <code>goodbit-publisher</code>.</p>
+          </details>
 
           <h3>Environment</h3>
           <table>
@@ -123,7 +133,7 @@ docker build -t goodbit-publisher .</code></pre>
                 <td><code>UPLOAD_DIR</code></td>
                 <td>
                   Where clips are written. Defaults to <code>/data/public</code>, which is the
-                  declared volume — mount it somewhere with room.
+                  declared volume. Mount it somewhere with room.
                 </td>
               </tr>
               <tr>
@@ -131,6 +141,14 @@ docker build -t goodbit-publisher .</code></pre>
                 <td>
                   The public HTTPS address, no trailing slash. Every link the publisher hands back is
                   built from this, so it has to be the address from outside, not the LAN one.
+                </td>
+              </tr>
+              <tr>
+                <td><code>PUBLISH_TOKEN</code></td>
+                <td>
+                  <strong>Required.</strong> A shared secret. Every write is refused without it, and
+                  refused if it does not match. Reads stay public. Send it as
+                  <code>Authorization: Bearer &lt;token&gt;</code> or <code>X-Publish-Token</code>.
                 </td>
               </tr>
               <tr>
@@ -154,9 +172,9 @@ docker build -t goodbit-publisher .</code></pre>
               <tr><th>Route</th><th>Does</th></tr>
             </thead>
             <tbody>
-              <tr><td><code>GET /api/health</code></td><td><code>{ ok: true }</code>. What the Test button in GoodBit calls.</td></tr>
-              <tr><td><code>POST /api/publish</code></td><td>Multipart upload, field <code>file</code>, plus <code>displayName</code> and <code>game</code>.</td></tr>
-              <tr><td><code>DELETE /api/publish/:filename</code></td><td>Removes the file and purges it from Cloudflare.</td></tr>
+              <tr><td><code>GET /api/health</code></td><td><code>{ ok: true }</code>, open. What the Test button in GoodBit calls.</td></tr>
+              <tr><td><code>POST /api/publish</code></td><td>Multipart upload, field <code>file</code>, plus <code>displayName</code> and <code>game</code>. Token required.</td></tr>
+              <tr><td><code>DELETE /api/publish/:filename</code></td><td>Removes the file and purges it from Cloudflare. Token required.</td></tr>
               <tr><td><code>PATCH /api/publish/:filename/metadata</code></td><td>Renames what the embed shows.</td></tr>
               <tr><td><code>GET /media/:filename</code></td><td>The file itself, with revalidation headers.</td></tr>
               <tr><td><code>GET /:filename</code></td><td>The player page with Open Graph tags.</td></tr>
@@ -185,9 +203,15 @@ docker build -t goodbit-publisher .</code></pre>
 
           <h3>Then tell GoodBit</h3>
           <p>
-            <em>Settings → App → Publisher</em>, paste the public address, press <strong>Test</strong>
-            — it should say the address answers — then <strong>Save</strong>. Publish appears in a
-            clip's menu from then on.
+            <em>Settings → App → Publisher</em>: the address, the token, <strong>Test</strong>, then
+            <strong>Save</strong>. Publish appears in a clip's menu from then on.
+          </p>
+          <p>
+            <strong>On the same network as the server, give it the internal address</strong>
+            (<code>http://192.168.1.20:5555</code>) rather than the public one. The upload then never
+            touches the proxy, so the body limit and the read timeout above stop mattering, and it is
+            faster. Links are still built from <code>PUBLIC_BASE_URL</code>, which is the server's
+            business, not GoodBit's.
           </p>
           <p><a href="#top" data-restart>← Back to the two routes</a></p>
         </section>
@@ -203,7 +227,7 @@ docker build -t goodbit-publisher .</code></pre>
             <ul>
               <li>
                 <strong>A machine that stays on.</strong> A NAS, a mini PC in a cupboard, a Raspberry
-                Pi, a cheap VPS. It does not need to be fast — it hands out files. It does need to be
+                Pi, a cheap VPS. It does not need to be fast. It hands out files. It does need to be
                 awake when someone clicks your link.
               </li>
               <li>
@@ -217,7 +241,7 @@ docker build -t goodbit-publisher .</code></pre>
               </li>
               <li>
                 <strong>Access to your router,</strong> to forward two ports. If your internet comes
-                over 4G/5G or Starlink you may be behind carrier NAT and cannot forward anything — in
+                over 4G/5G or Starlink you may be behind carrier NAT and cannot forward anything; in
                 that case a small VPS is the way round it.
               </li>
             </ul>
@@ -256,8 +280,35 @@ docker build -t goodbit-publisher .</code></pre>
               <label>
                 Server's address on your network
                 <input id="f-lan" type="text" placeholder="192.168.1.20" autocomplete="off" spellcheck="false" />
-                <span class="hint">Used later, to tell the proxy where to send traffic.</span>
+                <span class="hint">
+                  Used twice: to tell the proxy where to send traffic, and as the address you give
+                  GoodBit if it runs on the same network.
+                </span>
               </label>
+              <label>
+                Publish token
+                <input id="f-token" type="text" placeholder="a long random string" autocomplete="off" spellcheck="false" />
+                <span class="hint">
+                  Invent one now, the longer the better. Both ends need the same value.
+                </span>
+              </label>
+            </div>
+
+            <div class="watch">
+              <p>
+                <strong>The token is not optional.</strong> Serving clips is public, which is the
+                point; <em>writing</em> to the publisher must not be, or anyone who finds the address
+                can fill your disk and host whatever they like under your own domain. The publisher
+                refuses every upload until <code>PUBLISH_TOKEN</code> is set.
+              </p>
+              <p>Something to paste, if you have no way of making one to hand:</p>
+              <div class="copy">
+                <button type="button" data-copy="#cmd-token">Copy</button>
+                <pre><code id="cmd-token">openssl rand -base64 32
+
+# or, on Windows PowerShell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Max 256 }))</code></pre>
+              </div>
             </div>
 
             <p>
@@ -270,18 +321,9 @@ docker build -t goodbit-publisher .</code></pre>
           <section class="step" data-step="Run it" hidden>
             <h2>Start the publisher</h2>
             <p>
-              Build the image from the repository. There is no published image for every processor,
-              and building takes about a minute.
-            </p>
-            <div class="copy">
-              <button type="button" data-copy="#cmd-build-2">Copy</button>
-              <pre><code id="cmd-build-2">git clone https://github.com/DarrellVS/goodbit.git
-cd goodbit/publisher
-docker build -t goodbit-publisher .</code></pre>
-            </div>
-
-            <p>
-              Then save this as <code>docker-compose.yml</code> next to it and run
+              Nothing to clone and nothing to compile: the image is on Docker Hub, built for both
+              amd64 and arm64, so this covers a NAS, a Pi and an ordinary PC alike. Save this as
+              <code>docker-compose.yml</code> somewhere on the server and run
               <code>docker compose up -d</code>.
             </p>
             <div class="copy">
@@ -289,13 +331,30 @@ docker build -t goodbit-publisher .</code></pre>
               <pre><code id="cmd-compose"></code></pre>
             </div>
 
-            <p>Check it is alive from the server itself:</p>
+            <details>
+              <summary>Or build it yourself</summary>
+              <p>
+                If you would rather not pull a stranger's container, build the same thing from
+                source and change <code>image:</code> above to <code>goodbit-publisher</code>.
+              </p>
+              <div class="copy">
+                <button type="button" data-copy="#cmd-build-2">Copy</button>
+                <pre><code id="cmd-build-2">git clone https://github.com/DarrellVS/goodbit.git
+cd goodbit/publisher
+docker build -t goodbit-publisher .</code></pre>
+              </div>
+            </details>
+
+            <p>
+              Check it is alive, from the machine GoodBit runs on rather than from the server, since
+              that is the path publishing will actually take:
+            </p>
             <div class="copy">
               <button type="button" data-copy="#cmd-health">Copy</button>
               <pre><code id="cmd-health"></code></pre>
             </div>
             <p>
-              You want <code>{"ok":true}</code>. If you get nothing, the container did not start —
+              You want <code>{"ok":true}</code>. If you get nothing, the container did not start,
               <code>docker compose logs</code> will say why, and it is almost always the storage path
               not existing or not being writable.
             </p>
@@ -319,7 +378,7 @@ docker build -t goodbit-publisher .</code></pre>
             </p>
             <p>
               Forward <strong>80</strong> and <strong>443</strong> to the machine that will run the
-              reverse proxy in the next step — <em>not</em> to the publisher's port. 80 is only there
+              reverse proxy in the next step, <em>not</em> to the publisher's port. 80 is only there
               so the certificate can be issued and renewed; 443 carries everything real.
             </p>
 
@@ -333,25 +392,25 @@ docker build -t goodbit-publisher .</code></pre>
 
             <p>Every router calls this something different. Yours:</p>
             <ul class="brands">
-              <li><a href="https://www.asus.com/support/faq/1037906/" rel="noopener">ASUS</a></li>
-              <li><a href="https://www.tp-link.com/us/support/faq/1379/" rel="noopener">TP-Link</a></li>
-              <li><a href="https://kb.netgear.com/24290/How-do-I-add-a-custom-port-forwarding-service-on-my-Nighthawk-router" rel="noopener">Netgear</a></li>
-              <li><a href="https://en.avm.de/service/knowledge-base/dok/FRITZ-Box-7590/30_Setting-up-port-sharing-in-FRITZ-Box/" rel="noopener">FRITZ!Box</a></li>
-              <li><a href="https://help.ui.com/hc/en-us/articles/360043906532" rel="noopener">UniFi</a></li>
-              <li><a href="https://www.linksys.com/support-article?articleNum=136711" rel="noopener">Linksys</a></li>
-              <li><a href="https://www.dlink.com/en/support" rel="noopener">D-Link</a></li>
-              <li><a href="https://portforward.com/router.htm" rel="noopener">Anything else</a></li>
+              <li><a href="https://www.asus.com/support/faq/1037906/" rel="noopener" target="_blank">ASUS</a></li>
+              <li><a href="https://www.tp-link.com/us/support/faq/1379/" rel="noopener" target="_blank">TP-Link</a></li>
+              <li><a href="https://kb.netgear.com/24290/How-do-I-add-a-custom-port-forwarding-service-on-my-Nighthawk-router" rel="noopener" target="_blank">Netgear</a></li>
+              <li><a href="https://en.avm.de/service/knowledge-base/dok/FRITZ-Box-7590/30_Setting-up-port-sharing-in-FRITZ-Box/" rel="noopener" target="_blank">FRITZ!Box</a></li>
+              <li><a href="https://help.ui.com/hc/en-us/articles/360043906532" rel="noopener" target="_blank">UniFi</a></li>
+              <li><a href="https://www.linksys.com/support-article?articleNum=136711" rel="noopener" target="_blank">Linksys</a></li>
+              <li><a href="https://www.dlink.com/en/support" rel="noopener" target="_blank">D-Link</a></li>
+              <li><a href="https://portforward.com/router.htm" rel="noopener" target="_blank">Anything else</a></li>
             </ul>
 
             <p>
-              While you are in there, give the server a <strong>fixed address</strong> — a DHCP
+              While you are in there, give the server a <strong>fixed address</strong>, a DHCP
               reservation, sometimes called a static lease. Otherwise it changes one day and the
               forward quietly points at a printer.
             </p>
             <p>
               Last, point your domain at your home: an <code>A</code> record for
               <code id="dns-name">clips.example.com</code> pointing at your public IP. If that IP
-              changes, a dynamic DNS updater — most routers have one built in — keeps it honest.
+              changes, a dynamic DNS updater (most routers have one built in) keeps it honest.
             </p>
           </section>
 
@@ -365,7 +424,7 @@ docker build -t goodbit-publisher .</code></pre>
             </p>
             <p>
               If you have no preference,
-              <a href="https://nginxproxymanager.com/" rel="noopener">Nginx Proxy Manager</a> is the
+              <a href="https://nginxproxymanager.com/" rel="noopener" target="_blank">Nginx Proxy Manager</a> is the
               gentlest: it runs in Docker, has a web interface, and gets Let's Encrypt certificates
               for you without a command line.
             </p>
@@ -376,7 +435,7 @@ docker build -t goodbit-publisher .</code></pre>
               <li>
                 <strong>Domain Names</strong>: <code id="npm-domain">clips.example.com</code>
               </li>
-              <li><strong>Scheme</strong>: <code>http</code> — inside your network, plain is fine.</li>
+              <li><strong>Scheme</strong>: <code>http</code>, inside your network, plain is fine.</li>
               <li><strong>Forward Hostname / IP</strong>: <code id="npm-host">192.168.1.20</code></li>
               <li><strong>Forward Port</strong>: <code id="npm-port">5555</code></li>
               <li><strong>Block Common Exploits</strong>: on.</li>
@@ -388,9 +447,12 @@ docker build -t goodbit-publisher .</code></pre>
 
             <div class="watch">
               <p>
-                <strong>Then the part everyone misses.</strong> Open the host again, go to the
-                <em>Advanced</em> tab, and paste this in. Without it the proxy refuses anything over
-                1 MB and publishing a clip fails with nothing useful in the app.
+                <strong>Then the part everyone misses.</strong> Open the host again and find
+                <em>Custom Nginx Configuration</em>: in current versions that is the
+                <strong>cog at the right-hand end of the tab strip</strong>, next to <em>SSL</em>,
+                rather than a tab called <em>Advanced</em> as it was before. Paste this in and save.
+                Without it the proxy refuses anything over 1 MB and publishing a clip fails with
+                nothing useful in the app.
               </p>
               <div class="copy">
                 <button type="button" data-copy="#cmd-advanced">Copy</button>
@@ -412,6 +474,18 @@ proxy_send_timeout 600s;</code></pre>
               <code id="test-url">https://clips.example.com/api/health</code> on your phone with wifi
               off. You want <code>{"ok":true}</code> over a padlock.
             </p>
+
+            <div class="watch">
+              <p>
+                <strong>If GoodBit and the publisher are on the same network, skip the proxy for
+                uploads.</strong> Give GoodBit the internal address,
+                <code id="lan-url">http://192.168.1.20:5555</code>, rather than the public one. The
+                upload then goes straight to the container over your own network: no body limit to
+                raise, no timeout to extend, and it is faster. The public address is still what
+                links are built from, because that comes from
+                <code>PUBLIC_BASE_URL</code> on the server, not from what GoodBit was told.
+              </p>
+            </div>
           </section>
 
           <!-- 6 -->
@@ -422,7 +496,7 @@ proxy_send_timeout 600s;</code></pre>
               fixes one thing.
             </p>
             <p>
-              Cloudflare caches your media at its edge, which is good — the clip comes from a server
+              Cloudflare caches your media at its edge, which is good. The clip comes from a server
               near whoever opened it rather than from your cupboard. But when you <em>unpublish</em>
               a clip, deleting the file does not remove the copy Cloudflare is holding, so the link
               keeps working for a while. Give the publisher a token and it tells Cloudflare to drop
@@ -431,11 +505,16 @@ proxy_send_timeout 600s;</code></pre>
 
             <h3>Make the token</h3>
             <ol>
-              <li>Cloudflare dashboard → your profile → <em>API Tokens</em> → <em>Create Token</em>.</li>
+              <li>
+                Open
+                <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener">
+                  dash.cloudflare.com/profile/api-tokens</a>, which is your profile's
+                <em>API Tokens</em> page, and press <em>Create Token</em>.
+              </li>
               <li>Scroll to the bottom: <em>Create Custom Token</em>.</li>
               <li>
                 <strong>Permissions</strong>: <code>Zone</code> · <code>Cache Purge</code> ·
-                <code>Purge</code>. That one row, nothing else — it is the whole reason a token is
+                <code>Purge</code>. That one row, nothing else. It is the whole reason a token is
                 safer here than an account key.
               </li>
               <li>
@@ -445,8 +524,9 @@ proxy_send_timeout 600s;</code></pre>
               <li>Create, then copy the token. It is shown once.</li>
             </ol>
             <p>
-              The <strong>Zone ID</strong> is on your domain's overview page in Cloudflare, in the
-              right-hand column, under API.
+              The <strong>Zone ID</strong> is on your domain's overview page in the
+              <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">Cloudflare
+              dashboard</a>, in the right-hand column, under API.
             </p>
 
             <p>Add both to the compose file and restart:</p>
@@ -460,7 +540,7 @@ proxy_send_timeout 600s;</code></pre>
               <pre><code id="cmd-restart">docker compose up -d</code></pre>
             </div>
             <p>
-              With one missing or wrong, the publisher carries on and simply does not purge — it will
+              With one missing or wrong, the publisher carries on and simply does not purge; it will
               not break publishing.
             </p>
           </section>
@@ -470,15 +550,23 @@ proxy_send_timeout 600s;</code></pre>
             <h2>Tell GoodBit about it</h2>
             <p>In the app: <em>Settings → App → Publisher</em>.</p>
             <ol>
-              <li>Paste <code id="final-url">https://clips.example.com</code> into the box.</li>
+              <li>
+                Paste the address. On the same network as the server, use
+                <code id="lan-url-2">http://192.168.1.20:5555</code>, which skips the proxy for the
+                upload; from anywhere else use <code id="final-url">https://clips.example.com</code>.
+              </li>
+              <li>
+                Paste the publish token, <code id="token-value">the one you invented earlier</code>,
+                into the field under it. Without it every upload is refused.
+              </li>
               <li>Press <strong>Test</strong>. It should say <em>That address answers</em>.</li>
               <li>Press <strong>Save</strong>.</li>
             </ol>
             <p>
               <strong>Publish</strong> now appears in a clip's <code>⋮</code> menu and in the share
               sheet, and the link lands on your clipboard as soon as the upload finishes. By default
-              what goes up is a compressed copy — a fifth of the size, so it opens quickly for
-              whoever you sent it to — while the file on your disk is untouched. That is the
+              what goes up is a compressed copy, a fifth of the size, so it opens quickly for
+              whoever you sent it to, while the file on your disk is untouched. That is the
               <em>Compress clips when publishing</em> switch, in the same settings screen.
             </p>
 
@@ -498,7 +586,7 @@ proxy_send_timeout 600s;</code></pre>
                 <tr>
                   <td>Publish fails on big clips, works on small ones</td>
                   <td>
-                    The proxy's body limit. <code>client_max_body_size</code> — see the previous
+                    The proxy's body limit. <code>client_max_body_size</code>, see the previous
                     step.
                   </td>
                 </tr>
@@ -509,7 +597,7 @@ proxy_send_timeout 600s;</code></pre>
                 <tr>
                   <td>Link opens but the video does not play</td>
                   <td>
-                    <code>PUBLIC_BASE_URL</code> is wrong — it must be the public HTTPS address,
+                    <code>PUBLIC_BASE_URL</code> is wrong. It must be the public HTTPS address,
                     with no trailing slash.
                   </td>
                 </tr>
@@ -538,7 +626,7 @@ proxy_send_timeout 600s;</code></pre>
         <span class="spacer"></span>
         <a href="index.html">Home</a>
         <a href="docs.html">Documentation</a>
-        <a href="https://github.com/DarrellVS/goodbit">Source</a>
+        <a href="https://github.com/DarrellVS/goodbit" target="_blank" rel="noopener">Source</a>
       </div>
     </footer>
 

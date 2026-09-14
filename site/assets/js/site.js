@@ -26,7 +26,7 @@
    * the sticky header, where a heading you have scrolled to comes to rest.
    *
    * This used to be the middle of the viewport, which marked the *next*
-   * section as soon as its heading rose above the halfway line — so the list
+   * section as soon as its heading rose above the halfway line, so the list
    * ran a section ahead of the reader the whole way down, and at the top of the
    * page it already pointed at the second item.
    */

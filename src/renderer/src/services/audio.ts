@@ -16,7 +16,7 @@ export async function listAudioTracks(): Promise<AudioTrack[]> {
 /**
  * Import music by path.
  *
- * This posted multipart form data, which cannot cross the contextBridge — the
+ * This posted multipart form data, which cannot cross the contextBridge, the
  * request arrived with no body and the server answered "No files provided". A
  * desktop app has no reason to stream bytes through the renderer anyway: the
  * files are on this disk, so main is told where and reads them itself.

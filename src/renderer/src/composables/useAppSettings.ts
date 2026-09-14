@@ -14,6 +14,8 @@ export interface AppSettings {
   videosRoot: string;
   audioRoot: string;
   publisherBaseUrl: string;
+  /** The secret the publisher wants before it accepts an upload. */
+  publisherToken?: string;
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   migratedFromWebApp: boolean;

@@ -48,7 +48,7 @@ function handleClipDeleted(): void {
 /**
  * Send a whole day into the editor, in the order it was played.
  *
- * The library lists newest first, which is the wrong way round for a montage —
+ * The library lists newest first, which is the wrong way round for a montage,
  * so the ids go over in recording order and land on the timeline that way.
  * `EditorPage` reads them from `?clips=` and appends left to right.
  */

@@ -7,8 +7,8 @@ import { score as modelScore } from './model.js';
  *
  * Kept apart from the measuring for one practical reason: measuring a clip
  * costs an ffmpeg pass and is cached, while deciding costs nothing. A cached
- * measurement stays valid when the bar moves — because a game's calibration
- * changed, or a model was dropped in — and only the verdict is recomputed.
+ * measurement stays valid when the bar moves, because a game's calibration
+ * changed, or a model was dropped in, and only the verdict is recomputed.
  */
 
 /**
@@ -16,12 +16,12 @@ import { score as modelScore } from './model.js';
  * units of 3 × MAD.
  *
  * Arrived at by measuring, not by taste. Across 88 real recordings from 24
- * games, the cases that had to be refused — a Battlefield menu screen whose
+ * games, the cases that had to be refused, a Battlefield menu screen whose
  * music swells (1.04), a black loading screen (0.76), half a clip of settings
  * menus (1.14), a death and respawn sequence (0.58), a quiet walk through a
- * house (0.53) — all sit below 1.3, and the cases that had to be kept — a
+ * house (0.53), all sit below 1.3, and the cases that had to be kept, a
  * helicopter crash (1.44), a firefight (1.93), two clips of people laughing
- * over a near-static top-down game (1.68, 2.73) — all sit above it.
+ * over a near-static top-down game (1.68, 2.73), all sit above it.
  *
  * Absolute loudness cannot do this: that menu's music swell is 17 LU above its
  * own median, *larger* than the helicopter crash.
@@ -64,7 +64,7 @@ export interface DecideInput {
  * How sure a HUD reading has to be before it settles the question.
  *
  * Well below what a confirmed kill scores, and well above what the near misses
- * reached — see `games/battlefield.ts` for the measurements this comes from.
+ * reached, see `games/battlefield.ts` for the measurements this comes from.
  */
 const MIN_EVENT_CONFIDENCE = 0.8;
 

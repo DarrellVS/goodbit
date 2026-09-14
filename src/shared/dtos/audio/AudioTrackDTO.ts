@@ -3,8 +3,8 @@ import { BaseDTO } from '../BaseDTO.js';
 /**
  * Data Transfer Object for a music file available to the editor.
  *
- * Audio tracks have no database row — the files under the editor's music
- * folder are the whole story — so the DTO is built from a stat + probe rather
+ * Audio tracks have no database row. The files under the editor's music
+ * folder are the whole story, so the DTO is built from a stat + probe rather
  * than from an entity. The filename doubles as the id.
  */
 export class AudioTrackDTO extends BaseDTO<AudioTrackDTO> {

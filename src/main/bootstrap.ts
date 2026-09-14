@@ -2,7 +2,7 @@
  * Runs before every other module in the main process. Keep it dependency-free.
  *
  * TypeORM depends on `app-root-path`, which works out "the project root" the
- * moment it is imported — and in an Electron main process it does so from
+ * moment it is imported, and in an Electron main process it does so from
  * `process.argv[1]`. That is a script path when the app is started as
  * `electron .`, and it is *something* when Playwright launches the packaged
  * exe with its own flags, so every test passed. Double-click the installed

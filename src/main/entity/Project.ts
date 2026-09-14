@@ -9,8 +9,8 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
  * belongs to the library rather than to one browser profile.
  *
  * `timeline` is the draft JSON as the editor already stores it: clip ids, track
- * filenames and the edits. Media URLs stay out — they carry an expiring token
- * and a LAN host — and are rebuilt on restore, exactly as the local drafts do.
+ * filenames and the edits. Media URLs stay out. They carry an expiring token
+ * and a LAN host, and are rebuilt on restore, exactly as the local drafts do.
  * Kept as a JSON column rather than rows because nothing ever queries inside it.
  */
 @Entity()

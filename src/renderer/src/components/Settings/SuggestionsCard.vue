@@ -46,7 +46,7 @@ async function fitNow(): Promise<void> {
     if (outcome.fitted) {
       lastFit.value = outcome.report;
       toastStore.success(
-        `Fitted to ${outcome.report.examples} of your decisions — ` +
+        `Fitted to ${outcome.report.examples} of your decisions, ` +
           `${Math.round(outcome.report.accuracy * 100)}% right on the ones it was not shown`,
       );
     } else {
@@ -112,7 +112,7 @@ onMounted(refresh);
 <template>
   <!--
     The analysis ships with a rule whose one real threshold was set by looking
-    at ten clips. This is where that gets replaced by what you actually keep —
+    at ten clips. This is where that gets replaced by what you actually keep,
     on its own, as you trim, with nothing to run.
   -->
   <div class="p-4 bg-card border border-border rounded-lg space-y-4">
@@ -124,7 +124,7 @@ onMounted(refresh);
         <h3 class="font-medium text-foreground">Suggestions learn from your trims</h3>
         <p class="text-sm text-muted-600 mt-1">
           Every trim records where you cut and what GoodBit had suggested. Once there are enough,
-          it fits a small model to those decisions and uses it instead of the built-in rule —
+          it fits a small model to those decisions and uses it instead of the built-in rule,
           then keeps refitting as you go. Nothing leaves this machine.
         </p>
       </div>

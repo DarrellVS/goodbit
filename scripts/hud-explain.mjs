@@ -98,7 +98,7 @@ hud.frames.forEach((frame, i) => {
 
   let verdict = '';
   if (skull.score < 0.8) verdict = 'skull too weak';
-  else if (sat > 0.3) verdict = 'coloured — assist';
+  else if (sat > 0.3) verdict = 'coloured, assist';
   else if (skull.score >= 0.9 || label >= 0.74) verdict = 'HIT';
   else verdict = 'no label to confirm';
 

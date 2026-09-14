@@ -46,7 +46,7 @@ const style = computed(() => ({
 
 const isDragging = computed(() => dragMode.value !== DragMode.None);
 // `const enum` is erased at compile time, so it cannot be referenced from the
-// template — the cursor decision has to happen here.
+// template. The cursor decision has to happen here.
 const cursorClass = computed(() =>
   dragMode.value === DragMode.Move ? 'cursor-grabbing' : 'cursor-grab'
 );

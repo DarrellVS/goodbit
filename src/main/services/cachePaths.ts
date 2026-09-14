@@ -20,7 +20,7 @@ export function cacheDir(kind: 'thumbnails' | 'frames' | 'analysis'): string {
   return dir;
 }
 
-/** The same path without creating anything — for deletes and for globs to skip. */
+/** The same path without creating anything, for deletes and for globs to skip. */
 export function cacheDirPath(kind: 'thumbnails' | 'frames' | 'analysis'): string {
   return path.join(VIDEOS_ROOT, CACHE_DIR_NAME, kind);
 }
@@ -29,7 +29,7 @@ export function cacheDirPath(kind: 'thumbnails' | 'frames' | 'analysis'): string
  * Carry the old folder over, once.
  *
  * The app was renamed; its cache should not be regenerated over that. A rename
- * is instant and keeps hundreds of thumbnails that are still perfectly good —
+ * is instant and keeps hundreds of thumbnails that are still perfectly good,
  * and if it fails, the only cost is that they get made again.
  */
 export function migrateLegacyCacheDir(): void {

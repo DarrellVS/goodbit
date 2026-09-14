@@ -5,7 +5,7 @@ import { join } from 'node:path';
 /**
  * The handful of things the app needs to know before it can do anything.
  *
- * Deliberately not the renderer's settings — view preferences stay where they
+ * Deliberately not the renderer's settings, view preferences stay where they
  * are. These are the ones main itself reads at boot, before a window exists:
  * where the clips are, whether to start with Windows, where to publish.
  *
@@ -19,6 +19,14 @@ export interface Settings {
   audioRoot: string;
   /** Optional. Empty means the publish feature is absent, not broken. */
   publisherBaseUrl: string;
+  /**
+   * The shared secret the publisher checks before accepting an upload.
+   *
+   * Serving media is public by design; writing to it must not be, or anyone
+   * who finds the address owns the disk. The publisher refuses every write
+   * without one, so this is not optional in practice, only in type.
+   */
+  publisherToken?: string;
   startAtLogin: boolean;
   /** Keep running in the tray when the window is closed. */
   keepRunningInTray: boolean;
@@ -78,7 +86,7 @@ let cached: Settings | null = null;
 let changeListeners: Array<(settings: Settings) => void> = [];
 
 /**
- * Hear about saves from anywhere — the window, the tray, the updater. The tray
+ * Hear about saves from anywhere. The window, the tray, the updater. The tray
  * menu mirrors two of these and would otherwise show a stale tick.
  */
 export function onSettingsChange(listener: (settings: Settings) => void): () => void {
@@ -127,7 +135,7 @@ export function loadSettings(): Settings {
     cached = { ...DEFAULTS, ...parsed };
   } catch (error) {
     // Falling back to defaults quietly would look like the app forgetting where
-    // the clips are — and would let a later save overwrite a file that might
+    // the clips are, and would let a later save overwrite a file that might
     // still be recoverable. Keep the original and say so.
     const salvage = `${path}.corrupt-${Date.now()}`;
     try {

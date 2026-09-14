@@ -9,7 +9,7 @@ export class Game {
   @Column('text', { nullable: true })
   displayName!: string | null; // User-defined display name (optional)
 
-  // Hidden games stay on disk and stay indexed — they are only kept out of the
+  // Hidden games stay on disk and stay indexed. They are only kept out of the
   // browsing surfaces (library list, games list, stats, today, latest). Reaching
   // a clip explicitly (by id, by game filter, through a collection) still works.
   @Index()

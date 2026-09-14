@@ -1,8 +1,8 @@
 /**
  * Draw a few candidate app icons and render them for comparison.
  *
- * Each candidate is an SVG written here, rasterised by Electron — which is
- * already a dependency, so this needs no image library — at the sizes Windows
+ * Each candidate is an SVG written here, rasterised by Electron, which is
+ * already a dependency, so this needs no image library, at the sizes Windows
  * actually shows an icon at. The contact sheet puts every candidate next to
  * every size, because an icon that reads beautifully at 512 can be a smudge in
  * the tray at 16.
@@ -26,7 +26,7 @@ const PAPER = '#ffffff';
 
 /**
  * Six candidates. Each says something different about what the app is for, and
- * none of them is a play triangle — every video tool on the machine is already
+ * none of them is a play triangle. Every video tool on the machine is already
  * a play triangle.
  */
 const ICONS = [
@@ -200,7 +200,7 @@ app.whenReady().then(async () => {
     // The full-size one at the top level, so choosing means copying one file.
     writeFileSync(join(OUT, `${icon.name}.png`), tiles[0].image.toPNG());
     rows.push({ icon, tiles });
-    console.log(`${icon.name}  —  ${icon.about}`);
+    console.log(`${icon.name}, ${icon.about}`);
   }
   canvas.destroy();
 

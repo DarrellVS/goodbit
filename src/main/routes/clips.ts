@@ -62,7 +62,7 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
 
   if (game && game.length > 0) {
     // An explicit game filter is an explicit request for that folder, so it wins
-    // over hiding — a hidden game stays reachable through its own filter or a link.
+    // over hiding, a hidden game stays reachable through its own filter or a link.
     qb = qb.andWhere('clip.game = :game', { game });
   } else if (includeHidden !== 'true') {
     qb = await excludeHiddenGames(qb);
@@ -349,7 +349,7 @@ clipsRouter.get('/:id/keyframes', asyncHandler(async (req, res) => {
  * What one listen to this clip found, cached per file.
  *
  * Answers with `confident: false` far more often than not, and that is the
- * point — a clip whose sound never changes has nothing to point at.
+ * point, a clip whose sound never changes has nothing to point at.
  */
 clipsRouter.get('/:id/suggestions', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);

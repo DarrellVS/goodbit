@@ -180,7 +180,7 @@ export function useTimeline() {
    * Lay every clip end to end from zero.
    *
    * Export concatenates clips in array order using only trimStart/trimEnd and
-   * ignores startTime, so a gap on the timeline never reaches the output — it
+   * ignores startTime, so a gap on the timeline never reaches the output, it
    * is purely a lie about the result. Dragging is allowed to open gaps for the
    * sake of feedback; this is called when the drag ends to put the timeline
    * back to what will actually be rendered.

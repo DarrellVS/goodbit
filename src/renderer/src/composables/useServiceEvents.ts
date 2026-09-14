@@ -6,7 +6,7 @@ import { useGamesStore } from '../stores/games';
  * Keep the window in step with the background service.
  *
  * The watcher indexes clips whether or not anything is on screen, so a window
- * that only loaded once shows whatever was there when it opened — the app's
+ * that only loaded once shows whatever was there when it opened, the app's
  * whole point is that it notices a clip while you are recording, and without
  * this you had to press Rescan to see it.
  *

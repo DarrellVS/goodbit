@@ -2,7 +2,7 @@
  * The shapes an export can take, and the crop maths behind them.
  *
  * Kept here rather than on either side alone because the client draws the crop
- * frame over the player and the server builds the ffmpeg filter from it — if
+ * frame over the player and the server builds the ffmpeg filter from it, if
  * the two disagree by a pixel, what you framed is not what you get.
  *
  * Nothing is ever scaled up. A format crops the source at its own resolution,
@@ -63,7 +63,7 @@ export function cropBoxFor(
   if (!spec || spec.ratio === null || width <= 0 || height <= 0) return null;
 
   const sourceRatio = width / height;
-  // Within rounding, the source is already this shape — cropping would only
+  // Within rounding, the source is already this shape, cropping would only
   // shave a pixel row off for nothing.
   if (Math.abs(sourceRatio - spec.ratio) < 0.01) return null;
 

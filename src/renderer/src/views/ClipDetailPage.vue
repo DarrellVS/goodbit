@@ -44,7 +44,7 @@ const { clip, metadata, loading, error, loadClip, handleClipUpdated } = useClipL
  * The clip's permanent public address, or nothing.
  *
  * Media is served by the `goodbit://` protocol, which only this app can
- * resolve — putting it in a QR code produced a camera saying no app can use it.
+ * resolve, putting it in a QR code produced a camera saying no app can use it.
  * An unpublished clip has no permanent address, and the sheet offers to serve
  * it on the local network instead.
  */
@@ -59,8 +59,8 @@ async function publishFromShare(compressed: boolean | undefined): Promise<void> 
     handleClipUpdated(await publishClip(clip.value.id, { compress: compressed }));
     toastStore.success(
       compressed === true
-        ? 'Compressed copy published — the link is ready'
-        : 'Published — the link is ready',
+        ? 'Compressed copy published. The link is ready'
+        : 'Published. The link is ready',
     );
   } catch (error) {
     toastStore.error((error as Error).message || 'Could not publish this clip');

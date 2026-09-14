@@ -25,7 +25,7 @@ const typeIcons = {
  * A toast floats over arbitrary content, so it needs a ground of its own.
  *
  * These were pale solid fills (`bg-green-50`) until the accent tints were
- * reworked, and a tint alone is not a background — at 8% over a dark editor the
+ * reworked, and a tint alone is not a background, at 8% over a dark editor the
  * toast was effectively invisible. The card colour underneath is opaque in both
  * themes; the accent stays in the border, icon and text, where it still reads.
  */

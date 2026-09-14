@@ -4,7 +4,7 @@ import { useToastStore } from '../stores/toast';
 import { setGameHidden } from '../services/games';
 
 /**
- * Hiding a game keeps its folder and files exactly where they are — it only
+ * Hiding a game keeps its folder and files exactly where they are, it only
  * drops the game out of the library, the sidebar, stats and the editor's clip
  * picker. Undo it from Settings -> Games.
  */

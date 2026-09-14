@@ -159,8 +159,8 @@ function timeAt(event: PointerEvent): number {
 /**
  * Click to place the playhead, drag to scrub.
  *
- * The pointer is captured, so a drag that wanders off the strip — or off the
- * window — keeps scrubbing and still ends cleanly.
+ * The pointer is captured, so a drag that wanders off the strip, or off the
+ * window, keeps scrubbing and still ends cleanly.
  */
 function startScrub(event: PointerEvent): void {
   if (event.button !== 0) return;

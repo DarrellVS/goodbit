@@ -11,7 +11,7 @@ interface Props {
   clips: readonly TimelineClip[];
   audio: readonly TimelineAudio[];
   currentTime: number;
-  /** Longest of the two lanes — what the ruler spans. */
+  /** Longest of the two lanes, what the ruler spans. */
   duration: number;
   /** End of the picture. Music past this point is cut on export. */
   videoDuration: number;
@@ -59,7 +59,7 @@ const playheadPosition = computed(
   () => EDITOR_CONSTANTS.TIMELINE_OFFSET_PX + props.currentTime * pixelsPerSecond.value
 );
 
-/** Where the picture ends, in lane pixels — music beyond it is hatched. */
+/** Where the picture ends, in lane pixels, music beyond it is hatched. */
 const videoEndPosition = computed(() => props.videoDuration * pixelsPerSecond.value);
 const showOverrunHatch = computed(
   () => props.videoDuration > 0 && props.duration > props.videoDuration + 0.05
@@ -194,7 +194,7 @@ function handleRulerMouseUp(): void {
             @click="emit('open-music')"
           >
             <Icon icon="material-symbols:music-note" class="text-sm" />
-            Music lane — click to add a track
+            Music lane. Click to add a track
           </button>
         </div>
 

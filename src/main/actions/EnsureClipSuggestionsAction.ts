@@ -23,7 +23,7 @@ import type { SuggestedMoment } from '@shared/index.js';
 
 /**
  * Bumped whenever the measurement changes, so answers cached by an older one
- * are ignored rather than served for ever. The *verdict* is not cached — it is
+ * are ignored rather than served for ever. The *verdict* is not cached, it is
  * recomputed every time from the cached measurement, so a change to the bar or
  * a newly trained model takes effect without re-listening to anything.
  */
@@ -37,7 +37,7 @@ export type EnsureClipSuggestionsInput = { clipId: number; windowSec?: number; r
  *
  * A listen is cheap but not free, and the Trim page asks for it on every open.
  * The cache sits with the other derived files under `.goodbit-cache/`, keyed by
- * the path and invalidated by the clip's own mtime — the same rule the
+ * the path and invalidated by the clip's own mtime. The same rule the
  * thumbnails use, so a trimmed-and-swapped clip re-analyses on its own.
  */
 export interface SuggestionResult extends AnalyzeClipOutput {
@@ -78,8 +78,8 @@ export class EnsureClipSuggestionsAction extends BaseAction<
     ]);
 
     if (!analysis.analyzed || !analysis.features) {
-      // A clip with no sound — or one too short for the listening half to
-      // bother with — can still have a kill on screen, and that is worth
+      // A clip with no sound, or one too short for the listening half to
+      // bother with, can still have a kill on screen, and that is worth
       // suggesting. The duration comes from the video stream here, because the
       // measurement that gave up never worked one out.
       const durationSec = analysis.durationSec || hud.durationSec;
@@ -122,7 +122,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
     });
 
     // When the screen decided it, the window belongs around what the screen
-    // showed — not around the loudest second, which on a clip with a kill in
+    // showed, not around the loudest second, which on a clip with a kill in
     // it is often a reload or a teammate shouting somewhere else.
     const anchored =
       verdict.anchor && this.placeAround(verdict.anchor, analysis.durationSec, windowSec);
@@ -145,8 +145,8 @@ export class EnsureClipSuggestionsAction extends BaseAction<
   /**
    * A window built around something the game showed.
    *
-   * Same shape as the one built from sound — lead-in, the thing, a beat after
-   * — but the "thing" is however long the event took, so three kills in nine
+   * Same shape as the one built from sound, lead-in, the thing, a beat after
+   *, but the "thing" is however long the event took, so three kills in nine
    * seconds produce a window that holds all three.
    */
   private placeAround(

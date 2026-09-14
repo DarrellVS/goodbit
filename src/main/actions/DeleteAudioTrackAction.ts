@@ -12,7 +12,7 @@ export class DeleteAudioTrackAction extends BaseAction<DeleteAudioTrackInput, { 
     const filePath = resolveAudioPath(input.id);
     if (!filePath) throw new Error(`Unknown audio track: ${input.id}`);
 
-    // Recycle Bin, never unlink — same rule the clips follow.
+    // Recycle Bin, never unlink, same rule the clips follow.
     // Normalised: the Windows shell rejects the forward slashes these paths
     // carry, with "Failed to parse path".
     await shell.trashItem(normalize(filePath));

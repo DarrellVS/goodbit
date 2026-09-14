@@ -20,7 +20,7 @@
       The thumb itself has no width on purpose.
       Radix positions a thumb by percentage and then pulls it back inside the
       track by a share of its own width, so a wide thumb lands visibly short of
-      0% and past 100% — the handle sat several pixels away from the edge of the
+      0% and past 100%. The handle sat several pixels away from the edge of the
       strip it was supposed to mark. A zero-width thumb is positioned exactly,
       and the parts you can see and grab hang off it.
     -->

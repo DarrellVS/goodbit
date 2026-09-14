@@ -21,7 +21,7 @@ const FFMPEG = FFMPEG_PATH;
  * handful of seconds inside them. Loudness finds it: gunfire, explosions and the
  * moment everyone starts shouting all sit well above whatever that clip calls
  * normal. One `ebur128` pass over the first audio track costs about 100 ms for
- * a thirty second clip — cheap enough to run on the whole library.
+ * a thirty second clip, cheap enough to run on the whole library.
  *
  * This measures; it does not judge. Whether the moment is worth suggesting is
  * decided in `services/highlights/decide.ts`, because that answer depends on
@@ -49,8 +49,8 @@ export const MIN_ROOM = 1.4;
 /**
  * How far to start before the loud part, in seconds.
  *
- * What the sound marks is the *reaction* — the explosion, the shout, the
- * killfeed — and the thing that caused it already happened. Cutting exactly on
+ * What the sound marks is the *reaction*. The explosion, the shout, the
+ * killfeed, and the thing that caused it already happened. Cutting exactly on
  * the spike drops the shot that led to it, so the window opens a beat earlier.
  */
 export const LEAD_IN = 2.5;
@@ -66,8 +66,8 @@ export const TAIL_ROOM = 1.5;
  * clip with its event at 24.4–25.4 s of a 26.4 s recording came back as
  * 16.4–26.4, eight seconds of nothing followed by the thing.
  *
- * The event itself is short — measured across the accepted clips, a median of
- * 1.0 s above half its own peak — so the length is the lead-in, the event and
+ * The event itself is short, measured across the accepted clips, a median of
+ * 1.0 s above half its own peak, so the length is the lead-in, the event and
  * the tail, floored here. Six is enough for a run-up, the thing, and a beat
  * after it; below that it reads as a jump cut.
  */

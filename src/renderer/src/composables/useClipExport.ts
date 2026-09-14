@@ -67,7 +67,7 @@ export function useClipExport(
           failures = 0;
         } catch (error) {
           // A job the server has never heard of is gone for good. Anything else
-          // — a dropped connection, a proxy hiccup — is worth another try.
+          //, a dropped connection, a proxy hiccup, is worth another try.
           const code = (error as { response?: { status?: number } }).response?.status;
           if (code === 404) throw new Error('The server lost track of this export');
 
@@ -113,7 +113,7 @@ export function useClipExport(
    * Stop the running render.
    *
    * The poll loop sees the cancelled status and unwinds itself, so this only
-   * has to ask — ffmpeg is killed server-side rather than left to finish a file
+   * has to ask, ffmpeg is killed server-side rather than left to finish a file
    * nobody is waiting for.
    */
   async function cancelCurrentExport(): Promise<void> {

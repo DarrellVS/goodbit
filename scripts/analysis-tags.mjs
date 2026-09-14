@@ -2,7 +2,7 @@
  * Run the sound tagger over the measured sample and store what it heard.
  *
  * YAMNet is an AudioSet classifier: 521 labels, of which a few dozen describe
- * things that happen in game clips — gunfire, explosions, crashes, laughter,
+ * things that happen in game clips, gunfire, explosions, crashes, laughter,
  * cheering, music, silence, typing. Inference costs single-digit milliseconds
  * per clip; decoding the audio to 16 kHz mono costs about a fifth of a second.
  *
@@ -38,7 +38,7 @@ export const TAG_HOP = 0.48;
  * `reaction` and `action` are the things a clip is saved for. `music` and
  * `dead` are the opposite: a soundtrack playing over a menu, or the typing and
  * clicking of someone who has alt-tabbed. `voice` is deliberately separate and
- * deliberately not treated as evidence of anything — in co-op footage people
+ * deliberately not treated as evidence of anything, in co-op footage people
  * talk continuously, so it fires at 0.9 for whole clips.
  */
 export const TAG_GROUPS = {

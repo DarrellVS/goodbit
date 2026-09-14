@@ -4,7 +4,7 @@ import type { Template } from './templates.js';
  * Finding a known picture inside a frame.
  *
  * Zero-mean normalised cross-correlation, which scores 1 for the same shape
- * however bright the scene behind it is and however dark the icon was drawn —
+ * however bright the scene behind it is and however dark the icon was drawn,
  * the reason a plain brightness test could not do this job. A kill banner over
  * a sunlit wall and the same banner over wet tarmac score alike.
  *

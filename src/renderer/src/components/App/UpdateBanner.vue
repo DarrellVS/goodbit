@@ -5,7 +5,7 @@ import { TITLEBAR_HEIGHT } from '@shared/index';
 import { useUpdater } from '../../composables/useUpdater';
 
 /**
- * "There is a new version" — the one interruption the app is allowed.
+ * "There is a new version". The one interruption the app is allowed.
  *
  * Two details it got wrong and now does not. It sat at the very top of the
  * window, which is inside the title bar's drag region: on Windows that band is
@@ -55,7 +55,7 @@ const top = `${TITLEBAR_HEIGHT + 14}px`;
           <p class="text-sm text-muted-500 mt-0.5">
             {{
               ready
-                ? `GoodBit ${version} installs when you restart — nothing is lost.`
+                ? `GoodBit ${version} installs when you restart. Nothing is lost.`
                 : `${percent}% of the way there. You can keep working.`
             }}
           </p>

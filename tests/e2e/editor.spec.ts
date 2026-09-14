@@ -5,8 +5,8 @@ import { launchApp, seedClips, type TestApp } from './app';
  * Editor controls that do what they are labelled, and a timeline whose blocks
  * stay inside their track.
  *
- * Zoom was inverted in three places at once — the handlers, the disabled
- * guards, and therefore the readout — which is the shape of bug that survives
+ * Zoom was inverted in three places at once. The handlers, the disabled
+ * guards, and therefore the readout, which is the shape of bug that survives
  * being read: everything agreed with everything else, and all of it was
  * backwards.
  */

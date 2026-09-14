@@ -208,7 +208,7 @@ function toggleTag(name: string): void {
         <button
           v-if="isAdded(entry.clip)"
           class="w-full group flex items-center gap-2 p-1.5 rounded-lg bg-orange-500/5 hover:bg-card transition-all border border-orange-400/40 hover:border-orange-500/60 cursor-pointer"
-          title="Already in the timeline — click to add another copy"
+          title="Already in the timeline. Click to add another copy"
           @click="emit('add-to-timeline', entry.clip)"
         >
           <div class="relative w-14 h-8 rounded overflow-hidden flex-shrink-0 bg-black">

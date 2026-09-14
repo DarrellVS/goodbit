@@ -6,8 +6,8 @@ import type { TimelineAudio, TimelineClip } from '../types/editor';
  *
  * Wherever a video clip sits under the playhead the video element owns the
  * clock, and this only parks one `<audio>` element per placement at the right
- * offset and gain. Where no clip covers the playhead — music-only stretches,
- * or a timeline with no video at all — the video engine has nothing to drive
+ * offset and gain. Where no clip covers the playhead, music-only stretches,
+ * or a timeline with no video at all. The video engine has nothing to drive
  * `currentTime` with, so this advances it off wall-clock instead. Without that
  * the music plays while the playhead stands still.
  */

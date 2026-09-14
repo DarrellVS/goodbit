@@ -67,9 +67,9 @@ test.describe('a day, edited', () => {
     await expect(toast).toBeVisible({ timeout: 30_000 });
 
     // Two of the three clips are a constant tone, which the analysis is built
-    // to refuse — so this also asserts it leaves those alone rather than
+    // to refuse, so this also asserts it leaves those alone rather than
     // cutting them at random.
-    await expect(toast).toContainText(/Trimmed 1 clip to their highlights — 2 left alone/);
+    await expect(toast).toContainText(/Trimmed 1 clip to their highlights, 2 left alone/);
 
     expect(await readClock(), 'the timeline should be shorter after trimming').not.toBe(before);
   });

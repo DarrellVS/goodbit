@@ -8,8 +8,8 @@
 
 Thirty seconds of game lands on your disk every time you reach for the replay key, and about ten of
 them are the reason you reached. GoodBit watches the folder OBS records into, indexes every clip as
-it arrives, listens for which few seconds those were — and in a game it has been taught, reads what
-the game itself put on screen — then gives you somewhere to tag, trim and cut them together.
+it arrives, listens for which few seconds those were, and in a game it has been taught, reads what
+the game itself put on screen, then gives you somewhere to tag, trim and cut them together.
 
 Everything happens on your own machine. Nothing is uploaded unless you ask it to be.
 
@@ -28,20 +28,20 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
 ## What it does
 
 - **Watches, so you do not have to.** Registered to start with Windows and living in the tray, it
-  notices a clip the moment OBS finishes writing it — thumbnail, frame strip and all — whether or not
+  notices a clip the moment OBS finishes writing it, thumbnail, frame strip and all, whether or not
   a window is open.
 - **Finds the good bit.** One cheap pass over a clip's sound (about 100 ms) says where the gunfire,
   the explosion or the shouting was, measured against that clip's own normal, and leaning towards
   the end because a replay buffer is saved *after* something happens. It stays quiet when a clip has
-  nothing that stands out, which is about five clips in six — being loud is not enough, or every
+  nothing that stands out, which is about five clips in six, being loud is not enough, or every
   menu screen with music over it would qualify.
 - **Reads the game's own HUD, where it can.** Loudness can only report that a clip got loud.
-  Battlefield 6 puts a banner under the crosshair when *you* get a kill, and GoodBit looks for it —
+  Battlefield 6 puts a banner under the crosshair when *you* get a kill, and GoodBit looks for it,
   so the suggestion arrives with a reason attached: *you dropped someone here*, or *two kills, five
   seconds apart*, and the window is built around the kill rather than the loudest second. Only games
   that have a module for them are looked at, only when you open the Trim page, and the answer is
-  cached — nothing decodes video while you are playing.
-- **Keeps your files alone.** Clips are never renamed — a display name is a database field. Deletes
+  cached. Nothing decodes video while you are playing.
+- **Keeps your files alone.** Clips are never renamed, a display name is a database field. Deletes
   go to the Recycle Bin, never `unlink`. Trimming copies the streams rather than re-encoding, so the
   picture is the recorded bytes; a switch in Settings re-encodes it to about a fifth of the size if
   you would rather have room on the disk. What gets *published* is shrunk by default instead, since
@@ -57,11 +57,11 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
   does not arrive twice as loud as the last one.
 - **Publishes, if you want it to.** An optional module you run on a server of your own turns a clip
   into a public link with a Discord-friendly embed. Leave it unconfigured and the feature is simply
-  absent — and if you do want it, there is a
+  absent, and if you do want it, there is a
   [guide that walks you through it](https://darrellvs.github.io/goodbit/publisher.html), with a
   quick start for anyone who already runs things behind a reverse proxy.
 - **Keeps a copy of itself.** Before a new version is allowed near the database, SQLite is asked for
-  a snapshot and the snapshot is read back — integrity check and row count — so an update that goes
+  a snapshot and the snapshot is read back, integrity check and row count, so an update that goes
   wrong is an inconvenience rather than a loss. Settings → Advanced lists them.
 - **Learns from what you keep.** Every trim records where you cut next to what was suggested, and a
   *Wrong* button on the banner records the one thing it cannot infer. Once there are enough, the app
@@ -76,7 +76,7 @@ Grab the installer or the portable build from the
 The installer keeps itself up to date.
 
 **Windows will warn about an unknown publisher.** The builds are not signed with a paid certificate,
-so SmartScreen shows "Windows protected your PC" on first run — *More info* → *Run anyway*. Nothing
+so SmartScreen shows "Windows protected your PC" on first run, *More info* → *Run anyway*. Nothing
 about the warning is specific to this app; it is what an unsigned installer always does.
 
 ## First run
@@ -92,11 +92,11 @@ Point it at the folder OBS records into. The layout it expects is the one OBS al
 ```
 
 The top-level folder name is the game name. Renaming a game in the app only changes how it is
-displayed — the folder is left alone, so OBS keeps writing exactly where it was.
+displayed. The folder is left alone, so OBS keeps writing exactly where it was.
 
 ## The publisher (optional)
 
-A small Express service that hosts `/media/*` and an embed page per clip. Run it wherever you like —
+A small Express service that hosts `/media/*` and an embed page per clip. Run it wherever you like,
 it is packaged for Docker and runs happily on a NAS. Put its address into Settings → App and the
 publish actions appear.
 
@@ -115,7 +115,7 @@ npm run build:win          # installer + portable build in release/
 ```
 
 `build:win` depends on the end-to-end suite, so an installer cannot be produced from a tree whose
-tests fail. Those tests never run in CI — they need a desktop session, a GPU and ffmpeg — and each
+tests fail. Those tests never run in CI. They need a desktop session, a GPU and ffmpeg, and each
 one gets a throw-away data folder, videos root and database, so a run can never touch a real library.
 
 ## How it is put together
@@ -130,7 +130,7 @@ one gets a throw-away data folder, videos root and database, so a run can never 
 
 Data calls travel over IPC to a loopback listener in the same process, behind a secret regenerated
 at every launch; media is served off disk by a `goodbit://` protocol handler with Range support, so
-video can seek. Nothing is reachable from outside the machine — with one deliberate exception, which
+video can seek. Nothing is reachable from outside the machine, with one deliberate exception, which
 is "Send to my phone": that starts a server bound to the network which serves exactly one file,
 behind a random address, and closes itself after thirty minutes or when the app quits.
 

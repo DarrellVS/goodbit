@@ -21,7 +21,7 @@ import { shareService } from './services/share.js';
  *
  * It is registered to start with Windows, lives in the tray, and owns
  * everything stateful: the database, the folder watcher, ffmpeg. The window is
- * a client that attaches to it — closing the window hides it, and the watcher
+ * a client that attaches to it, closing the window hides it, and the watcher
  * keeps indexing whatever OBS writes while nothing is on screen.
  */
 
@@ -31,7 +31,7 @@ declare const __LEGACY_IMPORT__: boolean;
  * Fix the app name before anything asks for a path.
  *
  * userData is derived from it, and running unpackaged the default is
- * "Electron" — so a development run would use a different profile from the
+ * "Electron", so a development run would use a different profile from the
  * installed app, and never exercise the real one.
  */
 app.setName('GoodBit');
@@ -46,7 +46,7 @@ let tray: Tray | null = null;
  *
  * This has to happen here, not just in settings.ts: Electron derives the
  * single-instance lock and all of Chromium's state from `userData`, so setting
- * it only for our own files left a test run sharing a lock — and a cache —
+ * it only for our own files left a test run sharing a lock, and a cache,
  * with whatever install was already running, and being turned away by it.
  */
 const dataOverride = process.env.GOODBIT_USER_DATA;
@@ -88,7 +88,7 @@ function createWindow(): BrowserWindow {
     icon: appIcon(),
     autoHideMenuBar: true,
     backgroundColor: '#0f1012',
-    // A drawn title bar, with Windows still owning the caption buttons — which
+    // A drawn title bar, with Windows still owning the caption buttons, which
     // keeps the snap layouts that appear on hovering maximise, and the system
     // behaviour for double-click and drag.
     titleBarStyle: 'hidden',
@@ -151,7 +151,7 @@ function showWindow(): void {
 
 /**
  * The icon as a file. The exe carries one for the taskbar, but a tray entry
- * and a development window take an image from JavaScript — so the PNG ships
+ * and a development window take an image from JavaScript, so the PNG ships
  * beside the asar (`extraResources` in electron-builder.yml) and is read from
  * `build/` while developing.
  */
@@ -182,7 +182,7 @@ function buildTray(): void {
   tray.on('double-click', showWindow);
 }
 
-/** Show the window on a route — what the tray items reach for. */
+/** Show the window on a route, what the tray items reach for. */
 function openIn(path: string): void {
   showWindow();
   const window = mainWindow;
@@ -300,7 +300,7 @@ app.whenReady().then(async () => {
     // Development-only: adopt the database the self-hosted version left behind.
     const { importLegacyDatabase } = await import('./migration/importLegacy.js');
     const report = await importLegacyDatabase();
-    if (!report.imported) console.log(`[migration] skipped — ${report.reason}`);
+    if (!report.imported) console.log(`[migration] skipped, ${report.reason}`);
   }
 
   await initDatabase();

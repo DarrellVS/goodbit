@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile);
  *    up for seconds.
  * 3. **Frames stay on the GPU until after they have been thrown away.**
  *    `-hwaccel cuda` alone copies every decoded frame into system memory and
- *    only then lets the `fps` filter drop nine tenths of them — eleven
+ *    only then lets the `fps` filter drop nine tenths of them, eleven
  *    gigabytes of transfer for a half-minute clip. Adding
  *    `-hwaccel_output_format cuda` moves the drop in front of the copy and
  *    halves the wall time.

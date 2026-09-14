@@ -12,6 +12,17 @@ export function publisherBaseUrl(): string {
   return (loadSettings().publisherBaseUrl || '').replace(/\/$/, '');
 }
 
+/** The secret the publisher wants on every write. Empty when not set yet. */
+export function publisherToken(): string {
+  return (loadSettings().publisherToken || '').trim();
+}
+
+/** Headers every write to the publisher has to carry. */
+export function publisherAuthHeaders(): Record<string, string> {
+  const token = publisherToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 /** True when publishing is available at all. */
 export function isPublisherConfigured(): boolean {
   return publisherBaseUrl().length > 0;

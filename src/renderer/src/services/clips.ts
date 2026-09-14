@@ -208,7 +208,7 @@ export interface SuggestionEvent {
 export interface ClipSuggestions {
   clipId: number;
   analyzed: boolean;
-  /** False when the clip's sound never changes — the UI then shows nothing. */
+  /** False when the clip's sound never changes. The UI then shows nothing. */
   confident: boolean;
   reason: string | null;
   durationSec: number;
@@ -322,7 +322,7 @@ export async function getEncoderInfo(): Promise<EncoderInfo> {
 /**
  * `compress` uploads a share-sized copy and leaves the file on disk alone;
  * `false` uploads the recording as it is. Left out, the compress-published
- * setting decides. Only for a clip that has not been published — the server
+ * setting decides. Only for a clip that has not been published, the server
  * refuses a compressed copy of one already up.
  */
 export async function publishClip(id: number, options: { compress?: boolean } = {}): Promise<Clip> {
@@ -391,7 +391,7 @@ export interface ImportFilesResult {
  *
  * Multipart form data cannot cross the contextBridge, so this arrived with no
  * body once the transport moved to IPC. Main is handed the paths and reads the
- * files itself — which is the right shape for a desktop app regardless, since
+ * files itself, which is the right shape for a desktop app regardless, since
  * nothing has to pass through the renderer's memory.
  */
 export async function importFiles(paths: string[]): Promise<ImportFilesResult> {

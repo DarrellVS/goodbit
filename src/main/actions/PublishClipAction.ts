@@ -15,7 +15,7 @@ export interface PublishClipInput {
   /**
    * Upload a share-sized copy and leave the file on disk as it is.
    *
-   * Left out, the compress-published setting decides — which is what the plain
+   * Left out, the compress-published setting decides, which is what the plain
    * Publish button does. Passed explicitly, it overrides that for this one
    * upload, which is how the menu offers the other choice.
    */

@@ -173,7 +173,7 @@ const watchesScreen = computed(
 
 /**
  * The banner only appears when the analysis is confident, so a failure here is
- * not worth telling the user about — there was nothing promised to lose.
+ * not worth telling the user about. There was nothing promised to lose.
  */
 async function loadSuggestions(): Promise<void> {
   suggestionsLoading.value = true;

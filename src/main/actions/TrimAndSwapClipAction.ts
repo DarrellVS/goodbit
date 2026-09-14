@@ -16,7 +16,7 @@ export type TrimAndSwapInput = {
   /**
    * Absent means the setting decides: `compressed` unless the person turned
    * that off, in which case a lossless copy. This action replaces the original
-   * file, so a re-encode is a generation loss on the only copy — which is the
+   * file, so a re-encode is a generation loss on the only copy, which is the
    * point when the file is a hundred megabytes of a ten second moment, and the
    * reason there is a switch.
    */

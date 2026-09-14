@@ -4,7 +4,7 @@
  * Split out of `AnalyzeClipAction` so that three things can share one
  * description: the rule that ships, a learned model if one is ever trained, and
  * the offline bench that fits it. A feature added here is available to all
- * three at once, and — because the names are the contract with a stored model —
+ * three at once, and, because the names are the contract with a stored model,
  * one removed from here invalidates that model rather than silently changing
  * what it means.
  */

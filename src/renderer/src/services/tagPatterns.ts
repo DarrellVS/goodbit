@@ -5,7 +5,7 @@ import type { TagCategory } from '../utils/tagSuggestions';
  * Filename-matching rules, now kept by the server.
  *
  * They lived in browser IndexedDB, where clearing site data lost them and a
- * desktop build — which gets its own profile — would not have seen them at all.
+ * desktop build, which gets its own profile, would not have seen them at all.
  *
  * Expressions cross the wire as regex **sources**; RegExp objects do not
  * survive JSON. They are rebuilt with the `i` flag on arrival, which is the

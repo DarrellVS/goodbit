@@ -4,8 +4,8 @@
  * Loudness cannot tell a menu whose music swells from an explosion, and the
  * thing that most often makes a clip worth keeping is not either of those: it
  * is four people shouting at once. Speech and laughter have a signature that
- * music and engines do not — the envelope of a voice band flutters at the
- * syllable rate, three to eight times a second — and that is measurable
+ * music and engines do not. The envelope of a voice band flutters at the
+ * syllable rate, three to eight times a second, and that is measurable
  * without a model.
  *
  * Two RMS envelopes at 50 Hz, one of them band-limited to voices, cost about a

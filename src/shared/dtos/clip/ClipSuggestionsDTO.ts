@@ -20,7 +20,7 @@ export interface SuggestionEvent {
 }
 
 /**
- * What one cheap listen to a clip found — and, for a game whose HUD the app
+ * What one cheap listen to a clip found, and, for a game whose HUD the app
  * knows how to read, what the screen said as well.
  *
  * `confident` is the whole point: a clip whose sound never changes has nothing
@@ -49,7 +49,7 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
 
   /**
    * What the moment had to clear. Usually the fixed floor, but higher in a game
-   * whose clips all stand out — see the calibration note in the main process.
+   * whose clips all stand out, see the calibration note in the main process.
    */
   bar!: number;
 

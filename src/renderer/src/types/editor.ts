@@ -19,7 +19,7 @@ export interface TimelineClip {
  * other, and run past the end of the picture (the export cuts them there).
  */
 export interface TimelineAudio {
-  /** Instance id — the same library track can be placed more than once. */
+  /** Instance id. The same library track can be placed more than once. */
   id: string;
   /** Filename of the track in the editor music folder. */
   trackId: string;

@@ -68,7 +68,7 @@ export function useEditorDrafts(
    */
   const activeDraft = ref<ActiveDraft | null>(null);
   /**
-   * The newest stored timeline as it stood when the editor opened — offered back
+   * The newest stored timeline as it stood when the editor opened, offered back
    * by the resume banner. Held apart from the database record so that starting
    * to work before deciding, which overwrites that record, cannot take the offer
    * away.
@@ -81,7 +81,7 @@ export function useEditorDrafts(
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
-   * Named drafts only — the rolling autosave is the resume banner's business.
+   * Named drafts only. The rolling autosave is the resume banner's business.
    *
    * Local records first, then anything the library holds that this browser has
    * never seen: a draft saved on another machine, or one that outlived a
@@ -157,7 +157,7 @@ export function useEditorDrafts(
     }
 
     // A named draft that lives in the library is kept up to date there too, on
-    // the same debounce. The rolling autosave stays local — it is a scratch
+    // the same debounce. The rolling autosave stays local. It is a scratch
     // record, not something worth a round trip every beat.
     if (target?.serverId) {
       try {
@@ -232,7 +232,7 @@ export function useEditorDrafts(
       name: payload.name.trim() || 'Imported draft',
       updatedAt: new Date().toISOString(),
       // The payload came back out of a reactive ref, so its entries are Vue
-      // proxies — and structuredClone, which IndexedDB writes through, refuses
+      // proxies, and structuredClone, which IndexedDB writes through, refuses
       // to clone a Proxy. Every field is a primitive, so a spread is enough to
       // hand over plain objects.
       clips: payload.clips.map((clip) => ({ ...clip })),

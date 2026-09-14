@@ -3,7 +3,7 @@
  *
  * One line per clip: whether the signal fired, when, and where that sits in
  * the clip. A signal worth shipping fires on most clips of a game where
- * something happened, rarely on the rest, and lands near the end — which is
+ * something happened, rarely on the rest, and lands near the end, which is
  * where a replay buffer's moment lives.
  *
  *   node scripts/visual-scan.mjs "Battlefield 6" --limit 40 --fps 4
@@ -24,7 +24,7 @@ const VIDEO = /\.(mp4|mov|mkv)$/i;
  *
  * `ink` is the share of the region that is bright and near-grey; `stuck` is
  * how much of that ink landed on itself since the last sample. Scenery can be
- * as bright as a HUD for seconds on end, but it slides with the camera — so
+ * as bright as a HUD for seconds on end, but it slides with the camera, so
  * the pair separates an overlay from a sunlit wall, which brightness alone
  * could not.
  */

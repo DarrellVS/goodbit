@@ -6,7 +6,7 @@ const SCRUB_ZONE = 1 / 3;
 
 /**
  * The native controls sit along the bottom of the video, and a pointer there
- * is heading for play, volume or fullscreen — not scrubbing. The strip stops
+ * is heading for play, volume or fullscreen, not scrubbing. The strip stops
  * this far above the bottom edge so it never covers them, and keeps at least
  * `SCRUB_MIN_BAND_PX` of height on a card too short for a third to leave room.
  */
@@ -21,7 +21,7 @@ export function scrubBand(heightPx: number): { bottomPx: number; heightPx: numbe
   };
 }
 
-// Don't re-seek for sub-frame movements — Chrome stutters when currentTime is
+// Don't re-seek for sub-frame movements, Chrome stutters when currentTime is
 // hammered on every mousemove.
 const SEEK_EPSILON = 0.03;
 
@@ -95,7 +95,7 @@ export function useHoverScrub(videoEl: Ref<HTMLVideoElement | null>, enabled: Re
   function handleMouseMove(event: MouseEvent): void {
     if (!enabled.value) return;
     // A fullscreen video still bubbles its mouse moves to the card it lives in,
-    // whose rectangle is now meaningless — every move became a seek to
+    // whose rectangle is now meaningless. Every move became a seek to
     // somewhere. Fullscreen is for watching; the strip is off there.
     if (document.fullscreenElement) {
       stopScrubbing(false);

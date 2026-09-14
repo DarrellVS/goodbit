@@ -31,7 +31,7 @@ export interface InkOptions {
 }
 
 /**
- * Which pixels are bright and close to grey — HUD ink, whatever is behind it.
+ * Which pixels are bright and close to grey, HUD ink, whatever is behind it.
  *
  * Games draw their overlays in white or near-white, and everything else in a
  * frame is coloured by the light in the scene. The greyness test is what keeps
@@ -87,7 +87,7 @@ export function stickiness(previous: Uint8Array | undefined, current: Uint8Array
  *
  * Battlefield draws the skull white for a kill you got and green for an assist
  * someone else finished; the shapes are near enough identical, so only the
- * colour tells them apart — and the shape matcher works in grey on purpose.
+ * colour tells them apart, and the shape matcher works in grey on purpose.
  *
  * Only the bright pixels count, and that is the whole point. Averaged over the
  * whole box a white icon on orange dirt reads as orange, which threw away real

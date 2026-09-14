@@ -117,7 +117,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
       executeBatchOperation(() => clipsService.batchDelete(clipIds), 'delete', 'deleted');
 
     // Asked the same way a single delete is, and skipped under the same
-    // setting — a native `confirm()` blocks the whole renderer.
+    // setting, a native `confirm()` blocks the whole renderer.
     if (config.public.value.confirmBeforeDelete) {
       toastStore.confirm(
         `${count} ${pluralize(count, 'clip')} will be moved to the Recycle Bin.`,

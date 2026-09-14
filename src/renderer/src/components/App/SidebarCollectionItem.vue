@@ -30,7 +30,7 @@ const emit = defineEmits<Emits>();
   <!--
     `relative` on the row matters: the clip count is positioned absolutely so it
     can share a spot with the hover buttons, and without an anchor on its own
-    row it resolved against a distant ancestor — so once the sidebar scrolled,
+    row it resolved against a distant ancestor, so once the sidebar scrolled,
     the counts stayed pinned while their rows moved away beneath them.
   -->
   <RouterLink

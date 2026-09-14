@@ -70,7 +70,7 @@ const isLocal = computed(() => sharingThisClip.value);
  * The QR is drawn to a data URL rather than a canvas element.
  *
  * The dialog mounts its content lazily, so a canvas ref is not reliably there
- * when the URL arrives — an image source always is.
+ * when the URL arrives, an image source always is.
  */
 async function render(): Promise<void> {
   const target = activeUrl.value;
@@ -136,7 +136,7 @@ async function copy(): Promise<void> {
         <!--
           Two ways off this machine: the local network, which needs nothing but
           the same wifi, and a published link, which needs a publisher. Media
-          served by goodbit:// is not one of them — nothing but this app can
+          served by goodbit:// is not one of them. Nothing but this app can
           open that, and a QR of it made phones say no app could use the code.
         -->
         <div v-if="activeUrl" class="p-6 flex flex-col items-center gap-4">
@@ -153,7 +153,7 @@ async function copy(): Promise<void> {
             link stops working in {{ minutesLeft }} minutes.
           </p>
           <p v-else class="text-xs text-center text-muted-500">
-            This is the public link — anyone with it can watch.
+            This is the public link. Anyone with it can watch.
           </p>
 
           <div class="w-full flex items-center gap-2">

@@ -43,7 +43,7 @@ export type ServiceEvent =
   | { type: 'clip-removed'; filePath: string }
   /**
    * Publishing a clip takes as long as it takes to squeeze two hundred
-   * megabytes and push them up a home connection — a minute is normal. Saying
+   * megabytes and push them up a home connection, a minute is normal. Saying
    * nothing for a minute reads as broken, so it says where it is.
    */
   | {
@@ -59,8 +59,8 @@ export type ServiceEvent =
 /**
  * Push an event to whatever is listening.
  *
- * Exported so work that lives outside this file — publishing, which is an
- * action — can report on itself without the window having to poll for it.
+ * Exported so work that lives outside this file, publishing, which is an
+ * action, can report on itself without the window having to poll for it.
  */
 export function announce(event: ServiceEvent): void {
   emit(event);
@@ -83,7 +83,7 @@ function emit(event: ServiceEvent): void {
   }
 }
 
-/** The top-level folder name is the game name — OBS's doing, and the app follows it. */
+/** The top-level folder name is the game name, OBS's doing, and the app follows it. */
 function gameFromPath(filePath: string): string | null {
   const rel = relative(VIDEOS_ROOT, filePath);
   if (!rel || rel.startsWith('..')) return null;
@@ -95,8 +95,8 @@ function gameFromPath(filePath: string): string | null {
 /**
  * Bring the database in line with what is on disk.
  *
- * Wrapped rather than called directly so every entry point — boot, the watcher's
- * backstop, the Rescan button — reports the same way.
+ * Wrapped rather than called directly so every entry point, boot, the watcher's
+ * backstop, the Rescan button, reports the same way.
  */
 export async function reconcile(): Promise<void> {
   emit({ type: 'scan-started' });
@@ -113,7 +113,7 @@ export async function reconcile(): Promise<void> {
       `[service] scan: +${result.added} ~${result.updated} -${result.removed} (${result.total} total)`,
     );
     if (result.pruneSkipped) {
-      console.warn(`[service] ${result.pruneSkipped.reason} — nothing was deleted`);
+      console.warn(`[service] ${result.pruneSkipped.reason}, nothing was deleted`);
     }
   } catch (error) {
     console.error('[service] scan failed:', error instanceof Error ? error.message : error);
@@ -168,7 +168,7 @@ function startWatching(): void {
 /**
  * The boot sequence, each step isolated.
  *
- * One failing step must not stop the rest — a clip library that cannot reach
+ * One failing step must not stop the rest, a clip library that cannot reach
  * the publisher is still a working clip library.
  */
 export async function startServices(): Promise<void> {

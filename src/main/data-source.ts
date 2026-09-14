@@ -48,7 +48,7 @@ export function refreshRoots(): void {
  * Constructed lazily rather than at import: TypeORM reads the options object
  * when the DataSource is created, and rewriting `options.database` afterwards
  * left the driver addressing a database it had already hashed into an
- * attach-alias — which failed with "no such table: <hash>.sqlite_master".
+ * attach-alias, which failed with "no such table: <hash>.sqlite_master".
  *
  * The same live-binding trick as the roots: every caller does
  * `AppDataSource.getRepository(…)` inside a function body, so they pick up the

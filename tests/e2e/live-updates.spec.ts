@@ -4,7 +4,7 @@ import { launchApp, seedClips, type TestApp } from './app';
 /**
  * A clip recorded while the window is open has to appear in it.
  *
- * This is the app's whole premise — it watches so you do not have to — and it
+ * This is the app's whole premise. It watches so you do not have to, and it
  * was broken without being noticeable: the service indexed clips correctly and
  * the database was right, but nothing in the renderer subscribed to the events,
  * so an open window kept showing whatever was there when it loaded until
@@ -69,7 +69,7 @@ test.describe('the window keeps up with the watcher', () => {
  * First run has to land somewhere that explains itself.
  *
  * The guard redirected to a route that had never been added, so vue-router
- * failed the navigation and the window came up empty — a blank app with no
+ * failed the navigation and the window came up empty, a blank app with no
  * error, which is the worst version of broken.
  */
 test.describe('first run', () => {
@@ -82,7 +82,7 @@ test.describe('first run', () => {
       expect(ctx.page.url()).toContain('#/welcome');
       await expect(ctx.page.getByText('Welcome to GoodBit')).toBeVisible();
       // The phrase also appears on the disabled confirm button; match the row.
-      await expect(ctx.page.getByText('Required — choose a folder')).toBeVisible();
+      await expect(ctx.page.getByText('Required: choose a folder')).toBeVisible();
     } finally {
       await ctx.close();
     }

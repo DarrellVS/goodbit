@@ -11,7 +11,7 @@ import { shareService } from '../services/share.js';
 /**
  * The handlers behind the preload bridge.
  *
- * Only what main alone can do lives here for now — settings, folder pickers,
+ * Only what main alone can do lives here for now, settings, folder pickers,
  * shell integration, service events. The library's own data still travels over
  * the loopback HTTP server until `services/*.ts` in the renderer moves across.
  */
@@ -70,7 +70,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
    * Importing takes paths, not bytes.
    *
    * The web app posted files as multipart form data, which cannot cross the
-   * contextBridge — uploads failed with "No files provided" once the transport
+   * contextBridge, uploads failed with "No files provided" once the transport
    * moved to IPC. It was the wrong shape for a desktop app anyway: the files
    * are already on this disk, so main reads them directly instead of streaming
    * them through the renderer's memory.
@@ -169,8 +169,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   /**
    * Copies of the library.
    *
-   * One is taken automatically whenever a new version boots — see `backup.ts`
-   * for why — and this is the manual button plus the list of what exists.
+   * One is taken automatically whenever a new version boots, see `backup.ts`
+   * for why, and this is the manual button plus the list of what exists.
    */
   ipcMain.handle('backup:list', () => listBackups());
   ipcMain.handle('backup:now', () => takeBackup(databasePath()));
@@ -184,7 +184,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
    * Recolour the native caption buttons when the theme changes.
    *
    * Windows draws minimise/maximise/close itself, so they keep whatever colour
-   * they were given — light glyphs stay light on a light page and disappear.
+   * they were given, light glyphs stay light on a light page and disappear.
    */
   ipcMain.handle('window:setOverlay', (_event, colors: { symbolColor?: string }) => {
     const window = getWindow();

@@ -2,7 +2,7 @@
  * Photograph a piece of UI that only appears in a state hard to reach by hand.
  *
  * The update banner shows while an update is downloading or ready, which is
- * not a state a test machine can conjure — so this launches the built app
+ * not a state a test machine can conjure, so this launches the built app
  * against a throw-away profile and pushes the state straight into the window
  * over the same channel the main process uses.
  *

@@ -5,7 +5,7 @@ import { ffmpegConfigured } from './ffmpeg.js';
 
 /**
  * Music the editor can lay under a timeline lives in one flat folder. There is
- * no database table for it — the files are the whole model — so the filename
+ * no database table for it. The files are the whole model, so the filename
  * doubles as the id and every lookup is a stat.
  */
 export const EDITOR_AUDIO_DIR = path.join(AUDIO_ROOT, 'Editor');
@@ -41,7 +41,7 @@ export async function ensureAudioDir(): Promise<void> {
  * Resolve a track id to a path inside the music folder, or null.
  *
  * The id arrives from the client, so it is stripped to a bare filename and the
- * result is checked to still sit inside the folder — `..` must not escape.
+ * result is checked to still sit inside the folder, `..` must not escape.
  */
 export function resolveAudioPath(id: string): string | null {
   const filename = path.basename(id);

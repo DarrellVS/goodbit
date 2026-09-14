@@ -7,7 +7,7 @@ import { Clip } from '../entity/Clip.js';
 /**
  * Reveal a clip in the file manager.
  *
- * Was `spawn('cmd', ['/c', 'start', '', 'explorer.exe', '/select,…'])` — a
+ * Was `spawn('cmd', ['/c', 'start', '', 'explorer.exe', '/select,…'])`, a
  * Windows-only shell-out that also built a quoted argument by hand. Electron
  * does the same thing through the OS, and works everywhere.
  */

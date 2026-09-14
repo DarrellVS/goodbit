@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GoodBit — documentation</title>
+    <title>GoodBit documentation</title>
     <meta
       name="description"
       content="Setting GoodBit up, what it expects of your recording folder, how the highlight analysis works, trimming, the editor, sharing, publishing, and where it keeps your data."
@@ -13,7 +13,7 @@
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="GoodBit" />
     <meta property="og:url" content="https://darrellvs.github.io/goodbit/docs.html" />
-    <meta property="og:title" content="GoodBit — documentation" />
+    <meta property="og:title" content="GoodBit documentation" />
     <meta
       property="og:description"
       content="The folder layout, the highlight analysis, trimming, the editor, sharing, publishing and backups."
@@ -43,7 +43,7 @@
         <nav class="site-nav" aria-label="Sections">
           <a href="index.html#listen" data-small-hide>The idea</a>
           <a href="index.html#what" data-optional>What it does</a>
-          <a href="https://github.com/DarrellVS/goodbit" data-optional>Source</a>
+          <a href="https://github.com/DarrellVS/goodbit" data-optional target="_blank" rel="noopener">Source</a>
           <a class="cta" href="index.html#get">Get it</a>
         </nav>
       </div>
@@ -75,7 +75,7 @@
         <h2 id="install">Installing</h2>
         <p>
           Download the installer or the portable build from the
-          <a href="https://github.com/DarrellVS/goodbit/releases/latest">latest release</a>. Windows
+          <a href="https://github.com/DarrellVS/goodbit/releases/latest" target="_blank" rel="noopener">latest release</a>. Windows
           10 or 11, 64-bit.
         </p>
         <p>
@@ -222,7 +222,7 @@
         <h3 id="hud">For some games, it reads the screen</h3>
         <p>
           Loudness can only report that a clip got loud. Some games will simply tell you what
-          happened, and where GoodBit has been taught to read one, it does — and then the suggestion
+          happened, and where GoodBit has been taught to read one, it does, and then the suggestion
           arrives with its reason attached rather than a guess about volume.
         </p>
         <ul>
@@ -231,7 +231,7 @@
             rather than the feed in the corner. The feed lists everybody's kills and would have to
             know your name to be any use; the banner only ever appears for a kill <em>you</em> got,
             so it filters itself. GoodBit looks for the skull, the boxed <em>KILL</em> beneath it,
-            and the colour — Battlefield draws assist skulls green where a kill's is white — and all
+            and the colour (Battlefield draws assist skulls green where a kill's is white), and all
             three have to agree.
           </li>
           <li>
@@ -242,7 +242,7 @@
           </li>
           <li>
             <strong>It only runs when you open the clip</strong>, only for a game that has a module,
-            and the answer is cached. Nothing decodes video while you are playing — that is OBS's
+            and the answer is cached. Nothing decodes video while you are playing: that is OBS's
             job and GoodBit stays out of its way.
           </li>
           <li>
@@ -258,8 +258,8 @@
         </ul>
         <p>
           Battlefield 6 is the only one so far, and that is a measurement rather than an oversight.
-          Every other game in the library that was checked — Ready Or Not, Satisfactory, RV There
-          Yet, a handful of co-op horror games — shows status on screen but never announces the
+          Every other game in the library that was checked (Ready Or Not, Satisfactory, RV There
+          Yet, a handful of co-op horror games) shows status on screen but never announces the
           moment, so there is nothing to read and the sound remains the best evidence there is.
           Battlefield 2042 does announce it, but differently enough that the 6 templates do not match
           it, and there were too few recordings to check a second module against.
@@ -275,7 +275,7 @@
         </p>
         <p>
           Once there are around sixty of those, GoodBit fits a small model to them on its own and
-          starts using it instead of the built-in threshold — then refits after every twenty-five
+          starts using it instead of the built-in threshold, then refits after every twenty-five
           new decisions, so it keeps up with you. <strong>Settings → Advanced → Suggestions</strong>
           shows how far along it is, what the model got right on the decisions it was not shown, and
           has a button to go back to the built-in rule. Nothing leaves the machine at any point; the
@@ -373,14 +373,22 @@
         </p>
         <p>
           It is the one genuinely hands-on part of GoodBit, because a link anyone can open means a
-          machine the internet can reach — a container, a forwarded port and a reverse proxy with a
+          machine the internet can reach: a container, a forwarded port and a reverse proxy with a
           certificate. <strong><a href="publisher.html">There is a guide for exactly that</a></strong>,
           with a quick start for anyone who has done this before and a seven-step walkthrough that
           writes your own domain and paths into every command for anyone who has not.
         </p>
         <p>
-          What goes up is a compressed copy by default — about a fifth of the size, so it opens
-          quickly for whoever you sent it to — while the file on your disk is untouched. The clip
+          Two things the guide will insist on. The publisher needs a
+          <strong>publish token</strong>, the same value at both ends, because serving clips is
+          public and writing to it must not be. And if GoodBit runs on the same network as the
+          server, give it the <strong>internal address</strong> rather than the public one: the
+          upload then goes straight to the container instead of through the proxy, which is faster
+          and sidesteps the upload size limit entirely.
+        </p>
+        <p>
+          What goes up is a compressed copy by default, about a fifth of the size, so it opens
+          quickly for whoever you sent it to, while the file on your disk is untouched. The clip
           menu offers the other choice, and <em>Settings → App</em> has the switch. Publishing
           reports itself as it goes: making the copy, then uploading, with a percentage, since a
           couple of hundred megabytes up a home connection is not instant.
@@ -507,8 +515,8 @@ npm run build:win    # installer and portable build, into release/</code></pre>
         <span>GoodBit</span>
         <span class="spacer"></span>
         <a href="index.html">Home</a>
-        <a href="https://github.com/DarrellVS/goodbit">Source</a>
-        <a href="https://github.com/DarrellVS/goodbit/releases/latest">Releases</a>
+        <a href="https://github.com/DarrellVS/goodbit" target="_blank" rel="noopener">Source</a>
+        <a href="https://github.com/DarrellVS/goodbit/releases/latest" target="_blank" rel="noopener">Releases</a>
       </div>
     </footer>
 

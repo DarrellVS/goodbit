@@ -11,7 +11,7 @@ const FFPROBE = FFPROBE_PATH;
  * What this machine can do, decided once.
  *
  * OBS writes AV1 here, and software AV1 decoding of a 3440x1440 clip runs at
- * 0.44x realtime — a thirty second clip costs over a minute before a single
+ * 0.44x realtime, a thirty second clip costs over a minute before a single
  * frame is encoded. With `-hwaccel cuda` the same decode takes nine seconds.
  * Detection is a real encode of a tiny synthetic clip, because a build can
  * list an encoder the GPU will refuse at runtime.
@@ -153,7 +153,7 @@ export async function probeVideo(filePath: string): Promise<ProbeInfo> {
  * Turn an HDR picture into an SDR one that looks like what was on screen.
  *
  * Without this the PQ curve is read as if it were sRGB and everything comes out
- * grey and flat — which is exactly what the exports looked like before. Hable
+ * grey and flat, which is exactly what the exports looked like before. Hable
  * keeps the highlights instead of clipping them.
  */
 export const TONEMAP_FILTER =
@@ -212,7 +212,7 @@ export function decodeArgs(info: EncoderInfo): string[] {
  * than edited: a trim that replaces the recording, or the copy that goes to the
  * publisher.
  *
- * The recording is what OBS wrote — 80–100 Mbit/s AV1 or HEVC at 3440x1440 —
+ * The recording is what OBS wrote, 80–100 Mbit/s AV1 or HEVC at 3440x1440,
  * and a ten second cut of it is over a hundred megabytes, which is the wrong
  * size for a file whose whole purpose is being shared. Quality 23 H.264 with a
  * bitrate ceiling scaled by pixel count lands a 1440p ultrawide clip around
@@ -226,7 +226,7 @@ const SHARE_KBPS_PER_MEGAPIXEL = 4000;
 export function shareEncoderArgs(encoders: EncoderInfo, info: ProbeInfo): string[] {
   const megapixels = (info.width * info.height) / 1_000_000;
   const budget = megapixels > 0 ? Math.round(megapixels * SHARE_KBPS_PER_MEGAPIXEL) : null;
-  // Never cap above what the source already is — that would only add a ceiling
+  // Never cap above what the source already is. That would only add a ceiling
   // the picture never reaches, and never below the budget the picture needs.
   const targetKbps = budget && info.kbps ? Math.min(budget, info.kbps) : budget ?? info.kbps;
   return encoderArgs(encoders, { quality: SHARE_QUALITY, targetKbps });

@@ -3,7 +3,7 @@ import { useToastStore } from '../stores/toast';
 import type { ServiceEvent } from './useServiceEvents';
 
 /**
- * "It is still going" — publishing, out loud.
+ * "It is still going", publishing, out loud.
  *
  * Publishing a clip squeezes a couple of hundred megabytes and pushes them up a
  * home connection, which is a minute on a good day. The app used to say nothing
@@ -54,8 +54,8 @@ export function usePublishProgress(): void {
 
     const description =
       event.stage === 'compressing'
-        ? `Making a smaller copy — ${event.percent}%`
-        : `Uploading — ${event.percent}%`;
+        ? `Making a smaller copy, ${event.percent}%`
+        : `Uploading, ${event.percent}%`;
 
     if (existing) {
       toasts.update(existing, { description, progress: event.percent });

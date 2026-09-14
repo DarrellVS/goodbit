@@ -143,7 +143,7 @@ onBeforeUnmount(stopDrag);
     <div class="relative w-full h-full bg-gradient-to-br from-card to-orange-500/4 border border-border backdrop-blur-sm overflow-hidden">
       <!--
         The frame strip covers the whole source clip, so the block shows only
-        the slice between the trim handles — scroll it by trimStart and stretch
+        the slice between the trim handles, scroll it by trimStart and stretch
         it by the share of the clip that is kept, and the stills stay under the
         moments they belong to while the handles move.
       -->

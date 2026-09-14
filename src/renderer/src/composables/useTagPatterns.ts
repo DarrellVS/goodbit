@@ -12,8 +12,8 @@ import { TAG_PATTERNS, type TagPattern, type TagCategory } from '../utils/tagSug
  * The rules that suggest tags from a filename.
  *
  * These moved out of browser IndexedDB and into the library database. The one
- * lift of whatever was already stored locally happens on first load — see
- * `migrateLocalPatterns` — because a desktop build gets its own profile and
+ * lift of whatever was already stored locally happens on first load, see
+ * `migrateLocalPatterns`, because a desktop build gets its own profile and
  * would otherwise never see them again.
  */
 export function useTagPatterns() {

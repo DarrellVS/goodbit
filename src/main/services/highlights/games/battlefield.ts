@@ -7,14 +7,14 @@ import { BF_KILL_LABEL, BF_SKULL, type Template } from '../vision/templates.js';
 /**
  * Battlefield tells you when you got a kill. This reads it.
  *
- * Not the kill feed in the corner — that lists everybody's kills and would
+ * Not the kill feed in the corner. That lists everybody's kills and would
  * need to know your own name to be any use. The banner under the crosshair
  * appears only for kills *you* got, so it filters itself: a skull, the score,
  * the name of whoever you dropped, and a boxed KILL underneath.
  *
  * **Why two templates and a colour test.** The skull alone looked like enough
  * and is not. Measured against forty real recordings, every confirmed kill
- * scored 0.89 or better — but a clock icon on IMPROVABLE SECTOR reached 0.87
+ * scored 0.89 or better, but a clock icon on IMPROVABLE SECTOR reached 0.87
  * and a helmet on SPOT ASSIST 0.83, while one genuine kill caught mid-fade
  * scored 0.82. Any single threshold on the skull either loses that kill or
  * takes those two. The word KILL looks nothing like a clock, and the assist
@@ -26,7 +26,7 @@ import { BF_KILL_LABEL, BF_SKULL, type Template } from '../vision/templates.js';
  * One box holding the whole banner: skull, score, and the label row under it.
  *
  * Deliberately one region and not two. Each region costs its own decode of the
- * video, which is nearly the entire cost of reading a clip — asking for the
+ * video, which is nearly the entire cost of reading a clip, asking for the
  * banner and the labels separately doubled the time for one file. The two
  * boxes are adjacent, so one crop covers both and the parts are sliced out
  * here.
@@ -51,7 +51,7 @@ const ICON_SLACK = 0.022;
  *
  * `SKULL_FLOOR` is low on purpose. The banner animates in, and for the first
  * frame or two the skull is half drawn while the label beside it is already
- * legible — one real kill was thrown away because the only frame whose skull
+ * legible, one real kill was thrown away because the only frame whose skull
  * cleared 0.80 was a single frame, and a lone frame is not believed.
  */
 const SKULL_ALONE = 0.90;
@@ -152,7 +152,7 @@ function findHits({ regions, fps, frameWidth, frameHeight }: WatchInput): Hit[] 
     if (!convincing) return;
 
     // Read the colour where the shape actually matched, not where it was
-    // expected, and only off the lit pixels — see `glyphSaturation`.
+    // expected, and only off the lit pixels, see `glyphSaturation`.
     const colour = glyphSaturation(frame, {
       x: iconBox.x + skull.x,
       y: iconBox.y + skull.y,
@@ -188,7 +188,7 @@ function groupHits(hits: Hit[]): Kill[] {
     .map((group) => ({
       atSec: Math.max(0, group[0].atSec - BANNER_LAG_SEC),
       // How sure this was a kill, which is the best evidence any one frame
-      // gave — not the average. The banner fades in and out, so averaging over
+      // gave, not the average. The banner fades in and out, so averaging over
       // a group drags a certain kill down to the score of its own half-drawn
       // first frame.
       confidence: Math.min(
@@ -210,7 +210,7 @@ function describeKills(kills: Kill[]): GameEvent {
       atSec: first.atSec,
       untilSec: first.atSec,
       confidence,
-      reason: 'you dropped someone here — Battlefield put its own kill banner up',
+      reason: 'you dropped someone here',
     };
   }
   if (kills.length === 2) {
@@ -234,7 +234,7 @@ function describeKills(kills: Kill[]): GameEvent {
 export const battlefield: GameModule = {
   // Battlefield 6 only, and that is a measurement rather than an oversight.
   // 2042 draws its kill notification as a red strip left of centre carrying a
-  // skull and an XP figure, with no boxed KILL beneath — neither template
+  // skull and an XP figure, with no boxed KILL beneath, neither template
   // matches it, and four recordings is too thin a sample to build a second
   // module against. It gets the general rule until there is footage to check
   // one with.

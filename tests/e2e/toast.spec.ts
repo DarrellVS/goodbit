@@ -5,12 +5,12 @@ import { launchApp, type TestApp } from './app';
  * A toast has to be readable over whatever it floats above.
  *
  * Its background used to be a pale solid fill. When the accent washes were
- * reworked into low-alpha tints, the toast came along with them — and a tint is
+ * reworked into low-alpha tints, the toast came along with them, and a tint is
  * not a ground: at 8% over the dark editor it was effectively invisible, the
  * text hanging in mid-air over the timeline.
  *
  * The contrast and pale-surface checks both miss this, because they look at an
- * element against whatever is painted behind it — and here that was the page,
+ * element against whatever is painted behind it, and here that was the page,
  * which happened to contrast fine.
  */
 test.describe('toasts', () => {
@@ -46,7 +46,7 @@ test.describe('toasts', () => {
       await ctx.page.getByRole('button', { name: /export/i }).first().click();
 
       // The toast itself, not the visually-hidden copy Radix attaches to body
-      // for screen readers — that one is transparent by design and measuring it
+      // for screen readers. That one is transparent by design and measuring it
       // said the toast had no background when it did.
       const toast = ctx.page
         .locator('li')

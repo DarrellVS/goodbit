@@ -128,7 +128,7 @@ export function useFileImport() {
    * Import by path.
    *
    * Files used to be posted as multipart form data, which cannot cross the
-   * contextBridge — the request arrived empty and the server answered "No files
+   * contextBridge. The request arrived empty and the server answered "No files
    * provided". Main is handed the paths and reads them off the same disk.
    */
   async function uploadFiles(paths: string[]) {

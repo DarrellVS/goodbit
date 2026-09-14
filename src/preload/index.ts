@@ -5,7 +5,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron';
  *
  * Deliberately thin: every entry forwards to one IPC channel and nothing else
  * happens here. The renderer wraps this in its own `api.ts`, which is where
- * arguments get copied to plain data — Vue reactive proxies cannot cross the
+ * arguments get copied to plain data, Vue reactive proxies cannot cross the
  * contextBridge and arrive as "An object could not be cloned".
  */
 const api = {
@@ -80,7 +80,7 @@ const api = {
   },
 
   /**
-   * Background service events — a clip appearing while the window is open, a
+   * Background service events, a clip appearing while the window is open, a
    * scan finishing. Returns an unsubscribe, because a component that forgets
    * to detach would otherwise keep a dead listener alive for the session.
    */

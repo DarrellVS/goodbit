@@ -22,7 +22,7 @@ async function backUpNow(): Promise<void> {
   try {
     const result = await window.goodbit?.backups.now();
     if (result?.taken) {
-      toastStore.success(`Copied ${result.clips} clips — the copy was read back and is sound`);
+      toastStore.success(`Copied ${result.clips} clips. The copy was read back and is sound`);
       await refresh();
     } else {
       toastStore.error(result?.reason ?? 'Could not take a copy');
@@ -58,7 +58,7 @@ onMounted(() => {
         <p class="text-sm text-muted-600 mt-1">
           A copy of the library is taken and read back whenever a new version of GoodBit starts, in
           case an update changes how things are stored. The last five are kept. Your clips
-          themselves are never touched — this is only the names, tags, notes and collections.
+          themselves are never touched. This is only the names, tags, notes and collections.
         </p>
       </div>
     </div>

@@ -93,8 +93,8 @@ export const BF_SKULL = decode(64, 64, [
  * The boxed word KILL from the label row under that banner.
  *
  * The skull alone is not enough. Battlefield draws skull-shaped icons for
- * assists as well, and any round icon — a clock for a sector, a helmet for a
- * spot — correlates with a skull well enough to matter. The word does not.
+ * assists as well, and any round icon, a clock for a sector, a helmet for a
+ * spot, correlates with a skull well enough to matter. The word does not.
  */
 export const BF_KILL_LABEL = decode(72, 44, [
     'HhkTEBIUFBYaHRwdICEfHx8gHx8fHx8eHh4fHxwZGBwhIRsYGRodHx4dHR4eGB8fHh0eHh4dGxoaGRkaGxkYGBcYFhAKCQkK',

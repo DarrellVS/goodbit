@@ -9,7 +9,7 @@ import { Clip } from '../../entity/Clip.js';
  * median; a quiet horror game is silence punctuated by stings, so everything
  * does. Measured across the library: Ride's clips peak at 0.61 above their own
  * normal at the median and never clear 0.94, while In Sound Mind's sit at 4.77
- * — which meant the fixed bar flagged *every single* In Sound Mind clip as a
+ *, which meant the fixed bar flagged *every single* In Sound Mind clip as a
  * highlight, and none of them as a rest.
  *
  * So a clip must clear the absolute floor and also beat what is ordinary for

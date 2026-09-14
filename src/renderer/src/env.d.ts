@@ -59,6 +59,7 @@ interface AppSettingsWire {
   videosRoot: string;
   audioRoot: string;
   publisherBaseUrl: string;
+  publisherToken?: string;
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   migratedFromWebApp: boolean;

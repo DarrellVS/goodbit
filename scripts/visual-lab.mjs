@@ -2,7 +2,7 @@
  * A bench for finding what a game's HUD gives away.
  *
  * Decodes one clip once on the GPU, crops a few regions, and prints a time
- * series of cheap per-frame statistics for each — so a candidate signal ("the
+ * series of cheap per-frame statistics for each, so a candidate signal ("the
  * kill banner appeared") can be checked against a clip whose content is known,
  * before any of it is wired into the analysis.
  *
@@ -13,7 +13,7 @@
  * Geometry is in **units of frame height, measured from an anchor**, never in
  * fractions of width. A game's HUD scales with height and sticks to an edge or
  * to the middle, so the same numbers land on the same pixels at 16:9 and at
- * 21:9 — which fractions of width do not.
+ * 21:9, which fractions of width do not.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import ffmpegPath from 'ffmpeg-static';
@@ -82,7 +82,7 @@ export function probeInfo(filePath) {
  * Sample a clip's HUD.
  *
  * One decode for every region. Frames stay on the GPU until `fps` has thrown
- * most of them away, so only the sampled ones cross to system memory — which
+ * most of them away, so only the sampled ones cross to system memory, which
  * is the whole cost: downloading all of them first and dropping them after
  * took twice as long. The crop happens at full resolution, because scaling
  * the frame down first blurs the HUD into the scenery it is meant to stand
@@ -101,7 +101,7 @@ export function probeClip(filePath, { fps = 4, regions, startSec, durationSec: w
   });
 
   // Several raw outputs cannot share one pipe, so each region is its own run
-  // when there is more than one. One region — the common case — streams.
+  // when there is more than one. One region. The common case, streams.
   const frames = {};
   keys.forEach((key, i) => {
     const r = regions[key];
@@ -131,7 +131,7 @@ export function probeClip(filePath, { fps = 4, regions, startSec, durationSec: w
 }
 
 /**
- * The share of a region that is bright and close to grey — which is what HUD
+ * The share of a region that is bright and close to grey, which is what HUD
  * text and icons are, on top of whatever the game is showing.
  */
 export function whiteShare(frame, { min = 170, spread = 34 } = {}) {
@@ -157,7 +157,7 @@ export function colourShare(frame, test) {
 }
 
 /**
- * A mask of the bright, near-grey pixels — HUD ink, whatever is behind it.
+ * A mask of the bright, near-grey pixels, HUD ink, whatever is behind it.
  */
 export function whiteMask(frame, width, height, { min = 170, spread = 34 } = {}) {
   const mask = new Uint8Array(width * height);
@@ -171,7 +171,7 @@ export function whiteMask(frame, width, height, { min = 170, spread = 34 } = {})
 
 /**
  * The share of the bright pixels that sit within a couple of pixels of a dark
- * one — which is what a letter or an icon is, and what a sunlit wall is not.
+ * one, which is what a letter or an icon is, and what a sunlit wall is not.
  *
  * Brightness alone cannot tell a kill banner from scenery: both hold a steady
  * level for seconds. Stroke width can, and costs one pass.

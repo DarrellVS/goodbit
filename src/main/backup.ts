@@ -10,7 +10,7 @@ import { backupsDir, loadSettings, saveSettings } from './settings.js';
  * The app runs TypeORM with `synchronize: true` and no migrations: on every
  * boot it compares the entities to the tables and changes the tables to match.
  * That is fine while the entities only gain columns, and on SQLite it is not
- * fine at all when a column changes type or goes away — the resolution is a
+ * fine at all when a column changes type or goes away. The resolution is a
  * table rebuild, and a rebuild that goes wrong takes the library with it.
  *
  * Migrations are the real answer and are not what 1.0 ships. What it ships
@@ -18,7 +18,7 @@ import { backupsDir, loadSettings, saveSettings } from './settings.js';
  * back* before any version that could carry a schema change is allowed near
  * the file. A backup nobody has opened is a guess, not a backup.
  *
- * Cheap by construction — one `VACUUM INTO`, only when the app version changed
+ * Cheap by construction, one `VACUUM INTO`, only when the app version changed
  * since the last successful boot.
  */
 
@@ -42,7 +42,7 @@ function stamp(): string {
  * A plain file copy taken while something is writing can capture a torn page,
  * and the manual "Back up now" button runs with the app's own connection open.
  * `VACUUM INTO` is answered by SQLite itself, so what lands is always a valid
- * database — and compacted on the way out. A read-only connection is enough;
+ * database, and compacted on the way out. A read-only connection is enough;
  * the source is never modified.
  */
 async function snapshot(source: string, target: string): Promise<void> {
@@ -86,7 +86,7 @@ async function verify(path: string): Promise<number> {
     return await new Promise<number>((resolve) =>
       db.get('SELECT COUNT(*) AS n FROM clip', (error, row: { n: number } | undefined) =>
         // A database from before the first scan has no `clip` table yet, and
-        // that is not a failure — only a corrupt copy is.
+        // that is not a failure, only a corrupt copy is.
         resolve(error ? 0 : (row?.n ?? 0)),
       ),
     );
@@ -115,7 +115,7 @@ function prune(): void {
 /**
  * Copy the database if this version has not booted before.
  *
- * Must be called before the DataSource is initialised — that is the moment
+ * Must be called before the DataSource is initialised. That is the moment
  * `synchronize` gets its hands on the schema, and the whole point is to have a
  * verified copy from *before* it.
  */

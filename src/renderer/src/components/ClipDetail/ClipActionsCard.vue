@@ -11,7 +11,7 @@ import type { Clip } from '../../types/clip';
  *
  * The published state used to be a card of its own above everything else, which
  * meant the page was headed by a status you only ever see on a minority of
- * clips — and that card was written in emerald-on-emerald, so it was
+ * clips, and that card was written in emerald-on-emerald, so it was
  * unreadable the moment the app went dark. It is a row in here now.
  */
 interface Props {

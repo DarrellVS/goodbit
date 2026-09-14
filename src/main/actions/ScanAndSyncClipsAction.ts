@@ -22,7 +22,7 @@ export type ScanResult = {
  * How much of the library may disappear in a single scan before it is treated
  * as a problem with the folder rather than as deletions.
  *
- * A clip row carries everything that cannot be recovered from disk — tags,
+ * A clip row carries everything that cannot be recovered from disk, tags,
  * notes, the display name, collection membership, stars. Losing half of them in
  * one pass is never something the user did by hand; it means the videos folder
  * is pointed somewhere wrong, or an external drive has not mounted yet.
@@ -102,8 +102,8 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
 
     // Deleting a clip row throws away the only copy of its tags, notes, display
     // name, collections and stars. When the videos folder is momentarily
-    // unreachable — an external drive not mounted yet, or a first-run picker
-    // pointed at the wrong place — every file looks missing at once, and the
+    // unreachable, an external drive not mounted yet, or a first-run picker
+    // pointed at the wrong place. Every file looks missing at once, and the
     // unguarded version of this loop wiped the whole library.
     let pruneSkipped: ScanResult['pruneSkipped'];
     const wipingEverything = entries.length === 0 && allClips.length > 0;
@@ -118,7 +118,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
         wouldHaveRemoved: missing.length,
       };
       console.warn(
-        `[scan] not removing anything — ${pruneSkipped.reason}. ` +
+        `[scan] not removing anything, ${pruneSkipped.reason}. ` +
           'Check the videos folder in Settings; nothing has been deleted.',
       );
     }

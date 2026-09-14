@@ -4,8 +4,8 @@ import { launchApp, seedClips, type TestApp } from './app';
 /**
  * Every screen, in both palettes.
  *
- * The dark-mode work shipped visibly broken — unreadable text on unreadable
- * ground — while typecheck, build and the CSS itself were all correct. Nothing
+ * The dark-mode work shipped visibly broken, unreadable text on unreadable
+ * ground, while typecheck, build and the CSS itself were all correct. Nothing
  * that existed could see the result. These walk the app and assert that what is
  * drawn is actually legible, which is the only check that would have caught it.
  */
@@ -146,7 +146,7 @@ test.describe('every screen, in both palettes', () => {
 
         for (const item of bad) {
           const ratio = contrast(item.fg, item.bg);
-          // 2.5:1 is far below the accessibility bar on purpose — this is
+          // 2.5:1 is far below the accessibility bar on purpose, this is
           // looking for text that is effectively invisible, not for text that
           // is merely low contrast.
           if (ratio < 2.5) {
@@ -168,7 +168,7 @@ test.describe('every screen, in both palettes', () => {
  *
  * A long games list grew the sidebar past the window instead of scrolling
  * inside it, so the page itself picked up a second scrollbar next to the
- * content one. Invisible to every other check — the markup was valid and
+ * content one. Invisible to every other check. The markup was valid and
  * nothing errored.
  */
 test.describe('layout', () => {
@@ -235,7 +235,7 @@ test.describe('layout', () => {
       await ctx.page.waitForTimeout(route.name === 'trim' ? 3000 : 600);
 
       // The editor used h-screen, which is 100vh and ignores the title bar
-      // above it — so it overflowed by exactly the bar's height.
+      // above it, so it overflowed by exactly the bar's height.
       const over = await ctx.page.evaluate(
         () => document.documentElement.scrollHeight - window.innerHeight,
       );
@@ -258,7 +258,7 @@ test.describe('layout', () => {
     }, id);
     await ctx.page.waitForTimeout(3000);
 
-    // Nothing overflowed the document — the page had its own scroller — so the
+    // Nothing overflowed the document. The page had its own scroller, so the
     // window-height test above was blind to this. What was actually wrong is
     // that the preview took the whole viewport and pushed the timeline, the
     // transport and the save button below the fold.
@@ -291,7 +291,7 @@ test.describe('layout', () => {
     }, id);
     await ctx.page.waitForTimeout(3000);
 
-    // The range opens on the whole clip, so both handles are at the extremes —
+    // The range opens on the whole clip, so both handles are at the extremes,
     // which is exactly where a mispositioned one shows up. Radix pulls a thumb
     // back inside the track by a share of its own width, so a thumb with any
     // width at all lands short of the edge it is marking.
@@ -356,7 +356,7 @@ test.describe('layout', () => {
 
           const box = el.getBoundingClientRect();
           if (box.width > 120 && box.height > 24) {
-            out.push(`${colour} — ${el.className.toString().slice(0, 60)}`);
+            out.push(`${colour}, ${el.className.toString().slice(0, 60)}`);
           }
         }
 

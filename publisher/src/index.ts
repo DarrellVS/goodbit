@@ -5,6 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { warnIfUnprotected } from './middlewares/requireToken.js';
 
 dotenv.config();
 
@@ -353,6 +354,7 @@ const PORT = Number(process.env.PORT || 5000);
 app.listen(PORT, () => {
   console.log(`Publisher listening on http://localhost:${PORT}`);
   console.log(`UPLOAD_DIR=${UPLOAD_DIR}`);
+  warnIfUnprotected();
 });
 
 

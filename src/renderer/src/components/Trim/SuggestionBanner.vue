@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
+import AppMark from '../App/AppMark.vue';
 import type { ClipSuggestions } from '../../services/clips';
 
 interface Props {
@@ -27,8 +28,8 @@ const emit = defineEmits<Emits>();
 /**
  * Nothing is shown unless the analysis is sure.
  *
- * Most clips have nothing to point at — a flat-sounding clip returns
- * `confident: false` — and a suggestion that is really a guess would teach the
+ * Most clips have nothing to point at, a flat-sounding clip returns
+ * `confident: false`, and a suggestion that is really a guess would teach the
  * user to ignore the banner entirely.
  */
 const show = computed(() => !!props.suggestions?.confident && !!props.suggestions.window);
@@ -61,8 +62,8 @@ const headline = computed(() =>
 
 const detail = computed(() =>
   evidence.value
-    ? ` — ${evidence.value}`
-    : ` — ${seconds.value}s, which is usually where the good bit is`,
+    ? evidence.value
+    : `${seconds.value}s, which is usually where the good bit is`,
 );
 
 const seconds = computed(() => {
@@ -102,14 +103,17 @@ function reject(): void {
     v-else-if="show && window"
     class="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-300 bg-orange-500/6"
   >
-    <Icon
-      :icon="evidence ? 'material-symbols:crosshair' : 'material-symbols:graphic-eq'"
-      class="text-lg text-orange-500 flex-shrink-0"
-    />
+    <!--
+      The app's own mark when the game told us what happened, a level meter when
+      all we did was listen. `material-symbols:crosshair` is not a real icon
+      name, so this was a blank space.
+    -->
+    <AppMark v-if="evidence" bare :size="20" class="text-orange-500" />
+    <Icon v-else icon="material-symbols:graphic-eq" class="text-lg text-orange-500 flex-shrink-0" />
 
     <div class="text-sm text-muted-800 min-w-0">
       <span class="font-semibold">{{ headline }}</span>
-      <span class="text-muted-500">{{ detail }}</span>
+      <span class="text-muted-500">, {{ detail }}</span>
     </div>
 
     <div class="flex items-center gap-1.5 ml-auto">

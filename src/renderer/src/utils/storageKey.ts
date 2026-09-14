@@ -4,7 +4,7 @@
  * The app was called Filmpje and its localStorage keys said so. Renaming them
  * outright would silently reset everyone's view settings and theme on the
  * version that did it, so the old key is copied across once and then left
- * alone — there is no second app reading it.
+ * alone. There is no second app reading it.
  */
 export function carryOverKey(legacyKey: string, key: string): void {
   try {

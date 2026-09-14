@@ -29,7 +29,7 @@ function parseTimemark(mark: string): number {
  * Run one ffmpeg command as a promise that can actually be cancelled.
  *
  * fluent-ffmpeg's `end`/`error` events are the only completion signal, and a
- * killed process arrives as an error — so an abort is translated back into a
+ * killed process arrives as an error, so an abort is translated back into a
  * CancelledError rather than being reported as a failed render.
  */
 export function runFfmpeg(command: FfmpegCommand, opts: RunOptions = {}): Promise<void> {

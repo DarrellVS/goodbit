@@ -19,7 +19,7 @@ const FFPROBE = FFPROBE_PATH;
 /**
  * `lossless` copies the streams and snaps the start back to a keyframe;
  * `exact` re-encodes at edit quality to land on the frame asked for;
- * `compressed` re-encodes at share size — see `CompressVideoAction`.
+ * `compressed` re-encodes at share size, see `CompressVideoAction`.
  */
 export type TrimMode = 'lossless' | 'exact' | 'compressed';
 
@@ -47,7 +47,7 @@ export interface TrimVideoOutput {
  * Cut a piece out of a clip.
  *
  * This used to always re-encode at crf 18, and `TrimAndSwapClipAction` puts the
- * result back over the original — so every trim was a generation loss on the
+ * result back over the original, so every trim was a generation loss on the
  * only copy of that moment that exists. Lossless is now the default: the
  * streams are copied and the start is snapped back to the nearest keyframe, so
  * the picture is the recorded bytes. `exact` stays available for when the cut
@@ -132,7 +132,7 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
    * The last keyframe at or before `t`.
    *
    * Reading packet flags only up to `t` keeps this cheap even on a long file.
-   * Falls back to `t` itself when the index says nothing useful — the copy then
+   * Falls back to `t` itself when the index says nothing useful, the copy then
    * starts a little late rather than failing.
    */
   async nearestKeyframeAtOrBefore(filePath: string, t: number): Promise<number> {

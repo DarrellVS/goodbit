@@ -10,7 +10,7 @@ import { useAppSettings } from '../composables/useAppSettings';
  * First run: the app needs somewhere to look for clips.
  *
  * This exists because the videos folder used to be an environment variable that
- * threw before the process could start — correct for one machine, useless for
+ * threw before the process could start, correct for one machine, useless for
  * an app someone installs. Nothing here is required beyond the first folder;
  * everything else has a sensible default and lives in Settings.
  */
@@ -76,7 +76,7 @@ async function finish(): Promise<void> {
           <span class="min-w-0 flex-1">
             <span class="block font-medium text-foreground">Your clips folder</span>
             <span class="block text-xs text-muted-500 truncate">
-              {{ settings.videosRoot || 'Required — choose a folder' }}
+              {{ settings.videosRoot || 'Required: choose a folder' }}
             </span>
           </span>
         </button>
@@ -90,7 +90,7 @@ async function finish(): Promise<void> {
           <span class="min-w-0 flex-1">
             <span class="block font-medium text-foreground">Music for the editor</span>
             <span class="block text-xs text-muted-500 truncate">
-              {{ settings.audioRoot || 'Optional — you can set this later' }}
+              {{ settings.audioRoot || 'Optional. You can set this later' }}
             </span>
           </span>
         </button>

@@ -14,7 +14,7 @@ export type GenerateThumbnailInput = {
  * One frame, for the card in the library.
  *
  * HDR sources are tone mapped. Without it the thumbnail comes out the washed-out
- * grey that an HDR picture always becomes when it is dumped into an SDR file —
+ * grey that an HDR picture always becomes when it is dumped into an SDR file,
  * which is the same bug that was fixed in the exports and in the frame strips,
  * and was still here because a thumbnail is one frame and nobody looks at it
  * next to the source.

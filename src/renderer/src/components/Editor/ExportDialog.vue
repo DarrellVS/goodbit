@@ -75,7 +75,7 @@ const canPosition = computed(() => format.value !== 'original');
 function applyPreset(id: string): void {
   const preset = PLATFORM_PRESETS.find((p) => p.id === id);
   if (!preset) return;
-  // Nothing a preset does is hidden — it sets the same controls shown below.
+  // Nothing a preset does is hidden. It sets the same controls shown below.
   format.value = preset.format;
   normalizeLoudness.value = preset.normalizeLoudness;
 }
@@ -147,7 +147,7 @@ watch(
               </span>
             </div>
             <p v-if="wasCleaned" class="text-xs text-amber-600">
-              Saved as “{{ cleanName }}” — characters a filename cannot hold were dropped.
+              Saved as “{{ cleanName }}”. Characters a filename cannot hold were dropped.
             </p>
           </div>
 
@@ -255,7 +255,7 @@ watch(
               />
             </div>
             <p class="text-xs text-muted-500">
-              {{ etaLabel || 'This runs on the server — it keeps going even if the render outlasts the page.' }}
+              {{ etaLabel || 'This runs on the server. It keeps going even if the render outlasts the page.' }}
             </p>
           </div>
 

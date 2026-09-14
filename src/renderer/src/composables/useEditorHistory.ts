@@ -19,7 +19,7 @@ interface HistoryPorts {
 /**
  * Undo and redo for the editor.
  *
- * Both lanes are captured together, because one gesture can touch both — the
+ * Both lanes are captured together, because one gesture can touch both, the
  * export cuts music at the video end, so deleting the last clip shortens the
  * music too, and undoing half of that would be worse than not undoing at all.
  *

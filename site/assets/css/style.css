@@ -1,5 +1,5 @@
 /*
- * GoodBit — the website.
+ * GoodBit, the website.
  *
  * Plain CSS, no build step. The visual idea is the app's own timeline: a ruler
  * down the left, hairlines instead of shadows, timecodes set in mono, square
@@ -1101,9 +1101,36 @@ tbody tr:last-child td {
  * `hidden` has to win.
  *
  * The attribute's own rule is `display: none` at user-agent weight, so any
- * class that sets `display` beats it — which left the route chooser on screen
+ * class that sets `display` beats it, which left the route chooser on screen
  * after it had been hidden, because `.route` is a grid.
  */
 [hidden] {
   display: none !important;
+}
+
+/* An aside you can open: the longer way round, for people who want it. */
+.prose details {
+  border: 1px solid var(--rule);
+  padding: 0.9rem 1.1rem;
+  margin: 1.4rem 0;
+}
+
+.prose details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.prose details summary:hover {
+  color: var(--accent);
+}
+
+.prose details[open] summary {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.prose details > *:last-child {
+  margin-bottom: 0;
 }

@@ -6,8 +6,8 @@
  * gives brightness and frame-to-frame difference, which separates "a menu with
  * music over it" from "something happening" without a model.
  *
- * Decoding is the expensive part — 33 seconds software on a 3440x1440 AV1 clip,
- * 6 with `-hwaccel cuda` — so this is kept apart from the audio pass and only
+ * Decoding is the expensive part, 33 seconds software on a 3440x1440 AV1 clip,
+ * 6 with `-hwaccel cuda`, so this is kept apart from the audio pass and only
  * run where it earns its cost.
  *
  *   node scripts/analysis-visual.mjs
