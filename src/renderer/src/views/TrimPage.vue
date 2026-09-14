@@ -139,6 +139,9 @@ const videoElement = computed(() =>
 const { currentTime, isPlaying, togglePlayback, seek, scrubTo } = useVideoPlayer({
   videoElement,
   range,
+  // The cut replaces this exact file, by renaming over it. Holding it open
+  // until then is how that rename fails.
+  locked: isSaving,
 });
 
 async function loadClipMetadata(): Promise<void> {

@@ -141,9 +141,12 @@ function startWatching(): void {
     // Game folders sit one level down; nothing deeper is a clip.
     depth: 2,
     ignoreInitial: true,
-    // The derived caches and the app's own output would otherwise loop.
+    // The derived caches, the app's own working files, and anything a trim
+    // left behind before those were hidden.
     ignored: (path: string) =>
-      basename(path).startsWith('.') || path.includes(`${sep}${CACHE_DIR_NAME}${sep}`),
+      basename(path).startsWith('.') ||
+      /\.tmp-\d+\.[a-z0-9]+$/i.test(basename(path)) ||
+      path.includes(`${sep}${CACHE_DIR_NAME}${sep}`),
     awaitWriteFinish: {
       stabilityThreshold: WRITE_SETTLE_MS,
       pollInterval: 500,

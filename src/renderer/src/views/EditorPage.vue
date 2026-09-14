@@ -124,6 +124,9 @@ function handleSeek(time: number): void {
 }
 
 function handlePlay(): void {
+  // Nothing plays while a render is reading the same files. See the watch on
+  // `isExporting` below.
+  if (isExporting.value) return;
   if (currentTime.value >= totalDuration.value) currentTime.value = 0;
   playing.value = true;
 }
@@ -168,6 +171,17 @@ const {
   exportClip,
   cancelCurrentExport,
 } = useClipExport(timelineClips, timelineAudio);
+
+/*
+ * Playback stops for the length of a render.
+ *
+ * The export reads every clip on the timeline while ffmpeg writes the result,
+ * and two players holding those files open is what produces a resource busy
+ * error partway through a job that has already done most of its work.
+ */
+watch(isExporting, (busy) => {
+  if (busy) playing.value = false;
+});
 
 const {
   drafts,
@@ -622,7 +636,10 @@ async function loadClipsFromQuery(): Promise<void> {
 
 useKeyboardShortcuts({
   actions: {
-    'editor-play-pause': togglePlayback,
+    'editor-play-pause': () => {
+      if (isExporting.value) return;
+      togglePlayback();
+    },
     'editor-skip-backward': () => skipBackward(),
     'editor-skip-forward': () => skipForward(),
     'editor-delete-clip': handleDeleteSelection,

@@ -61,8 +61,11 @@ const emit = defineEmits<Emits>();
         <Icon icon="material-symbols:fast-rewind" class="text-lg text-muted-700" />
       </button>
       
+      <!-- Nothing plays while a render is reading the same files. -->
       <button
-        class="p-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20"
+        class="p-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        :disabled="props.exporting"
+        :title="props.exporting ? 'Playback is paused while the export runs' : undefined"
         @click="playing ? emit('pause') : emit('play')"
       >
         <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-xl text-card" />

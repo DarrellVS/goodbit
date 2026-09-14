@@ -30,6 +30,13 @@ export type ScanResult = {
  */
 const MAX_PRUNE_FRACTION = 0.5;
 
+/**
+ * What a trim leaves behind while it works, and what an interrupted one leaves
+ * behind for good. Hidden by their leading dot now, but the older shape is
+ * still on disk in libraries that trimmed on 1.3.5 or earlier.
+ */
+const WORKING_FILE = /(^\.goodbit-(trim|bak)-|\.tmp-\d+\.[a-z0-9]+$)/i;
+
 function toRelPath(absolutePath: string): string {
   return path.relative(VIDEOS_ROOT, absolutePath);
 }
@@ -55,6 +62,11 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     let updated = 0;
 
     for (const absPath of entries) {
+      // Trims made before the working files were hidden left names like
+      // `clip.tmp-1789421332922.mp4` behind when one failed midway. They are
+      // not recordings and a row for one is worse than no row at all.
+      if (WORKING_FILE.test(path.basename(absPath))) continue;
+
       nowOnDisk.add(absPath);
       const rel = toRelPath(absPath);
       const game = rel.split(path.sep)[0] || '';

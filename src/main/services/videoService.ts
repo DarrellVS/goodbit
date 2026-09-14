@@ -67,7 +67,21 @@ class VideoService {
     await new OpenClipAction().execute({ clipId: id });
   }
 
+  /**
+   * A file that is already gone is not an obstacle to forgetting the clip.
+   *
+   * `shell.trashItem` throws on a path that does not exist, and the delete
+   * route trashes before it removes the row, so a clip whose file had been
+   * moved or renamed outside the app could never be deleted from inside it:
+   * every attempt failed on the file and left the row where it was.
+   */
   async moveClipFileToTrash(filePath: string): Promise<void> {
+    try {
+      await fsPromises.access(filePath);
+    } catch {
+      console.warn('[delete] file already gone, removing the row only:', filePath);
+      return;
+    }
     await new MoveFileToTrashAction().execute({ filePath });
   }
 }

@@ -60,8 +60,24 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
       .catch(() => null);
     const dir = path.dirname(clip.filePath);
     const ext = path.extname(clip.filePath) || '.mp4';
-    const tmpPath = path.join(dir, `${path.basename(clip.filePath, ext)}.tmp-${Date.now()}${ext}`);
-    const bakPath = `${clip.filePath}.bak`;
+    /*
+     * Both working files start with a dot, and that is not cosmetic.
+     *
+     * They are written into the game folder, because the swap at the end has to
+     * be a rename on one volume rather than a copy across two. That folder is
+     * watched. An exact trim re-encodes, which on a 3440 wide recording is tens
+     * of seconds, and for all of that time a file ending in .mp4 sat in a game
+     * folder looking exactly like a new recording: the watcher indexed it, and
+     * the library gained a second clip named `....tmp-1789421332922.mp4`, dated
+     * now, while the real clip kept its own date.
+     *
+     * A leading dot is the one thing both discovery paths already agree to
+     * skip: the watcher ignores any basename starting with one, and the scan
+     * globs with `dot: false`.
+     */
+    const stem = path.basename(clip.filePath, ext);
+    const tmpPath = path.join(dir, `.goodbit-trim-${stem}-${Date.now()}${ext}`);
+    const bakPath = path.join(dir, `.goodbit-bak-${stem}-${Date.now()}${ext}`);
 
     // If currently published, unpublish first so the old content is removed from the CDN
     if (wasPublished) {
@@ -96,6 +112,8 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
         onProgress: (fraction) => say('cutting', Math.round(fraction * 100)),
       });
     } catch (error) {
+      // A half written cut is not something to leave lying in a game folder.
+      try { await fsPromises.rm(tmpPath, { force: true }); } catch {}
       say('failed', 0);
       throw error;
     }

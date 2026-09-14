@@ -4,6 +4,15 @@ interface VideoPlayerOptions {
   videoElement: Ref<HTMLVideoElement | null>;
   range: Ref<[number, number]>;
   onMetadataLoaded?: () => void;
+  /**
+   * Set while something else is writing this file.
+   *
+   * A trim ends by renaming the new cut over the old one, and Windows refuses
+   * to rename a file a player is holding open. Playing the clip you are in the
+   * middle of replacing is asking for a resource busy error at the last step,
+   * with the cut already made.
+   */
+  locked?: Ref<boolean>;
 }
 
 /**
@@ -13,8 +22,10 @@ interface VideoPlayerOptions {
  * transport, so this is also where the playhead and the play/pause state that
  * page draws come from.
  */
-export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoPlayerOptions) {
+export function useVideoPlayer({ videoElement, range, onMetadataLoaded, locked }: VideoPlayerOptions) {
   const LOOP_THRESHOLD = 0.02;
+
+  const isLocked = (): boolean => locked?.value === true;
 
   const currentTime = ref(0);
   const isPlaying = ref(false);
@@ -31,7 +42,9 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
 
     if (video.currentTime >= endTime - LOOP_THRESHOLD) {
       video.currentTime = startTime;
-      if (video.paused) {
+      // The loop is what makes a lock more than a pause: pausing alone lasts
+      // until the range ends and this starts it again.
+      if (video.paused && !isLocked()) {
         video.play().catch(() => {});
       }
     }
@@ -58,7 +71,7 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
   /** Play from the start of the range if the playhead sits outside it. */
   function togglePlayback(): void {
     const video = videoElement.value;
-    if (!video) return;
+    if (!video || isLocked()) return;
 
     const [startTime, endTime] = range.value;
 
@@ -70,6 +83,13 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded }: VideoP
     } else {
       video.pause();
     }
+  }
+
+  // Stop the moment the file is claimed, not at the end of the range.
+  if (locked) {
+    watch(locked, (busy) => {
+      if (busy) videoElement.value?.pause();
+    });
   }
 
   /** Move the playhead, clamped to the trim range, outside it there is nothing to see. */
