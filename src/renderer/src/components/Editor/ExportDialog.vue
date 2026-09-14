@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseToggle from '../Base/BaseToggle.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import {
@@ -227,11 +228,11 @@ watch(
             </div>
           </div>
 
-          <label class="flex items-start gap-2.5 cursor-pointer">
-            <input
+          <div class="flex items-start gap-2.5">
+            <BaseToggle
               v-model="normalizeLoudness"
-              type="checkbox"
-              class="mt-0.5 accent-orange-500"
+              class="mt-0.5"
+              label="Even out the sound"
               :disabled="exporting"
             />
             <span class="text-sm text-muted-700">
@@ -240,7 +241,7 @@ watch(
                 Puts the whole movie at −14 LUFS, the level the platforms turn everything down to anyway
               </span>
             </span>
-          </label>
+          </div>
 
           <div v-if="exporting" class="space-y-1.5">
             <div class="flex items-center justify-between text-xs font-medium text-muted-700">

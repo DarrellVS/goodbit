@@ -12,9 +12,11 @@ import ffprobeStatic from 'ffprobe-static';
 import { launchApp, seedClips, type TestApp } from './app';
 
 /**
- * A trimmed recording is a hundred megabytes of a ten second moment. By
- * default a trim now re-encodes to share size, and publishing can send a
- * compressed copy while the file on disk stays as recorded. Both are checked
+ * Two different questions, and they have different answers.
+ *
+ * A trim replaces the only copy of that moment, so it keeps the recorded
+ * picture unless asked otherwise. What goes to a public link is a copy, so it
+ * is shrunk by default and the file on disk is never touched. Both are checked
  * against what actually lands: the bytes on disk, and the bytes a publisher
  * receives.
  */
@@ -135,47 +137,55 @@ test.describe('compressing what gets shared', () => {
     await publisher?.close();
   });
 
-  test('a trim compresses by default and lands exactly where asked', async () => {
+  test('a trim keeps the recorded picture unless asked otherwise', async () => {
     const clip = (await clips())[0];
-    const before = statSync(clip.filePath).size;
 
     const res = await call('POST', `/clips/${clip.id}/trim`, { startSec: 1.25, endSec: 2.25 });
-    const body = res.body as { mode: string; actualStartSec: number; actualEndSec: number; sizeBytes: number };
+    const body = res.body as { mode: string; actualStartSec: number; sizeBytes: number };
     expect(res.status).toBe(200);
-    expect(body.mode).toBe('compressed');
-    // A re-encode does not snap to a keyframe: the cut is the cut.
-    expect(body.actualStartSec).toBeCloseTo(1.25, 2);
-    expect(body.actualEndSec).toBeCloseTo(2.25, 2);
-
-    const after = probe(clip.filePath);
-    expect(after.codec).toBe('h264');
-    expect(after.durationSec).toBeGreaterThan(0.9);
-    expect(after.durationSec).toBeLessThan(1.15);
+    expect(body.mode).toBe('lossless');
+    // The fixture has one keyframe, at zero: a copy from 1.25 starts there.
+    expect(body.actualStartSec).toBeLessThan(1.25);
     expect(body.sizeBytes).toBe(statSync(clip.filePath).size);
-    expect(body.sizeBytes).toBeLessThan(before);
   });
 
-  test('turning the setting off makes a trim a lossless copy again', async () => {
-    await saveSettings({ compressTrims: false });
+  test('turning the setting on re-encodes the cut, exactly where asked', async () => {
+    await saveSettings({ compressTrims: true });
     try {
       const clip = (await clips())[1];
+      const before = statSync(clip.filePath).size;
+
       const res = await call('POST', `/clips/${clip.id}/trim`, { startSec: 1.25, endSec: 2.25 });
-      const body = res.body as { mode: string; actualStartSec: number };
+      const body = res.body as {
+        mode: string;
+        actualStartSec: number;
+        actualEndSec: number;
+        sizeBytes: number;
+      };
       expect(res.status).toBe(200);
-      expect(body.mode).toBe('lossless');
-      // The fixture has one keyframe, at zero: a copy from 1.25 starts there.
-      expect(body.actualStartSec).toBeLessThan(1.25);
+      expect(body.mode).toBe('compressed');
+      // A re-encode does not snap to a keyframe: the cut is the cut.
+      expect(body.actualStartSec).toBeCloseTo(1.25, 2);
+      expect(body.actualEndSec).toBeCloseTo(2.25, 2);
+
+      const after = probe(clip.filePath);
+      expect(after.codec).toBe('h264');
+      expect(after.durationSec).toBeGreaterThan(0.9);
+      expect(after.durationSec).toBeLessThan(1.15);
+      expect(body.sizeBytes).toBe(statSync(clip.filePath).size);
+      expect(body.sizeBytes).toBeLessThan(before);
     } finally {
-      await saveSettings({ compressTrims: true });
+      await saveSettings({ compressTrims: false });
     }
   });
 
-  test('publishing a compressed copy sends a smaller file and leaves the original alone', async () => {
+  test('publishing sends a smaller copy and leaves the original alone', async () => {
     const clip = (await clips())[2];
     const originalHash = sha(clip.filePath);
     const originalSize = statSync(clip.filePath).size;
 
-    const res = await call('POST', `/clips/${clip.id}/publish`, { compress: true });
+    // Nothing passed: the compress-published setting decides, and it is on.
+    const res = await call('POST', `/clips/${clip.id}/publish`, {});
     expect(res.status).toBe(200);
     expect((res.body as { published: boolean }).published).toBe(true);
 
@@ -200,14 +210,29 @@ test.describe('compressing what gets shared', () => {
     expect(publisher.received.length).toBe(countBefore);
   });
 
-  test('a plain publish still sends the file as it is', async () => {
+  test('asking for the original uploads the recording byte for byte', async () => {
     const clip = (await clips())[3];
-    const res = await call('POST', `/clips/${clip.id}/publish`, {});
+    const res = await call('POST', `/clips/${clip.id}/publish`, { compress: false });
     expect(res.status).toBe(200);
 
     const upload = publisher.received.find((r) => r.filename === clip.filename);
     expect(upload).toBeTruthy();
     expect(upload!.sizeBytes).toBe(statSync(clip.filePath).size);
     expect(sha(upload!.path)).toBe(sha(clip.filePath));
+  });
+
+  test('the setting can be turned off, and then a plain publish sends the original', async () => {
+    await saveSettings({ compressPublished: false });
+    try {
+      const clip = (await clips())[0];
+      const res = await call('POST', `/clips/${clip.id}/publish`, {});
+      expect(res.status).toBe(200);
+
+      const upload = publisher.received.filter((r) => r.filename === clip.filename).pop();
+      expect(upload).toBeTruthy();
+      expect(sha(upload!.path)).toBe(sha(clip.filePath));
+    } finally {
+      await saveSettings({ compressPublished: true });
+    }
   });
 });

@@ -26,20 +26,24 @@ export function createClipActionHandlers(params: {
   const getClip = () => toValue(params.clip);
   
   /**
-   * Two entry points rather than one with a flag: both are bound straight to
-   * clicks, and a click handler's first argument is the event.
+   * Three entry points rather than one with a flag: each is bound straight to a
+   * click, and a click handler's first argument is the event, not a flag.
+   *
+   * `onPublish` says nothing about compression and lets the setting decide;
+   * the other two override it for one upload.
    */
-  const onPublish = () => publish(false);
+  const onPublish = () => publish(undefined);
   const onPublishCompressed = () => publish(true);
+  const onPublishOriginal = () => publish(false);
 
-  async function publish(compress: boolean) {
+  async function publish(compress: boolean | undefined) {
     if (params.isPublishing.value) return;
     params.isPublishing.value = true;
     try {
       const clip = getClip();
       const updated = await publishClip(clip.id, { compress });
       params.emitUpdated(updated);
-      const title = compress ? 'Compressed copy published' : 'Clip published';
+      const title = compress === true ? 'Compressed copy published' : 'Clip published';
       if (updated.publishedUrl) {
         await navigator.clipboard.writeText(updated.publishedUrl).catch(() => {});
         toastStore.success('URL copied to clipboard', title);
@@ -174,6 +178,7 @@ export function createClipActionHandlers(params: {
   return { 
     onPublish, 
     onPublishCompressed,
+    onPublishOriginal,
     onUnpublish, 
     onCopyUrl, 
     onReveal, 

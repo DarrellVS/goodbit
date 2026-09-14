@@ -39,13 +39,19 @@ export interface Settings {
   /**
    * Re-encode a trim to share size instead of keeping the recorded bytes.
    *
-   * Default on: a ten second cut of an OBS recording is a hundred megabytes,
-   * which is the wrong size for a file whose purpose is being sent to someone.
-   * Off keeps the trim lossless — a stream copy snapped to a keyframe. While
-   * on, publishing also offers to send a compressed copy and leave the
-   * original alone.
+   * **Default off.** A trim replaces the only copy of that moment, so the
+   * recorded picture is kept unless someone asks otherwise; on, a cut is
+   * re-encoded to roughly a fifth of the size.
    */
   compressTrims?: boolean;
+  /**
+   * Send a share-sized copy to the publisher instead of the file itself.
+   *
+   * **Default on**, and a different question from the one above: what goes to
+   * a public link is a copy, so shrinking it costs nothing on disk and saves
+   * whoever opens the link most of the download.
+   */
+  compressPublished?: boolean;
   /** Where the window was last, so it opens where you left it. */
   window?: WindowBounds;
 }
@@ -152,9 +158,14 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   return next;
 }
 
-/** Whether trims are re-encoded to share size. Unset means yes. */
+/** Whether a trim is re-encoded to share size. Unset means no. */
 export function compressTrims(): boolean {
-  return loadSettings().compressTrims !== false;
+  return loadSettings().compressTrims === true;
+}
+
+/** Whether what goes to the publisher is a share-sized copy. Unset means yes. */
+export function compressPublished(): boolean {
+  return loadSettings().compressPublished !== false;
 }
 
 /** True when there is enough to start: somewhere to read clips from. */

@@ -14,6 +14,8 @@ import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
 import { exportLabels, recordRejection, summarise } from '../services/highlights/labels.js';
+import { registered } from '../services/highlights/registry.js';
+import '../services/highlights/games/index.js';
 import { EnsureClipSuggestionsAction } from '../actions/EnsureClipSuggestionsAction.js';
 import { TrimVideoAction, type TrimMode } from '../actions/TrimVideoAction.js';
 import {
@@ -359,6 +361,21 @@ clipsRouter.get('/:id/suggestions', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Which games have a module that reads their screen.
+ *
+ * Asked for before any clip is analysed, so the Trim page can say that a wait
+ * is a few seconds of reading rather than a tenth of a second of listening.
+ * Must be declared before `/:id/suggestions`, or Express reads "suggestions"
+ * as a clip id.
+ */
+clipsRouter.get('/suggestions/watchers', asyncHandler(async (_req, res) => {
+  const games = registered()
+    .filter((entry) => entry.watches)
+    .flatMap((entry) => entry.games.map((game) => game.toLowerCase()));
+  res.json({ games, modules: registered() });
+}));
+
+/**
  * "That suggestion was wrong."
  *
  * One click, and the only way the app ever learns that a confident answer was
@@ -416,7 +433,7 @@ clipsRouter.delete('/suggestions/model', asyncHandler(async (_req, res) => {
 clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const { compress } = (req.body ?? {}) as { compress?: boolean };
-  if (compress) {
+  if (compress === true) {
     // A compressed copy is an offer for a clip that has never been published:
     // the file already up there is the file, and swapping it for a smaller one
     // behind a link that is already out is not what anyone clicked.
@@ -426,7 +443,7 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
     }
   }
   const action = new PublishClipAction();
-  const { clip } = await action.execute({ id, compress: !!compress });
+  const { clip } = await action.execute({ id, compress });
   const repo = AppDataSource.getRepository(Clip);
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
   const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);

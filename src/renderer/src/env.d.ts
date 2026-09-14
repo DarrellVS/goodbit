@@ -63,6 +63,7 @@ interface AppSettingsWire {
   migratedFromWebApp: boolean;
   learnFromTrims?: boolean;
   compressTrims?: boolean;
+  compressPublished?: boolean;
 }
 
 interface BackupFileWire {

@@ -8,6 +8,11 @@ interface Props {
   loading: boolean;
   /** True once the range already matches the suggestion, so the button can say so. */
   applied: boolean;
+  /**
+   * Whether this game's clips get their screen read as well as heard. Known
+   * before the answer arrives, so the wait can say what is taking the time.
+   */
+  watchesScreen?: boolean;
 }
 
 interface Emits {
@@ -41,6 +46,25 @@ const label = computed(() => {
   return w ? `${format(w.start)} – ${format(w.end)}` : '';
 });
 
+/**
+ * What the game itself showed, when it showed anything.
+ *
+ * Loudness can only report that a clip got loud, so its banner says so in
+ * general terms. A kill banner is the game confirming what happened, and then
+ * the suggestion can say why it is being made.
+ */
+const evidence = computed(() => props.suggestions?.evidence ?? null);
+
+const headline = computed(() =>
+  evidence.value ? `Worth keeping: ${label.value}` : `The loudest stretch is ${label.value}`,
+);
+
+const detail = computed(() =>
+  evidence.value
+    ? ` — ${evidence.value}`
+    : ` — ${seconds.value}s, which is usually where the good bit is`,
+);
+
 const seconds = computed(() => {
   const w = window.value;
   return w ? Math.round((w.end - w.start) * 10) / 10 : 0;
@@ -63,19 +87,29 @@ function reject(): void {
     v-if="loading"
     class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card/60 text-sm text-muted-500"
   >
-    <Icon icon="material-symbols:graphic-eq" class="text-base animate-pulse" />
-    Listening to this clip…
+    <Icon
+      :icon="watchesScreen ? 'material-symbols:screenshot-monitor' : 'material-symbols:graphic-eq'"
+      class="text-base animate-pulse"
+    />
+    <!--
+      Reading the screen takes a few seconds where listening takes a tenth of
+      one, so the wait says which is happening rather than looking stuck.
+    -->
+    {{ watchesScreen ? 'Listening, and reading this game’s HUD…' : 'Listening to this clip…' }}
   </div>
 
   <div
     v-else-if="show && window"
     class="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-300 bg-orange-500/6"
   >
-    <Icon icon="material-symbols:graphic-eq" class="text-lg text-orange-500 flex-shrink-0" />
+    <Icon
+      :icon="evidence ? 'material-symbols:crosshair' : 'material-symbols:graphic-eq'"
+      class="text-lg text-orange-500 flex-shrink-0"
+    />
 
     <div class="text-sm text-muted-800 min-w-0">
-      <span class="font-semibold">The loudest stretch is {{ label }}</span>
-      <span class="text-muted-500"> — {{ seconds }}s, which is usually where the good bit is</span>
+      <span class="font-semibold">{{ headline }}</span>
+      <span class="text-muted-500">{{ detail }}</span>
     </div>
 
     <div class="flex items-center gap-1.5 ml-auto">

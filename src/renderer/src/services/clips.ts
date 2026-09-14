@@ -196,6 +196,15 @@ export async function getKeyframes(id: number, until: number): Promise<number[]>
   return data.keyframes;
 }
 
+/** Something the game itself put on screen, and when. */
+export interface SuggestionEvent {
+  kind: string;
+  atSec: number;
+  untilSec?: number;
+  confidence: number;
+  reason: string;
+}
+
 export interface ClipSuggestions {
   clipId: number;
   analyzed: boolean;
@@ -209,7 +218,25 @@ export interface ClipSuggestions {
   peakZ: number;
   eventSec: number;
   bar: number;
-  basis: 'rule' | 'model';
+  basis: 'rule' | 'model' | 'hud';
+  /** Why this is being suggested, when the grounds are worth saying out loud. */
+  evidence: string | null;
+  /** What the game itself showed. Empty for a game with no module. */
+  events: SuggestionEvent[];
+  /** True when this game's clips get their screen read as well as heard. */
+  watchesScreen: boolean;
+}
+
+/**
+ * Which games have their screen read.
+ *
+ * Asked for once, before any clip is analysed, so the Trim page can say that a
+ * wait is a few seconds of reading rather than a tenth of a second of
+ * listening. Lower case, to compare against a folder name.
+ */
+export async function getHudWatchedGames(): Promise<string[]> {
+  const { data } = await axios.get<{ games: string[] }>('/api/clips/suggestions/watchers');
+  return data.games;
 }
 
 export async function getClipSuggestions(
@@ -293,13 +320,16 @@ export async function getEncoderInfo(): Promise<EncoderInfo> {
 }
 
 /**
- * `compress` uploads a share-sized copy and leaves the file on disk alone.
- * Only for a clip that has not been published; the server refuses otherwise.
+ * `compress` uploads a share-sized copy and leaves the file on disk alone;
+ * `false` uploads the recording as it is. Left out, the compress-published
+ * setting decides. Only for a clip that has not been published — the server
+ * refuses a compressed copy of one already up.
  */
 export async function publishClip(id: number, options: { compress?: boolean } = {}): Promise<Clip> {
-  const { data } = await axios.post<Clip>(`/api/clips/${id}/publish`, {
-    compress: !!options.compress,
-  });
+  const { data } = await axios.post<Clip>(
+    `/api/clips/${id}/publish`,
+    options.compress === undefined ? {} : { compress: options.compress },
+  );
   return data;
 }
 

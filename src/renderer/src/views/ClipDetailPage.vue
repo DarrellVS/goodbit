@@ -53,11 +53,15 @@ const shareUrl = computed(() =>
 );
 
 /** Publishing from the share sheet, so the code it was after can appear. */
-async function publishFromShare(compressed: boolean): Promise<void> {
+async function publishFromShare(compressed: boolean | undefined): Promise<void> {
   if (!clip.value) return;
   try {
     handleClipUpdated(await publishClip(clip.value.id, { compress: compressed }));
-    toastStore.success(compressed ? 'Compressed copy published — the link is ready' : 'Published — the link is ready');
+    toastStore.success(
+      compressed === true
+        ? 'Compressed copy published — the link is ready'
+        : 'Published — the link is ready',
+    );
   } catch (error) {
     toastStore.error((error as Error).message || 'Could not publish this clip');
   }

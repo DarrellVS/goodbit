@@ -1,4 +1,6 @@
 import type { HighlightFeatures } from './features.js';
+import type { Region } from './vision/geometry.js';
+import type { SampledRegion } from './vision/sample.js';
 
 /**
  * Per-game knowledge, kept out of the general rule.
@@ -9,18 +11,18 @@ import type { HighlightFeatures } from './features.js';
  * it. Those are facts about one game, and hard-coding them into the rule would
  * make it worse everywhere else.
  *
- * A module claims some game folder names and may adjust the verdict for them.
- * It sees only the features, never the audio, so adding one costs nothing at
- * analysis time.
+ * A module claims some game folder names and may do two things for them: name
+ * boxes on the screen it wants sampled and turn what appears in them into
+ * events, and adjust the verdict the general rule would reach.
  *
- * **There are deliberately none of these yet.** Every candidate tweak I could
- * think of — shorter lead-in for racing, a higher bar for shooters — was a
- * guess rather than a measurement, and guesses aimed at one game are exactly
- * what produced the suggestions that pointed at nothing. The per-game
- * behaviour that *is* justified by measurement is game calibration, which is
- * general and lives in `calibration.ts`. This is here so the next real finding
- * has somewhere to go.
+ * **Adding one is a measuring job, not a guessing one.** Every tweak that
+ * suggested itself from the armchair — shorter lead-in for racing, a higher
+ * bar for shooters — was a guess, and guesses aimed at one game are exactly
+ * what produced suggestions that pointed at nothing. `scripts/visual-*.mjs`
+ * is the bench: it renders what a candidate rule actually picked, and no rule
+ * belongs here until those contact sheets show the thing it claims to find.
  */
+
 export interface GameRefinement {
   /** Refuse outright, with a reason worth showing someone. */
   reject?: string;
@@ -34,15 +36,61 @@ export interface GameRefinement {
   minWindowSec?: number;
 }
 
+/**
+ * Something the game itself said happened, and when.
+ *
+ * This is the strongest evidence there is — stronger than loudness, which can
+ * only report that a clip got loud. A kill banner is the game confirming a
+ * kill, so a suggestion built on one can say *why* it is being made.
+ */
+export interface GameEvent {
+  /** A short machine name: 'kill', 'multi-kill'. */
+  kind: string;
+  /** When it happened, in seconds from the start of the clip. */
+  atSec: number;
+  /**
+   * When it finished, for something that took a while — three kills in nine
+   * seconds is one event nine seconds long, and the window has to fit it.
+   */
+  untilSec?: number;
+  /** How sure the detector is, 0 to 1. */
+  confidence: number;
+  /**
+   * One line for the person looking at the suggestion, in the app's voice:
+   * lower case, plain, no exclamation marks.
+   */
+  reason: string;
+}
+
+export interface WatchInput {
+  /** The boxes this module asked for, sampled in order. */
+  regions: Record<string, SampledRegion>;
+  /** Samples per second. */
+  fps: number;
+  frameWidth: number;
+  frameHeight: number;
+  durationSec: number;
+}
+
 export interface GameModule {
   /** Folder names this applies to. Matched case-insensitively. */
   games: string[];
   /** What this module knows, in one line, for anyone reading the registry. */
   describe: string;
+  /**
+   * Boxes on the screen to sample, keyed by name. Declaring any of these is
+   * what makes a clip of this game worth decoding frames for at all; a game
+   * with no module is never decoded.
+   */
+  regions?: Record<string, Region>;
+  /** Turn the sampled boxes into events. Only called when `regions` is set. */
+  watch?(input: WatchInput): GameEvent[];
   refine(input: {
     features: HighlightFeatures;
     /** The bar the general rule would use, after calibration. */
     bar: number;
+    /** What the HUD gave away, if this module watched for anything. */
+    events?: GameEvent[];
   }): GameRefinement;
 }
 
@@ -63,7 +111,17 @@ export function moduleFor(game: string): GameModule | null {
   return MODULES.find((m) => m.games.some((g) => g.toLowerCase() === wanted)) ?? null;
 }
 
+/** Whether a clip of this game has anything on screen worth reading. */
+export function watchesScreen(game: string): boolean {
+  const module = moduleFor(game);
+  return !!module?.regions && !!module.watch;
+}
+
 /** What is registered, for the settings screen and for logs. */
-export function registered(): Array<{ games: string[]; describe: string }> {
-  return MODULES.map(({ games, describe }) => ({ games, describe }));
+export function registered(): Array<{ games: string[]; describe: string; watches: boolean }> {
+  return MODULES.map(({ games, describe, regions, watch }) => ({
+    games,
+    describe,
+    watches: !!regions && !!watch,
+  }));
 }

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAppSettings } from '../../composables/useAppSettings';
 import { usePublisher } from '../../composables/usePublisher';
+import SettingToggle from './SettingToggle.vue';
 import { useToastStore } from '../../stores/toast';
 import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
 
@@ -19,8 +20,8 @@ const { refresh: refreshPublisher } = usePublisher();
 const toast = useToastStore();
 
 /** The clip menus read this through `usePublisher`, so tell them. */
-async function saveCompressTrims(on: boolean): Promise<void> {
-  await save({ compressTrims: on });
+async function saveCompressPublished(on: boolean): Promise<void> {
+  await save({ compressPublished: on });
   await refreshPublisher();
 }
 
@@ -117,53 +118,40 @@ async function testPublisher(): Promise<void> {
         </div>
       </div>
 
-      <label class="flex items-start justify-between gap-4 p-4 bg-card rounded-lg border border-border cursor-pointer">
-        <span>
-          <span class="block font-medium text-foreground">Start with Windows</span>
-          <span class="block text-sm text-muted-500 mt-1">
-            Runs in the tray and indexes clips as they are recorded
-          </span>
-        </span>
-        <input
-          type="checkbox"
-          class="mt-1 accent-orange-500"
-          :checked="settings.startAtLogin"
-          @change="save({ startAtLogin: ($event.target as HTMLInputElement).checked })"
-        />
-      </label>
+      <SettingToggle
+        label="Start with Windows"
+        description="Runs in the tray and indexes clips as they are recorded"
+        :model-value="settings.startAtLogin"
+        @update:model-value="save({ startAtLogin: $event })"
+      />
 
-      <label class="flex items-start justify-between gap-4 p-4 bg-card rounded-lg border border-border cursor-pointer">
-        <span>
-          <span class="block font-medium text-foreground">Keep running when the window closes</span>
-          <span class="block text-sm text-muted-500 mt-1">
-            Off means closing the window quits, and nothing is indexed until you open it again
-          </span>
-        </span>
-        <input
-          type="checkbox"
-          class="mt-1 accent-orange-500"
-          :checked="settings.keepRunningInTray"
-          @change="save({ keepRunningInTray: ($event.target as HTMLInputElement).checked })"
-        />
-      </label>
+      <SettingToggle
+        label="Keep running when the window closes"
+        description="Off means closing the window quits, and nothing is indexed until you open it again"
+        :model-value="settings.keepRunningInTray"
+        @update:model-value="save({ keepRunningInTray: $event })"
+      />
 
-      <label class="flex items-start justify-between gap-4 p-4 bg-card rounded-lg border border-border cursor-pointer">
-        <span>
-          <span class="block font-medium text-foreground">Compress clips when trimming</span>
-          <span class="block text-sm text-muted-500 mt-1">
-            A trim re-encodes the cut to share size — roughly a fifth of the recording — and
-            publishing offers a compressed copy. Off keeps the recorded bytes: a lossless cut to
-            the nearest keyframe.
-          </span>
-        </span>
-        <input
-          type="checkbox"
-          class="mt-1 accent-orange-500"
-          aria-label="Compress clips when trimming"
-          :checked="settings.compressTrims !== false"
-          @change="saveCompressTrims(($event.target as HTMLInputElement).checked)"
-        />
-      </label>
+      <SettingToggle
+        label="Compress clips when trimming"
+        description="A trim replaces the only copy of that moment, so this is off: the cut keeps the recorded picture, snapped to the nearest keyframe. On, it is re-encoded to roughly a fifth of the size."
+        :model-value="settings.compressTrims === true"
+        @update:model-value="save({ compressTrims: $event })"
+      />
+
+      <!--
+        A different question from the one above, which is why it is a different
+        switch: what goes to a public link is a copy, so shrinking it costs
+        nothing on disk. Hidden when there is no publisher — a setting for a
+        feature you do not have is noise.
+      -->
+      <SettingToggle
+        v-if="settings.publisherBaseUrl"
+        label="Compress clips when publishing"
+        description="The file on disk is untouched; only the copy behind the public link is re-encoded, so it downloads in a fifth of the time. Off uploads the recording as it is."
+        :model-value="settings.compressPublished !== false"
+        @update:model-value="saveCompressPublished($event)"
+      />
 
       <div class="p-4 bg-card rounded-lg border border-border space-y-3">
         <div>

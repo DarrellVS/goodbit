@@ -1,20 +1,24 @@
 <script setup lang="ts">
+import BaseToggle from '../Base/BaseToggle.vue';
+
+/**
+ * One row of the settings screen: what the switch is, what it does, and the
+ * switch itself. The switch is `Base/BaseToggle.vue` — there is one of those
+ * in the app, not one per screen.
+ */
 interface Props {
   modelValue: boolean;
   label: string;
   description: string;
+  disabled?: boolean;
 }
 
 interface Emits {
   (e: 'update:modelValue', value: boolean): void;
 }
 
-const props = defineProps<Props>();
+withDefaults(defineProps<Props>(), { disabled: false });
 const emit = defineEmits<Emits>();
-
-function toggle(): void {
-  emit('update:modelValue', !props.modelValue);
-}
 </script>
 
 <template>
@@ -23,16 +27,11 @@ function toggle(): void {
       <label class="font-medium text-foreground">{{ label }}</label>
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>
     </div>
-    <button
-      class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-      :class="modelValue ? 'bg-orange-500' : 'bg-muted-300'"
-      @click="toggle"
-    >
-      <span
-        class="inline-block h-4 w-4 transform rounded-full bg-card transition-transform"
-        :class="modelValue ? 'translate-x-6' : 'translate-x-1'"
-      />
-    </button>
+    <BaseToggle
+      :model-value="modelValue"
+      :label="label"
+      :disabled="disabled"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
   </div>
 </template>
-

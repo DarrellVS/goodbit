@@ -25,6 +25,7 @@
         :suggestions="suggestions"
         :loading="suggestionsLoading"
         :applied="suggestionApplied"
+        :watches-screen="watchesScreen"
         @apply="applySuggestion"
         @seek="seek"
         @reject="rejectThisSuggestion"
@@ -62,6 +63,7 @@ import {
   getClip,
   getClipMeta,
   getClipSuggestions,
+  getHudWatchedGames,
   rejectSuggestion,
   trimClip,
   updateClipName,
@@ -159,6 +161,17 @@ const suggestions = ref<ClipSuggestions | null>(null);
 const suggestionsLoading = ref(false);
 
 /**
+ * Whether this clip's game gets its screen read as well as heard.
+ *
+ * Known from the game's folder name alone, so the banner can say what a wait
+ * is for before the answer that would have told it arrives.
+ */
+const hudGames = ref<string[]>([]);
+const watchesScreen = computed(
+  () => !!clip.value && hudGames.value.includes(clip.value.game.trim().toLowerCase()),
+);
+
+/**
  * The banner only appears when the analysis is confident, so a failure here is
  * not worth telling the user about — there was nothing promised to lose.
  */
@@ -231,5 +244,11 @@ onMounted(() => {
   void loadClip();
   void loadClipMetadata();
   void loadSuggestions();
+  // Nothing depends on this arriving; it only changes what the wait says.
+  void getHudWatchedGames()
+    .then((games) => {
+      hudGames.value = games;
+    })
+    .catch(() => {});
 });
 </script>

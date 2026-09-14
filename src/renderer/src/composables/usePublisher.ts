@@ -11,16 +11,18 @@ import { computed, ref } from 'vue';
  */
 const configured = ref(false);
 /**
- * Whether publishing also offers a compressed copy. Tied to the compress-trims
- * setting: someone who wants their trims small wants the same of what they
- * send out, and someone who turned it off asked for the recorded bytes.
+ * Whether a plain publish sends a share-sized copy.
+ *
+ * The menu needs this to say what its two entries do: one repeats the setting,
+ * the other does the opposite of it, and neither should make you guess which
+ * is which.
  */
-const offersCompressed = ref(true);
+const compressesPublished = ref(true);
 let started = false;
 
-function apply(settings: { publisherBaseUrl: string; compressTrims?: boolean } | undefined): void {
+function apply(settings: { publisherBaseUrl: string; compressPublished?: boolean } | undefined): void {
   configured.value = !!settings?.publisherBaseUrl;
-  offersCompressed.value = settings?.compressTrims !== false;
+  compressesPublished.value = settings?.compressPublished !== false;
 }
 
 export function usePublisher() {
@@ -36,7 +38,7 @@ export function usePublisher() {
 
   return {
     isConfigured: computed(() => configured.value),
-    offersCompressed: computed(() => offersCompressed.value),
+    compressesPublished: computed(() => compressesPublished.value),
     refresh,
   };
 }

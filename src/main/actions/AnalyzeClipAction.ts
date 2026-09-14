@@ -28,20 +28,23 @@ const FFMPEG = FFMPEG_PATH;
  * the game and on any trained model, and both can change without the audio
  * changing. Keeping them apart is what lets the expensive half stay cached.
  *
- * Deliberately audio only. Scene-change detection was measured at 33 s per clip
- * in software and 6 s with GPU decode on these 3440x1440 files, against 0.1 s
- * for listening. An AudioSet tagger (YAMNet) was tried too and is not used: on
- * 88 real clips its classes did not separate the moments worth keeping from the
- * rest, and its strongest `Gunshot`/`Explosion` frame disagreed with the
- * loudness peak on every single accepted clip. `scripts/analysis-tags.mjs`
- * keeps that experiment runnable rather than repeatable by accident.
+ * Audio only, and on purpose: it runs on every clip in the library, so it has
+ * to stay at a tenth of a second. Looking at pixels costs thirty times that
+ * even with the GPU decoding, which is why it happens in `WatchClipHudAction`
+ * instead and only for games whose HUD a module knows how to read.
+ *
+ * An AudioSet tagger (YAMNet) was tried here and is not used: on 88 real clips
+ * its classes did not separate the moments worth keeping from the rest, and
+ * its strongest `Gunshot`/`Explosion` frame disagreed with the loudness peak on
+ * every single accepted clip. `scripts/analysis-tags.mjs` keeps that experiment
+ * runnable rather than repeatable by accident.
  */
 
 /**
  * A clip barely longer than the window is already the good bit, usually because
  * someone trimmed it to that. Offering to shave two seconds off it is noise.
  */
-const MIN_ROOM = 1.4;
+export const MIN_ROOM = 1.4;
 
 /**
  * How far to start before the loud part, in seconds.
@@ -50,10 +53,10 @@ const MIN_ROOM = 1.4;
  * killfeed — and the thing that caused it already happened. Cutting exactly on
  * the spike drops the shot that led to it, so the window opens a beat earlier.
  */
-const LEAD_IN = 2.5;
+export const LEAD_IN = 2.5;
 
 /** Keep this much of the clip after the peak, so the payoff is not cut off. */
-const TAIL_ROOM = 1.5;
+export const TAIL_ROOM = 1.5;
 
 /**
  * The shortest suggestion worth making, in seconds.
@@ -68,7 +71,7 @@ const TAIL_ROOM = 1.5;
  * the tail, floored here. Six is enough for a run-up, the thing, and a beat
  * after it; below that it reads as a jump cut.
  */
-const MIN_WINDOW_SEC = 6;
+export const MIN_WINDOW_SEC = 6;
 
 export interface AnalyzeClipInput {
   filePath: string;
@@ -209,7 +212,7 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
  * That last one was missing and produced three second suggestions on clips
  * whose moment was at the very end.
  */
-function place(
+export function place(
   length: number,
   durationSec: number,
   onset: number,
@@ -221,7 +224,7 @@ function place(
   return { start: round(Math.max(0, end - length)), end: round(end) };
 }
 
-function round(n: number, places = 1): number {
+export function round(n: number, places = 1): number {
   const f = 10 ** places;
   return Math.round(n * f) / f;
 }

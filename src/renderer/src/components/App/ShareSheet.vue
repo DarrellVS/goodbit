@@ -26,15 +26,18 @@ interface Props {
 
 interface Emits {
   (e: 'update:open', value: boolean): void;
-  /** `compressed` asks for a share-sized copy, leaving the file alone. */
-  (e: 'publish', compressed: boolean): void;
+  /**
+   * `undefined` lets the compress-published setting decide; a boolean
+   * overrides it for this one upload.
+   */
+  (e: 'publish', compressed: boolean | undefined): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const toastStore = useToastStore();
-const { isConfigured: publisherConfigured, offersCompressed } = usePublisher();
+const { isConfigured: publisherConfigured, compressesPublished } = usePublisher();
 const {
   state: shareState,
   starting: shareStarting,
@@ -201,18 +204,21 @@ async function copy(): Promise<void> {
           <button
             v-if="!url && publisherConfigured"
             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-muted-700 text-sm font-medium hover:bg-muted-50 transition-colors"
-            @click="emit('publish', false)"
+            @click="emit('publish', undefined)"
           >
             <Icon icon="material-symbols:cloud-upload" class="text-lg" />
             Publish for a permanent link
           </button>
           <button
-            v-if="!url && publisherConfigured && offersCompressed"
+            v-if="!url && publisherConfigured"
             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-muted-700 text-sm font-medium hover:bg-muted-50 transition-colors"
-            @click="emit('publish', true)"
+            @click="emit('publish', !compressesPublished)"
           >
-            <Icon icon="material-symbols:compress" class="text-lg" />
-            Publish a compressed copy
+            <Icon
+              :icon="compressesPublished ? 'material-symbols:hd' : 'material-symbols:compress'"
+              class="text-lg"
+            />
+            {{ compressesPublished ? 'Publish the original file' : 'Publish a compressed copy' }}
           </button>
         </div>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseToggle from '../Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useToastStore } from '../../stores/toast';
@@ -131,15 +132,14 @@ onMounted(refresh);
 
     <template v-if="summary">
       <div class="flex items-center justify-between gap-3">
-        <label class="flex items-center gap-3 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            class="w-4 h-4 accent-orange-500"
-            :checked="summary.automatic"
-            @change="setAutomatic(($event.target as HTMLInputElement).checked)"
+        <div class="flex items-center gap-3 select-none">
+          <BaseToggle
+            :model-value="summary.automatic"
+            label="Learn from my trims automatically"
+            @update:model-value="setAutomatic($event)"
           />
           <span class="text-sm text-foreground">Learn from my trims automatically</span>
-        </label>
+        </div>
       </div>
 
       <div v-if="summary.model" class="px-3 py-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm space-y-1">

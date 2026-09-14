@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseToggle from '../components/Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -96,12 +97,12 @@ async function finish(): Promise<void> {
         </button>
       </div>
 
-      <label class="flex items-start gap-3 p-4 rounded-xl bg-muted-50 cursor-pointer">
-        <input
-          type="checkbox"
-          class="mt-0.5 accent-orange-500"
-          :checked="settings.startAtLogin"
-          @change="save({ startAtLogin: ($event.target as HTMLInputElement).checked })"
+      <div class="flex items-start gap-3 p-4 rounded-xl bg-muted-50">
+        <BaseToggle
+          class="mt-0.5"
+          label="Start with Windows"
+          :model-value="settings.startAtLogin"
+          @update:model-value="save({ startAtLogin: $event })"
         />
         <span class="text-sm">
           <span class="block font-medium text-foreground">Start with Windows</span>
@@ -109,7 +110,7 @@ async function finish(): Promise<void> {
             Runs quietly in the tray so new clips are indexed as they are recorded
           </span>
         </span>
-      </label>
+      </div>
 
       <button
         class="w-full py-3 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 disabled:opacity-40 disabled:hover:bg-orange-500 transition-colors"

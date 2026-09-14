@@ -1,5 +1,5 @@
 import type { HighlightFeatures } from './features.js';
-import { moduleFor, type GameRefinement } from './registry.js';
+import { moduleFor, type GameEvent, type GameRefinement } from './registry.js';
 import { score as modelScore } from './model.js';
 
 /**
@@ -33,10 +33,19 @@ export const MIN_SPREAD_LU = 6;
 
 export interface Verdict {
   confident: boolean;
+  /** Why there is nothing to suggest. Null when there is. */
   reason: string | null;
+  /**
+   * Why there *is* something to suggest, when the grounds are worth saying out
+   * loud. Only the screen gives grounds that specific: loudness can say a clip
+   * got loud, but not what happened.
+   */
+  evidence: string | null;
   /** What set the bar, for logs and for the settings screen. */
   bar: number;
-  basis: 'rule' | 'model';
+  basis: 'rule' | 'model' | 'hud';
+  /** The event the suggestion should be built around, when one decided it. */
+  anchor: GameEvent | null;
 }
 
 export interface DecideInput {
@@ -47,11 +56,38 @@ export interface DecideInput {
    * known. A moment also has to beat what is ordinary for its own game.
    */
   gameMedianPeakZ?: number | null;
+  /** What the game put on screen, where a module knows how to read it. */
+  events?: GameEvent[];
 }
 
-export function decide({ features, game, gameMedianPeakZ }: DecideInput): Verdict {
+/**
+ * How sure a HUD reading has to be before it settles the question.
+ *
+ * Well below what a confirmed kill scores, and well above what the near misses
+ * reached — see `games/battlefield.ts` for the measurements this comes from.
+ */
+const MIN_EVENT_CONFIDENCE = 0.8;
+
+export function decide({ features, game, gameMedianPeakZ, events }: DecideInput): Verdict {
   let bar = MIN_PEAK_Z;
   let refinement: GameRefinement = {};
+
+  // The game saying what happened beats anything inferred from the sound, so
+  // this comes first and nothing below can overturn it. A clip can be quiet
+  // and still be the one with the kill in it.
+  const strongest = (events ?? [])
+    .filter((event) => event.confidence >= MIN_EVENT_CONFIDENCE)
+    .sort((a, b) => b.confidence - a.confidence)[0];
+  if (strongest) {
+    return {
+      confident: true,
+      reason: null,
+      evidence: strongest.reason,
+      bar,
+      basis: 'hud',
+      anchor: strongest,
+    };
+  }
 
   // A game's own normal, where it is known. See calibration.ts: a racing game
   // is a constant engine and nothing stands far above it, while a quiet horror
@@ -63,13 +99,13 @@ export function decide({ features, game, gameMedianPeakZ }: DecideInput): Verdic
   if (game) {
     const module = moduleFor(game);
     if (module) {
-      refinement = module.refine({ features, bar });
+      refinement = module.refine({ features, bar, events });
       if (refinement.bar !== undefined) bar = refinement.bar;
     }
   }
 
   if (refinement.reject) {
-    return { confident: false, reason: refinement.reject, bar, basis: 'rule' };
+    return { confident: false, reason: refinement.reject, evidence: null, bar, basis: 'rule', anchor: null };
   }
 
   // A trained model replaces the threshold entirely when one is present; the
@@ -80,8 +116,10 @@ export function decide({ features, game, gameMedianPeakZ }: DecideInput): Verdic
       confident: probability >= 0.5,
       reason:
         probability >= 0.5 ? null : 'nothing in this clip looks like the bits you usually keep',
+      evidence: null,
       bar,
       basis: 'model',
+      anchor: null,
     };
   }
 
@@ -89,8 +127,10 @@ export function decide({ features, game, gameMedianPeakZ }: DecideInput): Verdic
     return {
       confident: false,
       reason: 'the sound of this clip never really changes',
+      evidence: null,
       bar,
       basis: 'rule',
+      anchor: null,
     };
   }
 
@@ -98,10 +138,12 @@ export function decide({ features, game, gameMedianPeakZ }: DecideInput): Verdic
     return {
       confident: false,
       reason: 'nothing in this clip really stands out from the rest of it',
+      evidence: null,
       bar,
       basis: 'rule',
+      anchor: null,
     };
   }
 
-  return { confident: true, reason: null, bar, basis: 'rule' };
+  return { confident: true, reason: null, evidence: null, bar, basis: 'rule', anchor: null };
 }

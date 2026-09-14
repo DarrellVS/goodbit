@@ -7,12 +7,16 @@ import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
 import { publisherService } from '../services/publisherService.js';
 import { CompressVideoAction } from './CompressVideoAction.js';
+import { compressPublished } from '../settings.js';
 
 export interface PublishClipInput {
   id: number;
   /**
-   * Upload a share-sized copy and leave the file on disk as it is. For a clip
-   * that has never been published; the route refuses it otherwise.
+   * Upload a share-sized copy and leave the file on disk as it is.
+   *
+   * Left out, the compress-published setting decides — which is what the plain
+   * Publish button does. Passed explicitly, it overrides that for this one
+   * upload, which is how the menu offers the other choice.
    */
   compress?: boolean;
 }
@@ -29,7 +33,8 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
     const game = await gameRepo.findOne({ where: { name: clip.game } });
     const gameDisplayName = game?.displayName || clip.game;
 
-    const result = input.compress
+    const compress = input.compress ?? compressPublished();
+    const result = compress
       ? await this.publishCompressed(clip, gameDisplayName)
       : await publisherService.publish(clip.filePath, clip.displayName || clip.filename, gameDisplayName);
 

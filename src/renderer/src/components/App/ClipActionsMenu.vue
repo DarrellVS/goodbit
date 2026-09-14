@@ -37,12 +37,13 @@ const isPublishing = ref(false);
 const isExportingAudio = ref(false);
 const showMoveDialog = ref(false);
 
-// Whether a compressed copy is on offer follows the compress-trims setting.
-const { offersCompressed } = usePublisher();
+// What a plain Publish does, so the two entries can say which is which.
+const { compressesPublished } = usePublisher();
 
 const {
   onPublish,
   onPublishCompressed,
+  onPublishOriginal,
   onUnpublish,
   onCopyUrl,
   onReveal,
@@ -194,18 +195,23 @@ async function handleMoveToGame(targetGame: string) {
               <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
             </MenubarItem>
             <!--
-              A smaller upload without touching the file: the recording stays
-              as recorded, and what goes out is share-sized. Not offered once a
-              clip is published — the file up there is the file.
+              The other choice, whichever way the setting is pointed. Either
+              way the file on disk is untouched; only the copy behind the link
+              differs. Not offered once a clip is published — the file up there
+              is the file.
             -->
             <MenubarItem
-              v-if="offersCompressed"
               class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
               :class="{ 'opacity-50 pointer-events-none': isPublishing }"
-              @click="onPublishCompressed"
+              @click="compressesPublished ? onPublishOriginal() : onPublishCompressed()"
             >
-              <Icon icon="material-symbols:compress" class="text-base" />
-              <span>{{ isPublishing ? 'Publishing…' : 'Publish a compressed copy' }}</span>
+              <Icon
+                :icon="compressesPublished ? 'material-symbols:hd' : 'material-symbols:compress'"
+                class="text-base"
+              />
+              <span>
+                {{ compressesPublished ? 'Publish the original file' : 'Publish a compressed copy' }}
+              </span>
             </MenubarItem>
           </template>
 
