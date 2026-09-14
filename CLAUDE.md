@@ -89,6 +89,42 @@ empty or when one scan would remove more than half the library. A clip row carri
 its tags, notes, display name, collections and stars, and an unmounted drive makes every file look
 missing at once.
 
+### Highlights: listening, and reading the screen
+
+Two halves, and they cost three orders of magnitude apart.
+
+`AnalyzeClipAction` **listens** — one `ebur128` pass, about 100 ms — and runs for every clip. It
+measures; it never judges. `services/highlights/decide.ts` turns a measurement into a verdict, which
+is why the expensive half can stay cached while the bar, a game's calibration or a trained model
+change underneath it.
+
+`WatchClipHudAction` **reads the screen**, and runs only for a game with a module in
+`services/highlights/games/`. Roughly a sixth of a second per second of footage, so it is cached
+hard, keyed by the clip's own mtime, and is never triggered by indexing — only by the Trim page
+asking for suggestions. Decoding video while OBS is writing clips is the thing to avoid.
+
+Three rules hold the vision code together, and each is there because the obvious alternative was
+measured and was worse:
+
+- **Geometry is in units of frame height from an anchor** (`vision/geometry.ts`), never fractions of
+  width. A HUD scales with height and sticks to an edge or the middle, so the same numbers land on
+  the same pixels at 16:9 and at 21:9; a fraction of width slides a centre element a third of the
+  way across the screen when the aspect changes.
+- **Frames stay on the GPU until after they are dropped.** `-hwaccel cuda` alone copies every decoded
+  frame to system memory and only then lets `fps` throw nine tenths away — eleven gigabytes of
+  transfer for a half-minute clip. `-hwaccel_output_format cuda` halves the wall time.
+- **Crop at full resolution, scale only the crop.** Scaling the frame down first blurs the HUD into
+  the scenery it has to stand out from: a signal that read 0 then 6128 collapsed into noise between
+  145 and 1162.
+
+A module declares boxes to sample and turns them into `GameEvent`s carrying a `reason` — a sentence
+shown to the user. Adding one is a **measuring job**: `scripts/visual-*.mjs` renders contact sheets
+of what a candidate rule actually picked, and `scripts/hud-check.mjs` runs the *shipped* modules over
+a real library by bundling `src/main` with esbuild, so the bench and the app cannot drift apart.
+Nothing belongs in the registry until those sheets show the thing it claims to find. Battlefield 6 is
+the only module: 2042's HUD is different and four recordings is too thin to check a second one
+against.
+
 ### Encoding
 
 `services/encoders.ts` probes `h264_nvenc` / `qsv` / `amf` and `cuda` / `d3d11va` / `qsv` once per
@@ -99,13 +135,21 @@ encoder here** — these are 3440x1440 AV1 files and software decoding them runs
 
 **HDR sources must be tone mapped.** OBS writes PQ/bt2020; reading that as sRGB is what made every
 export grey and washed out. `TONEMAP_FILTER` (hable) is applied wherever a frame is decoded — export,
-exact trims, thumbnails, frame strips.
+exact trims, thumbnails, frame strips, HUD sampling.
+
+**Compressing a trim and compressing a published copy are two settings.** A trim replaces the only
+copy of that moment, so `compressTrims` is **off** by default and the cut is a stream copy;
+`compressPublished` is **on**, because what goes behind a public link is a copy and the file on disk
+is untouched either way. `shareEncoderArgs` is the share preset both use.
 
 ### Client
 
 - `stores/` (Pinia): `clips`, `collections`, `games`, `tags`, `batchOperations`, `toast`.
   `clips` and `collections` use the abort-and-requestId pattern to drop stale responses; preserve it.
 - `composables/` hold most component logic; `services/` are thin one-function-per-endpoint wrappers.
+- **One switch component.** `Base/BaseToggle.vue` is the only on/off control; `Settings/SettingToggle.vue`
+  wraps it with a label and a description. Native checkboxes were mixed in with hand-rolled switches
+  and read as two different controls for the same kind of decision.
 - `utils/mediaUrl.ts` is the single place media URLs are built.
 - View preferences live in localStorage via `useConfiguration()`. App settings come from main via
   `useAppSettings()` — different things, do not merge them.

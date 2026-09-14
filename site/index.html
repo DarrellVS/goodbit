@@ -103,7 +103,8 @@
             <p>
               The shot landing, the explosion, four people shouting at once. GoodBit measures a
               clip's loudness against that clip's own quiet, so a horror game and a shooter are each
-              judged on their own terms, then keeps the stretch that stands out most.
+              judged on their own terms, then keeps the stretch that stands out most. And where the
+              game will simply tell you what happened, it reads that instead.
             </p>
           </div>
 
@@ -136,6 +137,15 @@
               <dd>
                 One <code>ffmpeg</code> pass, about a tenth of a second per clip, cached next to the
                 file and recomputed if the file changes. Nothing downloaded, nothing uploaded, no queue.
+              </dd>
+            </div>
+            <div>
+              <dt>It reads the HUD</dt>
+              <dd>
+                Battlefield 6 puts a banner under the crosshair when <em>you</em> get a kill — not
+                the feed in the corner, which lists everyone's. GoodBit looks for that banner, so the
+                suggestion arrives with its reason attached: <em>two kills, five seconds apart</em>.
+                Only games it has been taught, only when you open the clip.
               </dd>
             </div>
             <div>
@@ -399,8 +409,11 @@
               <p>
                 It measures loudness across the clip and compares every moment to that clip's own
                 middle. If the loudest stretch is not meaningfully louder than the rest, it says
-                there is nothing to point at rather than guessing. There is no machine-learning model
-                and nothing is sent anywhere: it is one pass of ffmpeg on your PC.
+                there is nothing to point at rather than guessing. For a game it has been taught —
+                Battlefield 6 so far — it also looks at a few frames a second for the notice that
+                game puts on screen when you get a kill, and builds the window around that instead.
+                Nothing is sent anywhere: it is ffmpeg on your PC, and the result is cached, so a
+                clip is only ever read once.
               </p>
             </div>
             <div>

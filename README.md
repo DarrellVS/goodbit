@@ -27,9 +27,17 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
   the end because a replay buffer is saved *after* something happens. It stays quiet when a clip has
   nothing that stands out, which is about five clips in six — being loud is not enough, or every
   menu screen with music over it would qualify.
+- **Reads the game's own HUD, where it can.** Loudness can only report that a clip got loud.
+  Battlefield 6 puts a banner under the crosshair when *you* get a kill, and GoodBit looks for it —
+  so the suggestion arrives with a reason attached: *you dropped someone here*, or *two kills, five
+  seconds apart*, and the window is built around the kill rather than the loudest second. Only games
+  that have a module for them are looked at, only when you open the Trim page, and the answer is
+  cached — nothing decodes video while you are playing.
 - **Keeps your files alone.** Clips are never renamed — a display name is a database field. Deletes
   go to the Recycle Bin, never `unlink`. Trimming copies the streams rather than re-encoding, so the
-  picture is the recorded bytes.
+  picture is the recorded bytes; a switch in Settings re-encodes it to about a fifth of the size if
+  you would rather have room on the disk. What gets *published* is shrunk by default instead, since
+  that is a copy and the file you keep is untouched either way.
 - **Cuts a montage.** A timeline with a music lane, undo, snapping and drafts that survive a restart.
   A day of one game goes onto it in one click, in recording order, and **Trim to highlights** puts
   every clip on the moment its sound spiked.

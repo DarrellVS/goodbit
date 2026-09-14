@@ -211,12 +211,57 @@
           </li>
         </ul>
         <p>
-          It is deliberately audio-only. Scene-change detection measured at more than a minute per
-          clip on 3440×1440 footage, hundreds of times the cost, for a signal that mostly agreed with
-          the sound anyway. A pretrained sound classifier was tried as well and is not used: on real
-          recordings its <em>gunshot</em> and <em>explosion</em> labels fired on ambient gunfire
+          The listening half is audio-only on purpose, because it runs on every clip you own and has
+          to stay at a tenth of a second. A pretrained sound classifier was tried and is not used: on
+          real recordings its <em>gunshot</em> and <em>explosion</em> labels fired on ambient gunfire
           rather than on the moment, and its <em>laughter</em> label did not fire on people laughing
           over game audio at all.
+        </p>
+
+        <h3 id="hud">For some games, it reads the screen</h3>
+        <p>
+          Loudness can only report that a clip got loud. Some games will simply tell you what
+          happened, and where GoodBit has been taught to read one, it does — and then the suggestion
+          arrives with its reason attached rather than a guess about volume.
+        </p>
+        <ul>
+          <li>
+            <strong>Battlefield 6</strong> is the first, and it is the banner under the crosshair
+            rather than the feed in the corner. The feed lists everybody's kills and would have to
+            know your name to be any use; the banner only ever appears for a kill <em>you</em> got,
+            so it filters itself. GoodBit looks for the skull, the boxed <em>KILL</em> beneath it,
+            and the colour — Battlefield draws assist skulls green where a kill's is white — and all
+            three have to agree.
+          </li>
+          <li>
+            <strong>The window is built around the kill</strong>, not the loudest second, which on a
+            clip with a kill in it is as often a reload or someone shouting elsewhere. Several kills
+            close together become one suggestion that holds all of them: <em>three kills inside nine
+            seconds</em>.
+          </li>
+          <li>
+            <strong>It only runs when you open the clip</strong>, only for a game that has a module,
+            and the answer is cached. Nothing decodes video while you are playing — that is OBS's
+            job and GoodBit stays out of its way.
+          </li>
+          <li>
+            <strong>It costs about a sixth of a second per second of footage</strong> with a GPU
+            doing the decoding, so a half-minute clip is a few seconds. The Trim page says so while
+            it works rather than looking stuck.
+          </li>
+          <li>
+            <strong>Any monitor.</strong> Everything is measured in units of screen height from a
+            corner or the middle, which is how a game lays its HUD out, so it lands in the same place
+            on a 16:9 monitor and on a 21:9 one.
+          </li>
+        </ul>
+        <p>
+          Battlefield 6 is the only one so far, and that is a measurement rather than an oversight.
+          Every other game in the library that was checked — Ready Or Not, Satisfactory, RV There
+          Yet, a handful of co-op horror games — shows status on screen but never announces the
+          moment, so there is nothing to read and the sound remains the best evidence there is.
+          Battlefield 2042 does announce it, but differently enough that the 6 templates do not match
+          it, and there were too few recordings to check a second module against.
         </p>
 
         <h3 id="learning">It learns from what you keep</h3>
