@@ -48,7 +48,7 @@ export class GenerateFrameStripAction extends BaseAction<GenerateFrameStripInput
       `tile=${frames}x1:padding=2:color=black`,
     );
 
-    const inputOptions = encoders ? decodeArgs(encoders) : [];
+    const inputOptions = encoders ? await decodeArgs(encoders, inputPath) : [];
 
     await withTimeout(
       new Promise<void>((resolve, reject) => {

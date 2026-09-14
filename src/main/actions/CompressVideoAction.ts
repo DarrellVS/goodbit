@@ -42,7 +42,7 @@ export class CompressVideoAction extends BaseAction<CompressVideoInput, Compress
     const endSec = input.endSec ?? info.durationSec;
     const duration = Math.max(0.05, endSec - startSec);
 
-    let command = ffmpegConfigured(inputPath).inputOptions([...decodeArgs(encoders)]);
+    let command = ffmpegConfigured(inputPath).inputOptions([...(await decodeArgs(encoders, inputPath))]);
     // Only seek when asked: `-ss 0 -t <whole file>` on a stream whose duration
     // is rounded can drop the last frame.
     if (input.startSec !== undefined || input.endSec !== undefined) {

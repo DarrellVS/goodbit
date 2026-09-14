@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import path from 'node:path';
+import fsPromises from 'node:fs/promises';
 import { FFPROBE_PATH } from '../services/binaries.js';
 import { promisify } from 'node:util';
 import { BaseAction } from './BaseAction.js';
@@ -64,25 +66,45 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
       // length grows by however far back that was.
       const lead = Math.max(0, startSec - snapped);
 
-      await runFfmpeg(
-        ffmpegConfigured(inputPath)
-          .inputOptions([`-ss ${snapped.toFixed(3)}`])
-          .outputOptions([
-            `-t ${(duration + lead).toFixed(3)}`,
-            '-c copy',
-            // Keep only the first audio track: OBS writes six identical copies
-            // here, and carrying all of them multiplies the file for nothing.
-            '-map 0:v:0',
-            '-map 0:a:0?',
-            '-movflags +faststart',
-            // No `-avoid_negative_ts make_zero` here. It rewrites the
-            // timestamps that `-t` is measured against, which silently
-            // stretched a three second cut into nearly five.
-            '-y',
-          ])
-          .output(outputPath),
-        { signal, onProgress, durationSec: duration + lead, timeoutMs: 10 * 60_000 },
+      // Round the seek point *down* to the millisecond rather than to the
+      // nearest one. ffmpeg seeks to the keyframe at or before `-ss`, so a
+      // value a hair above the keyframe makes it treat that keyframe as
+      // pre-roll, and the frames after it then reference a picture the next
+      // step is about to remove.
+      const seek = Math.floor(snapped * 1000) / 1000;
+
+      // Written beside the output and swept up below. The dot matters: the
+      // folder watcher ignores dotfiles, so a half-written cut is never
+      // mistaken for a new recording.
+      const staged = path.join(
+        path.dirname(outputPath),
+        `.${path.basename(outputPath, path.extname(outputPath))}.preroll${path.extname(outputPath) || '.mp4'}`,
       );
+
+      try {
+        await runFfmpeg(
+          ffmpegConfigured(inputPath)
+            .inputOptions([`-ss ${seek.toFixed(3)}`])
+            .outputOptions([
+              `-t ${(duration + lead).toFixed(3)}`,
+              '-c copy',
+              // Keep only the first audio track: OBS writes six identical copies
+              // here, and carrying all of them multiplies the file for nothing.
+              '-map 0:v:0',
+              '-map 0:a:0?',
+              // No `-avoid_negative_ts make_zero` here. It rewrites the
+              // timestamps that `-t` is measured against, which silently
+              // stretched a three second cut into nearly five.
+              '-y',
+            ])
+            .output(staged),
+          { signal, onProgress, durationSec: duration + lead, timeoutMs: 10 * 60_000 },
+        );
+
+        await this.dropPreroll(staged, outputPath, signal);
+      } finally {
+        await fsPromises.rm(staged, { force: true }).catch(() => {});
+      }
 
       // Report what the copy actually produced, not what was asked for: a
       // stream copy ends on a packet boundary, so both edges can move.
@@ -104,7 +126,7 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
     if (info.isHdr) filters.push(TONEMAP_FILTER);
 
     let command = ffmpegConfigured(inputPath)
-      .inputOptions([...decodeArgs(encoders), `-ss ${startSec.toFixed(3)}`])
+      .inputOptions([...(await decodeArgs(encoders, inputPath)), `-ss ${startSec.toFixed(3)}`])
       .outputOptions([`-t ${duration.toFixed(3)}`]);
 
     if (filters.length) command = command.outputOptions([`-vf ${filters.join(',')}`]);
@@ -126,6 +148,38 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
     );
 
     return { actualStartSec: startSec, actualEndSec: endSec, mode };
+  }
+
+  /**
+   * Copy the streams once more, leaving the pre-roll behind.
+   *
+   * A stream copy cannot begin in the middle of a group of pictures, so ffmpeg
+   * copies from the keyframe before the cut and, rather than leaving the
+   * frames ahead of the cut out, writes them flagged discardable and stamped
+   * at time zero. Players disagree about what that means. ffmpeg and Chrome's
+   * software decoder skip them; NVDEC decodes them, and since they lean on a
+   * keyframe that is not in the file, the result was four seconds of solid
+   * green at the head of a trimmed clip and audio running a group of pictures
+   * ahead of the picture.
+   *
+   * Reading the file back and writing it out drops them, because by then they
+   * carry the flag that says so. It is a second stream copy and costs about a
+   * tenth of a second on a cut this size, against a first pass that costs the
+   * same, so a trim is twice as long and still imperceptible.
+   */
+  private async dropPreroll(staged: string, outputPath: string, signal?: AbortSignal): Promise<void> {
+    await runFfmpeg(
+      ffmpegConfigured(staged)
+        .outputOptions([
+          '-c copy',
+          '-map 0:v:0',
+          '-map 0:a:0?',
+          '-movflags +faststart',
+          '-y',
+        ])
+        .output(outputPath),
+      { signal, timeoutMs: 10 * 60_000 },
+    );
   }
 
   /**

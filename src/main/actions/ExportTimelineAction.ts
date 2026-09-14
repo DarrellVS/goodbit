@@ -262,7 +262,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const targetKbps = targetKbpsFor(format, info.width, info.height, info.kbps);
 
     let command: FfmpegCommand = ffmpegConfigured(inputPath)
-      .inputOptions([...decodeArgs(encoders), `-ss ${trimStart.toFixed(3)}`])
+      .inputOptions([...(await decodeArgs(encoders, inputPath)), `-ss ${trimStart.toFixed(3)}`])
       .outputOptions([`-t ${duration.toFixed(3)}`]);
 
     if (filters.length) command = command.outputOptions([`-vf ${filters.join(',')}`]);

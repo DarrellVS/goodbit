@@ -39,6 +39,7 @@ npm run build          # typecheck, then all three bundles into out/
 npm run test:e2e       # builds, then Playwright drives the real app
 npm run build:win      # check:pre-release (typecheck + e2e) then electron-builder
 node scripts/backup-db.mjs   # verified snapshot of the library database
+node scripts/trim-check.mjs  # run the shipped lossless trim on a real clip and check the result
 ```
 
 Keep `npm run typecheck` green, `build` runs it first and fails otherwise.
@@ -78,6 +79,11 @@ backstop, since filesystem events are a hint rather than a guarantee.
   against an object with no socket.
 - The renderer's axios only had its **adapter** swapped, so every `services/*.ts` call site is
   unchanged.
+- **One thing does come in from outside**: a `goodbit://` link, which the publisher setup guide
+  ends with so nobody retypes a forty character token. `deeplink.ts` parses it strictly and
+  `PublisherInviteDialog.vue` shows what it is being asked to do, in full. **A link never writes a
+  setting.** Anything that can open a browser can send one, and one that silently repointed the
+  publisher would send every clip published afterwards to whoever sent it.
 
 ### Server-side actions
 
@@ -136,6 +142,24 @@ encoder here**, these are 3440x1440 AV1 files and software decoding them runs at
 **HDR sources must be tone mapped.** OBS writes PQ/bt2020; reading that as sRGB is what made every
 export grey and washed out. `TONEMAP_FILTER` (hable) is applied wherever a frame is decoded, export,
 exact trims, thumbnails, frame strips, HUD sampling.
+
+**A lossless trim is two stream copies, not one.** A copy cannot begin in the middle of a group of
+pictures, so ffmpeg starts at the keyframe before the cut and writes the frames ahead of the cut
+*flagged discardable and stamped at time zero* rather than leaving them out. Software decoders skip
+them; **NVDEC decodes them**, against a keyframe that is no longer in the file, which shipped as
+four seconds of flat green at the head of every trimmed clip with the sound a group of pictures
+ahead of the picture. The second pass reads the file back and writes it out, which drops them
+because by then they carry the flag that says so. It costs about as much as the first pass, and
+both are around a tenth of a second.
+
+The health of a trim is one number, **how many packets carry the discard flag, and it must be
+zero**. `scripts/trim-check.mjs` runs the shipped action over a real recording and asserts that,
+plus that the opening frame is not green under `-hwaccel cuda`. Nothing else catches this: the
+container duration is right either way, and so is any player that happens to honour the flag.
+
+Because cuts made before that fix are still on disk, `decodeArgs` takes the file as well as the
+encoder and **falls back to software decode for a source that still has a pre-roll**, which is 30%
+slower and correct rather than fast and green.
 
 **Compressing a trim and compressing a published copy are two settings.** A trim replaces the only
 copy of that moment, so `compressTrims` is **off** by default and the cut is a stream copy;

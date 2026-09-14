@@ -202,9 +202,52 @@ export function encoderArgs(
   }
 }
 
-/** Input options for reading a source: GPU decode when the machine has it. */
-export function decodeArgs(info: EncoderInfo): string[] {
-  return info.hwaccel ? [`-hwaccel ${info.hwaccel}`] : [];
+/**
+ * Whether a file opens with frames ffmpeg has already marked as throwaway.
+ *
+ * A stream copy that starts in the middle of a group of pictures leaves them
+ * behind: the frames between the keyframe it was forced to begin at and the
+ * cut that was actually asked for, written flagged discardable and stamped at
+ * time zero rather than left out. Software decoders skip them. NVDEC does not,
+ * and decodes them against a keyframe that is no longer in the file, which
+ * comes out as a few seconds of flat green at the head of the picture and
+ * sound running a group of pictures ahead of it.
+ *
+ * GoodBit's own trim no longer writes them, see `TrimVideoAction`, but every
+ * cut made before it stopped is still on disk, so anything about to hand a
+ * file to the GPU asks first. Only the opening second is read, because that is
+ * the only place a pre-roll can be.
+ */
+export async function hasDiscardedPreroll(filePath: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync(
+      FFPROBE,
+      [
+        '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'packet=flags',
+        '-read_intervals', '%+1',
+        '-of', 'csv=p=0',
+        filePath,
+      ],
+      { maxBuffer: 4 * 1024 * 1024 },
+    );
+    return stdout.split('\n').some((line) => line.includes('D'));
+  } catch {
+    // A file that cannot be read is a problem for the decode about to happen,
+    // not for the question of how to decode it. Answer the question asked.
+    return false;
+  }
+}
+
+/**
+ * Input options for reading a source: GPU decode when the machine has it and
+ * the file survives it. See `hasDiscardedPreroll` for when it does not.
+ */
+export async function decodeArgs(info: EncoderInfo, filePath: string): Promise<string[]> {
+  if (!info.hwaccel) return [];
+  if (await hasDiscardedPreroll(filePath)) return [];
+  return [`-hwaccel ${info.hwaccel}`];
 }
 
 /**
