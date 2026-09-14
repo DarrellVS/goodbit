@@ -44,6 +44,15 @@ const page = await app.firstWindow();
 await page.waitForLoadState('domcontentloaded');
 await page.waitForTimeout(2500);
 
+// The dark palette when asked for, since these overlays sit on whatever the
+// app is showing and the two grounds are not the same problem.
+if (process.argv.includes('--dark')) {
+  await page.evaluate(() => localStorage.setItem('goodbit-theme', 'dark'));
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(2000);
+}
+
 if (mode === 'publish') {
   // The service-event channel, the same one the real publish reports on.
   await app.evaluate(({ BrowserWindow }, events) => {
@@ -64,7 +73,7 @@ if (mode === 'publish') {
 
 await page.waitForTimeout(900);
 mkdirSync(join(process.cwd(), 'tmp'), { recursive: true });
-await page.screenshot({ path: join(process.cwd(), 'tmp', `banner-${mode}.png`) });
+await page.screenshot({ path: join(process.cwd(), 'tmp', `banner-${mode}${process.argv.includes('--dark') ? '-dark' : ''}.png`) });
 
 // And prove it can actually be clicked, which is the bug this was written for.
 if (mode === 'ready') {

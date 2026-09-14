@@ -33,7 +33,7 @@ const typeColors = {
   success: 'text-green-600 bg-card border-green-500/40',
   error: 'text-red-600 bg-card border-red-500/40',
   warning: 'text-orange-600 bg-card border-orange-500/40',
-  info: 'text-blue-600 bg-blue-500/8 border-blue-200',
+  info: 'text-blue-600 bg-card border-blue-500/40',
 };
 
 function getToastClass(toast: Toast): string {
@@ -68,7 +68,7 @@ function getIconName(toast: Toast): string {
         <!-- Only for work in progress; a bar at 0 would read as stuck. -->
         <div
           v-if="toast.progress !== undefined"
-          class="h-1 rounded-full bg-black/10 overflow-hidden mt-1.5"
+          class="h-1 rounded-full bg-muted-200 overflow-hidden mt-1.5"
         >
           <div
             class="h-full bg-current transition-[width] duration-200 ease-out"

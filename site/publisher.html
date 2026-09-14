@@ -275,7 +275,10 @@ docker build -t goodbit-publisher .</code></pre>
               <label>
                 Where clips are stored
                 <input id="f-data" type="text" placeholder="/volume1/docker/goodbit-clips" autocomplete="off" spellcheck="false" />
-                <span class="hint">A folder on the server with room. Synology paths start <code>/volume1</code>.</span>
+                <span class="hint">
+                  A folder on the server with room. Synology paths start <code>/volume1</code>;
+                  on a Pi with a drive attached, see below.
+                </span>
               </label>
               <label>
                 Server's address on your network
@@ -293,6 +296,41 @@ docker build -t goodbit-publisher .</code></pre>
                 </span>
               </label>
             </div>
+
+            <details>
+              <summary>Finding the path to an attached drive</summary>
+              <p>
+                On a Pi or any Linux box, this lists every disk and where it is mounted. A USB drive
+                is usually <code>/dev/sda</code> with a partition <code>/dev/sda1</code>.
+              </p>
+              <div class="copy">
+                <button type="button" data-copy="#cmd-lsblk">Copy</button>
+                <pre><code id="cmd-lsblk">lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT</code></pre>
+              </div>
+              <p>
+                If the <code>MOUNTPOINT</code> column has a path, that is the one to use. If the big
+                partition is mounted on <code>/</code> then the machine already boots from that
+                drive and there is nothing to mount: any ordinary path, such as
+                <code>/srv/goodbit-clips</code>, is on it.
+              </p>
+              <p>
+                If the column is empty the drive is attached but not mounted, and mounting it by
+                hand does not survive a restart. Give it a permanent home instead:
+              </p>
+              <div class="copy">
+                <button type="button" data-copy="#cmd-mount">Copy</button>
+                <pre><code id="cmd-mount">sudo mkdir -p /mnt/ssd
+sudo blkid /dev/sda1          # note the UUID
+echo 'UUID=your-uuid /mnt/ssd ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+sudo mount -a
+df -h /mnt/ssd</code></pre>
+              </div>
+              <p>
+                <strong>Keep the <code>nofail</code>.</strong> Without it a machine whose drive is
+                missing refuses to finish booting, and on a headless box that means no shell to fix
+                it from.
+              </p>
+            </details>
 
             <div class="watch">
               <p>
