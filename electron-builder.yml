@@ -18,6 +18,12 @@ asarUnpack:
   - '**/node_modules/ffprobe-static/**'
   - '**/node_modules/sqlite3/**'
 
+# The tray needs the icon as a file at runtime; the exe's embedded icon is not
+# reachable from JavaScript. Lands at process.resourcesPath/icon.png.
+extraResources:
+  - from: build/icon.png
+    to: icon.png
+
 win:
   icon: build/icon.png
   target:

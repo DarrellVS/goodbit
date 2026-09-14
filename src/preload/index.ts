@@ -36,6 +36,12 @@ const api = {
 
   app: {
     version: () => ipcRenderer.invoke('app:version'),
+    /** The tray asked for a screen; the router takes it from here. */
+    onNavigate: (listener: (path: string) => void) => {
+      const handler = (_: unknown, path: string): void => listener(path);
+      ipcRenderer.on('app:navigate', handler);
+      return () => ipcRenderer.removeListener('app:navigate', handler);
+    },
   },
 
   /** Copies of the library database, taken before any version changes the schema. */

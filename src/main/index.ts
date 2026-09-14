@@ -2,14 +2,16 @@
 import './bootstrap.js';
 import { app, BrowserWindow, Menu, Tray, shell, nativeImage } from 'electron';
 import { join } from 'node:path';
-import { mkdirSync } from 'node:fs';
-import { initDatabase } from './data-source.js';
-import { isConfigured, loadSettings, saveSettings, userDataDir } from './settings.js';
-import { startServices, stopServices } from './startup.js';
+import { existsSync, mkdirSync } from 'node:fs';
+import { MoreThanOrEqual } from 'typeorm';
+import { AppDataSource, initDatabase } from './data-source.js';
+import { Clip } from './entity/Clip.js';
+import { isConfigured, loadSettings, onSettingsChange, saveSettings, userDataDir } from './settings.js';
+import { onServiceEvent, reconcile, startServices, stopServices } from './startup.js';
 import { registerIpc } from './ipc/index.js';
 import { registerApiBridge, startApiBridge, stopApiBridge } from './ipc/apiBridge.js';
 import { registerProtocolScheme, registerProtocolHandler } from './protocol.js';
-import { registerUpdater } from './updater.js';
+import { checkForUpdatesNow, registerUpdater } from './updater.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
 import { initialBounds, rememberWindowState } from './windowState.js';
 import { shareService } from './services/share.js';
@@ -83,6 +85,7 @@ function createWindow(): BrowserWindow {
     minWidth: 940,
     minHeight: 600,
     show: false,
+    icon: appIcon(),
     autoHideMenuBar: true,
     backgroundColor: '#0f1012',
     // A drawn title bar, with Windows still owning the caption buttons — which
@@ -146,25 +149,107 @@ function showWindow(): void {
   mainWindow.focus();
 }
 
+/**
+ * The icon as a file. The exe carries one for the taskbar, but a tray entry
+ * and a development window take an image from JavaScript — so the PNG ships
+ * beside the asar (`extraResources` in electron-builder.yml) and is read from
+ * `build/` while developing.
+ */
+function appIcon(): Electron.NativeImage {
+  const candidates = [
+    join(process.resourcesPath ?? '', 'icon.png'),
+    join(app.getAppPath(), 'build', 'icon.png'),
+  ];
+  const found = candidates.find((p) => existsSync(p));
+  return found ? nativeImage.createFromPath(found) : nativeImage.createEmpty();
+}
+
+/** Tray-sized, one representation per common Windows scale so it stays crisp. */
+function trayIcon(): Electron.NativeImage {
+  const base = appIcon();
+  if (base.isEmpty()) return base;
+  const icon = nativeImage.createEmpty();
+  for (const [scaleFactor, px] of [[1, 16], [1.25, 20], [1.5, 24], [2, 32]] as const) {
+    icon.addRepresentation({ scaleFactor, buffer: base.resize({ width: px, height: px }).toPNG() });
+  }
+  return icon;
+}
+
 function buildTray(): void {
-  // An empty image still gives a usable tray entry; the real icon lands with
-  // the packaging work rather than blocking the service from running.
-  tray = new Tray(nativeImage.createEmpty());
+  tray = new Tray(trayIcon());
   tray.setToolTip('GoodBit');
-  refreshTrayMenu();
+  void refreshTrayMenu();
   tray.on('double-click', showWindow);
 }
 
-export function refreshTrayMenu(clipsToday?: number): void {
+/** Show the window on a route — what the tray items reach for. */
+function openIn(path: string): void {
+  showWindow();
+  const window = mainWindow;
+  if (!window) return;
+  const send = (): void => {
+    if (!window.isDestroyed()) window.webContents.send('app:navigate', path);
+  };
+  // A window that was just created has no router yet to hand the path to.
+  if (window.webContents.isLoadingMainFrame()) window.webContents.once('did-finish-load', send);
+  else send();
+}
+
+async function latestClip(): Promise<Clip | null> {
+  if (!AppDataSource.isInitialized) return null;
+  return AppDataSource.getRepository(Clip).findOne({ where: {}, order: { createdAt: 'DESC' } });
+}
+
+async function clipsToday(): Promise<number> {
+  if (!AppDataSource.isInitialized) return 0;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return AppDataSource.getRepository(Clip).count({ where: { createdAt: MoreThanOrEqual(start) } });
+}
+
+function shorten(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+/**
+ * The tray menu is the app for someone who never opens the window: the
+ * replay buffer just saved something, and the next step is to trim it. So the
+ * menu leads with today's count and the latest clip, and the rest is what
+ * the settings screen would be opened for.
+ */
+export async function refreshTrayMenu(): Promise<void> {
   if (!tray) return;
   const settings = loadSettings();
+  const [latest, today] = await Promise.all([
+    latestClip().catch(() => null),
+    clipsToday().catch(() => 0),
+  ]);
+  if (!tray) return;
+
+  const latestName = latest ? shorten(latest.displayName || latest.filename, 40) : null;
+  const count = `${today} clip${today === 1 ? '' : 's'} today`;
 
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: 'Open GoodBit', click: showWindow },
-      ...(clipsToday === undefined
-        ? []
-        : [{ label: `${clipsToday} clip${clipsToday === 1 ? '' : 's'} today`, enabled: false }]),
+      { label: latestName ? `${count} · latest: ${latestName}` : count, enabled: false },
+      { type: 'separator' },
+      {
+        label: 'Trim the latest clip',
+        enabled: !!latest,
+        click: () => latest && openIn(`/trim/${latest.id}`),
+      },
+      {
+        label: 'Open the latest clip',
+        enabled: !!latest,
+        click: () => latest && openIn(`/clips/${latest.id}`),
+      },
+      {
+        label: 'Open the clips folder',
+        enabled: !!settings.videosRoot,
+        click: () => void shell.openPath(settings.videosRoot),
+      },
+      { label: 'Rescan the library', click: () => void reconcile() },
       { type: 'separator' },
       {
         label: 'Start with Windows',
@@ -175,6 +260,16 @@ export function refreshTrayMenu(clipsToday?: number): void {
           applyLoginItem();
         },
       },
+      {
+        label: 'Keep running when the window closes',
+        type: 'checkbox',
+        checked: settings.keepRunningInTray,
+        click: (item) => saveSettings({ keepRunningInTray: item.checked }),
+      },
+      ...(app.isPackaged
+        ? [{ label: 'Check for updates', click: () => { checkForUpdatesNow(); showWindow(); } }]
+        : []),
+      { label: 'Settings', click: () => openIn('/settings') },
       { type: 'separator' },
       {
         label: 'Quit',
@@ -217,6 +312,11 @@ app.whenReady().then(async () => {
   registerUpdater(() => mainWindow);
   buildTray();
   applyLoginItem();
+  // The menu quotes the library and two settings, so it follows both.
+  onServiceEvent((event) => {
+    if (event.type !== 'scan-started') void refreshTrayMenu();
+  });
+  onSettingsChange(() => void refreshTrayMenu());
 
   // A first run with nowhere to look for clips still opens, so the window can
   // ask for a folder. Only a configured install starts watching.

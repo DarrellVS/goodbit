@@ -25,7 +25,10 @@ interface GoodBitBridge {
   pathForFile: (file: File) => string;
   showInFolder: (filePath: string) => Promise<void>;
   openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
-  app: { version: () => Promise<string> };
+  app: {
+    version: () => Promise<string>;
+    onNavigate: (listener: (path: string) => void) => () => void;
+  };
   backups: {
     list: () => Promise<BackupFileWire[]>;
     now: () => Promise<BackupResultWire>;

@@ -20,6 +20,12 @@ export type UpdateState =
 
 let state: UpdateState = { status: 'idle' };
 
+/** A check on demand — the tray asks for one. The window's banner shows the result. */
+export function checkForUpdatesNow(): void {
+  if (!app.isPackaged) return;
+  autoUpdater.checkForUpdates().catch(() => {});
+}
+
 function publish(getWindow: () => BrowserWindow | null, next: UpdateState): void {
   state = next;
   const window = getWindow();

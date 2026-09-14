@@ -41,7 +41,7 @@ export interface Settings {
    *
    * Default on: a ten second cut of an OBS recording is a hundred megabytes,
    * which is the wrong size for a file whose purpose is being sent to someone.
-   * Off keeps the trim lossless � a stream copy snapped to a keyframe. While
+   * Off keeps the trim lossless — a stream copy snapped to a keyframe. While
    * on, publishing also offers to send a compressed copy and leave the
    * original alone.
    */
@@ -69,6 +69,18 @@ const DEFAULTS: Settings = {
 };
 
 let cached: Settings | null = null;
+let changeListeners: Array<(settings: Settings) => void> = [];
+
+/**
+ * Hear about saves from anywhere — the window, the tray, the updater. The tray
+ * menu mirrors two of these and would otherwise show a stale tick.
+ */
+export function onSettingsChange(listener: (settings: Settings) => void): () => void {
+  changeListeners.push(listener);
+  return () => {
+    changeListeners = changeListeners.filter((l) => l !== listener);
+  };
+}
 
 /** `%APPDATA%/GoodBit` on Windows. Everything the app owns lives under here. */
 export function userDataDir(): string {
@@ -130,6 +142,13 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   const next = { ...loadSettings(), ...patch };
   cached = next;
   writeFileSync(settingsPath(), JSON.stringify(next, null, 2), 'utf-8');
+  for (const listener of changeListeners) {
+    try {
+      listener(next);
+    } catch (error) {
+      console.error('[settings] listener threw:', error);
+    }
+  }
   return next;
 }
 

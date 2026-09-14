@@ -19,7 +19,7 @@ const FFPROBE = FFPROBE_PATH;
 /**
  * `lossless` copies the streams and snaps the start back to a keyframe;
  * `exact` re-encodes at edit quality to land on the frame asked for;
- * `compressed` re-encodes at share size — see `CompressVideoAction`.
+ * `compressed` re-encodes at share size â€” see `CompressVideoAction`.
  */
 export type TrimMode = 'lossless' | 'exact' | 'compressed';
 
