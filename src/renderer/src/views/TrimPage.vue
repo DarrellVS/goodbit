@@ -5,7 +5,12 @@
     the bottom by a tall clip.
   -->
   <div class="h-full flex flex-col overflow-hidden">
-    <TrimHeader />
+    <TrimHeader
+      :name="clipName"
+      :placeholder="clip?.filename ?? 'Name this clip'"
+      @update:name="clipName = $event"
+      @commit="saveName"
+    />
 
     <main class="flex-1 min-h-0 w-full max-w-7xl mx-auto px-6 py-5 flex flex-col gap-4 overflow-y-auto">
       <VideoPreview
@@ -54,12 +59,16 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import {
+  getClip,
   getClipMeta,
   getClipSuggestions,
   rejectSuggestion,
   trimClip,
+  updateClipName,
   type ClipSuggestions,
 } from '../services/clips';
+import type { Clip } from '../types/clip';
+import { useToastStore } from '../stores/toast';
 import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
 import { restoreScrollPosition } from '../utils/scroll';
 import { useTrimRange } from '../composables/useTrimRange';
@@ -110,6 +119,38 @@ async function loadClipMetadata(): Promise<void> {
     initializeRange(metadata.durationSec || 0);
   } catch (error) {
     console.error('Failed to load clip metadata:', error);
+  }
+}
+
+const toastStore = useToastStore();
+const clip = ref<Clip | null>(null);
+const clipName = ref('');
+
+async function loadClip(): Promise<void> {
+  try {
+    clip.value = await getClip(Number(props.id));
+    clipName.value = clip.value.displayName ?? '';
+  } catch (error) {
+    console.error('Failed to load the clip:', error);
+  }
+}
+
+/**
+ * The name is saved when the field is left, not when the trim is saved: a name
+ * is a decision on its own and should not be lost to a change of mind about
+ * the cut. An empty field clears the name, and the filename shows again.
+ */
+async function saveName(): Promise<void> {
+  if (!clip.value) return;
+  const next = clipName.value.trim() || null;
+  if (next === (clip.value.displayName ?? null)) return;
+
+  try {
+    clip.value = await updateClipName(clip.value.id, next);
+    clipName.value = clip.value.displayName ?? '';
+    toastStore.success(next ? `Named "${next}"` : 'Name cleared');
+  } catch (error) {
+    toastStore.error((error as Error).message || 'Could not save the name');
   }
 }
 
@@ -176,6 +217,7 @@ async function handleSave(): Promise<void> {
 }
 
 onMounted(() => {
+  void loadClip();
   void loadClipMetadata();
   void loadSuggestions();
 });
