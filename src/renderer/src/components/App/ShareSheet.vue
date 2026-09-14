@@ -26,14 +26,15 @@ interface Props {
 
 interface Emits {
   (e: 'update:open', value: boolean): void;
-  (e: 'publish'): void;
+  /** `compressed` asks for a share-sized copy, leaving the file alone. */
+  (e: 'publish', compressed: boolean): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const toastStore = useToastStore();
-const { isConfigured: publisherConfigured } = usePublisher();
+const { isConfigured: publisherConfigured, offersCompressed } = usePublisher();
 const {
   state: shareState,
   starting: shareStarting,
@@ -200,10 +201,18 @@ async function copy(): Promise<void> {
           <button
             v-if="!url && publisherConfigured"
             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-muted-700 text-sm font-medium hover:bg-muted-50 transition-colors"
-            @click="emit('publish')"
+            @click="emit('publish', false)"
           >
             <Icon icon="material-symbols:cloud-upload" class="text-lg" />
             Publish for a permanent link
+          </button>
+          <button
+            v-if="!url && publisherConfigured && offersCompressed"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-muted-700 text-sm font-medium hover:bg-muted-50 transition-colors"
+            @click="emit('publish', true)"
+          >
+            <Icon icon="material-symbols:compress" class="text-lg" />
+            Publish a compressed copy
           </button>
         </div>
 

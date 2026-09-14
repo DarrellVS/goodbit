@@ -15,6 +15,7 @@ import {
   MenubarTrigger,
 } from 'radix-vue';
 import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
+import { usePublisher } from '../../composables/usePublisher';
 import MoveClipDialog from './MoveClipDialog.vue';
 import type { Clip } from '../../types/clip';
 
@@ -36,8 +37,12 @@ const isPublishing = ref(false);
 const isExportingAudio = ref(false);
 const showMoveDialog = ref(false);
 
+// Whether a compressed copy is on offer follows the compress-trims setting.
+const { offersCompressed } = usePublisher();
+
 const {
   onPublish,
+  onPublishCompressed,
   onUnpublish,
   onCopyUrl,
   onReveal,
@@ -179,15 +184,30 @@ async function handleMoveToGame(targetGame: string) {
             <Icon icon="material-symbols:cloud-off" class="text-base" />
             <span>{{ isPublishing ? 'Unpublishing…' : 'Unpublish' }}</span>
           </MenubarItem>
-          <MenubarItem
-            v-else
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
-            :class="{ 'opacity-50 pointer-events-none': isPublishing }"
-            @click="onPublish"
-          >
-            <Icon icon="material-symbols:cloud-upload" class="text-base" />
-            <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
-          </MenubarItem>
+          <template v-else>
+            <MenubarItem
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              :class="{ 'opacity-50 pointer-events-none': isPublishing }"
+              @click="onPublish"
+            >
+              <Icon icon="material-symbols:cloud-upload" class="text-base" />
+              <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
+            </MenubarItem>
+            <!--
+              A smaller upload without touching the file: the recording stays
+              as recorded, and what goes out is share-sized. Not offered once a
+              clip is published — the file up there is the file.
+            -->
+            <MenubarItem
+              v-if="offersCompressed"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              :class="{ 'opacity-50 pointer-events-none': isPublishing }"
+              @click="onPublishCompressed"
+            >
+              <Icon icon="material-symbols:compress" class="text-base" />
+              <span>{{ isPublishing ? 'Publishing…' : 'Publish a compressed copy' }}</span>
+            </MenubarItem>
+          </template>
 
           <MenubarSeparator class="h-px bg-muted-200 my-1" />
 

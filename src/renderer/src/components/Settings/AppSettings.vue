@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAppSettings } from '../../composables/useAppSettings';
+import { usePublisher } from '../../composables/usePublisher';
 import { useToastStore } from '../../stores/toast';
 import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
 
@@ -14,7 +15,14 @@ import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
  * publisher the first sign of trouble used to be a publish failing.
  */
 const { settings, load, save, pickFolder } = useAppSettings();
+const { refresh: refreshPublisher } = usePublisher();
 const toast = useToastStore();
+
+/** The clip menus read this through `usePublisher`, so tell them. */
+async function saveCompressTrims(on: boolean): Promise<void> {
+  await save({ compressTrims: on });
+  await refreshPublisher();
+}
 
 const encoders = ref<EncoderInfo | null>(null);
 const encodersLoading = ref(true);
@@ -136,6 +144,24 @@ async function testPublisher(): Promise<void> {
           class="mt-1 accent-orange-500"
           :checked="settings.keepRunningInTray"
           @change="save({ keepRunningInTray: ($event.target as HTMLInputElement).checked })"
+        />
+      </label>
+
+      <label class="flex items-start justify-between gap-4 p-4 bg-card rounded-lg border border-border cursor-pointer">
+        <span>
+          <span class="block font-medium text-foreground">Compress clips when trimming</span>
+          <span class="block text-sm text-muted-500 mt-1">
+            A trim re-encodes the cut to share size — roughly a fifth of the recording — and
+            publishing offers a compressed copy. Off keeps the recorded bytes: a lossless cut to
+            the nearest keyframe.
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          class="mt-1 accent-orange-500"
+          aria-label="Compress clips when trimming"
+          :checked="settings.compressTrims !== false"
+          @change="saveCompressTrims(($event.target as HTMLInputElement).checked)"
         />
       </label>
 

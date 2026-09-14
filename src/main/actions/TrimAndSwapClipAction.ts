@@ -7,14 +7,18 @@ import { TrimVideoAction, type TrimMode } from './TrimVideoAction.js';
 import { publisherService } from '../services/publisherService.js';
 import { recordTrim } from '../services/highlights/labels.js';
 import { EnsureClipSuggestionsAction } from './EnsureClipSuggestionsAction.js';
+import { compressTrims } from '../settings.js';
 
 export type TrimAndSwapInput = {
   clipId: number;
   startSec: number;
   endSec: number;
   /**
-   * Defaults to a lossless copy. This action replaces the original file, so
-   * re-encoding is a generation loss on the only copy — `exact` is opt-in.
+   * Absent means the setting decides: `compressed` unless the person turned
+   * that off, in which case a lossless copy. This action replaces the original
+   * file, so a re-encode is a generation loss on the only copy — which is the
+   * point when the file is a hundred megabytes of a ten second moment, and the
+   * reason there is a switch.
    */
   mode?: TrimMode;
 };
@@ -24,6 +28,8 @@ export interface TrimAndSwapOutput {
   actualStartSec: number;
   actualEndSec: number;
   mode: TrimMode;
+  /** What the file weighs now, so the page can say what the trim did. */
+  sizeBytes: number;
 }
 
 export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndSwapOutput> {
@@ -31,7 +37,7 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     clipId,
     startSec,
     endSec,
-    mode = 'lossless',
+    mode = compressTrims() ? 'compressed' : 'lossless',
   }: TrimAndSwapInput): Promise<TrimAndSwapOutput> {
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id: clipId });
@@ -103,6 +109,6 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
       }
     }
 
-    return trimmed;
+    return { ...trimmed, sizeBytes: st.size };
   }
 }

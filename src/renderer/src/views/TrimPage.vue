@@ -71,6 +71,7 @@ import type { Clip } from '../types/clip';
 import { useToastStore } from '../stores/toast';
 import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
 import { restoreScrollPosition } from '../utils/scroll';
+import { formatBytes } from '../utils/formatters';
 import { useTrimRange } from '../composables/useTrimRange';
 import { useVideoPlayer } from '../composables/useVideoPlayer';
 import TrimHeader from '../components/Trim/TrimHeader.vue';
@@ -204,13 +205,23 @@ async function handleSave(): Promise<void> {
   
   try {
     const [startTime, endTime] = range.value;
-    await trimClip(Number(props.id), startTime, endTime);
+    const result = await trimClip(Number(props.id), startTime, endTime);
+    // Say what happened to the file: a compressed trim is the whole reason a
+    // hundred megabyte clip became fifteen, and a lossless one explains why
+    // it did not.
+    const was = clip.value?.sizeBytes;
+    const now = formatBytes(result.sizeBytes);
+    toastStore.success(
+      was ? `${formatBytes(was)} → ${now}` : now,
+      result.mode === 'compressed' ? 'Trimmed and compressed' : 'Trimmed',
+    );
     clipsStore.resetPagination();
     await clipsStore.fetchClips(false);
     await router.push('/');
     restoreScrollPosition();
   } catch (error) {
     console.error('Failed to trim clip:', error);
+    toastStore.error((error as Error).message || 'Could not trim this clip');
   } finally {
     isSaving.value = false;
   }

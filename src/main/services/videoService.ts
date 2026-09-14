@@ -7,6 +7,7 @@ import { Clip } from '../entity/Clip.js';
 import { EnsureThumbnailAction } from '../actions/EnsureThumbnailAction.js';
 import { EnsureFrameStripAction } from '../actions/EnsureFrameStripAction.js';
 import { TrimAndSwapClipAction, type TrimAndSwapOutput } from '../actions/TrimAndSwapClipAction.js';
+import type { TrimMode } from '../actions/TrimVideoAction.js';
 import { ScanAndSyncClipsAction, type ScanResult } from '../actions/ScanAndSyncClipsAction.js';
 import { GetClipMetaAction, type ClipMeta } from '../actions/GetClipMetaAction.js';
 import { OpenClipAction } from '../actions/OpenClipAction.js';
@@ -21,7 +22,7 @@ class VideoService {
     id: number,
     startSec: number,
     endSec: number,
-    mode?: 'lossless' | 'exact',
+    mode?: TrimMode,
   ): Promise<TrimAndSwapOutput> {
     const result = await new TrimAndSwapClipAction().execute({ clipId: id, startSec, endSec, mode });
     // After swapping, invalidate caches so they regenerate on next request

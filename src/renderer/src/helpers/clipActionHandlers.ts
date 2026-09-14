@@ -25,18 +25,26 @@ export function createClipActionHandlers(params: {
   // Helper to always get the current clip value
   const getClip = () => toValue(params.clip);
   
-  async function onPublish() {
+  /**
+   * Two entry points rather than one with a flag: both are bound straight to
+   * clicks, and a click handler's first argument is the event.
+   */
+  const onPublish = () => publish(false);
+  const onPublishCompressed = () => publish(true);
+
+  async function publish(compress: boolean) {
     if (params.isPublishing.value) return;
     params.isPublishing.value = true;
     try {
       const clip = getClip();
-      const updated = await publishClip(clip.id);
+      const updated = await publishClip(clip.id, { compress });
       params.emitUpdated(updated);
+      const title = compress ? 'Compressed copy published' : 'Clip published';
       if (updated.publishedUrl) {
         await navigator.clipboard.writeText(updated.publishedUrl).catch(() => {});
-        toastStore.success('URL copied to clipboard', 'Clip published');
+        toastStore.success('URL copied to clipboard', title);
       } else {
-        toastStore.success('Clip published successfully');
+        toastStore.success(title);
       }
     } catch (error) {
       console.error('Publish failed:', error);
@@ -165,6 +173,7 @@ export function createClipActionHandlers(params: {
 
   return { 
     onPublish, 
+    onPublishCompressed,
     onUnpublish, 
     onCopyUrl, 
     onReveal, 

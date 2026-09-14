@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { FFPROBE_PATH } from '../services/binaries.js';
 import { promisify } from 'node:util';
 import { BaseAction } from './BaseAction.js';
+import { CompressVideoAction } from './CompressVideoAction.js';
 import { ffmpegConfigured } from '../services/ffmpeg.js';
 import { runFfmpeg } from '../services/ffmpegRun.js';
 import {
@@ -15,7 +16,12 @@ import {
 const execFileAsync = promisify(execFile);
 const FFPROBE = FFPROBE_PATH;
 
-export type TrimMode = 'lossless' | 'exact';
+/**
+ * `lossless` copies the streams and snaps the start back to a keyframe;
+ * `exact` re-encodes at edit quality to land on the frame asked for;
+ * `compressed` re-encodes at share size — see `CompressVideoAction`.
+ */
+export type TrimMode = 'lossless' | 'exact' | 'compressed';
 
 export type TrimVideoInput = {
   inputPath: string;
@@ -23,8 +29,7 @@ export type TrimVideoInput = {
   endSec: number;
   outputPath: string;
   /**
-   * `lossless` copies the streams and snaps the start to the nearest earlier
-   * keyframe; `exact` re-encodes to land on the frame asked for.
+   * See `TrimMode`. Defaults to a lossless copy.
    */
   mode?: TrimMode;
   signal?: AbortSignal;
@@ -84,6 +89,13 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
       const actual = await probeVideo(outputPath).catch(() => null);
       const actualDuration = actual?.durationSec || duration + lead;
       return { actualStartSec: snapped, actualEndSec: snapped + actualDuration, mode };
+    }
+
+    if (mode === 'compressed') {
+      await new CompressVideoAction().execute({
+        inputPath, outputPath, startSec, endSec, signal, onProgress,
+      });
+      return { actualStartSec: startSec, actualEndSec: endSec, mode };
     }
 
     const [encoders, info] = await Promise.all([detectEncoders(), probeVideo(inputPath)]);

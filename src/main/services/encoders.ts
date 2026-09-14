@@ -206,3 +206,28 @@ export function encoderArgs(
 export function decodeArgs(info: EncoderInfo): string[] {
   return info.hwaccel ? [`-hwaccel ${info.hwaccel}`] : [];
 }
+
+/**
+ * The size a clip is squeezed to when it is meant to be sent somewhere rather
+ * than edited: a trim that replaces the recording, or the copy that goes to the
+ * publisher.
+ *
+ * The recording is what OBS wrote — 80–100 Mbit/s AV1 or HEVC at 3440x1440 —
+ * and a ten second cut of it is over a hundred megabytes, which is the wrong
+ * size for a file whose whole purpose is being shared. Quality 23 H.264 with a
+ * bitrate ceiling scaled by pixel count lands a 1440p ultrawide clip around
+ * 20 Mbit/s and 1080p around 8, which looks fine on a phone and in Discord and
+ * is about a fifth of the recording.
+ */
+export const SHARE_QUALITY = 23;
+const SHARE_KBPS_PER_MEGAPIXEL = 4000;
+
+/** Encoder arguments for a share-sized copy of `info`. */
+export function shareEncoderArgs(encoders: EncoderInfo, info: ProbeInfo): string[] {
+  const megapixels = (info.width * info.height) / 1_000_000;
+  const budget = megapixels > 0 ? Math.round(megapixels * SHARE_KBPS_PER_MEGAPIXEL) : null;
+  // Never cap above what the source already is — that would only add a ceiling
+  // the picture never reaches, and never below the budget the picture needs.
+  const targetKbps = budget && info.kbps ? Math.min(budget, info.kbps) : budget ?? info.kbps;
+  return encoderArgs(encoders, { quality: SHARE_QUALITY, targetKbps });
+}

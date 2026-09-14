@@ -17,6 +17,8 @@ export interface AppSettings {
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   migratedFromWebApp: boolean;
+  /** Re-encode trims to share size. Unset means on. */
+  compressTrims?: boolean;
 }
 
 const EMPTY: AppSettings = {

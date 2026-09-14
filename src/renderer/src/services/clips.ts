@@ -160,7 +160,8 @@ export async function getClipMeta(id: number): Promise<ClipMeta> {
   return data;
 }
 
-export type TrimMode = 'lossless' | 'exact';
+/** `compressed` re-encodes to share size; the default follows the setting. */
+export type TrimMode = 'lossless' | 'exact' | 'compressed';
 
 export interface TrimResult {
   ok: boolean;
@@ -168,18 +169,21 @@ export interface TrimResult {
   actualStartSec: number;
   actualEndSec: number;
   mode: TrimMode;
+  /** The file's size after the trim. */
+  sizeBytes: number;
 }
 
+/** Trim a clip in place. Leave `mode` out to let the compress-trims setting decide. */
 export async function trimClip(
   id: number,
   startSec: number,
   endSec: number,
-  mode: TrimMode = 'lossless',
+  mode?: TrimMode,
 ): Promise<TrimResult> {
   const { data } = await axios.post<TrimResult>(`/api/clips/${id}/trim`, {
     startSec,
     endSec,
-    mode,
+    ...(mode ? { mode } : {}),
   });
   return data;
 }
@@ -288,8 +292,14 @@ export async function getEncoderInfo(): Promise<EncoderInfo> {
   return data;
 }
 
-export async function publishClip(id: number): Promise<Clip> {
-  const { data } = await axios.post<Clip>(`/api/clips/${id}/publish`);
+/**
+ * `compress` uploads a share-sized copy and leaves the file on disk alone.
+ * Only for a clip that has not been published; the server refuses otherwise.
+ */
+export async function publishClip(id: number, options: { compress?: boolean } = {}): Promise<Clip> {
+  const { data } = await axios.post<Clip>(`/api/clips/${id}/publish`, {
+    compress: !!options.compress,
+  });
   return data;
 }
 

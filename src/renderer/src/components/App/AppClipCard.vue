@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
 import { useConfiguration } from '../../composables/useConfiguration';
 import { useClipActionsHandlers } from '../../composables/useClipActionsHandlers';
-import { useHoverScrub } from '../../composables/useHoverScrub';
+import { useHoverScrub, scrubBand } from '../../composables/useHoverScrub';
 import { useBatchOperationsStore } from '../../stores/batchOperations';
 import { useCollectionsStore } from '../../stores/collections';
 import { useToastStore } from '../../stores/toast';
@@ -66,6 +66,17 @@ const {
 
 // Keep the time label from hanging off either edge of the card.
 const scrubLabelLeft = computed(() => `${Math.min(92, Math.max(8, scrubProgress.value * 100))}%`);
+
+/**
+ * The strip is drawn exactly where the pointer scrubs: above the native
+ * controls, never over them. Measured when scrubbing starts, since the card's
+ * height is whatever the grid gave it.
+ */
+const previewEl = ref<HTMLElement | null>(null);
+const scrubStripStyle = computed(() => {
+  const band = scrubBand(previewEl.value?.clientHeight ?? 0);
+  return { bottom: `${band.bottomPx}px`, height: `${band.heightPx}px` };
+});
 
 function handleDragStart(event: DragEvent) {
   startDrag({ type: 'clip', clipId: props.clip.id }, event);
@@ -146,6 +157,7 @@ function handleCardClick(event: MouseEvent) {
     </div>
 
     <div 
+      ref="previewEl"
       class="aspect-[21/9] bg-black relative"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
@@ -161,11 +173,13 @@ function handleCardClick(event: MouseEvent) {
         controls
       />
 
-      <!-- Scrub strip indicator. pointer-events-none so the native controls
-           underneath stay clickable. -->
+      <!-- Scrub strip indicator, sitting above the native controls rather than
+           over them. pointer-events-none so whatever is underneath stays
+           clickable. -->
       <div
         v-if="isScrubbing"
-        class="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none z-10"
+        class="absolute inset-x-0 pointer-events-none z-10"
+        :style="scrubStripStyle"
       >
         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
         <div

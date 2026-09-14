@@ -36,6 +36,16 @@ export interface Settings {
    * Default on; Settings â†’ Advanced turns it off and can revert to the rule.
    */
   learnFromTrims?: boolean;
+  /**
+   * Re-encode a trim to share size instead of keeping the recorded bytes.
+   *
+   * Default on: a ten second cut of an OBS recording is a hundred megabytes,
+   * which is the wrong size for a file whose purpose is being sent to someone.
+   * Off keeps the trim lossless — a stream copy snapped to a keyframe. While
+   * on, publishing also offers to send a compressed copy and leave the
+   * original alone.
+   */
+  compressTrims?: boolean;
   /** Where the window was last, so it opens where you left it. */
   window?: WindowBounds;
 }
@@ -121,6 +131,11 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   cached = next;
   writeFileSync(settingsPath(), JSON.stringify(next, null, 2), 'utf-8');
   return next;
+}
+
+/** Whether trims are re-encoded to share size. Unset means yes. */
+export function compressTrims(): boolean {
+  return loadSettings().compressTrims !== false;
 }
 
 /** True when there is enough to start: somewhere to read clips from. */

@@ -4,6 +4,23 @@ import { ref, type Ref } from 'vue';
 // scrub strip. Above it the pointer does nothing.
 const SCRUB_ZONE = 1 / 3;
 
+/**
+ * The native controls sit along the bottom of the video, and a pointer there
+ * is heading for play, volume or fullscreen — not scrubbing. The strip stops
+ * this far above the bottom edge so it never covers them, and keeps at least
+ * `SCRUB_MIN_BAND_PX` of height on a card too short for a third to leave room.
+ */
+export const SCRUB_CONTROLS_PX = 56;
+export const SCRUB_MIN_BAND_PX = 36;
+
+/** Where the strip sits above the video's bottom edge, given its height. */
+export function scrubBand(heightPx: number): { bottomPx: number; heightPx: number } {
+  return {
+    bottomPx: SCRUB_CONTROLS_PX,
+    heightPx: Math.max(heightPx * SCRUB_ZONE - SCRUB_CONTROLS_PX, SCRUB_MIN_BAND_PX),
+  };
+}
+
 // Don't re-seek for sub-frame movements — Chrome stutters when currentTime is
 // hammered on every mousemove.
 const SEEK_EPSILON = 0.03;
@@ -77,11 +94,19 @@ export function useHoverScrub(videoEl: Ref<HTMLVideoElement | null>, enabled: Re
   /** Attach to the element that wraps the <video>; it defines the scrub geometry. */
   function handleMouseMove(event: MouseEvent): void {
     if (!enabled.value) return;
+    // A fullscreen video still bubbles its mouse moves to the card it lives in,
+    // whose rectangle is now meaningless — every move became a seek to
+    // somewhere. Fullscreen is for watching; the strip is off there.
+    if (document.fullscreenElement) {
+      stopScrubbing(false);
+      return;
+    }
     const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
     if (bounds.height === 0 || bounds.width === 0) return;
 
-    const relativeY = (event.clientY - bounds.top) / bounds.height;
-    if (relativeY < 1 - SCRUB_ZONE) {
+    const fromBottom = bounds.bottom - event.clientY;
+    const band = scrubBand(bounds.height);
+    if (fromBottom < band.bottomPx || fromBottom > band.bottomPx + band.heightPx) {
       stopScrubbing(true);
       return;
     }

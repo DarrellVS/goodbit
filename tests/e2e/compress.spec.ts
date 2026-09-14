@@ -1,0 +1,213 @@
+import { expect, test } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { AddressInfo } from 'node:net';
+import express from 'express';
+import multer from 'multer';
+import ffprobeStatic from 'ffprobe-static';
+import { launchApp, seedClips, type TestApp } from './app';
+
+/**
+ * A trimmed recording is a hundred megabytes of a ten second moment. By
+ * default a trim now re-encodes to share size, and publishing can send a
+ * compressed copy while the file on disk stays as recorded. Both are checked
+ * against what actually lands: the bytes on disk, and the bytes a publisher
+ * receives.
+ */
+
+interface Probe {
+  codec: string;
+  durationSec: number;
+}
+
+function probe(filePath: string): Probe {
+  const out = execFileSync(
+    (ffprobeStatic as unknown as { path: string }).path,
+    [
+      '-v', 'error',
+      '-select_streams', 'v:0',
+      '-show_entries', 'stream=codec_name:format=duration',
+      '-of', 'json',
+      filePath,
+    ],
+    { encoding: 'utf-8' },
+  );
+  const parsed = JSON.parse(out) as {
+    streams: Array<{ codec_name: string }>;
+    format: { duration: string };
+  };
+  return { codec: parsed.streams[0]?.codec_name ?? '', durationSec: Number(parsed.format.duration) };
+}
+
+const sha = (filePath: string) => createHash('sha1').update(readFileSync(filePath)).digest('hex');
+
+/**
+ * The publisher, as far as the app can tell: `POST /api/publish` takes a
+ * multipart upload named `file` and answers with a filename and a URL. What it
+ * received is kept so the test can look at it.
+ */
+interface FakePublisher {
+  server: Server;
+  url: string;
+  dir: string;
+  received: Array<{ filename: string; sizeBytes: number; path: string; displayName?: string }>;
+  close: () => Promise<void>;
+}
+
+async function startFakePublisher(): Promise<FakePublisher> {
+  const dir = mkdtempSync(join(tmpdir(), 'goodbit-fake-publisher-'));
+  const received: FakePublisher['received'] = [];
+  const app = express();
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, dir),
+      filename: (_req, file, cb) => cb(null, file.originalname),
+    }),
+  });
+  app.post('/api/publish', upload.single('file'), (req, res) => {
+    const file = req.file!;
+    received.push({
+      filename: file.originalname,
+      sizeBytes: file.size,
+      path: file.path,
+      displayName: (req.body as { displayName?: string }).displayName,
+    });
+    res.json({ filename: file.originalname, url: `http://publisher.test/media/${file.originalname}` });
+  });
+  app.delete('/api/publish/:filename', (_req, res) => res.json({ removed: true }));
+
+  const server = createServer(app);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  return {
+    server,
+    url: `http://127.0.0.1:${port}`,
+    dir,
+    received,
+    close: async () => {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
+test.describe('compressing what gets shared', () => {
+  let ctx: TestApp;
+  let publisher: FakePublisher;
+
+  const call = (method: string, path: string, body?: unknown, query?: unknown) =>
+    ctx.page.evaluate(
+      ([m, p, b, q]) =>
+        window.goodbit!.apiRequest({
+          method: m as string,
+          path: p as string,
+          body: b,
+          query: (q ?? {}) as Record<string, unknown>,
+        }),
+      [method, path, body, query] as const,
+    );
+
+  const saveSettings = (patch: Record<string, unknown>) =>
+    ctx.page.evaluate((p) => window.goodbit!.saveSettings(p as never), patch);
+
+  type Listed = { id: number; filePath: string; filename: string; published: boolean; sizeBytes: number };
+  const clips = async (): Promise<Listed[]> =>
+    ((await call('GET', '/clips', undefined, { pageSize: 50, game: 'ShareGame' })).body as { items: Listed[] })
+      .items.sort((a, b) => a.filename.localeCompare(b.filename));
+
+  test.beforeAll(async () => {
+    publisher = await startFakePublisher();
+    ctx = await launchApp();
+    // Four seconds each, fat: long enough for a one second cut to sit inside
+    // a GOP, and with enough bytes that compressing is visible on a synthetic
+    // pattern at all.
+    seedClips(ctx.videosRoot, 'ShareGame', 4, 4, 6);
+    await saveSettings({ publisherBaseUrl: publisher.url });
+    await ctx.page.waitForTimeout(9000);
+  });
+
+  test.afterAll(async () => {
+    await ctx?.close();
+    await publisher?.close();
+  });
+
+  test('a trim compresses by default and lands exactly where asked', async () => {
+    const clip = (await clips())[0];
+    const before = statSync(clip.filePath).size;
+
+    const res = await call('POST', `/clips/${clip.id}/trim`, { startSec: 1.25, endSec: 2.25 });
+    const body = res.body as { mode: string; actualStartSec: number; actualEndSec: number; sizeBytes: number };
+    expect(res.status).toBe(200);
+    expect(body.mode).toBe('compressed');
+    // A re-encode does not snap to a keyframe: the cut is the cut.
+    expect(body.actualStartSec).toBeCloseTo(1.25, 2);
+    expect(body.actualEndSec).toBeCloseTo(2.25, 2);
+
+    const after = probe(clip.filePath);
+    expect(after.codec).toBe('h264');
+    expect(after.durationSec).toBeGreaterThan(0.9);
+    expect(after.durationSec).toBeLessThan(1.15);
+    expect(body.sizeBytes).toBe(statSync(clip.filePath).size);
+    expect(body.sizeBytes).toBeLessThan(before);
+  });
+
+  test('turning the setting off makes a trim a lossless copy again', async () => {
+    await saveSettings({ compressTrims: false });
+    try {
+      const clip = (await clips())[1];
+      const res = await call('POST', `/clips/${clip.id}/trim`, { startSec: 1.25, endSec: 2.25 });
+      const body = res.body as { mode: string; actualStartSec: number };
+      expect(res.status).toBe(200);
+      expect(body.mode).toBe('lossless');
+      // The fixture has one keyframe, at zero: a copy from 1.25 starts there.
+      expect(body.actualStartSec).toBeLessThan(1.25);
+    } finally {
+      await saveSettings({ compressTrims: true });
+    }
+  });
+
+  test('publishing a compressed copy sends a smaller file and leaves the original alone', async () => {
+    const clip = (await clips())[2];
+    const originalHash = sha(clip.filePath);
+    const originalSize = statSync(clip.filePath).size;
+
+    const res = await call('POST', `/clips/${clip.id}/publish`, { compress: true });
+    expect(res.status).toBe(200);
+    expect((res.body as { published: boolean }).published).toBe(true);
+
+    const upload = publisher.received.find((r) => r.filename === clip.filename);
+    expect(upload, 'the copy must carry the clip\'s own filename, or it can never be unpublished').toBeTruthy();
+    expect(upload!.sizeBytes).toBeLessThan(originalSize);
+    expect(probe(upload!.path).codec).toBe('h264');
+    // What the test seeded is byte-for-byte what is still there.
+    expect(sha(clip.filePath)).toBe(originalHash);
+    // The size the library shows is the file's, not the copy's.
+    const listed = (await clips()).find((c) => c.id === clip.id)!;
+    expect(listed.sizeBytes).toBe(originalSize);
+  });
+
+  test('a clip that is already published is not offered a compressed copy', async () => {
+    const clip = (await clips())[2];
+    expect(clip.published).toBe(true);
+    const countBefore = publisher.received.length;
+
+    const res = await call('POST', `/clips/${clip.id}/publish`, { compress: true });
+    expect(res.status).toBe(409);
+    expect(publisher.received.length).toBe(countBefore);
+  });
+
+  test('a plain publish still sends the file as it is', async () => {
+    const clip = (await clips())[3];
+    const res = await call('POST', `/clips/${clip.id}/publish`, {});
+    expect(res.status).toBe(200);
+
+    const upload = publisher.received.find((r) => r.filename === clip.filename);
+    expect(upload).toBeTruthy();
+    expect(upload!.sizeBytes).toBe(statSync(clip.filePath).size);
+    expect(sha(upload!.path)).toBe(sha(clip.filePath));
+  });
+});

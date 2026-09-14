@@ -15,7 +15,7 @@ import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
 import { exportLabels, recordRejection, summarise } from '../services/highlights/labels.js';
 import { EnsureClipSuggestionsAction } from '../actions/EnsureClipSuggestionsAction.js';
-import { TrimVideoAction } from '../actions/TrimVideoAction.js';
+import { TrimVideoAction, type TrimMode } from '../actions/TrimVideoAction.js';
 import {
   cancelJob,
   completeJob,
@@ -311,10 +311,14 @@ clipsRouter.post('/:id/trim', asyncHandler(async (req, res) => {
   const { startSec, endSec, mode } = req.body as {
     startSec: number;
     endSec: number;
-    mode?: 'lossless' | 'exact';
+    /** Absent lets the compress-trims setting decide. */
+    mode?: TrimMode;
   };
   if (!(startSec >= 0) || !(endSec > startSec)) {
     return res.status(400).json({ error: 'Invalid range' });
+  }
+  if (mode !== undefined && !['lossless', 'exact', 'compressed'].includes(mode)) {
+    return res.status(400).json({ error: 'Unknown trim mode' });
   }
   const result = await videoService.trimAndSwapClip(id, startSec, endSec, mode);
   // The actual range matters: a lossless cut snaps to a keyframe, so what
@@ -411,8 +415,18 @@ clipsRouter.delete('/suggestions/model', asyncHandler(async (_req, res) => {
 
 clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
+  const { compress } = (req.body ?? {}) as { compress?: boolean };
+  if (compress) {
+    // A compressed copy is an offer for a clip that has never been published:
+    // the file already up there is the file, and swapping it for a smaller one
+    // behind a link that is already out is not what anyone clicked.
+    const existing = await AppDataSource.getRepository(Clip).findOneByOrFail({ id });
+    if (existing.published) {
+      return res.status(409).json({ error: 'Already published. Unpublish it first to publish a compressed copy.' });
+    }
+  }
   const action = new PublishClipAction();
-  const { clip } = await action.execute({ id });
+  const { clip } = await action.execute({ id, compress: !!compress });
   const repo = AppDataSource.getRepository(Clip);
   const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
   const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);

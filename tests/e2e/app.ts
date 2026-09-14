@@ -112,6 +112,11 @@ export function seedClips(
   /** Seconds. Long enough matters for timeline tests: the lane has a 1000px
    * floor, so short clips never reach its right edge. */
   duration = 2,
+  /**
+   * x264 crf. Lower is fatter; a test about compression seeds something with
+   * bytes to lose, since a synthetic pattern at the default is already tiny.
+   */
+  crf = 23,
 ): string[] {
   const ffmpeg = ffmpegPath as unknown as string;
 
@@ -125,7 +130,7 @@ export function seedClips(
       '-hide_banner', '-v', 'error',
       '-f', 'lavfi', '-i', `testsrc=size=640x360:rate=30:duration=${duration}`,
       '-f', 'lavfi', '-i', `sine=frequency=440:duration=${duration}`,
-      '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', String(crf), '-pix_fmt', 'yuv420p',
       '-c:a', 'aac', '-shortest', '-y', file,
     ]);
     made.push(file);
