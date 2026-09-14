@@ -5,6 +5,8 @@ import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { TrimVideoAction, type TrimMode } from './TrimVideoAction.js';
 import { publisherService } from '../services/publisherService.js';
+import { recordTrim } from '../services/highlights/labels.js';
+import { EnsureClipSuggestionsAction } from './EnsureClipSuggestionsAction.js';
 
 export type TrimAndSwapInput = {
   clipId: number;
@@ -34,6 +36,13 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id: clipId });
     const wasPublished = !!clip.published;
+
+    // What the analysis thought, before the file is replaced and the cache for
+    // it becomes a description of something else. This is the only chance to
+    // record what was on offer next to what the person actually chose.
+    const before = await new EnsureClipSuggestionsAction()
+      .execute({ clipId })
+      .catch(() => null);
     const dir = path.dirname(clip.filePath);
     const ext = path.extname(clip.filePath) || '.mp4';
     const tmpPath = path.join(dir, `${path.basename(clip.filePath, ext)}.tmp-${Date.now()}${ext}`);
@@ -66,6 +75,20 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     clip.sizeBytes = st.size;
     clip.fileModifiedAt = st.mtime;
     await repo.save(clip);
+
+    // A person just answered the exact question the analysis is trying to
+    // answer. Keep the answer; see `entity/HighlightLabel.ts`.
+    await recordTrim({
+      clipId: clip.id,
+      game: clip.game,
+      durationSec: before?.durationSec ?? endSec,
+      chosenStartSec: trimmed.actualStartSec,
+      chosenEndSec: trimmed.actualEndSec,
+      suggested: before?.confident ? before.window : null,
+      peakZ: before?.peakZ ?? null,
+      spreadLu: before?.spreadLu ?? null,
+      eventSec: before?.eventSec ?? null,
+    });
 
     // If it was published before, re-publish the updated file and store the new URL
     if (wasPublished) {

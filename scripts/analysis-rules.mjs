@@ -404,3 +404,60 @@ export function ruleV4(clip, windowSec = 10, config = V4) {
     spreadLu: r(shaped.spreadLu),
   };
 }
+
+/* ----------------------------------------------------------------- v5 */
+
+export const V5 = {
+  ...V4,
+  /**
+   * The shortest suggestion worth making.
+   *
+   * The acoustic event itself is short — measured over the accepted clips, a
+   * median of 1.0 s above half its own peak and 1.6 s above a quarter — so a
+   * window sized to the event alone would be a jump cut. Six seconds is enough
+   * for a run-up, the thing, and a beat after it.
+   */
+  MIN_WINDOW_SEC: 6,
+};
+
+/**
+ * As v4, but the window is as long as the moment needs rather than always ten
+ * seconds.
+ *
+ * The fixed length was most visible when the moment sat near the end of a clip:
+ * a Battlefield clip whose event runs 24.4–25.4 s of a 26.4 s recording came
+ * back as 16.4–26.4, which is eight seconds of walking before anything happens.
+ */
+export function ruleV5(clip, maxWindowSec = 10, config = V5) {
+  const base = ruleV4(clip, maxWindowSec, config);
+  if (!base.confident || !base.window) return base;
+
+  const shaped = normalise(clip.full);
+  const n = shaped.z.length;
+  const peakIndex = Math.round((base.peakAt - clip.t0) / HOP);
+  const peakZ = shaped.z[peakIndex];
+
+  // How long the loud part actually lasts, either side of its peak.
+  let onset = peakIndex;
+  while (onset > 0 && shaped.z[onset - 1] >= peakZ * config.ONSET_FRACTION) onset--;
+  let decay = peakIndex;
+  while (decay < n - 1 && shaped.z[decay + 1] >= peakZ * config.ONSET_FRACTION) decay++;
+
+  const eventSec = (decay - onset + 1) * HOP;
+  const length = Math.min(
+    maxWindowSec,
+    Math.min(clip.durationSec * 0.8, Math.max(config.MIN_WINDOW_SEC, config.LEAD_IN + eventSec + config.TAIL_ROOM)),
+  );
+
+  const onsetSec = clip.t0 + onset * HOP;
+  const peakSec = clip.t0 + peakIndex * HOP;
+
+  let end = Math.min(clip.durationSec, Math.max(0, onsetSec - config.LEAD_IN) + length);
+  end = Math.max(end, Math.min(clip.durationSec, peakSec + config.TAIL_ROOM));
+
+  return {
+    ...base,
+    window: { start: r(Math.max(0, end - length)), end: r(end) },
+    eventSec: r(eventSec),
+  };
+}

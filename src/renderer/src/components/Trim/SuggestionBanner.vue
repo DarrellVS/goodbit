@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import type { ClipSuggestions } from '../../services/clips';
 
@@ -13,6 +13,7 @@ interface Props {
 interface Emits {
   (e: 'apply', start: number, end: number): void;
   (e: 'seek', time: number): void;
+  (e: 'reject'): void;
 }
 
 const props = defineProps<Props>();
@@ -39,6 +40,22 @@ const label = computed(() => {
   const w = window.value;
   return w ? `${format(w.start)} – ${format(w.end)}` : '';
 });
+
+const seconds = computed(() => {
+  const w = window.value;
+  return w ? Math.round((w.end - w.start) * 10) / 10 : 0;
+});
+
+/**
+ * Saying the suggestion is wrong is the only thing the app cannot work out for
+ * itself. A trim records where you cut; ignoring a banner records nothing.
+ */
+const dismissed = ref(false);
+
+function reject(): void {
+  dismissed.value = true;
+  emit('reject');
+}
 </script>
 
 <template>
@@ -58,7 +75,7 @@ const label = computed(() => {
 
     <div class="text-sm text-muted-800 min-w-0">
       <span class="font-semibold">The loudest stretch is {{ label }}</span>
-      <span class="text-muted-500"> — that is usually where the good bit is</span>
+      <span class="text-muted-500"> — {{ seconds }}s, which is usually where the good bit is</span>
     </div>
 
     <div class="flex items-center gap-1.5 ml-auto">
@@ -78,6 +95,15 @@ const label = computed(() => {
         @click="emit('apply', window.start, window.end)"
       >
         {{ applied ? 'Applied' : 'Use it' }}
+      </button>
+
+      <button
+        class="text-xs px-2 py-1.5 rounded-lg text-muted-500 hover:text-muted-800 hover:bg-black/5 transition-colors disabled:opacity-40"
+        :disabled="dismissed"
+        :title="dismissed ? 'Noted' : 'Tell GoodBit this suggestion is wrong'"
+        @click="reject"
+      >
+        {{ dismissed ? 'Noted' : 'Wrong' }}
       </button>
     </div>
   </div>

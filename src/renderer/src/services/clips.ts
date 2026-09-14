@@ -203,6 +203,9 @@ export interface ClipSuggestions {
   moments: Array<{ t: number; score: number }>;
   spreadLu: number;
   peakZ: number;
+  eventSec: number;
+  bar: number;
+  basis: 'rule' | 'model';
 }
 
 export async function getClipSuggestions(
@@ -212,6 +215,32 @@ export async function getClipSuggestions(
   const { data } = await axios.get<ClipSuggestions>(`/api/clips/${id}/suggestions`, {
     params: { windowSec },
   });
+  return data;
+}
+
+/** Say that a suggestion pointed at the wrong thing. */
+export async function rejectSuggestion(id: number): Promise<void> {
+  await axios.post(`/api/clips/${id}/suggestions/rejected`);
+}
+
+export interface LabelSummary {
+  total: number;
+  trims: number;
+  accepted: number;
+  rejected: number;
+  withRanges: number;
+  model: { trainedAt: string | null; examples: number | null } | null;
+}
+
+/** How much has been learned from, for the settings screen. */
+export async function getLabelSummary(): Promise<LabelSummary> {
+  const { data } = await axios.get<LabelSummary>('/api/clips/suggestions/labels');
+  return data;
+}
+
+/** Every label, so it can be trained on. */
+export async function getLabels(): Promise<unknown[]> {
+  const { data } = await axios.get<unknown[]>('/api/clips/suggestions/labels/export');
   return data;
 }
 

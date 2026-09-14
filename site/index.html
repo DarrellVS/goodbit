@@ -6,7 +6,7 @@
     <title>GoodBit: you pressed the hotkey for a reason</title>
     <meta
       name="description"
-      content="GoodBit watches the folder OBS records into, indexes every clip as it lands, and listens for which ten seconds you reached for the replay key over. Tag it, trim it, cut a montage, hand it to your phone. Windows, free, entirely local."
+      content="GoodBit watches the folder OBS records into, indexes every clip as it lands, and listens for which few seconds you reached for the replay key over. Tag it, trim it, cut a montage, hand it to your phone. Windows, free, entirely local."
     />
     <link rel="icon" href="assets/img/icon.png" />
     <link rel="canonical" href="https://darrellvs.github.io/goodbit/" />
@@ -65,7 +65,7 @@
             <p class="lede">
               Thirty seconds of game lands on your disk every time you reach for the replay key.
               About ten of them are the reason you reached. GoodBit indexes every clip the moment
-              OBS finishes writing it, and listens for which ten seconds those were.
+              OBS finishes writing it, and listens for which few seconds those were.
             </p>
 
             <div class="actions">
@@ -82,7 +82,7 @@
           <figure class="readout">
             <img
               src="assets/img/waveform.svg"
-              alt="A loudness measurement of a thirty second clip: quiet for most of its length with one loud burst near the middle, and a ten second window marked over that burst."
+              alt="A loudness measurement of a thirty second clip: quiet for most of its length with one loud burst near the middle, and the window it would keep marked over that burst."
               width="720"
               height="260"
             />
@@ -135,7 +135,15 @@
               <dt>It costs nothing</dt>
               <dd>
                 One <code>ffmpeg</code> pass, about a tenth of a second per clip, cached next to the
-                file and recomputed if the file changes. No model, no upload, no queue.
+                file and recomputed if the file changes. Nothing downloaded, nothing uploaded, no queue.
+              </dd>
+            </div>
+            <div>
+              <dt>It learns from you</dt>
+              <dd>
+                Every trim records where you cut next to what was suggested. With enough of those, a
+                small readable model fitted to your own decisions takes over from the built-in
+                threshold. On your machine, from your clips, and you can read the file it produces.
               </dd>
             </div>
           </dl>

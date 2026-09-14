@@ -5,6 +5,7 @@ import { useConfiguration } from '../../composables/useConfiguration';
 import SettingToggle from './SettingToggle.vue';
 import KeyboardShortcutCustomization from './KeyboardShortcutCustomization.vue';
 import BackupsCard from './BackupsCard.vue';
+import SuggestionsCard from './SuggestionsCard.vue';
 
 const config = useConfiguration();
 const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts);
@@ -25,6 +26,8 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
       />
 
       <KeyboardShortcutCustomization v-if="showShortcuts" />
+
+      <SuggestionsCard />
 
       <BackupsCard />
 

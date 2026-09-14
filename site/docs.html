@@ -194,6 +194,18 @@
             six gets a suggestion.
           </li>
           <li>
+            <strong>It is as long as the moment needs.</strong> The loud part of a clip is usually
+            about a second. The suggestion is that, plus a run-up and a beat after, never shorter
+            than six seconds and never longer than ten. A fixed ten used to mean eight seconds of
+            walking before anything happened.
+          </li>
+          <li>
+            <strong>It knows what is normal for each game.</strong> A racing game is a constant
+            engine; a quiet horror game is silence and stings. Once GoodBit has listened to eight or
+            more clips of a game, a moment also has to beat what is ordinary for that game, so a game
+            where everything stands out does not have every clip flagged.
+          </li>
+          <li>
             <strong>It is cheap and local.</strong> About a tenth of a second per clip, computed by
             ffmpeg on your own machine, cached beside the clip and recomputed if the file changes.
           </li>
@@ -201,7 +213,28 @@
         <p>
           It is deliberately audio-only. Scene-change detection measured at more than a minute per
           clip on 3440×1440 footage, hundreds of times the cost, for a signal that mostly agreed with
-          the sound anyway.
+          the sound anyway. A pretrained sound classifier was tried as well and is not used: on real
+          recordings its <em>gunshot</em> and <em>explosion</em> labels fired on ambient gunfire
+          rather than on the moment, and its <em>laughter</em> label did not fire on people laughing
+          over game audio at all.
+        </p>
+
+        <h3 id="learning">It learns from what you keep</h3>
+        <p>
+          Every trim you make is an answer to the question the analysis is asking: out of these
+          thirty seconds, which few were worth it. GoodBit now keeps that answer, alongside what it
+          had suggested at the time, as a row in your own library. There is also a
+          <strong>Wrong</strong> button on the suggestion banner for the one thing it cannot infer:
+          that a confident suggestion pointed at nothing.
+        </p>
+        <p>
+          <strong>Settings → Advanced → Suggestions</strong> shows how many of these there are. Once
+          there are around sixty, export them and run
+          <code>node scripts/train-highlights.mjs --labels &lt;file&gt;</code> from the repository.
+          It fits a small, readable model to your decisions and writes
+          <code>highlight-model.json</code>; drop that into <code>%APPDATA%\GoodBit</code> and the
+          app's suggestions follow your taste instead of the built-in threshold. Nothing leaves the
+          machine at any point, and removing the file puts the built-in rule back.
         </p>
 
         <h2 id="trim">Trimming</h2>

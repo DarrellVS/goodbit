@@ -22,6 +22,7 @@
         :applied="suggestionApplied"
         @apply="applySuggestion"
         @seek="seek"
+        @reject="rejectThisSuggestion"
       />
 
       <TimelineEditor
@@ -52,7 +53,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
-import { getClipMeta, getClipSuggestions, trimClip, type ClipSuggestions } from '../services/clips';
+import {
+  getClipMeta,
+  getClipSuggestions,
+  rejectSuggestion,
+  trimClip,
+  type ClipSuggestions,
+} from '../services/clips';
 import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
 import { restoreScrollPosition } from '../utils/scroll';
 import { useTrimRange } from '../composables/useTrimRange';
@@ -131,6 +138,18 @@ const suggestionApplied = computed(() => {
   if (!w) return false;
   return Math.abs(range.value[0] - w.start) < 0.15 && Math.abs(range.value[1] - w.end) < 0.15;
 });
+
+/**
+ * Recorded rather than acted on: the banner stays where it is, and the next
+ * version of the analysis has one more example of what not to point at.
+ */
+async function rejectThisSuggestion(): Promise<void> {
+  try {
+    await rejectSuggestion(Number(props.id));
+  } catch (error) {
+    console.error('Could not record that:', error);
+  }
+}
 
 function applySuggestion(start: number, end: number): void {
   range.value = [start, Math.min(end, duration.value)];

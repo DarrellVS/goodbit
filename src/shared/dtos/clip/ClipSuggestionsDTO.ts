@@ -32,6 +32,18 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
   /** How far the loudest moment stood above the clip's own normal. */
   peakZ!: number;
 
+  /** How long the loud part lasted, which sets how long the suggestion is. */
+  eventSec!: number;
+
+  /**
+   * What the moment had to clear. Usually the fixed floor, but higher in a game
+   * whose clips all stand out — see the calibration note in the main process.
+   */
+  bar!: number;
+
+  /** Whether the verdict came from the shipped rule or from a trained model. */
+  basis!: 'rule' | 'model';
+
   static fromAnalysis(clipId: number, a: {
     analyzed: boolean;
     confident: boolean;
@@ -41,6 +53,9 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
     moments: SuggestedMoment[];
     spreadLu: number;
     peakZ: number;
+    eventSec: number;
+    bar?: number;
+    basis?: 'rule' | 'model';
   }): ClipSuggestionsDTO {
     const dto = new ClipSuggestionsDTO();
     dto.clipId = clipId;
@@ -52,6 +67,9 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
     dto.moments = a.moments;
     dto.spreadLu = a.spreadLu;
     dto.peakZ = a.peakZ;
+    dto.eventSec = a.eventSec;
+    dto.bar = a.bar ?? 0;
+    dto.basis = a.basis ?? 'rule';
     return dto;
   }
 }

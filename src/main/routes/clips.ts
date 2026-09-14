@@ -13,6 +13,7 @@ import { publisherService } from '../services/publisherService.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
+import { exportLabels, recordRejection, summarise } from '../services/highlights/labels.js';
 import { EnsureClipSuggestionsAction } from '../actions/EnsureClipSuggestionsAction.js';
 import { TrimVideoAction } from '../actions/TrimVideoAction.js';
 import {
@@ -351,6 +352,41 @@ clipsRouter.get('/:id/suggestions', asyncHandler(async (req, res) => {
 
   const result = await new EnsureClipSuggestionsAction().execute({ clipId: id, windowSec, refresh });
   res.json(ClipSuggestionsDTO.fromAnalysis(id, result));
+}));
+
+/**
+ * "That suggestion was wrong."
+ *
+ * One click, and the only way the app ever learns that a confident answer was
+ * not a useful one. A trim records itself; being ignored does not, unless
+ * someone says so.
+ */
+clipsRouter.post('/:id/suggestions/rejected', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const clip = await AppDataSource.getRepository(Clip).findOneByOrFail({ id });
+  const result = await new EnsureClipSuggestionsAction().execute({ clipId: id });
+
+  await recordRejection({
+    clipId: id,
+    game: clip.game,
+    durationSec: result.durationSec,
+    suggested: result.window,
+    peakZ: result.peakZ,
+    spreadLu: result.spreadLu,
+    eventSec: result.eventSec,
+  });
+
+  res.json({ ok: true });
+}));
+
+/** How much supervision has been collected, for the settings screen. */
+clipsRouter.get('/suggestions/labels', asyncHandler(async (_req, res) => {
+  res.json(await summarise());
+}));
+
+/** Every label, for `scripts/train-highlights.mjs`. */
+clipsRouter.get('/suggestions/labels/export', asyncHandler(async (_req, res) => {
+  res.json(await exportLabels());
 }));
 
 clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
