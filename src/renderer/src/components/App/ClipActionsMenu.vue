@@ -19,6 +19,12 @@ import type { Clip } from '../../types/clip';
 interface Props {
   clip: Clip;
   collectionId?: number;
+  /**
+   * Trim and the editor are listed here for a tile in the library, which has no
+   * room for anything else. The clip page gives them their own buttons, so it
+   * turns them off rather than naming the same action twice on one card.
+   */
+  showEditActions?: boolean;
 }
 
 interface Emits {
@@ -26,7 +32,7 @@ interface Emits {
   (e: 'deleted'): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { showEditActions: true });
 const emit = defineEmits<Emits>();
 const router = useRouter();
 
@@ -81,29 +87,31 @@ async function handleMoveToGame(targetGame: string) {
           align="end"
           :side-offset="8"
         >
-          <!--
-            Trim sits at the top, not behind a submenu.
+          <template v-if="showEditActions">
+            <!--
+              Trim sits at the top, not behind a submenu.
 
-            It used to be two levels down under "Edit", which opens on hover,
-            and no tester found it. Cutting a clip down is the thing this app
-            is for, so it is the first item in its own menu.
-          -->
-          <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
-            @click="onTrim"
-          >
-            <Icon icon="material-symbols:content-cut" class="text-base" />
-            <span>Trim to the good bit</span>
-          </MenubarItem>
-          <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
-            @click="onAdvancedEdit"
-          >
-            <Icon icon="material-symbols:video-settings" class="text-base" />
-            <span>Open in the editor</span>
-          </MenubarItem>
+              It used to be two levels down under "Edit", which opens on hover,
+              and no tester found it. Cutting a clip down is the thing this app
+              is for, so it is the first item in its own menu.
+            -->
+            <MenubarItem
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              @click="onTrim"
+            >
+              <Icon icon="material-symbols:content-cut" class="text-base" />
+              <span>Trim to the good bit</span>
+            </MenubarItem>
+            <MenubarItem
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              @click="onAdvancedEdit"
+            >
+              <Icon icon="material-symbols:video-settings" class="text-base" />
+              <span>Open in the editor</span>
+            </MenubarItem>
 
-          <MenubarSeparator class="h-px bg-muted-200 my-1" />
+            <MenubarSeparator class="h-px bg-muted-200 my-1" />
+          </template>
 
           <!-- Reveal in Explorer -->
           <MenubarItem

@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useToastStore } from '../../stores/toast';
+import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
 import ClipStarButton from '../App/ClipStarButton.vue';
 import ClipActionsMenu from '../App/ClipActionsMenu.vue';
 import type { Clip } from '../../types/clip';
@@ -13,6 +16,12 @@ import type { Clip } from '../../types/clip';
  * meant the page was headed by a status you only ever see on a minority of
  * clips, and that card was written in emerald-on-emerald, so it was
  * unreadable the moment the app went dark. It is a row in here now.
+ *
+ * Trimming and the editor are buttons rather than menu items. They were both
+ * behind the three dots, under a line of grey text naming them, which is the
+ * most hidden place on the page for the two things the app is for. They sit
+ * above sharing and starring because they change the clip, and a rule separates
+ * them from the two that do not.
  */
 interface Props {
   clip: Clip;
@@ -28,6 +37,18 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const toastStore = useToastStore();
+const router = useRouter();
+
+// Only here to satisfy the handler factory; nothing in this card publishes.
+const isPublishing = ref(false);
+
+const { onTrim, onAdvancedEdit } = createClipActionHandlers({
+  clip: computed(() => props.clip),
+  isPublishing,
+  emitUpdated: (clip) => emit('updated', clip),
+  emitDeleted: () => emit('deleted'),
+  router,
+});
 
 async function copyPublicUrl(): Promise<void> {
   if (!props.clip.publishedUrl) return;
@@ -41,38 +62,61 @@ async function copyPublicUrl(): Promise<void> {
 </script>
 
 <template>
-  <div class="bg-card rounded-2xl p-4 border border-border space-y-2">
-    <div
-      v-if="clip.published && clip.publishedUrl"
-      class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30"
-    >
-      <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-emerald-500 flex-shrink-0" />
-      <span class="text-sm font-medium text-foreground">Published</span>
-      <button
-        class="ml-auto text-xs font-medium text-emerald-500 hover:underline"
-        @click="copyPublicUrl"
+  <div class="bg-card rounded-2xl p-4 border border-border">
+    <div class="space-y-2">
+      <div
+        v-if="clip.published && clip.publishedUrl"
+        class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30"
       >
-        Copy link
+        <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-emerald-500 flex-shrink-0" />
+        <span class="text-sm font-medium text-foreground">Published</span>
+        <button
+          class="ml-auto text-xs font-medium text-emerald-500 hover:underline"
+          @click="copyPublicUrl"
+        >
+          Copy link
+        </button>
+      </div>
+
+      <button
+        class="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 transition-colors text-left"
+        @click="onTrim"
+      >
+        <Icon icon="material-symbols:content-cut" class="text-xl text-white flex-shrink-0" />
+        <span class="text-sm font-semibold text-white">Trim to the good bit</span>
+      </button>
+
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 transition-colors text-left"
+        @click="onAdvancedEdit"
+      >
+        <Icon icon="material-symbols:video-settings" class="text-xl text-orange-500 flex-shrink-0" />
+        <span class="text-sm font-medium text-foreground">Open in the editor</span>
       </button>
     </div>
 
-    <button
-      class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
-      @click="emit('share')"
-    >
-      <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 flex-shrink-0" />
-      <span class="text-sm font-medium text-foreground">Share on your wifi</span>
-    </button>
+    <div class="h-px bg-border my-3" role="presentation"></div>
 
-    <ClipStarButton variant="row" :clip="clip" @updated="emit('updated', $event)" />
+    <div class="space-y-2">
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
+        @click="emit('share')"
+      >
+        <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 flex-shrink-0" />
+        <span class="text-sm font-medium text-foreground">Share on your wifi</span>
+      </button>
 
-    <div class="pt-1 flex items-center justify-between">
-      <span class="text-xs text-muted-500">Trim, publish, move, delete</span>
-      <ClipActionsMenu
-        :clip="clip"
-        @updated="emit('updated', $event)"
-        @deleted="emit('deleted')"
-      />
+      <ClipStarButton variant="row" :clip="clip" @updated="emit('updated', $event)" />
+
+      <div class="pt-1 flex items-center justify-between">
+        <span class="text-xs text-muted-500">Publish, move, delete</span>
+        <ClipActionsMenu
+          :clip="clip"
+          :show-edit-actions="false"
+          @updated="emit('updated', $event)"
+          @deleted="emit('deleted')"
+        />
+      </div>
     </div>
   </div>
 </template>
