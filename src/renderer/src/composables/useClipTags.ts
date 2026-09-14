@@ -26,22 +26,36 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
     }
     
     const clip = clipRef.value;
-    const clipName = clip.displayName || clip.filename;
     const existingTags = clip.tags || [];
     const suggestions = new Set<string>();
-    const normalizedName = clipName.toLowerCase();
-    
+
+    /*
+     * What the patterns are matched against.
+     *
+     * This used to be the display name alone, falling back to the filename.
+     * OBS names a recording after the moment it started, so for a stock library
+     * the haystack was `Battlefield 6_25.09.2026_15-15-15.mp4`: a timestamp,
+     * containing none of the words these patterns look for, and none of them
+     * could ever fire. The screen promised to save you the typing and could
+     * only work once you had already done it.
+     *
+     * Everything the person has actually written about the clip counts now, and
+     * so does the game, which is how a weapon or a mode pattern gets a chance.
+     */
+    const haystack = [clip.displayName, clip.filename, clip.notes, clip.game]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
     for (const pattern of patterns.value) {
       if (existingTags.includes(pattern.tag)) continue;
-      
-      const matchesPattern = pattern.patterns.some(regex => regex.test(normalizedName));
-      if (matchesPattern) {
-        console.log(pattern.tag, matchesPattern);
+
+      if (pattern.patterns.some((regex) => regex.test(haystack))) {
         suggestions.add(pattern.tag);
         if (suggestions.size >= 3) break;
       }
     }
-    
+
     return Array.from(suggestions).slice(0, 3);
   });
   

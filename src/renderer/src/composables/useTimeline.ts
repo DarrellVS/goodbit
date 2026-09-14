@@ -16,6 +16,7 @@ export function useTimeline() {
 
   function addClip(
     clipId: number,
+    name: string,
     videoUrl: string,
     thumbnailUrl: string,
     originalDuration: number
@@ -23,6 +24,7 @@ export function useTimeline() {
     const clip: TimelineClip = {
       id: uuidv4(),
       clipId,
+      name,
       startTime: duration.value,
       duration: originalDuration,
       trimStart: 0,

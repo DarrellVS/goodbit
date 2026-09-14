@@ -28,21 +28,32 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
     const clipRepo = AppDataSource.getRepository(Clip);
     const gameRepo = AppDataSource.getRepository(Game);
 
-    const clip = await clipRepo.findOneByOrFail({ id: input.id });
-
-    // Get game display name if available
-    const game = await gameRepo.findOne({ where: { name: clip.game } });
-    const gameDisplayName = game?.displayName || clip.game;
-
-    const compress = input.compress ?? compressPublished();
-    const name = clip.displayName || clip.filename;
+    /*
+     * Everything is inside the try, including looking the clip up.
+     *
+     * A failure before this point used to escape without a `failed` event, so
+     * the renderer kept a second, generic error toast of its own as a safety
+     * net. The two then both fired for an ordinary failure, and the generic one
+     * said "Please try again" over the top of the real reason. Reporting every
+     * failure from here means there is one message, and it is the true one.
+     */
+    let name = `clip ${input.id}`;
     const say = (
       stage: 'compressing' | 'uploading' | 'done' | 'failed',
       percent: number,
       message?: string,
-    ): void => announce({ type: 'publish-progress', clipId: clip.id, name, stage, percent, message });
+    ): void => announce({ type: 'publish-progress', clipId: input.id, name, stage, percent, message });
 
     try {
+      const clip = await clipRepo.findOneByOrFail({ id: input.id });
+      name = clip.displayName || clip.filename;
+
+      // Get game display name if available
+      const game = await gameRepo.findOne({ where: { name: clip.game } });
+      const gameDisplayName = game?.displayName || clip.game;
+
+      const compress = input.compress ?? compressPublished();
+
       const result = compress
         ? await this.publishCompressed(clip, gameDisplayName, say)
         : await publisherService.publish(clip.filePath, name, gameDisplayName, (f) =>

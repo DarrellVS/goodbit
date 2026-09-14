@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from 'radix-vue';
 import { formatTime } from '../../utils/timeFormat';
+import { outputSizeFor, targetKbpsFor } from '@shared/index';
 // Straight at the source rather than through the package root: `shared/dist` is
 // compiled to CommonJS, and Rollup cannot pick named runtime values out of a
 // CJS re-export. Types alone resolved fine through the root, which is why every
@@ -29,6 +30,9 @@ interface Props {
   clipCount: number;
   trackCount: number;
   duration: number;
+  /** The shape of the first clip, so the dialog can say what comes out. */
+  sourceWidth?: number;
+  sourceHeight?: number;
   exporting?: boolean;
   progress?: number;
   message?: string;
@@ -71,6 +75,35 @@ const activePreset = computed(
 
 /** A crop that keeps the whole frame has nothing to position. */
 const canPosition = computed(() => format.value !== 'original');
+
+/**
+ * The file this is about to make.
+ *
+ * The dialog listed how many clips and how long, and nothing at all about the
+ * output, which is the thing the options on this screen actually change.
+ * Picking Discord is about a size limit, and the size was the only number
+ * missing.
+ */
+const outputLabel = computed(() => {
+  if (!props.sourceWidth || !props.sourceHeight) return '';
+  const out = outputSizeFor(format.value, props.sourceWidth, props.sourceHeight);
+  return `${out.width} x ${out.height}`;
+});
+
+/** Roughly, from the bitrate the encoder is aiming at. Rounded hard, because a
+ *  precise wrong number is worse than an obviously approximate one. */
+const sizeLabel = computed(() => {
+  if (!props.sourceWidth || !props.sourceHeight || props.duration <= 0) return '';
+  const kbps = targetKbpsFor(format.value, props.sourceWidth, props.sourceHeight, null);
+  const out = outputSizeFor(format.value, props.sourceWidth, props.sourceHeight);
+  // No source bitrate to scale from, so fall back to the share budget: about
+  // 4 Mbit per megapixel, which is what the encoder targets.
+  const megapixels = (out.width * out.height) / 1e6;
+  const bitrate = kbps ?? Math.round(megapixels * 4000);
+  const megabytes = (bitrate * props.duration) / 8 / 1000;
+  if (!Number.isFinite(megabytes) || megabytes <= 0) return '';
+  return megabytes >= 100 ? `about ${Math.round(megabytes / 10) * 10} MB` : `about ${Math.round(megabytes)} MB`;
+});
 
 function applyPreset(id: string): void {
   const preset = PLATFORM_PRESETS.find((p) => p.id === id);
@@ -123,7 +156,7 @@ watch(
         <div class="p-6 border-b border-border">
           <DialogTitle class="text-xl font-bold text-foreground mb-1">Export timeline</DialogTitle>
           <DialogDescription class="text-sm text-muted-600">
-            The render lands in your Editor folder under this name
+            The render lands in the Exports folder beside your games, under this name
           </DialogDescription>
         </div>
 
@@ -270,6 +303,18 @@ watch(
               <Icon icon="material-symbols:music-note" class="text-lg text-orange-500" />
               {{ trackCount === 0 ? 'No music' : `${trackCount} music track${trackCount === 1 ? '' : 's'}` }}
             </div>
+            <!--
+              What you are about to get. The dialog said how long and how many
+              clips, and nothing about the file, which is the one thing you are
+              choosing between: picking Discord is about a size limit, and the
+              size was the only number missing.
+            -->
+            <div v-if="outputLabel" class="flex items-center gap-2">
+              <Icon icon="material-symbols:aspect-ratio" class="text-lg text-orange-500" />
+              <span class="font-mono">{{ outputLabel }}</span>
+              <span v-if="sizeLabel" class="text-muted-400">·</span>
+              <span v-if="sizeLabel" class="font-mono">{{ sizeLabel }}</span>
+            </div>
           </div>
         </div>
 
@@ -298,7 +343,10 @@ watch(
           >
             <Icon v-if="exporting" icon="svg-spinners:180-ring-with-bg" class="text-lg" />
             <Icon v-else icon="material-symbols:download" class="text-lg" />
-            <span>{{ exporting ? `Exporting ${Math.round(progress)}%` : 'Export' }}</span>
+            <!-- Tabular figures, or the button jitters as the count climbs. -->
+            <span class="tabular-nums">
+              {{ exporting ? `Exporting ${Math.round(progress)}%` : 'Export' }}
+            </span>
           </button>
         </div>
       </DialogContent>

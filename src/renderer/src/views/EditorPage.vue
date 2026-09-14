@@ -25,6 +25,7 @@ import { getClip, type ExportOptions } from '../services/clips';
 import { listAudioTracks } from '../services/audio';
 import { parseClipIds } from '../utils/clipIdQuery';
 import { pluralize } from '../utils/pluralize';
+import { formatTimeSimple } from '../utils/timeFormat';
 import { formatRelativeTime } from '../helpers/dateFormat';
 import type { Clip } from '../types/clip';
 import type { AudioTrack } from '../types/audio';
@@ -43,6 +44,17 @@ import type { DraftFilePayload } from '../utils/draftFile';
 type LibraryTab = 'clips' | 'music';
 
 const router = useRouter();
+
+/**
+ * What to call a clip on the timeline.
+ *
+ * The same string the library shows, so a block on the timeline is
+ * recognisable as the thing that was dragged onto it. The extension is
+ * dropped because it is the same on every clip and the block is narrow.
+ */
+function clipLabel(clip: { displayName?: string | null; filename: string }): string {
+  return clip.displayName?.trim() || clip.filename.replace(/\.[^.]+$/, '');
+}
 const route = useRoute();
 const toastStore = useToastStore();
 const gamesStore = useGamesStore();
@@ -174,6 +186,23 @@ const {
 } = useEditorDrafts(timelineClips, timelineAudio);
 
 const showExportDialog = ref(false);
+
+/**
+ * The shape of what is playing, so the export dialog can say what comes out.
+ *
+ * Read when the dialog opens rather than watched: the element has its
+ * dimensions by then, and nothing here needs to react to them changing.
+ */
+const sourceShape = ref({ width: 0, height: 0 });
+
+watch(showExportDialog, (open) => {
+  if (!open) return;
+  const element = videoA.value ?? videoB.value;
+  sourceShape.value = {
+    width: element?.videoWidth ?? 0,
+    height: element?.videoHeight ?? 0,
+  };
+});
 const showDraftsDialog = ref(false);
 const restoring = ref(false);
 
@@ -215,7 +244,7 @@ async function addClipsToTimeline(clips: Clip[]): Promise<void> {
 
   if (prepared.length > 0) record();
   for (const item of prepared) {
-    addClip(item.clip.id, item.videoUrl, item.thumbnailUrl, item.videoDuration);
+    addClip(item.clip.id, clipLabel(item.clip), item.videoUrl, item.thumbnailUrl, item.videoDuration);
   }
 }
 
@@ -271,6 +300,7 @@ async function restoreDraft(draft: EditorDraft): Promise<void> {
         const clip = clipsById.get(entry.clipId)!;
         return {
           clipId: entry.clipId,
+          name: clipLabel(clip),
           startTime: entry.startTime,
           duration: entry.duration,
           trimStart: entry.trimStart,
@@ -459,9 +489,26 @@ async function trimAllToHighlights(): Promise<void> {
     reflowClips();
 
     const untouched = lane.length - targets.length;
+
+    /*
+     * Say why, not just how many.
+     *
+     * This reported a count and nothing else, so the app's headline trick took
+     * seven seconds off a clip and gave no basis at all for trusting or
+     * doubting it. For a single clip the analysis has a sentence about what it
+     * heard or saw; that sentence is the whole point.
+     */
+    const single = targets.length === 1 ? lane.find((clip) => clip.id === targets[0].id) : null;
+    const why = single ? highlights.get(single.clipId)?.evidence : null;
+
+    const range = single
+      ? ` Kept ${formatTimeSimple(targets[0].start)} to ${formatTimeSimple(targets[0].end)}.`
+      : '';
+
     toastStore.success(
-      `Trimmed ${targets.length} ${pluralize(targets.length, 'clip')} to their highlights` +
-        (untouched > 0 ? `, ${untouched} left alone` : '')
+      (why ? `${why[0].toUpperCase()}${why.slice(1)}.${range}` : `Kept the loudest stretch of each.${range}`) +
+        (untouched > 0 ? ` ${untouched} left alone, nothing stood out in ${pluralize(untouched, 'it', 'them')}.` : ''),
+      `Trimmed ${targets.length} ${pluralize(targets.length, 'clip')} to the good bit`,
     );
   } finally {
     trimmingAll.value = false;
@@ -629,15 +676,33 @@ watch(
   <!-- h-full, not h-screen: 100vh ignores the title bar above and overflows by exactly its height. -->
   <div class="h-full flex flex-col bg-background text-foreground overflow-hidden">
     <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-b border-border">
-      <!-- No back arrow here: the title bar already has one. -->
+      <!--
+        A real way out, in the app rather than in the window chrome.
+
+        This screen takes the whole window and puts the sidebar away, so the
+        only exit was a 28 pixel arrow up in the title bar. Testers who did not
+        know their window had one were stranded on the most complicated screen
+        in the app.
+      -->
       <div class="flex items-center gap-3">
+        <button
+          class="flex items-center gap-1.5 -ml-2 px-2.5 py-1.5 rounded-lg text-sm text-muted-600 hover:text-foreground hover:bg-card/10 transition-colors"
+          title="Back to your library. The timeline is kept as a draft."
+          aria-label="Back to your library"
+          @click="router.push('/')"
+        >
+          <Icon icon="material-symbols:arrow-back" class="text-lg" />
+          <span>Back</span>
+        </button>
+        <div class="w-px h-6 bg-border"></div>
+
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
             <Icon icon="material-symbols:movie-edit" class="text-card" />
           </div>
           <div>
-            <h1 class="text-lg font-bold">Advanced Editor</h1>
-            <p v-if="!activeDraft" class="text-[10px] text-muted-600">Create your masterpiece</p>
+            <h1 class="text-lg font-bold">Editor</h1>
+            <p v-if="!activeDraft" class="text-[10px] text-muted-600">Join clips, add music, export one movie</p>
             <p v-else class="text-[10px] text-muted-600 flex items-center gap-1">
               <Icon icon="material-symbols:bookmark" class="text-orange-500 text-xs" />
               <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
@@ -892,6 +957,8 @@ watch(
       :clip-count="timelineClips.length"
       :track-count="timelineAudio.length"
       :duration="duration"
+      :source-width="sourceShape.width"
+      :source-height="sourceShape.height"
       :exporting="isExporting"
       :progress="exportProgress"
       :message="exportMessage"

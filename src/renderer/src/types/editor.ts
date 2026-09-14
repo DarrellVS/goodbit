@@ -1,6 +1,8 @@
 export interface TimelineClip {
   id: string;
   clipId: number;
+  /** What the library calls it, so the block on the timeline says the same. */
+  name: string;
   startTime: number;
   duration: number;
   trimStart: number;

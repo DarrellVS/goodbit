@@ -6,6 +6,23 @@ import { useToastStore } from '../stores/toast';
 import type { TagCategory } from '../utils/tagSuggestions';
 
 const { patterns, loading, addPattern, updatePattern, removePattern } = useTagPatterns();
+
+/** Regex punctuation, as opposed to a word somebody typed. */
+function looksLikeRegex(source: string): boolean {
+  return /[\\[\](){}|*+?^$]/.test(source);
+}
+
+/**
+ * The plain reading of a pattern.
+ *
+ * `\b3k\b` is a word boundary around "3k", which is a thing only some people
+ * know. Stripping the boundaries turns most of these back into the words they
+ * were always about, and anything genuinely clever keeps its own syntax.
+ */
+function readablePattern(source: string): string {
+  const plain = source.replace(/\\b/g, '').replace(/\[-_\]/g, ' ');
+  return looksLikeRegex(plain) ? source : plain;
+}
 const toastStore = useToastStore();
 
 const categories: TagCategory[] = ['General', 'Gameplay', 'Weapons', 'Maps', 'Modes', 'Quality'];
@@ -283,9 +300,11 @@ async function saveNew(): Promise<void> {
                     <span
                       v-for="(p, idx) in pattern.patterns"
                       :key="idx"
-                      class="text-xs bg-muted-100 px-2 py-1 rounded font-mono"
+                      class="text-xs bg-muted-100 px-2 py-1 rounded"
+                      :class="looksLikeRegex(p.source) ? 'font-mono text-muted-600' : ''"
+                      :title="looksLikeRegex(p.source) ? `Pattern: ${p.source}` : `Matches the word ${p.source}`"
                     >
-                      {{ p.source }}
+                      {{ readablePattern(p.source) }}
                     </span>
                   </div>
                 </div>
@@ -354,9 +373,11 @@ async function saveNew(): Promise<void> {
               <span
                 v-for="(p, idx) in pattern.patterns"
                 :key="idx"
-                class="text-xs bg-muted-100 px-2 py-1 rounded font-mono"
+                class="text-xs bg-muted-100 px-2 py-1 rounded"
+                :class="looksLikeRegex(p.source) ? 'font-mono text-muted-600' : ''"
+                :title="looksLikeRegex(p.source) ? `Pattern: ${p.source}` : `Matches the word ${p.source}`"
               >
-                {{ p.source }}
+                {{ readablePattern(p.source) }}
               </span>
             </div>
           </div>

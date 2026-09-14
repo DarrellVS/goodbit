@@ -82,7 +82,13 @@ export function useClipExport(
 
         if (status.status === 'done') {
           exportProgress.value = 100;
-          toastStore.success('Your edited clip has been saved!', 'Export successful');
+          // Name the file and say where it went. This used to say only that
+          // something had been saved, then navigate away, so the only way to
+          // find out whether it had worked was to go and look on disk.
+          toastStore.success(
+            `${name}.mp4 is in the Exports folder, beside your games`,
+            'Export finished',
+          );
           router.push('/');
           return;
         }

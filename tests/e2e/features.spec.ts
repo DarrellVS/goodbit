@@ -174,7 +174,10 @@ test.describe('features survive the port', () => {
 
     expect(final?.status).toBe('done');
     expect(final?.clip).toBeTruthy();
-    expect(statSync(join(ctx.videosRoot, 'Editor', 'e2e_export.mp4')).size).toBeGreaterThan(0);
+    // Renders land in "Exports", not "Editor": a top level folder is a game name
+    // here, so every export used to grow a game beside Battlefield 6 that shared
+    // its name with a screen.
+    expect(statSync(join(ctx.videosRoot, 'Exports', 'e2e_export.mp4')).size).toBeGreaterThan(0);
   });
 
   test('publishing is absent rather than broken with no publisher', async () => {

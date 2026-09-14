@@ -164,7 +164,7 @@ onBeforeUnmount(stopDrag);
       <div class="absolute top-1.5 left-2 right-2 flex items-start justify-between">
         <div class="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded">
           <Icon icon="material-symbols:video-library" class="text-xs" />
-          Clip #{{ clip.clipId }}
+          {{ clip.name }}
         </div>
         
         <button

@@ -29,7 +29,9 @@ test.describe('a day, edited', () => {
     });
     await ctx.page.waitForTimeout(1500);
 
-    await ctx.page.getByRole('button', { name: /edit day/i }).first().click();
+    // Renamed from "Edit day", which read as "edit the date" beside a heading
+    // that shows one.
+    await ctx.page.getByRole('button', { name: /open this day in the editor/i }).first().click();
     await ctx.page.waitForTimeout(3000);
 
     const url = await ctx.page.evaluate(() => window.location.hash);
@@ -37,7 +39,7 @@ test.describe('a day, edited', () => {
     return decodeURIComponent(url.split('clips=')[1]).split(',').map(Number);
   }
 
-  test('Edit day opens the editor with the whole day, oldest first', async () => {
+  test('opening a day sends the whole day to the editor, oldest first', async () => {
     const ids = await editTheDay();
     expect(ids.length).toBe(3);
 
@@ -63,13 +65,18 @@ test.describe('a day, edited', () => {
     await ctx.page.getByTitle(/trim every clip/i).click();
 
     // One ffmpeg listen per clip, four at a time.
-    const toast = ctx.page.locator('li').filter({ hasText: /highlight/i }).first();
+    const toast = ctx.page.locator('li').filter({ hasText: /good bit/i }).first();
     await expect(toast).toBeVisible({ timeout: 30_000 });
 
     // Two of the three clips are a constant tone, which the analysis is built
     // to refuse, so this also asserts it leaves those alone rather than
     // cutting them at random.
-    await expect(toast).toContainText(/Trimmed 1 clip to their highlights, 2 left alone/);
+    await expect(toast).toContainText(/Trimmed 1 clip to the good bit/);
+    await expect(toast).toContainText(/2 left alone/);
+
+    // And it has to say why it cut, not just how many. Reporting a count alone
+    // gave nobody any basis for trusting the app's headline trick.
+    await expect(toast).toContainText(/Kept \d+:\d\d to \d+:\d\d/);
 
     expect(await readClock(), 'the timeline should be shorter after trimming').not.toBe(before);
   });

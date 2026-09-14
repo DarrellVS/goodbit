@@ -51,8 +51,11 @@ export function createClipActionHandlers(params: {
         toastStore.success(title);
       }
     } catch (error) {
+      // No toast here. `PublishClipAction` reports every failure over the
+      // progress channel with the reason it actually hit, and this used to add
+      // a second one saying "Please try again" on top of "No publisher is set
+      // up", which is both a duplicate and wrong advice.
       console.error('Publish failed:', error);
-      toastStore.error('Please try again.', 'Publish failed');
     } finally {
       params.isPublishing.value = false;
     }

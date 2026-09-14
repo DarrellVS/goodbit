@@ -1,6 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
+
 import { Clip } from '../entity/Clip.js';
 import { BaseAction } from './BaseAction.js';
 import { ffmpegConfigured } from '../services/ffmpeg.js';
@@ -23,6 +25,16 @@ import {
   type ExportFormat,
 } from '@shared/index.js';
 import type { FfmpegCommand } from 'fluent-ffmpeg';
+
+/**
+ * Where renders land, one level under the videos root.
+ *
+ * A top level folder is a game name in this app, so whatever this is called
+ * shows up in the sidebar beside the real games. It should at least not be
+ * called the same thing as a screen.
+ */
+const EXPORTS_FOLDER = 'Exports';
+
 
 interface TimelineClipData {
   clipId: number;
@@ -93,7 +105,25 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const dbClips = await clipRepo.findByIds(clips.map((c) => c.clipId));
     const clipMap = new Map(dbClips.map((c) => [c.id, c]));
 
-    const editorDir = path.join(VIDEOS_ROOT, 'Editor');
+    // A render is not a recording, and the folder it lands in is one level down
+    // from the videos root, where a folder name *is* a game name. So every
+    // export used to grow a game called "Editor" in the sidebar, sitting next
+    // to Battlefield 6 and sharing its name with the Editor screen.
+    //
+    // "Exports" at least says what it is and collides with nothing. The older
+    // folder is carried over once, if it is there and the new one is not, so a
+    // library that already has renders in it ends up with one folder rather
+    // than two.
+    const editorDir = path.join(VIDEOS_ROOT, EXPORTS_FOLDER);
+    const legacyDir = path.join(VIDEOS_ROOT, 'Editor');
+    if (!existsSync(editorDir) && existsSync(legacyDir)) {
+      try {
+        await fs.rename(legacyDir, editorDir);
+        console.log(`[export] renamed the Editor folder to ${EXPORTS_FOLDER}`);
+      } catch (error) {
+        console.error('[export] could not rename the Editor folder:', error);
+      }
+    }
     await fs.mkdir(editorDir, { recursive: true });
 
     const tempDir = path.join(VIDEOS_ROOT, '.temp');
@@ -103,7 +133,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const concatListPath = path.join(tempDir, `concat_${Date.now()}.txt`);
     const outputFilename = `${outputName}.mp4`;
     const outputPath = path.join(editorDir, outputFilename);
-    const relPath = path.join('Editor', outputFilename);
+    const relPath = path.join(EXPORTS_FOLDER, outputFilename);
 
     try {
       const encoders = await detectEncoders();
@@ -190,7 +220,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
         filename: outputFilename,
         extension: '.mp4',
         displayName: outputName,
-        game: 'Editor',
+        game: EXPORTS_FOLDER,
         sizeBytes: stats.size,
         fileModifiedAt: stats.mtime,
         published: false,
