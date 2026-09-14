@@ -218,6 +218,7 @@ app.get('/:filename', (req, res) => {
       
       .video-wrapper {
         position: relative;
+        background: #000;
         border-radius: 16px;
         overflow: hidden;
         animation: glow 3s ease-in-out infinite;
@@ -229,6 +230,12 @@ app.get('/:filename', (req, res) => {
       video {
         width: 100%;
         display: block;
+        /*
+         * Black, and the wrapper behind it black too. Until a frame is
+         * decoded the element paints its own surface, and the default is the
+         * page's, which flashes pale against a dark player for as long as the
+         * first byte takes to arrive.
+         */
         background: #000;
       }
       
@@ -296,7 +303,7 @@ app.get('/:filename', (req, res) => {
       </div>
       
       <div class="video-wrapper">
-        <video id="video" controls poster="${thumbnailUrl}">
+        <video id="video" controls preload="metadata" poster="${thumbnailUrl}">
           <source src="${videoUrl}" type="video/mp4">
           Your browser does not support the video tag.
         </video>
