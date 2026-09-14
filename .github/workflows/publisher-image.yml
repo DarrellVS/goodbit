@@ -14,8 +14,8 @@ jobs:
   image:
     runs-on: ubuntu-latest
     # Without credentials this would fail on every tag and teach everyone to
-    # ignore a red cross. Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to turn it
-    # on; until then it skips itself.
+    # ignore a red cross. The two names are repository variables and the token
+    # is the one secret; until all three exist, this skips itself.
     if: ${{ vars.PUBLISHER_IMAGE != '' }}
 
     steps:
@@ -34,7 +34,7 @@ jobs:
 
       - uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build for both processors and push
