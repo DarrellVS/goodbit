@@ -5,19 +5,22 @@ import { ref, type Ref } from 'vue';
 const SCRUB_ZONE = 1 / 3;
 
 /**
- * The native controls sit along the bottom of the video, and a pointer there
- * is heading for play, volume or fullscreen, not scrubbing. The strip stops
- * this far above the bottom edge so it never covers them, and keeps at least
- * `SCRUB_MIN_BAND_PX` of height on a card too short for a third to leave room.
+ * The strip sits on the bottom edge.
+ *
+ * It used to stop 56 pixels short, because the browser's own play, volume and
+ * fullscreen buttons were painted along the bottom of every tile and a pointer
+ * heading for those is not trying to scrub. Those controls are gone: a tile is
+ * a picture now, and a click on it opens the clip. So the strip can have the
+ * edge it always wanted.
  */
-export const SCRUB_CONTROLS_PX = 56;
+export const SCRUB_CONTROLS_PX = 0;
 export const SCRUB_MIN_BAND_PX = 36;
 
 /** Where the strip sits above the video's bottom edge, given its height. */
 export function scrubBand(heightPx: number): { bottomPx: number; heightPx: number } {
   return {
     bottomPx: SCRUB_CONTROLS_PX,
-    heightPx: Math.max(heightPx * SCRUB_ZONE - SCRUB_CONTROLS_PX, SCRUB_MIN_BAND_PX),
+    heightPx: Math.max(heightPx * SCRUB_ZONE, SCRUB_MIN_BAND_PX),
   };
 }
 

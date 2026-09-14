@@ -3,6 +3,8 @@ import { computed, toRef, TransitionGroup } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useClipTags } from '../../composables/useClipTags';
 import type { Clip } from '../../types/clip';
+import { useRouter } from 'vue-router';
+import { useClipsStore } from '../../stores/clips';
 import BasePopover from '../Base/BasePopover.vue';
 
 interface Props {
@@ -13,6 +15,8 @@ interface Emits {
   (e: 'updated', clip: Clip): void;
 }
 
+const router = useRouter();
+const clipsStore = useClipsStore();
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
@@ -28,6 +32,18 @@ const {
 } = useClipTags(toRef(() => props.clip), (updated) => emit('updated', updated));
 
 const visibleTags = computed(() => props.clip.tags?.slice(0, 2) || []);
+
+/**
+ * Show every clip carrying this tag.
+ *
+ * Tagging was only half a feature: you could put a tag on a clip and then had
+ * no way to use it except by typing the word into search. The library already
+ * filters by tag, so a chip just has to ask it to.
+ */
+function filterByTag(tag: string): void {
+  clipsStore.setTags([tag]);
+  if (router.currentRoute.value.name !== 'clips') void router.push('/');
+}
 const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0) - 2));
 </script>
 
@@ -40,13 +56,20 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
       tag="div"
       class="flex items-center gap-1 gap-x-2 flex-wrap mt-2"
     >
-      <span 
-        v-for="tag in visibleTags" 
-        :key="tag" 
-        class="text-xs bg-card/10 py-0.5 rounded tag-enter-active"
+      <!--
+        A tag exists so you can click it later. These were plain text, so the
+        only way to use one was to type it into search.
+      -->
+      <button
+        v-for="tag in visibleTags"
+        :key="tag"
+        type="button"
+        class="text-xs bg-card/10 px-1.5 py-0.5 rounded tag-enter-active hover:bg-orange-500/15 hover:text-orange-600 transition-colors"
+        :title="`Show every clip tagged #${tag}`"
+        @click.stop="filterByTag(tag)"
       >
         #{{ tag }}
-      </span>
+      </button>
       
       <BasePopover v-if="hiddenTagsCount > 0" key="more-tags" side="bottom" :side-offset="8">
         <template #trigger>
@@ -55,7 +78,16 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
           </button>
         </template>
         <div class="flex flex-col gap-1 p-2">
-          <span v-for="tag in clip.tags" :key="tag" class="text-xs">#{{ tag }}</span>
+          <button
+            v-for="tag in clip.tags"
+            :key="tag"
+            type="button"
+            class="text-xs text-left hover:text-orange-600 transition-colors"
+            :title="`Show every clip tagged #${tag}`"
+            @click.stop="filterByTag(tag)"
+          >
+            #{{ tag }}
+          </button>
         </div>
       </BasePopover>
     </TransitionGroup>
