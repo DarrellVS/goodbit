@@ -9,6 +9,8 @@ export interface RemotePublishInput {
   filePath: string;
   displayName?: string;
   game?: string;
+  /** 0-1 of the bytes sent, when the size is known. */
+  onProgress?: (fraction: number) => void;
 }
 
 export interface RemotePublishOutput {
@@ -26,7 +28,19 @@ export class RemotePublishAction extends BaseAction<RemotePublishInput, RemotePu
     if (input.displayName) form.append('displayName', input.displayName);
     if (input.game) form.append('game', input.game);
     const url = `${baseUrl}/api/publish`;
-    const res = await axios.post(url, form, { headers: form.getHeaders() });
+    const res = await axios.post(url, form, {
+      headers: form.getHeaders(),
+      // A clip is tens or hundreds of megabytes; without these the default
+      // limits reject it long before the server sees it.
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      onUploadProgress: input.onProgress
+        ? (event) => {
+            if (!event.total) return;
+            input.onProgress?.(Math.min(1, event.loaded / event.total));
+          }
+        : undefined,
+    });
     return res.data as RemotePublishOutput;
   }
 }

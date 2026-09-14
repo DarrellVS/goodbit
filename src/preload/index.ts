@@ -33,6 +33,8 @@ const api = {
   /** Shell integration, replacing the Windows-only calls the server made. */
   showInFolder: (filePath: string) => ipcRenderer.invoke('shell:showInFolder', filePath),
   openPath: (filePath: string) => ipcRenderer.invoke('shell:openPath', filePath),
+  /** A web page, in the browser. Refused for anything that is not http(s). */
+  openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
 
   app: {
     version: () => ipcRenderer.invoke('app:version'),

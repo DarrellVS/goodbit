@@ -19,6 +19,13 @@ const { settings, load, save, pickFolder } = useAppSettings();
 const { refresh: refreshPublisher } = usePublisher();
 const toast = useToastStore();
 
+/** The setup guide on the website, in the person's own browser. */
+const PUBLISHER_GUIDE = 'https://darrellvs.github.io/goodbit/publisher.html';
+
+function openGuide(): void {
+  void window.goodbit?.openExternal(PUBLISHER_GUIDE);
+}
+
 /** The clip menus read this through `usePublisher`, so tell them. */
 async function saveCompressPublished(on: boolean): Promise<void> {
   await save({ compressPublished: on });
@@ -160,6 +167,17 @@ async function testPublisher(): Promise<void> {
             Optional. A server that hosts public links for the clips you publish — leave empty and
             publishing is simply off.
           </p>
+          <!--
+            The one genuinely hands-on thing GoodBit asks of anyone, so the
+            guide is a click away rather than something to go looking for.
+          -->
+          <button
+            class="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-500 transition-colors"
+            @click="openGuide"
+          >
+            <Icon icon="material-symbols:open-in-new" class="text-base" />
+            How to set one up
+          </button>
         </div>
 
         <div class="flex gap-2">

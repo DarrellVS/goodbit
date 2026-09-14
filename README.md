@@ -1,17 +1,25 @@
 <div align="center">
 
+<img src="site/assets/img/icon.png" width="84" alt="" />
+
 # GoodBit
 
 **You pressed the hotkey for a reason.**
 
 Thirty seconds of game lands on your disk every time you reach for the replay key, and about ten of
 them are the reason you reached. GoodBit watches the folder OBS records into, indexes every clip as
-it arrives, listens for which few seconds those were, and gives you somewhere to tag, trim and cut
-them together.
+it arrives, listens for which few seconds those were — and in a game it has been taught, reads what
+the game itself put on screen — then gives you somewhere to tag, trim and cut them together.
 
 Everything happens on your own machine. Nothing is uploaded unless you ask it to be.
 
-[**goodbit website**](https://darrellvs.github.io/goodbit/) · [Download](https://github.com/DarrellVS/goodbit/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/DarrellVS/goodbit?style=flat-square&color=f97316&label=download)](https://github.com/DarrellVS/goodbit/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/DarrellVS/goodbit/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/DarrellVS/goodbit/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/badge/Windows%2010%2F11-64--bit-8a8e97?style=flat-square)](https://github.com/DarrellVS/goodbit/releases/latest)
+
+**[Download](https://github.com/DarrellVS/goodbit/releases/latest) · [Website](https://darrellvs.github.io/goodbit/) · [Documentation](https://darrellvs.github.io/goodbit/docs.html)**
+
+<img src="site/assets/shots/library.webp" alt="The GoodBit library: Battlefield 6 clips grouped under the day they were recorded, each card showing a thumbnail, a name, size, age and tags." width="900" />
 
 </div>
 
@@ -49,7 +57,9 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
   does not arrive twice as loud as the last one.
 - **Publishes, if you want it to.** An optional module you run on a server of your own turns a clip
   into a public link with a Discord-friendly embed. Leave it unconfigured and the feature is simply
-  absent.
+  absent — and if you do want it, there is a
+  [guide that walks you through it](https://darrellvs.github.io/goodbit/publisher.html), with a
+  quick start for anyone who already runs things behind a reverse proxy.
 - **Keeps a copy of itself.** Before a new version is allowed near the database, SQLite is asked for
   a snapshot and the snapshot is read back — integrity check and row count — so an update that goes
   wrong is an inconvenience rather than a loss. Settings → Advanced lists them.

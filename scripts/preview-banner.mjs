@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { _electron as electron } from 'playwright';
 
-const mode = process.argv[2] === 'downloading' ? 'downloading' : 'ready';
+const mode = ['downloading', 'publish'].includes(process.argv[2]) ? process.argv[2] : 'ready';
 const base = mkdtempSync(join(tmpdir(), 'goodbit-banner-'));
 const dataDir = join(base, 'data');
 const videosRoot = join(base, 'videos');
@@ -44,11 +44,23 @@ const page = await app.firstWindow();
 await page.waitForLoadState('domcontentloaded');
 await page.waitForTimeout(2500);
 
-// Same channel the updater publishes on, so the renderer cannot tell the
-// difference between this and a real download finishing.
-await app.evaluate(({ BrowserWindow }, state) => {
-  for (const win of BrowserWindow.getAllWindows()) win.webContents.send('updater:state', state);
-}, mode === 'ready' ? { status: 'ready', version: '1.2.2' } : { status: 'downloading', percent: 63 });
+if (mode === 'publish') {
+  // The service-event channel, the same one the real publish reports on.
+  await app.evaluate(({ BrowserWindow }, events) => {
+    for (const event of events) {
+      for (const win of BrowserWindow.getAllWindows()) win.webContents.send('service:event', event);
+    }
+  }, [
+    { type: 'publish-progress', clipId: 1, name: 'Caught him coming up the steps', stage: 'compressing', percent: 34 },
+    { type: 'publish-progress', clipId: 1, name: 'Caught him coming up the steps', stage: 'uploading', percent: 61 },
+  ]);
+} else {
+  // Same channel the updater publishes on, so the renderer cannot tell the
+  // difference between this and a real download finishing.
+  await app.evaluate(({ BrowserWindow }, state) => {
+    for (const win of BrowserWindow.getAllWindows()) win.webContents.send('updater:state', state);
+  }, mode === 'ready' ? { status: 'ready', version: '1.2.2' } : { status: 'downloading', percent: 63 });
+}
 
 await page.waitForTimeout(900);
 mkdirSync(join(process.cwd(), 'tmp'), { recursive: true });

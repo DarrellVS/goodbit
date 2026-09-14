@@ -105,8 +105,10 @@ function goToNext(): void {
     </div>
   </div>
 
-  <div v-else-if="!hasClips" class="text-center py-8 text-sm text-muted-400">
-    No clips found
-  </div>
+  <!--
+    Nothing here when there are no clips. The empty state above already says
+    so, with a heading and a line about what to do next; this said it a second
+    time, in smaller type, directly underneath.
+  -->
 </template>
 

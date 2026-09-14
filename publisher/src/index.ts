@@ -80,7 +80,7 @@ app.get('/:filename', (req, res) => {
     <!-- Open Graph / Discord -->
     <meta property="og:type" content="video.other">
     <meta property="og:title" content="${escapeHtml(title)}">
-    <meta property="og:site_name" content="Filmpje">
+    <meta property="og:site_name" content="GoodBit">
     <meta property="og:url" content="${pageUrl}">
     <meta property="og:video" content="${videoUrl}">
     <meta property="og:video:url" content="${videoUrl}">

@@ -50,7 +50,7 @@ function getIconName(toast: Toast): string {
     <ToastRoot
       v-for="toast in toastStore.toasts"
       :key="toast.id"
-      :duration="toast.duration || 4000"
+      :duration="toast.sticky ? Infinity : toast.duration || 4000"
       class="rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)]"
       :class="getToastClass(toast)"
       @update:open="(open) => !open && toastStore.dismiss(toast.id)"
@@ -64,6 +64,17 @@ function getIconName(toast: Toast): string {
         <ToastDescription class="text-sm opacity-90">
           {{ toast.description }}
         </ToastDescription>
+
+        <!-- Only for work in progress; a bar at 0 would read as stuck. -->
+        <div
+          v-if="toast.progress !== undefined"
+          class="h-1 rounded-full bg-black/10 overflow-hidden mt-1.5"
+        >
+          <div
+            class="h-full bg-current transition-[width] duration-200 ease-out"
+            :style="{ width: `${Math.max(2, Math.min(100, toast.progress))}%` }"
+          ></div>
+        </div>
       </div>
 
       <ToastAction

@@ -20,7 +20,15 @@ export type ServiceEvent =
   | { type: 'scan-started' }
   | { type: 'scan-finished'; added: number; updated: number; removed: number; total: number }
   | { type: 'clip-added'; filePath: string; game: string }
-  | { type: 'clip-removed'; filePath: string };
+  | { type: 'clip-removed'; filePath: string }
+  | {
+      type: 'publish-progress';
+      clipId: number;
+      name: string;
+      stage: 'compressing' | 'uploading' | 'done' | 'failed';
+      percent: number;
+      message?: string;
+    };
 
 export function useServiceEvents() {
   const clipsStore = useClipsStore();
@@ -64,6 +72,11 @@ export function useServiceEvents() {
 
       case 'clip-removed':
         refreshSoon();
+        break;
+
+      case 'publish-progress':
+        // Owned by `usePublishProgress`; listed here so the switch stays
+        // exhaustive and a new event cannot be forgotten in both places.
         break;
     }
   }

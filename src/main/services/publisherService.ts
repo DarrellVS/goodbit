@@ -5,10 +5,15 @@ import { RemoteListPublishedAction } from '../actions/RemoteListPublishedAction.
 import { RemoteUpdateMetadataAction } from '../actions/RemoteUpdateMetadataAction.js';
 
 class PublisherService {
-  async publish(filePath: string, displayName?: string, game?: string): Promise<{ filename: string; url: string; }>
+  async publish(
+    filePath: string,
+    displayName?: string,
+    game?: string,
+    onProgress?: (fraction: number) => void,
+  ): Promise<{ filename: string; url: string; }>
   {
     const action = new RemotePublishAction();
-    return await action.execute({ filePath, displayName, game });
+    return await action.execute({ filePath, displayName, game, onProgress });
   }
 
   async unpublish(filename: string): Promise<{ removed: boolean; }>

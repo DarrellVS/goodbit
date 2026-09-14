@@ -25,6 +25,7 @@ interface GoodBitBridge {
   pathForFile: (file: File) => string;
   showInFolder: (filePath: string) => Promise<void>;
   openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
+  openExternal: (url: string) => Promise<{ ok: boolean }>;
   app: {
     version: () => Promise<string>;
     onNavigate: (listener: (path: string) => void) => () => void;

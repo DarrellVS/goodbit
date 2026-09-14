@@ -14,7 +14,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const OUT = join(process.cwd(), 'tmp', 'site');
-const page = process.argv.find((a) => a === 'index' || a === 'docs') ?? 'index';
+// Any page in site/, named without its extension.
+const page = process.argv.slice(2).find((a) => !a.startsWith('--') && !/^\d+$/.test(a)) ?? 'index';
 const widthArg = process.argv.indexOf('--width');
 const widths = widthArg > 0 ? [Number(process.argv[widthArg + 1])] : [1320, 420];
 

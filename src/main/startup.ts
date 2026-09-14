@@ -40,7 +40,31 @@ export type ServiceEvent =
   | { type: 'scan-started' }
   | { type: 'scan-finished'; added: number; updated: number; removed: number; total: number }
   | { type: 'clip-added'; filePath: string; game: string }
-  | { type: 'clip-removed'; filePath: string };
+  | { type: 'clip-removed'; filePath: string }
+  /**
+   * Publishing a clip takes as long as it takes to squeeze two hundred
+   * megabytes and push them up a home connection — a minute is normal. Saying
+   * nothing for a minute reads as broken, so it says where it is.
+   */
+  | {
+      type: 'publish-progress';
+      clipId: number;
+      name: string;
+      stage: 'compressing' | 'uploading' | 'done' | 'failed';
+      /** 0-100 within the current stage. */
+      percent: number;
+      message?: string;
+    };
+
+/**
+ * Push an event to whatever is listening.
+ *
+ * Exported so work that lives outside this file — publishing, which is an
+ * action — can report on itself without the window having to poll for it.
+ */
+export function announce(event: ServiceEvent): void {
+  emit(event);
+}
 
 export function onServiceEvent(listener: (event: ServiceEvent) => void): () => void {
   listeners.push(listener);

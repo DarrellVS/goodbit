@@ -59,6 +59,7 @@ import FileDropZone from '../components/App/FileDropZone.vue';
 import AppTagsFilter from '../components/App/AppTagsFilter.vue';
 import CommandPalette from '../components/App/CommandPalette.vue';
 import { useServiceEvents } from '../composables/useServiceEvents';
+import { usePublishProgress } from '../composables/usePublishProgress';
 import { useCollectionsStore } from '../stores/collections';
 
 const gamesStore = useGamesStore();
@@ -96,6 +97,10 @@ const collectionsStore = useCollectionsStore();
 // The watcher indexes clips while this window is open; without this the list
 // shows whatever was there when it loaded.
 const { scanning } = useServiceEvents();
+
+// Publishing narrates itself in a toast that stays put; mounted here so a
+// publish started in the library is still reported after navigating away.
+usePublishProgress();
 const showCommandPalette = ref(false);
 
 /**

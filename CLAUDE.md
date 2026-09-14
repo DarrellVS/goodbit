@@ -195,6 +195,8 @@ These do not run in CI (they need a desktop session, a GPU and ffmpeg). `build:w
   from disk; **a 1.0 blocker** once strangers have tags and notes they cannot re-derive, because
   TypeORM's SQLite auto-sync resolves some schema changes by rebuilding a table.
 - No linter. Typecheck and the e2e suite are the only automated gates.
-- `publisher/` still reads its config from a `.env`; it was deliberately left alone.
+- `publisher/` still reads its config from a `.env`; it was deliberately left alone. Setting it up
+  is documented at `site/publisher.html`, which is a wizard rather than a page — a quick start
+  and a seven-step route that writes the reader's own domain and paths into every command.
 - The app is no longer Windows-only in principle (`shell.trashItem`, `shell.showItemInFolder`), but
   nothing has been built or tested anywhere else.

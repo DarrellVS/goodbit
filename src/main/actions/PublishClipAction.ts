@@ -8,6 +8,7 @@ import { Game } from '../entity/Game.js';
 import { publisherService } from '../services/publisherService.js';
 import { CompressVideoAction } from './CompressVideoAction.js';
 import { compressPublished } from '../settings.js';
+import { announce } from '../startup.js';
 
 export interface PublishClipInput {
   id: number;
@@ -34,14 +35,29 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
     const gameDisplayName = game?.displayName || clip.game;
 
     const compress = input.compress ?? compressPublished();
-    const result = compress
-      ? await this.publishCompressed(clip, gameDisplayName)
-      : await publisherService.publish(clip.filePath, clip.displayName || clip.filename, gameDisplayName);
+    const name = clip.displayName || clip.filename;
+    const say = (
+      stage: 'compressing' | 'uploading' | 'done' | 'failed',
+      percent: number,
+      message?: string,
+    ): void => announce({ type: 'publish-progress', clipId: clip.id, name, stage, percent, message });
 
-    clip.published = true;
-    clip.publishedUrl = result.url;
-    await clipRepo.save(clip);
-    return { clip };
+    try {
+      const result = compress
+        ? await this.publishCompressed(clip, gameDisplayName, say)
+        : await publisherService.publish(clip.filePath, name, gameDisplayName, (f) =>
+            say('uploading', Math.round(f * 100)),
+          );
+
+      clip.published = true;
+      clip.publishedUrl = result.url;
+      await clipRepo.save(clip);
+      say('done', 100);
+      return { clip };
+    } catch (error) {
+      say('failed', 0, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   /**
@@ -49,12 +65,27 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
    * the publisher stores by upload name and `unpublish` asks for it by
    * `clip.filename`, so a copy under any other name could not be taken down.
    */
-  private async publishCompressed(clip: Clip, gameDisplayName: string) {
+  private async publishCompressed(
+    clip: Clip,
+    gameDisplayName: string,
+    say: (stage: 'compressing' | 'uploading' | 'done' | 'failed', percent: number) => void,
+  ) {
     const scratch = await fsPromises.mkdtemp(path.join(tmpdir(), 'goodbit-publish-'));
     const copy = path.join(scratch, clip.filename);
     try {
-      await new CompressVideoAction().execute({ inputPath: clip.filePath, outputPath: copy });
-      return await publisherService.publish(copy, clip.displayName || clip.filename, gameDisplayName);
+      say('compressing', 0);
+      await new CompressVideoAction().execute({
+        inputPath: clip.filePath,
+        outputPath: copy,
+        onProgress: (fraction) => say('compressing', Math.round(fraction * 100)),
+      });
+      say('uploading', 0);
+      return await publisherService.publish(
+        copy,
+        clip.displayName || clip.filename,
+        gameDisplayName,
+        (fraction) => say('uploading', Math.round(fraction * 100)),
+      );
     } finally {
       await fsPromises.rm(scratch, { recursive: true, force: true }).catch(() => {});
     }

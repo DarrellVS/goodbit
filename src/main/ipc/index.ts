@@ -119,6 +119,24 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     shell.showItemInFolder(normalize(filePath));
   });
 
+  /**
+   * Open a link in the person's own browser.
+   *
+   * Guarded to http and https on purpose: `shell.openExternal` will happily
+   * launch `file:`, `ms-settings:` and anything else the OS has registered, so
+   * a handler that forwards whatever it is given is a way to run things.
+   */
+  ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+    try {
+      const parsed = new URL(String(url));
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return { ok: false };
+      await shell.openExternal(parsed.toString());
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    }
+  });
+
   ipcMain.handle('shell:openPath', async (_event, filePath: string) => {
     const error = await shell.openPath(normalize(filePath));
     return error ? { ok: false, error } : { ok: true };

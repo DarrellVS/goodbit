@@ -790,3 +790,320 @@ tbody tr:last-child td {
 .middle .wrap {
   max-width: 46ch;
 }
+
+/* --------------------------------------------------------------- wizard */
+
+/*
+ * The publisher setup guide.
+ *
+ * Setting up a server behind a reverse proxy is the one genuinely hands-on
+ * thing GoodBit asks of anyone, so this is a guide that holds your place
+ * rather than a wall of prose: one step on screen at a time, your own values
+ * filled into the commands, and a way out at the top for anyone who does not
+ * need the hand-holding.
+ */
+
+.route {
+  display: grid;
+  gap: 1rem;
+  margin: 2rem 0 0;
+}
+
+@media (min-width: 46rem) {
+  .route {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.route button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1.4rem 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.route button:hover,
+.route button:focus-visible {
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+
+.route b {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+
+.route span {
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+
+.route .who {
+  display: block;
+  margin-top: 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* The step rail: which step you are on, and how many are left. */
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  flex: 1 1 5rem;
+  /* Without this a nowrap label sets a min-content floor and the rail breaks
+     onto a second row instead of letting the text ellipsis. */
+  min-width: 0;
+}
+
+/*
+ * These are rows, not lists of sentences.
+ *
+ * `.prose li + li` puts a top margin on every item but the first, which is
+ * right for prose and wrong here: in a flex row it pushed six of the seven
+ * steps five pixels down and left the first one standing proud.
+ */
+.steps li + li,
+.brands li + li {
+  margin-top: 0;
+}
+
+.steps button {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.1rem 0.55rem;
+  background: none;
+  border: 0;
+  border-top: 2px solid var(--rule);
+  color: var(--ink-3);
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /*
+   * One line, always. A label that wraps makes its own cell taller than the
+   * rest and the whole rail reads as misaligned; better to lose the tail of a
+   * long name than the alignment of all seven.
+   */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.steps button:hover {
+  color: var(--ink-2);
+}
+
+.steps li[data-state="current"] button {
+  border-top-color: var(--accent);
+  color: var(--accent);
+}
+
+.steps li[data-state="done"] button {
+  border-top-color: var(--ink-3);
+  color: var(--ink-2);
+}
+
+.step {
+  border-top: 1px solid var(--rule);
+  padding-top: 1.6rem;
+}
+
+.step h2 {
+  margin-top: 0;
+}
+
+.step[hidden] {
+  display: none;
+}
+
+/* Your own values, filled into every command on the page as you type. */
+.fields {
+  display: grid;
+  gap: 1rem;
+  margin: 1.4rem 0;
+}
+
+@media (min-width: 40rem) {
+  .fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fields label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+.fields input {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.fields input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.fields .hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+/* A command you are meant to copy, with a button that does it. */
+.copy {
+  position: relative;
+}
+
+.copy button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.copy button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.nav .spacer {
+  flex: 1;
+}
+
+.nav button {
+  padding: 0.65rem 1.2rem;
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.nav button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nav button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.nav button.primary:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+
+/* A thing worth stopping for: a gotcha that will cost an hour otherwise. */
+.watch {
+  border: 1px solid var(--accent);
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  padding: 1rem 1.2rem;
+  margin: 1.4rem 0;
+}
+
+.watch p:last-child {
+  margin-bottom: 0;
+}
+
+.watch strong {
+  color: var(--accent);
+}
+
+/* Links out to router makers, which are all differently named. */
+.brands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 1rem 0 0;
+  list-style: none;
+}
+
+.brands a {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--rule);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.brands a:hover {
+  border-color: var(--accent);
+}
+
+/*
+ * The guide pages: one column of prose, no table of contents beside it.
+ *
+ * `.docs` is a two-column grid whose first track is the contents list, so a
+ * page without one puts its whole article into a 15rem gutter.
+ */
+.guide {
+  padding: clamp(1.6rem, 4vw, 2.6rem) 0 4rem;
+}
+
+/*
+ * `hidden` has to win.
+ *
+ * The attribute's own rule is `display: none` at user-agent weight, so any
+ * class that sets `display` beats it — which left the route chooser on screen
+ * after it had been hidden, because `.route` is a grid.
+ */
+[hidden] {
+  display: none !important;
+}
