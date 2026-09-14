@@ -6,6 +6,17 @@ directories:
   output: release
   buildResources: build
 
+# Windows names the program by the executable's FileDescription, not by
+# productName: Task Manager, the "Open with" list, and the prompt a browser
+# puts up before handing over a `goodbit://` link all read that field. It comes
+# from `description`, which is a sentence, so the browser asked whether to
+# "Open Finds the good bit in your game clips, and keeps it."
+#
+# The sentence is still the right thing on GitHub and in the README, so it is
+# only the packaged copy that carries the name instead.
+extraMetadata:
+  description: GoodBit
+
 files:
   - out/**
   - package.json
