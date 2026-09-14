@@ -54,6 +54,18 @@ export type ServiceEvent =
       /** 0-100 within the current stage. */
       percent: number;
       message?: string;
+    }
+  /**
+   * The same problem as publishing. An exact cut re-encodes, which on a
+   * 3440 wide recording is tens of seconds, and the button said "Trimming"
+   * with a spinner and no idea how far along it was.
+   */
+  | {
+      type: 'trim-progress';
+      clipId: number;
+      stage: 'cutting' | 'done' | 'failed';
+      /** 0-100 through the cut. */
+      percent: number;
     };
 
 /**

@@ -44,6 +44,7 @@
         :frame-strip-source="frameStripSource"
         :is-valid="isValidRange"
         :is-saving="isSaving"
+        :save-progress="saveProgress"
         :playhead-percentage="timeToPercentage(currentTime)"
         :playhead="formatTime(currentTime)"
         :is-playing="isPlaying"
@@ -56,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClipsStore } from '../stores/clips';
 import {
@@ -102,6 +103,30 @@ const {
 
 const videoPreviewRef = ref<InstanceType<typeof VideoPreview> | null>(null);
 const isSaving = ref(false);
+
+/**
+ * How far the cut has got, straight from the action doing it.
+ *
+ * An exact trim re-encodes, tens of seconds on a wide recording, and the
+ * button used to spin with no number at all.
+ */
+const saveProgress = ref(0);
+let detachTrimProgress: (() => void) | null = null;
+
+onMounted(() => {
+  detachTrimProgress =
+    window.goodbit?.onServiceEvent((raw) => {
+      const event = raw as { type?: string; clipId?: number; percent?: number };
+      if (event.type !== 'trim-progress') return;
+      if (event.clipId !== Number(props.id)) return;
+      saveProgress.value = Math.max(0, Math.min(100, event.percent ?? 0));
+    }) ?? null;
+});
+
+onBeforeUnmount(() => {
+  detachTrimProgress?.();
+  detachTrimProgress = null;
+});
 
 const videoSource = computed(() => streamUrl(Number(props.id)));
 
@@ -215,6 +240,7 @@ async function handleSave(): Promise<void> {
   if (isSaving.value || !isValidRange.value) return;
   
   isSaving.value = true;
+  saveProgress.value = 0;
   
   try {
     const [startTime, endTime] = range.value;
@@ -223,9 +249,13 @@ async function handleSave(): Promise<void> {
     // hundred megabyte clip became fifteen, and a lossless one explains why
     // it did not.
     const was = clip.value?.sizeBytes;
-    const now = formatBytes(result.sizeBytes);
+    const size = was ? `${formatBytes(was)} → ${formatBytes(result.sizeBytes)}` : formatBytes(result.sizeBytes);
+
+    // Say where the cut landed, not just what it weighs. The toast used to
+    // report megabytes only, which is how a cut that quietly moved could go
+    // unnoticed. It cannot move any more, so this simply states the range.
     toastStore.success(
-      was ? `${formatBytes(was)} → ${now}` : now,
+      `Kept ${formatTime(result.actualStartSec)} to ${formatTime(result.actualEndSec)}. ${size}`,
       result.mode === 'compressed' ? 'Trimmed and compressed' : 'Trimmed',
     );
     clipsStore.resetPagination();

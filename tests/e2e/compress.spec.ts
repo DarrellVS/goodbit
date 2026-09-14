@@ -153,16 +153,29 @@ test.describe('compressing what gets shared', () => {
     await publisher?.close();
   });
 
-  test('a trim keeps the recorded picture unless asked otherwise', async () => {
+  test('a trim lands on the frames asked for, not the nearest keyframe', async () => {
     const clip = (await clips())[0];
 
     const res = await call('POST', `/clips/${clip.id}/trim`, { startSec: 1.25, endSec: 2.25 });
-    const body = res.body as { mode: string; actualStartSec: number; sizeBytes: number };
+    const body = res.body as {
+      mode: string;
+      actualStartSec: number;
+      actualEndSec: number;
+      sizeBytes: number;
+    };
     expect(res.status).toBe(200);
-    expect(body.mode).toBe('lossless');
-    // The fixture has one keyframe, at zero: a copy from 1.25 starts there.
-    expect(body.actualStartSec).toBeLessThan(1.25);
-    expect(body.sizeBytes).toBe(statSync(clip.filePath).size);
+
+    /*
+     * The default used to be a stream copy, which cannot begin in the middle of
+     * a group of pictures. This fixture has one keyframe, at zero, so asking
+     * for 1.25 to 2.25 produced a file that started at zero and ran half again
+     * as long as the range on screen, and the app reported megabytes rather
+     * than the range, so nobody could see it happen.
+     */
+    expect(body.mode).toBe('exact');
+    expect(body.actualStartSec).toBeCloseTo(1.25, 2);
+    expect(body.actualEndSec).toBeCloseTo(2.25, 2);
+    expect(body.sizeBytes).toBeGreaterThan(0);
   });
 
   test('turning the setting on re-encodes the cut, exactly where asked', async () => {

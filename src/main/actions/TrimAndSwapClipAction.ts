@@ -8,23 +8,28 @@ import { publisherService } from '../services/publisherService.js';
 import { recordTrim } from '../services/highlights/labels.js';
 import { EnsureClipSuggestionsAction } from './EnsureClipSuggestionsAction.js';
 import { compressTrims } from '../settings.js';
+import { probeDurationSec } from '../services/encoders.js';
+import { announce } from '../startup.js';
 
 export type TrimAndSwapInput = {
   clipId: number;
   startSec: number;
   endSec: number;
   /**
-   * Absent means the setting decides: `compressed` unless the person turned
-   * that off, in which case a lossless copy. This action replaces the original
-   * file, so a re-encode is a generation loss on the only copy, which is the
-   * point when the file is a hundred megabytes of a ten second moment, and the
-   * reason there is a switch.
+   * Absent means the setting decides, and both of its answers land on the exact
+   * frames asked for. This action replaces the original file, so the only
+   * question left is how hard the result is squeezed: `compressed` re-encodes
+   * to share size, `exact` keeps the picture close to the recording.
    */
   mode?: TrimMode;
 };
 
 export interface TrimAndSwapOutput {
-  /** Where the cut actually landed: a lossless copy snaps back to a keyframe. */
+  /**
+   * Where the cut landed, which is the range that was asked for. Only a caller
+   * that explicitly asks for `lossless` gets something else, because a stream
+   * copy has to begin at a keyframe.
+   */
   actualStartSec: number;
   actualEndSec: number;
   mode: TrimMode;
@@ -37,7 +42,11 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     clipId,
     startSec,
     endSec,
-    mode = compressTrims() ? 'compressed' : 'lossless',
+    // Both defaults are frame accurate. A stream copy cannot be: it has to
+    // begin at a keyframe, so asking for 4.5s to 12.8s quietly produced a file
+    // that started at 0. The cut now lands exactly where it was asked to, and
+    // the setting only chooses how hard the result is squeezed.
+    mode = compressTrims() ? 'compressed' : 'exact',
   }: TrimAndSwapInput): Promise<TrimAndSwapOutput> {
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id: clipId });
@@ -64,23 +73,64 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
       }
     }
 
-    const trimmed = await new TrimVideoAction().execute({
-      inputPath: clip.filePath,
-      startSec,
-      endSec,
-      outputPath: tmpPath,
-      mode,
-    });
+    /*
+     * Say how far along the cut is.
+     *
+     * An exact trim re-encodes, and on a 3440 wide recording that is tens of
+     * seconds. The button used to spin and say "Trimming" with no idea whether
+     * it was a moment away or half a minute.
+     */
+    const say = (stage: 'cutting' | 'done' | 'failed', percent: number): void =>
+      announce({ type: 'trim-progress', clipId: clip.id, stage, percent });
+
+    say('cutting', 0);
+
+    let trimmed;
+    try {
+      trimmed = await new TrimVideoAction().execute({
+        inputPath: clip.filePath,
+        startSec,
+        endSec,
+        outputPath: tmpPath,
+        mode,
+        onProgress: (fraction) => say('cutting', Math.round(fraction * 100)),
+      });
+    } catch (error) {
+      say('failed', 0);
+      throw error;
+    }
+
+    /*
+     * Keep the recording's own date.
+     *
+     * The cut writes a new file, so its modified time is the moment you pressed
+     * save. Taking that as the clip's date moved a recording from the 27th of
+     * August to today, into a day group it has nothing to do with, and lost the
+     * only record of when it actually happened. Trimming a recording does not
+     * change when it was recorded.
+     */
+    const recordedAt = clip.fileModifiedAt ? new Date(clip.fileModifiedAt) : null;
 
     try { await fsPromises.rm(bakPath, { force: true }); } catch {}
     await fsPromises.rename(clip.filePath, bakPath);
     await fsPromises.rename(tmpPath, clip.filePath);
     try { await fsPromises.rm(bakPath, { force: true }); } catch {}
 
+    if (recordedAt && !Number.isNaN(recordedAt.getTime())) {
+      // On disk too, or the next scan reads the new mtime and undoes this.
+      await fsPromises.utimes(clip.filePath, recordedAt, recordedAt).catch(() => {});
+    }
+
     const st = await fsPromises.stat(clip.filePath);
     clip.sizeBytes = st.size;
-    clip.fileModifiedAt = st.mtime;
+    clip.fileModifiedAt = recordedAt ?? st.mtime;
+    // The clip is a different length now, and the library shows that on every
+    // tile. Left alone it kept advertising the length of the recording it used
+    // to be.
+    clip.durationSec = (await probeDurationSec(clip.filePath)) ?? trimmed.actualEndSec - trimmed.actualStartSec;
     await repo.save(clip);
+
+    say('done', 100);
 
     // A person just answered the exact question the analysis is trying to
     // answer. Keep the answer; see `entity/HighlightLabel.ts`.

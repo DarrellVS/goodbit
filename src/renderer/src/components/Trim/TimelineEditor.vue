@@ -94,17 +94,37 @@
         <TimeIndicator label="Length" :time="length" variant="primary" />
       </div>
       
-      <button 
-        class="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-card shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+      <!--
+        The button fills as the cut runs.
+
+        An exact trim re-encodes, which on a 3440 wide recording is tens of
+        seconds, and a spinner with no number gives no idea whether to wait or
+        walk away. The fill is the progress; the percentage is there for anyone
+        who wants the number.
+      -->
+      <button
+        class="relative overflow-hidden inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-card shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
         :disabled="!isValid || isSaving"
         @click="$emit('save')"
       >
-        <Icon 
-          :icon="isSaving ? 'material-symbols:progress-activity' : 'material-symbols:save'" 
-          class="text-lg"
+        <span
+          v-if="isSaving"
+          class="absolute inset-y-0 left-0 bg-white/25 transition-[width] duration-200 ease-linear"
+          :style="{ width: `${Math.max(2, saveProgress)}%` }"
+          aria-hidden="true"
+        ></span>
+        <Icon
+          :icon="isSaving ? 'material-symbols:progress-activity' : 'material-symbols:save'"
+          class="relative text-lg"
           :class="{ 'animate-spin': isSaving }"
         />
-        <span>{{ isSaving ? 'Trimming...' : 'Save Trimmed Clip' }}</span>
+        <!--
+          Tabular figures, or the button shrinks and grows as the count goes
+          from 9 to 10 to 100 and the whole label jitters under the pointer.
+        -->
+        <span class="relative tabular-nums">
+          {{ isSaving ? `Trimming ${saveProgress}%` : 'Save Trimmed Clip' }}
+        </span>
       </button>
     </footer>
   </section>
@@ -128,6 +148,8 @@ interface Props {
   frameStripSource: string;
   isValid: boolean;
   isSaving: boolean;
+  /** 0-100 through the cut, reported by the action doing it. */
+  saveProgress?: number;
   /** Where the preview is, as a percentage of the whole clip. */
   playheadPercentage: number;
   /** The same position, formatted. */
@@ -135,7 +157,7 @@ interface Props {
   isPlaying: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { saveProgress: 0 });
 
 interface Emits {
   (e: 'save'): void;

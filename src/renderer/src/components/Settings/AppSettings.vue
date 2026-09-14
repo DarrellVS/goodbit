@@ -106,6 +106,15 @@ async function testPublisher(): Promise<void> {
             <p class="text-sm text-muted-500 mt-1 truncate">
               {{ settings.videosRoot || 'Not set' }}
             </p>
+            <!--
+              Pointing this somewhere else looks like it might throw the
+              library away. It does not, and saying so is the difference
+              between a setting people use and one they avoid.
+            -->
+            <p class="text-xs text-muted-500 mt-1.5">
+              Where OBS saves recordings. Nothing is moved or deleted if you change it, and the
+              clips from the old folder come back if you point it there again.
+            </p>
           </div>
           <button
             class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm flex-shrink-0"
@@ -147,7 +156,7 @@ async function testPublisher(): Promise<void> {
 
       <SettingToggle
         label="Compress clips when trimming"
-        description="A trim replaces the only copy of that moment, so this is off: the cut keeps the recorded picture, snapped to the nearest keyframe. On, it is re-encoded to roughly a fifth of the size."
+        description="A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size."
         :model-value="settings.compressTrims === true"
         @update:model-value="save({ compressTrims: $event })"
       />
