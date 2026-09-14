@@ -100,30 +100,24 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
       throw error;
     }
 
-    /*
-     * Keep the recording's own date.
-     *
-     * The cut writes a new file, so its modified time is the moment you pressed
-     * save. Taking that as the clip's date moved a recording from the 27th of
-     * August to today, into a day group it has nothing to do with, and lost the
-     * only record of when it actually happened. Trimming a recording does not
-     * change when it was recorded.
-     */
-    const recordedAt = clip.fileModifiedAt ? new Date(clip.fileModifiedAt) : null;
-
     try { await fsPromises.rm(bakPath, { force: true }); } catch {}
     await fsPromises.rename(clip.filePath, bakPath);
     await fsPromises.rename(tmpPath, clip.filePath);
     try { await fsPromises.rm(bakPath, { force: true }); } catch {}
 
-    if (recordedAt && !Number.isNaN(recordedAt.getTime())) {
-      // On disk too, or the next scan reads the new mtime and undoes this.
-      await fsPromises.utimes(clip.filePath, recordedAt, recordedAt).catch(() => {});
-    }
-
+    /*
+     * `fileModifiedAt` follows the new file, and `recordedAt` is left alone.
+     *
+     * The first attempt at keeping a trimmed clip in its own day forced the
+     * file's mtime back to the recording date, which made the mtime lie about
+     * bytes that had just changed. Everything derived is invalidated by
+     * comparing against it, so the clip kept its old analysis and the browser
+     * went on playing the video it had already cached.
+     */
     const st = await fsPromises.stat(clip.filePath);
     clip.sizeBytes = st.size;
-    clip.fileModifiedAt = recordedAt ?? st.mtime;
+    clip.fileModifiedAt = st.mtime;
+    clip.recordedAt = clip.recordedAt ?? st.mtime;
     // The clip is a different length now, and the library shows that on every
     // tile. Left alone it kept advertising the length of the recording it used
     // to be.

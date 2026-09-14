@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { streamUrl, thumbnailUrl } from '../../utils/mediaUrl';
+import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../../utils/mediaUrl';
 import type { Clip } from '../../types/clip';
 
 interface Props {
@@ -11,9 +11,15 @@ interface Props {
 const props = defineProps<Props>();
 const videoElement = ref<HTMLVideoElement | null>(null);
 
-const videoUrl = computed(() => streamUrl(props.clip.id));
+/*
+ * Keyed on the file's own date, like every other media URL.
+ *
+ * This asked for the clip with no version at all, so after a trim the browser
+ * went on serving the video it had already decoded and the page played nothing.
+ */
+const videoUrl = computed(() => videoUrlFor(props.clip.id, props.clip.fileModifiedAt));
 
-const posterUrl = computed(() => thumbnailUrl(props.clip.id));
+const posterUrl = computed(() => thumbUrlFor(props.clip.id, props.clip.fileModifiedAt));
 
 defineExpose({
   videoElement,

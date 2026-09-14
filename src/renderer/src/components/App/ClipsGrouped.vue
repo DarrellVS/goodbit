@@ -70,7 +70,7 @@ function editDayInEditor(group: DayGroup): void {
  * has no file date.
  */
 function time(clip: Clip): number {
-  const stamp = clip.fileModifiedAt ?? clip.createdAt;
+  const stamp = clip.recordedAt ?? clip.fileModifiedAt ?? clip.createdAt;
   return stamp ? new Date(stamp).getTime() : 0;
 }
 </script>

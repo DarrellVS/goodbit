@@ -38,12 +38,20 @@ const { formatBytes } = useFormat();
       </div>
       
       <div>
-        <div class="text-sm text-muted-500 mb-1">Modified</div>
+        <div class="text-sm text-muted-500 mb-1">Recorded</div>
         <button
           class="text-sm font-medium text-left hover:text-orange-600 transition-colors"
           @click="emit('toggle-date')"
         >
-          {{ showExactDate ? formatExactDate(clip.fileModifiedAt) : formatRelativeTime(clip.fileModifiedAt) }}
+          <!--
+            When it was recorded, not when the file last changed. A trim rewrites
+            the file, and "Modified" then reported the moment you pressed save.
+          -->
+          {{
+            showExactDate
+              ? formatExactDate(clip.recordedAt ?? clip.fileModifiedAt)
+              : formatRelativeTime(clip.recordedAt ?? clip.fileModifiedAt)
+          }}
         </button>
       </div>
     </div>

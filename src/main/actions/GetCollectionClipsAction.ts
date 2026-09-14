@@ -49,7 +49,8 @@ export class GetCollectionClipsAction extends BaseAction<GetCollectionClipsInput
       .createQueryBuilder('clip')
       .leftJoinAndSelect('clip.tags', 'tag')
       .where('clip.id IN (:...clipIds)', { clipIds })
-      .orderBy('clip.fileModifiedAt', 'DESC');
+      .orderBy('clip.recordedAt', 'DESC')
+      .addOrderBy('clip.fileModifiedAt', 'DESC');
 
     if (input.game && input.game.length > 0) {
       qb = qb.andWhere('clip.game = :game', { game: input.game });

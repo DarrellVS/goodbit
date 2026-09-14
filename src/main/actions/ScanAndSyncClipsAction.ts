@@ -74,6 +74,9 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           sizeBytes: stat.size,
           durationSec: await probeDurationSec(absPath),
           fileModifiedAt: stat.mtime,
+          // The first time we see a file, its date is the closest thing there
+          // is to when the moment happened. Never written again after this.
+          recordedAt: stat.mtime,
           displayName: null,
         });
         await clipRepo.save(clip);
@@ -98,12 +101,22 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           existing.game = game;
           await clipRepo.save(existing);
           updated += 1;
-        } else if (existing.durationSec == null) {
-          // Written before this column existed. Fill it in once, quietly: the
-          // file has not changed, so this is not an update worth counting.
-          existing.durationSec = await probeDurationSec(absPath);
-          if (existing.durationSec != null) await clipRepo.save(existing);
         }
+
+        // Rows written before these columns existed. Filled in once, quietly:
+        // the file has not changed, so neither is an update worth counting.
+        // `recordedAt` falls back to whatever date the row already carried,
+        // which for anything indexed before a trim is the recording's own.
+        let backfilled = false;
+        if (existing.durationSec == null) {
+          existing.durationSec = await probeDurationSec(absPath);
+          backfilled = existing.durationSec != null;
+        }
+        if (!existing.recordedAt) {
+          existing.recordedAt = existing.fileModifiedAt ?? stat.mtime;
+          backfilled = true;
+        }
+        if (backfilled) await clipRepo.save(existing);
       }
     }
 

@@ -15,6 +15,8 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
   sizeBytes!: number;
   /** Seconds. Null for a row written before the scan started recording it. */
   durationSec?: number | null;
+  /** When it was recorded, as opposed to when the file last changed. */
+  recordedAt?: string | null;
   fileModifiedAt!: string; // ISO string for client compatibility
   createdAt?: string;
   updatedAt?: string;
@@ -38,6 +40,9 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
     dto.extension = entity.extension;
     dto.sizeBytes = entity.sizeBytes;
     dto.durationSec = entity.durationSec ?? null;
+    dto.recordedAt = entity.recordedAt instanceof Date
+      ? entity.recordedAt.toISOString()
+      : (entity.recordedAt ?? null);
     dto.fileModifiedAt = entity.fileModifiedAt instanceof Date 
       ? entity.fileModifiedAt.toISOString() 
       : entity.fileModifiedAt;

@@ -331,7 +331,7 @@ function handleCardClick(event: MouseEvent) {
       <ClipMetadata
         :size-bytes="clip.sizeBytes"
         :duration-sec="clip.durationSec"
-        :recorded-at="clip.fileModifiedAt ?? clip.createdAt"
+        :recorded-at="clip.recordedAt ?? clip.fileModifiedAt ?? clip.createdAt"
       />
 
       <ClipTags :clip="clip" @updated="emit('updated', $event)" />

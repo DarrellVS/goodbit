@@ -41,8 +41,29 @@ export class Clip {
   @Column({ type: 'float', nullable: true })
   durationSec?: number | null;
 
+  /**
+   * When the file on disk last changed. Tracks the file, always.
+   *
+   * Every derived thing is invalidated by comparing against this: the analysis
+   * cache, and the `?v=` on a media URL that stops the browser showing a
+   * picture it has already decoded. So it has to move whenever the bytes move.
+   */
   @Column({ type: 'datetime' })
   fileModifiedAt!: Date;
+
+  /**
+   * When the moment was recorded, which is a different question.
+   *
+   * Taken from the file's date the first time it is indexed and never touched
+   * again. Trimming rewrites the file, so its date becomes the moment you
+   * pressed save, and using that everywhere sent an August recording into
+   * today's group. Keeping the recording date *in the file's own mtime* was
+   * the first attempt and was worse: it made the mtime lie, so a trimmed clip
+   * kept its old analysis and the browser kept playing the video it had
+   * already cached.
+   */
+  @Column({ type: 'datetime', nullable: true })
+  recordedAt?: Date | null;
 
   @CreateDateColumn()
   createdAt!: Date;

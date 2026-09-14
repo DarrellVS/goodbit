@@ -66,8 +66,8 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
    * two recordings that really do share one.
    */
   const SORTS: Record<string, [string, 'ASC' | 'DESC']> = {
-    newest: ['clip.fileModifiedAt', 'DESC'],
-    oldest: ['clip.fileModifiedAt', 'ASC'],
+    newest: ['clip.recordedAt', 'DESC'],
+    oldest: ['clip.recordedAt', 'ASC'],
     longest: ['clip.durationSec', 'DESC'],
     shortest: ['clip.durationSec', 'ASC'],
     largest: ['clip.sizeBytes', 'DESC'],

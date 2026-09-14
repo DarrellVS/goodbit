@@ -226,16 +226,30 @@ function openIn(path: string): void {
   else send();
 }
 
+/*
+ * Both of these are about when a clip was *recorded*.
+ *
+ * They counted `createdAt`, which is when the row was written, so the tray
+ * disagreed with the library beside it: a day group said four and the tray
+ * said three, and the "latest" it named was whichever row happened to be
+ * inserted last rather than the newest recording. `recordedAt` is the same
+ * field the library groups and orders by.
+ */
 async function latestClip(): Promise<Clip | null> {
   if (!AppDataSource.isInitialized) return null;
-  return AppDataSource.getRepository(Clip).findOne({ where: {}, order: { createdAt: 'DESC' } });
+  return AppDataSource.getRepository(Clip).findOne({
+    where: {},
+    order: { recordedAt: 'DESC', createdAt: 'DESC' },
+  });
 }
 
 async function clipsToday(): Promise<number> {
   if (!AppDataSource.isInitialized) return 0;
   const start = new Date();
   start.setHours(0, 0, 0, 0);
-  return AppDataSource.getRepository(Clip).count({ where: { createdAt: MoreThanOrEqual(start) } });
+  return AppDataSource.getRepository(Clip).count({
+    where: { recordedAt: MoreThanOrEqual(start) },
+  });
 }
 
 function shorten(text: string, max: number): string {
