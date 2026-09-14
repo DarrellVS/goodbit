@@ -936,6 +936,39 @@ tbody tr:last-child td {
   display: none;
 }
 
+/* The last step's handoff to the app, over a `goodbit://` link. */
+.handoff {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 1.3rem;
+  margin: 1.4rem 0 1.8rem;
+}
+
+.handoff p {
+  margin: 0.8rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.92rem;
+}
+
+.handoff p:last-child {
+  margin-top: 0.5rem;
+  color: var(--ink-3);
+  font-size: 0.86rem;
+}
+
+/* Nothing to hand over yet: still readable, plainly not ready. */
+.handoff .button[aria-disabled='true'] {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+
+.handoff .button[aria-disabled='true']:hover {
+  border-color: var(--rule);
+  color: var(--ink-3);
+}
+
 /* Your own values, filled into every command on the page as you type. */
 .fields {
   display: grid;

@@ -12,6 +12,7 @@ import { registerIpc } from './ipc/index.js';
 import { registerApiBridge, startApiBridge, stopApiBridge } from './ipc/apiBridge.js';
 import { registerProtocolScheme, registerProtocolHandler } from './protocol.js';
 import { checkForUpdatesNow, registerUpdater } from './updater.js';
+import { linkFromArgv, parseDeepLink, registerProtocolClient } from './deeplink.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
 import { initialBounds, rememberWindowState } from './windowState.js';
 import { shareService } from './services/share.js';
@@ -69,10 +70,40 @@ if (!app.requestSingleInstanceLock()) {
 // privileged and Range requests (therefore seeking) will not work.
 registerProtocolScheme();
 
-app.on('second-instance', () => {
-  // Launching again is how someone asks for the window back.
+app.on('second-instance', (_event, argv) => {
+  // Launching again is how someone asks for the window back. On Windows a
+  // `goodbit://` link arrives this way too, as an argument to a second launch
+  // that the lock above turns into a message to the first.
   showWindow();
+  const link = linkFromArgv(argv);
+  if (link) offer(link);
 });
+
+// macOS hands links to the running app rather than on a command line.
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  showWindow();
+  offer(url);
+});
+
+/**
+ * Put a link in front of the person, who decides.
+ *
+ * Never applied here. See `deeplink.ts`: anything that can open a browser can
+ * send one of these, so the window asks before a setting moves.
+ */
+function offer(raw: string): void {
+  const link = parseDeepLink(raw);
+  if (!link) return;
+
+  const window = mainWindow;
+  if (!window) return;
+  const send = (): void => {
+    if (!window.isDestroyed()) window.webContents.send('app:deep-link', link);
+  };
+  if (window.webContents.isLoadingMainFrame()) window.webContents.once('did-finish-load', send);
+  else send();
+}
 
 function createWindow(): BrowserWindow {
   const remembered = initialBounds();
@@ -312,6 +343,7 @@ app.whenReady().then(async () => {
   registerUpdater(() => mainWindow);
   buildTray();
   applyLoginItem();
+  registerProtocolClient();
   // The menu quotes the library and two settings, so it follows both.
   onServiceEvent((event) => {
     if (event.type !== 'scan-started') void refreshTrayMenu();
@@ -326,6 +358,14 @@ app.whenReady().then(async () => {
 
   const hidden = process.argv.includes('--hidden');
   if (!hidden) showWindow();
+
+  // Launched by clicking a link rather than the icon: the link is on our own
+  // command line rather than arriving through `second-instance`.
+  const launchedWith = linkFromArgv(process.argv);
+  if (launchedWith) {
+    showWindow();
+    offer(launchedWith);
+  }
 
   app.on('activate', () => showWindow());
 });

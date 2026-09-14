@@ -586,6 +586,27 @@ proxy_send_timeout 600s;</code></pre>
           <!-- 7 -->
           <section class="step" data-step="Finish" hidden>
             <h2>Tell GoodBit about it</h2>
+
+            <!--
+              The handoff. GoodBit answers to `goodbit://`, so the address and
+              the token can go straight across rather than being retyped. The
+              link only fills the app's dialog in; see `src/main/deeplink.ts`
+              for why it is never allowed to save anything on its own.
+            -->
+            <div class="handoff">
+              <a class="button primary" id="deeplink" href="#" aria-disabled="true">Set it up in GoodBit</a>
+              <p id="deeplink-note">
+                Fill in the internal address and the token on the <strong>Details</strong> step to
+                use this.
+              </p>
+              <p id="deeplink-alt" hidden>
+                Server somewhere else?
+                <a href="#" id="deeplink-public">Hand over the public address instead</a>, though the
+                upload then goes through the proxy.
+              </p>
+            </div>
+
+            <h3>Or by hand</h3>
             <p>In the app: <em>Settings → App → Publisher</em>.</p>
             <ol>
               <li>

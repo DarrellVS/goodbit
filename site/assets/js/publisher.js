@@ -112,7 +112,54 @@
       const el = document.querySelector(selector);
       if (el) el.textContent = content;
     }
+
+    handoff(v);
   }
+
+  /* ----------------------------------------------------------- handoff */
+
+  /**
+   * The last step hands the address and the token to the app over a
+   * `goodbit://` link, so a forty character secret is never retyped.
+   *
+   * Only offered once the reader has actually typed both. The placeholders are
+   * good enough to build a command around, since a wrong command visibly fails,
+   * but a link built from them would quietly point the app at
+   * `192.168.1.20`, which is somebody's printer.
+   */
+  function link(address, token) {
+    return `goodbit://configure/publisher?url=${encodeURIComponent(address)}&token=${encodeURIComponent(token)}`;
+  }
+
+  function handoff(v) {
+    const button = document.getElementById('deeplink');
+    if (!button) return;
+
+    const typed = (key) => Boolean((FIELDS[key].el?.value || '').trim());
+    const ready = typed('token') && typed('lan');
+
+    button.href = ready ? link(`http://${v.lan}:${v.port}`, v.token) : '#';
+    button.setAttribute('aria-disabled', ready ? 'false' : 'true');
+
+    const note = document.getElementById('deeplink-note');
+    if (note) {
+      note.innerHTML = ready
+        ? 'GoodBit opens and shows you what it is being asked to do. Nothing is saved until you agree there.'
+        : 'Fill in the internal address and the token on the <strong>Details</strong> step to use this.';
+    }
+
+    const alt = document.getElementById('deeplink-alt');
+    const publicLink = document.getElementById('deeplink-public');
+    if (alt) alt.hidden = !ready;
+    if (publicLink && ready) publicLink.href = link(v.url, v.token);
+  }
+
+  // A link with nothing behind it yet should do nothing, rather than jump to
+  // the top of the page and lose the reader's place in the wizard.
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('#deeplink');
+    if (button && button.getAttribute('aria-disabled') === 'true') event.preventDefault();
+  });
 
   for (const field of Object.values(FIELDS)) {
     field.el?.addEventListener('input', () => {

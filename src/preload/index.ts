@@ -38,6 +38,15 @@ const api = {
 
   app: {
     version: () => ipcRenderer.invoke('app:version'),
+    /**
+     * A `goodbit://` link arrived. The window asks the person about it; it is
+     * never applied on the strength of the link alone.
+     */
+    onDeepLink: (listener: (link: unknown) => void) => {
+      const handler = (_: unknown, link: unknown): void => listener(link);
+      ipcRenderer.on('app:deep-link', handler);
+      return () => ipcRenderer.removeListener('app:deep-link', handler);
+    },
     /** The tray asked for a screen; the router takes it from here. */
     onNavigate: (listener: (path: string) => void) => {
       const handler = (_: unknown, path: string): void => listener(path);

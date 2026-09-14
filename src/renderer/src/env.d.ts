@@ -29,6 +29,7 @@ interface GoodBitBridge {
   app: {
     version: () => Promise<string>;
     onNavigate: (listener: (path: string) => void) => () => void;
+    onDeepLink: (listener: (link: unknown) => void) => () => void;
   };
   backups: {
     list: () => Promise<BackupFileWire[]>;
