@@ -9,6 +9,8 @@ import { SyncPublishedClipsMetadataAction } from './actions/SyncPublishedClipsMe
 import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
 import { CACHE_DIR_NAME, migrateLegacyCacheDir } from './services/cachePaths.js';
+import { startForegroundHistory } from './services/capture/foregroundHistory.js';
+import { drainIncoming, stopWatchingIncoming, watchIncoming } from './services/capture/incoming.js';
 
 /**
  * What the background service does, and keeps doing.
@@ -235,6 +237,10 @@ export async function startServices(): Promise<void> {
     ['scan', () => reconcile()],
     ['games sync', () => new SyncGamesAction().execute()],
     ['creation dates', () => new SyncClipCreationDatesAction().execute()],
+    // Before the staging drain, so a clip left there by a crash has at least
+    // a chance of a name, and before OBS starts, so nothing is missed.
+    ['foreground sampler', () => startForegroundHistory()],
+    ['staging', () => drainIncoming()],
     // After the library is ready, because a clip that lands while this is
     // still scanning should find a watcher waiting for it.
     ['start OBS', () => startObsIfWanted()],
@@ -258,6 +264,7 @@ export async function startServices(): Promise<void> {
   }
 
   startWatching();
+  watchIncoming();
 
   reconcileTimer = setInterval(() => void reconcile(), RECONCILE_INTERVAL_MS);
   console.log('[service] ready');
@@ -270,6 +277,33 @@ export function stopServices(): void {
   }
   void watcher?.close();
   watcher = null;
+  void stopWatchingIncoming();
+}
+
+/**
+ * Hold everything that looks at the library, for an operation that moves it.
+ *
+ * Not a nicety. The watcher fires `unlink` for every clip a move takes away
+ * and each one triggers a scan, and a scan that runs when only the first few
+ * folders have moved sees a *minority* of clips missing, which is exactly the
+ * case the prune guard is designed to allow: it deletes those rows, and a clip
+ * row is the only copy of its tags, notes, stars and collections.
+ *
+ * So the library is deaf until the move has finished and the rows have caught
+ * up with the files.
+ */
+export function suspendLibrary(): void {
+  stopServices();
+  console.log('[service] library suspended');
+}
+
+/** Watch again, at whatever the root is now. */
+export async function resumeLibrary(): Promise<void> {
+  startWatching();
+  watchIncoming();
+  reconcileTimer = setInterval(() => void reconcile(), RECONCILE_INTERVAL_MS);
+  await reconcile();
+  console.log('[service] library resumed');
 }
 
 /** Restart the watcher after the videos folder is changed in Settings. */

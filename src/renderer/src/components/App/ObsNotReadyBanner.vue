@@ -47,6 +47,26 @@ const headline = computed(() => {
   return 'OBS is not set up to record into your library';
 });
 
+/**
+ * One line, not a report.
+ *
+ * This used to print every blocker's title *and* its full explanation as a
+ * bulleted list, which is the right level of detail for Settings and far too
+ * much for a banner sitting over somebody's library. Here the only questions
+ * worth answering are what is wrong and what to press, so the blockers are
+ * named and nothing is explained: the button leads to the screen that does.
+ */
+const summary = computed(() => {
+  if (!status.value?.installed) return 'GoodBit keeps what OBS records. It can install and set it up for you.';
+
+  // The titles as written, never lowercased: half of them open with "OBS",
+  // and "obs and goodbit are looking at different folders" reads like a bug.
+  const titles = blockers.value.map((finding) => finding.title.replace(/\.$/, ''));
+  if (titles.length === 0) return 'Your replay key saves nothing until this is sorted.';
+
+  return `${titles.join('. ')}.`;
+});
+
 onMounted(async () => {
   try {
     dismissed.value = sessionStorage.getItem(DISMISS_KEY) === 'yes';
@@ -92,40 +112,35 @@ async function recheck(): Promise<void> {
     v-if="visible"
     class="mx-6 mt-4 rounded-xl border border-orange-500/40 bg-orange-500/5 p-4"
   >
-    <div class="flex items-start gap-3">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-3">
       <Icon
         icon="material-symbols:error-circle-rounded"
-        class="text-xl text-orange-500 flex-shrink-0 mt-0.5"
+        class="text-xl text-orange-500 flex-shrink-0"
       />
 
       <div class="min-w-0 flex-1">
         <p class="font-medium text-foreground">{{ headline }}</p>
-        <p class="text-sm text-muted-500 mt-0.5">
-          GoodBit keeps the clips OBS records. Until these are sorted, pressing your replay key
-          saves nothing and this page stays empty.
-        </p>
+        <p class="text-sm text-muted-500 mt-0.5">{{ summary }}</p>
+      </div>
 
-        <ul v-if="blockers.length" class="mt-2 space-y-1">
-          <li v-for="finding in blockers" :key="finding.id" class="text-sm text-muted-500 flex gap-2">
-            <span class="text-orange-500/60">&middot;</span>
-            <span><span class="text-foreground">{{ finding.title }}.</span> {{ finding.detail }}</span>
-          </li>
-        </ul>
-
-        <div class="flex items-center gap-2 mt-3">
-          <button
-            class="px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium"
-            @click="showDialog = true"
-          >
-            Set up OBS for me
-          </button>
-          <button
-            class="px-3.5 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm text-foreground"
-            @click="dismiss"
-          >
-            Not now
-          </button>
-        </div>
+      <!--
+        Beside the text rather than under it. The banner is one sentence and an
+        action, and stacking the buttons underneath gave a four row block the
+        height of a clip card.
+      -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button
+          class="px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium whitespace-nowrap"
+          @click="showDialog = true"
+        >
+          Set up OBS for me
+        </button>
+        <button
+          class="px-3.5 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm text-foreground whitespace-nowrap"
+          @click="dismiss"
+        >
+          Not now
+        </button>
       </div>
     </div>
 

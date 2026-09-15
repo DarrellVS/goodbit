@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSyn
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { applyIniEdits, type IniEdit } from './ini.js';
+import { INCOMING_DIR_NAME } from '../capture/incoming.js';
 import { obsConfigDir, profilesDir, scenesDir } from './paths.js';
 import { pythonConfigFile, readObs, type ObsSnapshot } from './config.js';
 import {
@@ -124,6 +125,52 @@ function profileDir(): string {
   return path.join(profilesDir(), GOODBIT_PROFILE);
 }
 
+/**
+ * Does GoodBit's collection still load Smart Replays?
+ *
+ * Read rather than assumed, because the script outlives the setting that
+ * installed it: the collection is only rewritten when the scene is being
+ * rebuilt, so somebody who applies the setup without that step keeps a script
+ * GoodBit no longer wants.
+ */
+export function collectionHasScript(): boolean {
+  try {
+    const raw = JSON.parse(readFileSync(collectionFile(), 'utf-8')) as {
+      modules?: Record<string, unknown>;
+    };
+    const tool = raw.modules?.['scripts-tool'];
+    return Array.isArray(tool) && tool.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Take the script out, and leave the rest of the collection alone.
+ *
+ * A targeted edit rather than a rebuild. The collection carries the user's
+ * sources, their audio mixers and their scene layout, and none of that is ours
+ * to regenerate just because one module is being removed.
+ *
+ * It has to happen whether or not the scene is being rebuilt. Both sorting the
+ * clip: OBS writes the replay into GoodBit's staging folder and the script,
+ * still loaded, moves it out again before GoodBit has seen it. The race is
+ * invisible and the script usually wins.
+ */
+function removeScriptFromCollection(): boolean {
+  const file = collectionFile();
+  try {
+    const raw = JSON.parse(readFileSync(file, 'utf-8')) as { modules?: Record<string, unknown> };
+    if (!raw.modules || !('scripts-tool' in raw.modules)) return false;
+
+    delete raw.modules['scripts-tool'];
+    writeFileSync(file, JSON.stringify(raw, null, 4), 'utf-8');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function collectionFile(): string {
   return path.join(scenesDir(), `${GOODBIT_COLLECTION}.json`);
 }
@@ -147,10 +194,31 @@ export function profileEdits(choices: ObsSetupChoices): IniEdit[] {
   const edits: IniEdit[] = [
     { section: 'General', key: 'Name', value: GOODBIT_PROFILE },
     { section: 'Output', key: 'Mode', value: 'Simple' },
-    { section: 'SimpleOutput', key: 'FilePath', value: iniPath(choices.videosRoot) },
+    /*
+     * Not the videos root itself: a staging folder GoodBit owns.
+     *
+     * OBS names a recording after the clock and nothing else, so every clip
+     * would land at the top level, where the folder name *is* the game name
+     * and there is no folder. GoodBit takes it from here: it watches this
+     * folder, works out which game was in front while the clip was recording,
+     * and renames the file into place on the same volume.
+     *
+     * That job used to belong to a Python script running inside OBS.
+     */
+    {
+      section: 'SimpleOutput',
+      key: 'FilePath',
+      value: iniPath(path.join(choices.videosRoot, INCOMING_DIR_NAME)),
+    },
     // GoodBit reads mp4, mov and mkv. Being explicit rather than inheriting
     // whatever this OBS defaults to, which changed to hybrid_mp4 in 30.2.
+    //
+    // Load bearing beyond tidiness: `ScanAndSyncClipsAction` globs only mp4
+    // and mov, so an mkv would be filed correctly and then indexed by nothing.
     { section: 'SimpleOutput', key: 'RecFormat2', value: 'mp4' },
+    // So a file sitting in staging is recognisable as ours to anyone who opens
+    // the folder, rather than looking like OBS lost track of it.
+    { section: 'SimpleOutput', key: 'RecRBPrefix', value: 'GoodBit' },
   ];
 
   if (choices.encoder) {
@@ -487,7 +555,12 @@ export function planObsSetup(
 
   if (choices.createProfile) {
     const file = path.join(profileDir(), 'basic.ini');
-    const summary: string[] = [`Clips are written to ${choices.videosRoot}`];
+    // Where OBS writes is not where the clip ends up, and saying the second
+    // is the honest answer: the staging folder is an implementation detail the
+    // user never opens.
+    const summary: string[] = [
+      `Clips land in ${choices.videosRoot}, in a folder named after the game`,
+    ];
 
     if (choices.display) {
       const video = recordingVideoSettings(choices.display);
@@ -578,6 +651,26 @@ export function planObsSetup(
       file,
       summary: sceneSummary,
       details: sceneDetails,
+    });
+  }
+
+  /*
+   * Say that the script is going, in the preview, like every other write.
+   *
+   * It is a removal rather than an addition, which makes it the kind of thing
+   * a user most wants to have been told about beforehand.
+   */
+  if (!choices.installScript && collectionHasScript()) {
+    changes.push({
+      kind: 'modify',
+      title: 'Remove Smart Replays from the GoodBit scene',
+      file: collectionFile(),
+      summary: [
+        'GoodBit sorts clips into a folder per game itself now, so the script is not needed',
+        'Both of them sorting the same clip is a race, and the script usually wins',
+        'The script file and its Python are left on disk, only the entry that loads it goes',
+      ],
+      details: [{ key: 'modules["scripts-tool"]', value: 'removed' }],
     });
   }
 
@@ -766,6 +859,25 @@ export function applyObsSetup(
       }),
       'utf-8',
     );
+  }
+
+  /*
+   * The script comes out even when the scene is not being rebuilt.
+   *
+   * GoodBit sorts its own clips now. Leaving Smart Replays loaded means two
+   * programs racing to move the same file out of the staging folder, and the
+   * one that wins names it differently.
+   */
+  if (!choices.installScript && existsSync(collectionFile())) {
+    const file = collectionFile();
+    const before = readFileSync(file, 'utf-8');
+
+    if (removeScriptFromCollection()) {
+      const backup = path.join(backupsDir(), `${GOODBIT_COLLECTION}.json.${Date.now()}.bak`);
+      writeFileSync(backup, before, 'utf-8');
+      edited.push({ file, backup });
+      console.log('[obs] removed Smart Replays, GoodBit sorts the clips itself now');
+    }
   }
 
   if (choices.setPythonPath && choices.pythonDirectory) {

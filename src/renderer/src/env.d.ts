@@ -18,6 +18,18 @@ interface GoodBitBridge {
   getSettings: () => Promise<AppSettingsWire>;
   saveSettings: (patch: Partial<AppSettingsWire>) => Promise<AppSettingsWire>;
   pickFolder: (title: string) => Promise<string | null>;
+  moveLibrary: (destination: string) => Promise<{ jobId: string }>;
+  canMoveLibrary: (
+    destination: string,
+  ) => Promise<{ problem: string | null; obsRunning: boolean }>;
+  closeObs: (
+    force?: boolean,
+  ) => Promise<{
+    closed: boolean;
+    wasClosed: boolean;
+    reason?: 'no-window' | 'refused';
+    ended?: boolean;
+  }>;
   rescan: () => Promise<{ ok: boolean }>;
   pickFiles: (kind: 'video' | 'audio') => Promise<string[]>;
   importAudio: (paths: string[]) => Promise<{ imported: number; failed: number; tracks: unknown[]; errors?: string[] }>;

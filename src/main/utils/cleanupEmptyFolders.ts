@@ -21,6 +21,10 @@ async function removeEmptyDirectory(dirPath: string): Promise<boolean> {
     let hasRemovedAny = false;
     for (const entry of entries) {
       if (entry.isDirectory()) {
+        // The app's own folders, which are empty most of the time by design.
+        // `.goodbit-incoming` is where OBS writes a replay before GoodBit
+        // files it, and deleting it left OBS pointed at nothing.
+        if (entry.name.startsWith('.')) continue;
         const subDirPath = path.join(dirPath, entry.name);
         const wasRemoved = await removeEmptyDirectory(subDirPath);
         if (wasRemoved) {
@@ -59,6 +63,7 @@ export async function cleanupEmptyFolders(videosRoot: string): Promise<void> {
     
     for (const entry of entries) {
       if (entry.isDirectory()) {
+        if (entry.name.startsWith('.')) continue;
         const subDirPath = path.join(videosRoot, entry.name);
         const wasRemoved = await removeEmptyDirectory(subDirPath);
         if (wasRemoved) {

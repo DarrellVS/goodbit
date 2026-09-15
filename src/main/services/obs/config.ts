@@ -43,6 +43,15 @@ export interface ObsSceneCollection {
   /** Smart Replays, if it is loaded here. */
   smartReplays: ObsScriptEntry | null;
   sourceKinds: string[];
+  /**
+   * The audio endpoints this collection already captures, by device id.
+   *
+   * Read back so the setup can show what is already chosen rather than
+   * offering the default again. Somebody who picked four Wave Link devices
+   * last time and reopens the wizard should see those four ticked, not be
+   * asked to remember which ones they were.
+   */
+  audioDeviceIds: string[];
 }
 
 export interface ObsSnapshot {
@@ -166,7 +175,7 @@ export function readCollection(file: string): ObsSceneCollection | null {
   try {
     const parsed = JSON.parse(readFileSync(full, 'utf-8')) as {
       name?: string;
-      sources?: Array<{ id?: string }>;
+      sources?: Array<{ id?: string; settings?: { device_id?: string } }>;
       modules?: { 'scripts-tool'?: ObsScriptEntry[] };
     };
 
@@ -180,6 +189,16 @@ export function readCollection(file: string): ObsSceneCollection | null {
       smartReplays: smart,
       sourceKinds: Array.from(
         new Set((parsed.sources ?? []).map((source) => source.id).filter(Boolean) as string[]),
+      ),
+      // Output captures only. An input capture is a microphone, which the
+      // wizard lists separately and stores the same way.
+      audioDeviceIds: Array.from(
+        new Set(
+          (parsed.sources ?? [])
+            .filter((source) => (source.id ?? '').startsWith('wasapi_'))
+            .map((source) => source.settings?.device_id)
+            .filter(Boolean) as string[],
+        ),
       ),
     };
   } catch {

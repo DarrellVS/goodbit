@@ -61,6 +61,36 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return result.canceled ? null : result.filePaths[0];
   });
 
+  /**
+   * Move the library, rather than just look somewhere else.
+   *
+   * `settings:save` with a new `videosRoot` is the old behaviour and stays:
+   * it repoints and rescans, leaving the clips where they are. This one takes
+   * the clips with it, and takes their tags, notes, stars and dates too.
+   */
+  ipcMain.handle('library:move', async (_event, destination: string) => {
+    const { MoveLibraryAction } = await import('../actions/MoveLibraryAction.js');
+    return new MoveLibraryAction().execute({ destination, moveExisting: true });
+  });
+
+  /** What would go wrong, asked before anything is moved. */
+  ipcMain.handle('library:canMove', async (_event, destination: string) => {
+    const { whyNotMove } = await import('../actions/MoveLibraryAction.js');
+    const { VIDEOS_ROOT } = await import('../data-source.js');
+    const { obsIsRunning } = await import('../services/obs/paths.js');
+
+    return {
+      problem: whyNotMove(VIDEOS_ROOT, destination),
+      obsRunning: await obsIsRunning(),
+    };
+  });
+
+  /** Ask OBS to close, so a move can go ahead. Never forces it. */
+  ipcMain.handle('obs:close', async (_event, force?: boolean) => {
+    const { CloseObsAction } = await import('../actions/CloseObsAction.js');
+    return new CloseObsAction().execute({ force: force === true });
+  });
+
   ipcMain.handle('library:rescan', async () => {
     await reconcile();
     return { ok: true };

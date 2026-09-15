@@ -141,24 +141,19 @@ export function useObsSetup() {
           'Game capture alone records nothing outside a fullscreen game, so a clip of a browser or a windowed game comes out black.',
         enabled: true,
       },
-      {
-        key: 'installScript',
-        label: 'Sort clips into a folder per game',
-        description:
-          'OBS cannot do this on its own, so this installs Smart Replays, a script by qvvonk, and the Python it runs on.',
-        // Never blocked on the machine having a Python: GoodBit installs its
-        // own, into its own folder, as part of applying this.
-        enabled: true,
-        /*
-         * Not a choice.
-         *
-         * GoodBit reads a folder per game and the folder name is the game
-         * name. Without this every clip lands in one folder, the library shows
-         * one game, and nothing else in the app works properly. A switch here
-         * offers somebody the option of a broken install.
-         */
-        required: true,
-      },
+      /*
+       * There is no "sort clips into folders" step any more.
+       *
+       * Until now that meant installing Smart Replays, a third party script,
+       * plus a private Python interpreter to run it, because OBS names a
+       * recording after the clock and cannot be taught otherwise. GoodBit now
+       * does the sorting itself: OBS records into a staging folder, GoodBit
+       * asks Windows which program was in front while the clip was recording,
+       * and files it under that game.
+       *
+       * So it is not a step, because there is nothing to decide and nothing to
+       * install. It just happens.
+       */
     ];
   }
 
@@ -172,9 +167,11 @@ export function useObsSetup() {
     for (const step of steps.value) {
       (selected as Record<string, unknown>)[step.key] = step.enabled;
     }
-    // Pointing OBS at Python is what the script step needs, so it goes wherever
-    // that goes.
-    selected.setPythonPath = selected.installScript === true;
+    // Neither is wanted any more, and both are said explicitly rather than
+    // left undefined: a machine that was set up the old way is having them
+    // taken away, and the plan needs to know that is deliberate.
+    selected.installScript = false;
+    selected.setPythonPath = false;
     return selected;
   });
 
@@ -202,6 +199,24 @@ export function useObsSetup() {
       getAudioDevices(),
     ]);
     if (devices.status === 'fulfilled') audio.value = devices.value;
+
+    /*
+     * Show what is already set, rather than the default again.
+     *
+     * Reopening the wizard used to reset this to "whatever Windows is using",
+     * so somebody who had picked four Wave Link devices was quietly offered a
+     * setup that would replace them with one, and the only way to know was to
+     * read the preview carefully. The scene knows what it captures; ask it.
+     *
+     * Only devices this machine still has: an endpoint that has since been
+     * unplugged would otherwise sit ticked and invisible.
+     */
+    const already = status.value?.audioDeviceIds ?? [];
+    if (already.length > 0) {
+      const present = new Set(audio.value.map((device) => device.id));
+      const kept = already.filter((id) => present.has(id));
+      if (kept.length > 0) audioIds.value = kept;
+    }
     if (info.status === 'fulfilled') script.value = info.value;
     if (aliases.status === 'fulfilled') aliasNames.value = aliases.value.names;
     if (pythons.status === 'fulfilled') python.value = pythons.value;

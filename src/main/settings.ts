@@ -42,6 +42,14 @@ export interface Settings {
    * with. Off for anyone who would rather open OBS themselves.
    */
   startObsWithGoodbit?: boolean;
+  /**
+   * A game name for an executable, when the guess was wrong.
+   *
+   * Keyed by the lowercased full path. This is the one thing Smart Replays'
+   * alias list was genuinely for, and correcting a clip's game should fix
+   * every clip after it rather than only that one.
+   */
+  gameOverrides?: Record<string, string>;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
   /**

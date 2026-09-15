@@ -22,6 +22,21 @@ const { settings, load: loadSettings, save: saveSettings } = useAppSettings();
 
 const showDialog = ref(false);
 
+/*
+ * Changing a setup and making one are different jobs.
+ *
+ * The quick route answers every question with a default, which is what
+ * somebody with no setup wants and exactly what somebody adjusting a working
+ * one does not: it would quietly replace the audio devices and the screen they
+ * already chose. So a working setup goes straight to the questions.
+ */
+const changingExisting = ref(false);
+
+function openSetup(): void {
+  changingExisting.value = status.value?.ready === true;
+  showDialog.value = true;
+}
+
 const GUIDE = 'https://darrellvs.github.io/goodbit/obs.html';
 
 onMounted(async () => {
@@ -145,7 +160,7 @@ function openGuide(): void {
           <button
             class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50"
             :disabled="loading || working"
-            @click="showDialog = true"
+            @click="openSetup"
           >
             {{
               !status.installed
@@ -201,6 +216,10 @@ function openGuide(): void {
       @update:model-value="saveSettings({ startObsWithGoodbit: $event })"
     />
 
-    <ObsSetupDialog v-model:open="showDialog" @done="setup.refresh()" />
+    <ObsSetupDialog
+      v-model:open="showDialog"
+      :direct-to-full="changingExisting"
+      @done="setup.refresh()"
+    />
   </section>
 </template>

@@ -149,11 +149,22 @@ async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices
     bindHotkey: request.bindHotkey !== false,
     hotkey: request.hotkey ?? 'OBS_KEY_F8',
     createScene: request.createScene !== false,
-    installScript: request.installScript !== false,
-    aliases: await knownAliases(settings.videosRoot),
+    /*
+     * Off, now that GoodBit files its own clips.
+     *
+     * Until 1.4.0 a folder per game meant running Smart Replays inside OBS,
+     * which meant downloading a third party script and a private Python
+     * interpreter to run it, because OBS cannot name a file after a game.
+     * GoodBit now watches its own staging folder, asks Windows what was in
+     * front while the clip was recording, and renames the file into place.
+     *
+     * Still honoured when a caller explicitly asks, so a machine that is
+     * already set up the old way keeps working until it is migrated.
+     */
+    installScript: request.installScript === true,
+    aliases: request.installScript === true ? await knownAliases(settings.videosRoot) : [],
     namingMode: request.namingMode ?? ClipNamingMode.CurrentProcess,
-    // Always written, because the point is that OBS uses this one.
-    setPythonPath: request.setPythonPath !== false,
+    setPythonPath: request.setPythonPath === true,
     // The folder is known before the install happens, so the plan can name it.
     pythonDirectory: installed?.directory ?? privatePythonDir(),
     pythonInstalled: Boolean(installed?.usable),

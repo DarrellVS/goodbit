@@ -112,6 +112,24 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
   };
 }
 
+/**
+ * One tiny real clip, at exactly the path asked for.
+ *
+ * `seedClips` puts clips where the library expects them. This one is for the
+ * paths the library does not expect, such as the staging folder a replay
+ * arrives in before GoodBit has decided which game it belongs to.
+ */
+export function makeVideo(filePath: string, duration = 2): void {
+  mkdirSync(dirname(filePath), { recursive: true });
+  execFileSync(ffmpegPath as unknown as string, [
+    '-hide_banner', '-v', 'error',
+    '-f', 'lavfi', '-i', `testsrc=size=640x360:rate=30:duration=${duration}`,
+    '-f', 'lavfi', '-i', `sine=frequency=440:duration=${duration}`,
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '30', '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-shortest', '-y', filePath,
+  ]);
+}
+
 /** A handful of tiny real clips, made with the bundled ffmpeg. */
 export function seedClips(
   videosRoot: string,

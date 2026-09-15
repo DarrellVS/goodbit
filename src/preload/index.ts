@@ -16,6 +16,9 @@ const api = {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: unknown) => ipcRenderer.invoke('settings:save', patch),
   pickFolder: (title: string) => ipcRenderer.invoke('settings:pickFolder', title),
+  moveLibrary: (destination: string) => ipcRenderer.invoke('library:move', destination),
+  canMoveLibrary: (destination: string) => ipcRenderer.invoke('library:canMove', destination),
+  closeObs: (force?: boolean) => ipcRenderer.invoke('obs:close', force),
 
   /**
    * Importing hands over paths, not bytes: form data cannot cross the bridge,

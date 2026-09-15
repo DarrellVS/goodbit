@@ -32,6 +32,15 @@ interface Props {
   invitedSteps?: string[] | null;
   invitedBuffer?: number | null;
   invitedHotkey?: string | null;
+  /**
+   * Skip the quick-or-thorough question and go straight to the questions.
+   *
+   * Changing a setup that already works is not the same job as making one.
+   * The quick route exists to get somebody recording without asking anything,
+   * and offering it to a person who came here specifically to change a setting
+   * is offering to overwrite their answers with the defaults.
+   */
+  directToFull?: boolean;
 }
 
 interface Emits {
@@ -43,6 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   invitedSteps: null,
   invitedBuffer: null,
   invitedHotkey: null,
+  directToFull: false,
 });
 const emit = defineEmits<Emits>();
 
@@ -93,11 +103,15 @@ const route = ref<'quick' | 'full'>('full');
 
 const pages = computed(() => {
   const needsInstall = status.value ? !status.value.installed : false;
-  return ALL_PAGES.filter((page) => {
+  // Annotated: without it TypeScript infers a type predicate from the branches
+  // and narrows 'route' and 'install' out of PageId entirely.
+  return ALL_PAGES.filter((page): boolean => {
+    // Removed rather than stepped over, so Back cannot land on a question
+    // that was never asked and the step count reads honestly.
+    if (page.id === 'route') return !props.directToFull;
     if (page.id === 'install') return needsInstall;
-    if (route.value === 'quick') {
-      return page.id === 'route' || page.id === 'review' || page.id === 'done';
-    }
+    // Route is decided above, so by here it is one of the question pages.
+    if (route.value === 'quick') return page.id === 'review' || page.id === 'done';
     return true;
   });
 });
@@ -187,6 +201,7 @@ watch(
 onBeforeUnmount(() => {
   detach?.();
   stopWatching();
+  stopRecheckingPlan();
 });
 
 watch(
@@ -257,7 +272,96 @@ const bufferStep = computed(() => steps.value.find((step) => step.key === 'enabl
 const hotkeyStep = computed(() => steps.value.find((step) => step.key === 'bindHotkey') ?? null);
 const scriptStep = computed(() => steps.value.find((step) => step.key === 'installScript') ?? null);
 
+const closingObs = ref(false);
+
+/**
+ * Close OBS, so the preview can stop refusing.
+ *
+ * `CloseMainWindow`, the same as clicking the X, so OBS saves its own settings
+ * on the way out and the replay buffer is stopped rather than dropped. It can
+ * fail honestly: OBS asks before exiting while an output is running, and that
+ * dialog belongs to the user. The poll on the plan then clears the blocker by
+ * itself once it has gone.
+ */
+async function askObsToClose(): Promise<void> {
+  closingObs.value = true;
+  try {
+    const result = await window.goodbit?.closeObs();
+
+    if (!result?.closed && result?.reason === 'no-window') {
+      // No window, no tray icon, nothing to click. Say so, and offer the only
+      // thing that works rather than asking them to find a window that is not
+      // there.
+      toast.confirm(
+        'OBS is running with no window open, so there is nothing to close. GoodBit can end it. Nothing is lost: it writes its settings when it exits normally, and GoodBit is about to write them anyway.',
+        () => void endObs(),
+        'OBS has no window',
+      );
+      return;
+    }
+
+    if (!result?.closed) {
+      toast.error(
+        'OBS asks before closing while the replay buffer is running. Answer that, and this clears itself.',
+        'OBS is still open',
+      );
+      return;
+    }
+
+    await setup.refreshPlan();
+  } finally {
+    closingObs.value = false;
+  }
+}
+
+/** The second half of `askObsToClose`, once the user has agreed to end it. */
+async function endObs(): Promise<void> {
+  closingObs.value = true;
+  try {
+    const result = await window.goodbit?.closeObs(true);
+    if (result?.closed) {
+      toast.success('OBS has been closed');
+      await setup.refreshPlan();
+    } else {
+      toast.error('Ending OBS did not work. Task Manager will do it.', 'OBS is still open');
+    }
+  } finally {
+    closingObs.value = false;
+  }
+}
+
 const blocked = computed(() => (plan.value?.blockers.length ?? 0) > 0);
+
+/*
+ * A blocker can stop being true while it is on screen.
+ *
+ * "OBS is open" is the one that matters: the whole preview refuses to write
+ * while OBS is running, so the natural thing to do is close OBS, and then
+ * nothing happened. The message sat there until the user went back a page and
+ * returned, which reads as the app not noticing rather than as a stale read.
+ *
+ * So while the preview is showing something that blocks it, ask again. Only
+ * while it is showing, and only while it is blocked: a preview with nothing in
+ * its way has no reason to keep asking.
+ */
+let recheckingPlan: ReturnType<typeof setInterval> | null = null;
+
+function stopRecheckingPlan(): void {
+  if (recheckingPlan) clearInterval(recheckingPlan);
+  recheckingPlan = null;
+}
+
+watch(
+  () => page.value === 'review' && props.open && blocked.value,
+  (shouldWatch) => {
+    stopRecheckingPlan();
+    if (!shouldWatch) return;
+
+    recheckingPlan = setInterval(() => {
+      void setup.refreshPlan();
+    }, 2000);
+  },
+);
 
 /**
  * The quick route's answer, at a glance.
@@ -736,59 +840,38 @@ function openLink(url: string): void {
         <template v-else-if="page === 'sorting'">
           <p class="text-sm text-muted-500">
             GoodBit reads a folder per game, and that folder name is the game name. OBS names a
-            recording after the clock and nothing else, so without help every clip lands in one
-            folder and the library reads as a single game.
+            recording after the clock and nothing else, so something has to decide which game a clip
+            belongs to. GoodBit does it itself, with nothing to install.
           </p>
 
-          <div v-if="scriptStep" class="p-4 rounded-xl border border-border flex items-start gap-3">
+          <div class="p-4 rounded-xl border border-border flex items-start gap-3">
             <Icon
               icon="material-symbols:check-circle"
               class="text-lg text-orange-500 flex-shrink-0 mt-0.5"
             />
             <div class="min-w-0">
-              <p class="font-medium text-foreground text-sm">{{ scriptStep.label }}</p>
-              <p class="text-xs text-muted-500 mt-1">{{ scriptStep.description }}</p>
+              <p class="font-medium text-foreground text-sm">A folder per game</p>
+              <p class="text-xs text-muted-500 mt-1">
+                Whatever you were playing when you press the key is what the clip is filed under. A
+                browser or a launcher is named properly too, so nothing lands loose.
+              </p>
             </div>
           </div>
 
           <div
-            v-if="python"
+            v-if="aliasNames.length"
             class="p-4 rounded-xl border border-border text-xs text-muted-500 space-y-1"
           >
             <p class="text-sm font-medium text-foreground">
-              <template v-if="python.ready">GoodBit has its own Python</template>
-              <template v-else>GoodBit installs its own Python, {{ python.offered }}</template>
+              {{ aliasNames.length }} games found on this machine
             </p>
             <p>
-              In its own folder: off your PATH, not associated with anything, used for this one
-              script. About 25 MB the first time.
-            </p>
-            <p v-if="python.installs.some((install) => install.tooNew)">
-              This machine already has
-              {{ python.installs.filter((i) => i.tooNew).map((i) => i.version).join(', ') }}, which
-              OBS refuses to load: it takes 3.10 to 3.12 and reports the refusal nowhere except its
-              own log.
-            </p>
-          </div>
-
-          <div
-            v-if="script"
-            class="p-4 rounded-xl border border-border text-xs text-muted-500 space-y-1"
-          >
-            <p class="text-foreground font-medium text-sm">{{ script.name }} {{ script.version }}</p>
-            <p>By {{ script.author }}, {{ script.licence }}, downloaded unmodified.</p>
-            <p v-if="aliasNames.length">
-              {{ aliasNames.length }} games found on this machine, so their folders are named from
-              the first clip: {{ aliasNames.slice(0, 3).join(', ')
+              Their folders read properly from the first clip: {{ aliasNames.slice(0, 3).join(', ')
               }}<span v-if="aliasNames.length > 3">, and {{ aliasNames.length - 3 }} more</span>.
             </p>
-            <button class="text-orange-600 hover:text-orange-500" @click="openLink(script.repository)">
-              Look at the source
-            </button>
           </div>
         </template>
 
-        <!-- 6. The preview, which is the whole security model -->
         <template v-else-if="page === 'review'">
           <!--
             Quick asked for a decision, not a reading. Four lines, and the
@@ -827,7 +910,23 @@ function openLink(url: string): void {
             :key="blocker"
             class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm text-foreground"
           >
-            {{ blocker }}
+            <p>{{ blocker }}</p>
+
+            <!--
+              The one blocker with an answer the app can carry out.
+              GoodBit starts OBS itself at boot, so "close it and try again"
+              sends people round a loop: they close OBS, GoodBit opens it
+              again the next time it starts, and the setup is blocked for a
+              reason the app caused.
+            -->
+            <button
+              v-if="blocker.toLowerCase().includes('obs is open')"
+              class="mt-2 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-xs font-medium disabled:opacity-60"
+              :disabled="closingObs"
+              @click="askObsToClose"
+            >
+              {{ closingObs ? 'Asking OBS to close…' : 'Close OBS for me' }}
+            </button>
           </div>
 
           <button

@@ -103,9 +103,7 @@
           <p>
             <strong>OBS itself is part of it.</strong> With no OBS on the machine, the first step
             installs it from the OBS project's own release: Windows asks for permission, and
-            nothing else needs clicking. It also brings its own Python for the sorting script, into
-            its own folder, because OBS only loads Python 3.10 to 3.12 and says so nowhere except
-            its log.
+            nothing else needs clicking, including no auto-configuration wizard afterwards.
           </p>
 
           <p>Tick what you want it to do. The link at the bottom opens the app with these chosen.</p>
@@ -152,10 +150,10 @@
           <h3>What it actually writes</h3>
           <p>
             A profile folder of its own and a scene collection of its own, both called GoodBit, plus
-            two keys in OBS's own config: where Python is, and the flag that stops OBS opening its
-            auto-configuration wizard over the settings this has just chosen. It never edits a
-            profile you made, never switches the profile OBS opens with, and keeps a record of every
-            key it set so it can put things back.
+            one key in OBS's own config: the flag that stops OBS opening its auto-configuration
+            wizard over the settings this has just chosen. It never edits a profile you made, never
+            switches the profile OBS opens with, and keeps a record of every key it set so it can
+            put things back.
           </p>
           <p>
             The profile carries the resolution and frame rate of the screen you picked, at full
@@ -250,46 +248,34 @@
               <code>GAME</code> into every filename.
             </p>
             <p>
-              The answer everyone uses is
-              <a href="https://obsproject.com/forum/resources/smart-replays.2039/" target="_blank" rel="noopener">Smart Replays</a>,
-              an OBS script by qvvonk, AGPL-3.0. It watches which application is in front when you
-              press the key and moves the saved clip into a folder named after it.
+              GoodBit does it instead, and there is nothing to install. Point OBS at a folder
+              GoodBit watches and it takes over from there: when a clip appears it asks Windows
+              which program was in front while that clip was recording, matches it against the games
+              on your machine, and moves the file into a folder named after it.
             </p>
             <ol>
               <li>
-                Install <strong>Python between 3.10 and 3.12</strong>, with the
-                <strong>tcl/tk</strong> option ticked in the installer. Not newer: OBS refuses to
-                load 3.13 and reports that in its log and nowhere else. The script imports tkinter
-                at startup, so a build without tcl/tk does not load at all.
+                In OBS: <em>Settings &rarr; Output &rarr; Recording</em>, and set the
+                <strong>Recording Path</strong> to a folder called
+                <code>.goodbit-incoming</code> inside your clips folder. If your clips live in
+                <code>C:\Users\you\Videos</code>, that is
+                <code>C:\Users\you\Videos\.goodbit-incoming</code>.
               </li>
               <li>
-                In OBS: <em>Tools → Scripts → Python Settings</em>, and point it at that Python
-                folder. OBS runs no script at all until this is set.
+                Create the folder first if OBS will not accept it. The leading dot keeps it out of
+                your library: GoodBit skips it when it scans, so a clip still being written is never
+                indexed half finished.
               </li>
               <li>
-                Download <code>smart_replays.py</code> from
-                <a href="https://github.com/qvvonk/smart_replays" target="_blank" rel="noopener">its repository</a>
-                and add it under <em>Tools → Scripts</em> with the <code>+</code> button.
-              </li>
-              <li>
-                Set <strong>Base path for clips</strong> to the same folder as before. It must be on
-                the same drive as OBS's recording path, because the script moves files rather than
-                copying them.
-              </li>
-              <li>Leave <strong>Sort clips into folders</strong> ticked. That is the whole point.</li>
-              <li>
-                Add an <strong>alias</strong> per game so the folder gets a name a person would
-                recognise. The format is
-                <code>C:\path\to\game > Game Name</code>, and a folder works as well as an
-                executable, so one line covers whatever the game's exe is called.
+                That is all. Nothing runs inside OBS, there is no Python to install, and no script
+                to keep up to date.
               </li>
             </ol>
             <p class="muted">
-              Two things worth knowing before you rely on it. Its
-              <em>Restart every</em> option is on by default and has an open crash report against
-              it, so consider setting it to 0. And it reads which process is in front by opening a
-              handle to it, so if you play something with strict anti-cheat and would rather it did
-              not, its <em>name from the current scene</em> mode never touches another process.
+              A clip recorded while something that is not a game is in front, a browser or a
+              launcher, is named after that instead, so nothing ever lands loose at the top level.
+              If GoodBit cannot work out what was in front at all, the clip goes to
+              <code>Unsorted</code> rather than being left where you will not find it.
             </p>
           </section>
 

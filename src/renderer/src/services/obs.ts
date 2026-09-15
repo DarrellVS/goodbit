@@ -33,6 +33,7 @@ export interface ObsStatus {
   videosRoot: string;
   recordingPath: string | null;
   replayBufferSeconds: number | null;
+  audioDeviceIds: string[];
   hotkey: string | null;
   python: { version: string; directory: string; usable: boolean } | null;
   pythonConfigured: string | null;

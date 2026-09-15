@@ -71,6 +71,37 @@ export function useAppSettings() {
     return chosen;
   }
 
+  /**
+   * Choose a folder and take the clips with it.
+   *
+   * The plain `pickFolder` above repoints and rescans, leaving the files
+   * alone, which is what somebody correcting a wrong path wants. This is the
+   * other intent, and it runs as a job because a library is minutes.
+   */
+  async function moveLibraryTo(
+    title: string,
+  ): Promise<{ chosen: string; problem: string | null; obsRunning: boolean } | null> {
+    const chosen = await window.goodbit?.pickFolder(title);
+    if (!chosen) return null;
+
+    const checked = (await window.goodbit?.canMoveLibrary(chosen)) ?? {
+      problem: null,
+      obsRunning: false,
+    };
+    return { chosen, ...checked };
+  }
+
+  /** Ask OBS to close so a move can start. Never forces it. */
+  async function closeObs(): Promise<boolean> {
+    const result = await window.goodbit?.closeObs();
+    return result?.closed ?? false;
+  }
+
+  async function startMove(destination: string): Promise<void> {
+    await window.goodbit?.moveLibrary(destination);
+    await load();
+  }
+
   return {
     settings: readonly(settings),
     loaded: readonly(loaded),
@@ -78,5 +109,8 @@ export function useAppSettings() {
     load,
     save,
     pickFolder,
+    moveLibraryTo,
+    startMove,
+    closeObs,
   };
 }

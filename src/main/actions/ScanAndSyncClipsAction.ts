@@ -51,6 +51,11 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       cwd: VIDEOS_ROOT,
       onlyFiles: true,
       dot: false,
+      // `dot: false` already excludes `.goodbit-incoming`, where OBS writes a
+      // replay before GoodBit files it, and `.filmpje-cache`. This says so
+      // outright so that turning `dot` on later cannot silently index a clip
+      // that is still being written.
+      ignore: ['.*/**'],
       unique: true,
       followSymbolicLinks: true,
       absolute: true,

@@ -36,11 +36,6 @@ export function scenesDir(): string {
   return path.join(obsConfigDir(), 'basic', 'scenes');
 }
 
-/** Has OBS ever run here? Its configuration only exists after a first launch. */
-export function obsHasConfig(): boolean {
-  return existsSync(obsConfigDir()) && existsSync(path.join(obsConfigDir(), 'basic'));
-}
-
 /**
  * Is OBS on this machine at all?
  *
@@ -51,9 +46,14 @@ export function obsHasConfig(): boolean {
  * install what they just installed.
  *
  * The executable is the test. Everything this setup writes it creates itself.
+ *
+ * It has to be the *only* test, in both directions. Accepting the folder as
+ * proof as well looks harmless and is not: uninstalling OBS leaves
+ * `%APPDATA%/obs-studio` exactly where it was, profiles and all, so the app
+ * went on reporting "OBS is set up and recording into your library" with a
+ * Start button that could only fail, on a machine with no OBS on it.
  */
 export async function obsIsInstalled(): Promise<boolean> {
-  if (obsHasConfig()) return true;
   return (await findObsExecutable()) !== null;
 }
 

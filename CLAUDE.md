@@ -160,8 +160,10 @@ none of it is from documentation, because OBS documents its plugin API and not i
 **Things that cost a debugging session each, and are load-bearing:**
 
 - **OBS cannot name a file after a game.** `os_generate_formatted_filename` takes the clock and the
-  video settings, and nothing else; an unknown token silently loses its `%`. A folder per game needs
-  code inside OBS, which is why Smart Replays is downloaded at all.
+  video settings, and nothing else; an unknown token silently loses its `%`. So OBS records into
+  `<videosRoot>/.goodbit-incoming/` and **GoodBit files the clip itself**, from the program that was
+  in front while it was recording. See `services/capture/`. This used to be a third party OBS script
+  and a private Python interpreter to run it, and both are gone.
 - **The hotkey is the output's, not the frontend's.** `[Hotkeys] OBSBasic.SaveReplayBuffer` with a
   `bindings` array is the documented shape and binds nothing on OBS 31: what works, and what the
   hotkey list shows, is `ReplayBuffer={"ReplayBuffer.Save":[…]}`.
@@ -177,10 +179,10 @@ none of it is from documentation, because OBS documents its plugin API and not i
   it decodes.
 - **A new profile is not an empty profile.** OBS fills one with 1920x1080 at 30, downscaled to 720p.
   Leaving `[Video]` alone is only right for a profile somebody else made.
-- **Python is GoodBit's own.** OBS loads 3.10 to 3.12 and refuses 3.13 with one line in its log. The
-  installer ignores `TargetDir` when the same minor is already installed, and upgrades *that* one
-  instead, so `pickPrivateVersion` chooses a minor the machine does not have. The embeddable and
-  NuGet builds have no Tkinter, which Smart Replays imports at module level.
+- **Installed means the executable exists**, and only that. `obsIsInstalled` used to accept the
+  config folder as proof too, which is backwards: uninstalling OBS leaves `%APPDATA%/obs-studio`
+  exactly where it was, so the app reported "set up and recording" on a machine with no OBS and a
+  Start button that could only fail.
 - **An empty `Untitled` collection is not "scenes you have built".** Deciding from "has a profile"
   meant a fresh OBS got no scene and opened on a blank one.
 - **Installed means the executable exists**, not the config folder: OBS writes that on its first
@@ -190,6 +192,33 @@ none of it is from documentation, because OBS documents its plugin API and not i
 `scripts/obs-apply-check.mjs` applies the whole thing against a throw-away `GOODBIT_OBS_DIR` and
 reads back what landed; `scripts/obs-backup.mjs` takes a verified copy of a real OBS configuration
 before any of this is trusted with it.
+
+### Naming a clip, without anything running inside OBS
+
+`src/main/services/capture/` decides which game a clip belongs to, which is the job a third party
+script used to do from inside OBS.
+
+- **OBS records into `<videosRoot>/.goodbit-incoming/`**, a staging folder GoodBit owns. Inside the
+  videos root deliberately, so filing a clip is a same volume `fs.rename`: atomic, instant, and the
+  file is never half present at its final path. `%APPDATA%` would be a cross volume copy of a few
+  hundred megabytes for anybody whose library is on another drive.
+- **Dot prefixed**, so all three sweepers leave it alone. The watcher and the scan skip it for free
+  (`dot: false`, plus an explicit `ignore: ['.*/**']` so a later option change cannot index a half
+  written replay). `cleanupEmptyFolders` had to be taught, because an empty staging folder is its
+  normal resting state and it was deleting it at every boot.
+- **The foreground is sampled at 1 Hz** by a 5 KB C# helper compiled on demand into
+  `%APPDATA%/GoodBit/bin/`, the same trick `displayQuery.ts` uses. Measured at 0.11% of one core.
+- **`PROCESS_QUERY_LIMITED_INFORMATION`, never `PROCESS_VM_READ`.** A protected process denies the
+  second and allows the first, so the old script failed to name exactly the games most likely to be
+  protected, and those clips landed with no game at all.
+- **Attribution is a vote over the clip's own window**, not a reading at the moment it lands. A clip
+  arrives seconds after the moment it records, by which time the user has often alt-tabbed. Games
+  win the vote over non-games, so Discord in front for most of the window still names it after the
+  game behind it; when nothing in the window is a game the most-seen program wins, because
+  recording a browser is a thing people do on purpose.
+- **A folder that already exists wins over a better name for it.** The library holds
+  `Headliners-Win64-Shipping` because that is what the old script called it, and writing the better
+  name would leave two folders for one game.
 
 ### Encoding
 

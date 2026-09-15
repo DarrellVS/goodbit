@@ -15,7 +15,7 @@ import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
  * with no GPU encoder an export is quietly slow, and with an unreachable
  * publisher the first sign of trouble used to be a publish failing.
  */
-const { settings, load, save, pickFolder } = useAppSettings();
+const { settings, load, save, pickFolder, moveLibraryTo, startMove, closeObs } = useAppSettings();
 const { refresh: refreshPublisher } = usePublisher();
 const toast = useToastStore();
 
@@ -67,6 +67,62 @@ async function choose(key: 'videosRoot' | 'audioRoot', title: string): Promise<v
   if (chosen) toast.success('Folder updated, rescanning');
 }
 
+/**
+ * Two different intents, so two buttons rather than one that guesses.
+ *
+ * "My clips are somewhere else" wants the library repointed and the files left
+ * alone, which is `Change`. "I want my clips in Videos/Clips" wants them
+ * carried over with their tags, stars, notes and dates, which is this. A
+ * single button would have to ask, and the answer is not a detail: one of them
+ * touches every file in the library.
+ */
+async function moveClipsFolder(): Promise<void> {
+  const picked = await moveLibraryTo('Where should your clips live?');
+  if (!picked) return;
+
+  if (picked.problem) {
+    toast.error(picked.problem, 'That folder will not work');
+    return;
+  }
+
+  /*
+   * OBS has to be shut before anything moves.
+   *
+   * It keeps the replay buffer in memory and writes it into the staging folder
+   * the instant the key is pressed, so a save during a move either lands in a
+   * folder that has already been carried over or arrives in the middle of a
+   * copy. Asking it to close is a WM_CLOSE, the same as clicking the X, so OBS
+   * saves its own settings on the way out and nothing is forced.
+   */
+  if (picked.obsRunning) {
+    const closed = await new Promise<boolean>((resolve) => {
+      toast.confirm(
+        'OBS has to be closed while your clips move, or a replay saved mid-move lands in the old folder. GoodBit can ask it to close now.',
+        () => resolve(true),
+        'Close OBS first?',
+      );
+      window.setTimeout(() => resolve(false), 12_000);
+    });
+
+    if (!closed) return;
+
+    toast.info('Asking OBS to close');
+    if (!(await closeObs())) {
+      toast.error(
+        'OBS is still open. It asks before closing while the replay buffer is running, so answer that and try again.',
+        'Could not close OBS',
+      );
+      return;
+    }
+  }
+
+  await startMove(picked.chosen);
+  toast.success(
+    'Leave OBS closed until this finishes, or a replay will land in the old folder.',
+    'Moving your clips',
+  );
+}
+
 async function savePublisher(): Promise<void> {
   await save({
     publisherBaseUrl: publisherUrl.value.trim(),
@@ -107,21 +163,34 @@ async function testPublisher(): Promise<void> {
               {{ settings.videosRoot || 'Not set' }}
             </p>
             <!--
-              Pointing this somewhere else looks like it might throw the
-              library away. It does not, and saying so is the difference
-              between a setting people use and one they avoid.
+              This used to explain that changing it moves nothing. It no longer
+              needs to: changing it now asks which of the two things you meant,
+              and OBS is pointed at the same folder either way rather than
+              being a second setting that can disagree with this one.
             -->
             <p class="text-xs text-muted-500 mt-1.5">
-              Where OBS saves recordings. Nothing is moved or deleted if you change it, and the
-              clips from the old folder come back if you point it there again.
+              Your library, and where OBS records into. They are always the same folder.
+              <br />
+              <span class="text-muted-400">
+                Move clips takes everything with it, tags and dates included. Change only points
+                GoodBit somewhere else and leaves the files alone.
+              </span>
             </p>
           </div>
-          <button
-            class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm flex-shrink-0"
-            @click="choose('videosRoot', 'Where does OBS save your clips?')"
-          >
-            Change
-          </button>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button
+              class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+              @click="moveClipsFolder"
+            >
+              Move clips
+            </button>
+            <button
+              class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+              @click="choose('videosRoot', 'Where do you keep your clips?')"
+            >
+              Change
+            </button>
+          </div>
         </div>
 
         <div class="flex items-start justify-between gap-4 pt-3 border-t border-border">

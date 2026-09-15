@@ -6,6 +6,7 @@ import { bestPython, ownPython } from '../services/obs/python.js';
 import { installedSmartReplays, SMART_REPLAYS } from '../services/obs/smartReplays.js';
 import { GOODBIT_COLLECTION, GOODBIT_PROFILE, readManifest } from '../services/obs/setup.js';
 import { loadSettings } from '../settings.js';
+import { INCOMING_DIR_NAME } from '../services/capture/incoming.js';
 
 /**
  * What is wrong with this machine's OBS, in sentences.
@@ -59,6 +60,8 @@ export interface ObsStatus {
   recordingPath: string | null;
   replayBufferSeconds: number | null;
   hotkey: string | null;
+  /** What the GoodBit scene already captures, so the setup can show it ticked. */
+  audioDeviceIds: string[];
   python: { version: string; directory: string; usable: boolean } | null;
   pythonConfigured: string | null;
   script: { installed: boolean; matchesPin: boolean; version: string; loadedInCollection: boolean };
@@ -158,7 +161,22 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
         });
       }
 
-      if (profile.recordingPath && videosRoot && !samePath(profile.recordingPath, videosRoot)) {
+      /*
+       * Two paths are right, and one of them is only right for now.
+       *
+       * GoodBit points OBS at its own staging folder and files each clip into
+       * a game folder itself. Recording straight into the videos root is what
+       * 1.4.0 did, and it still works while Smart Replays is the one sorting,
+       * so it is not an error until that machine is migrated.
+       */
+      const staging = videosRoot ? path.join(videosRoot, INCOMING_DIR_NAME) : '';
+      const recordsSomewhereKnown =
+        !profile.recordingPath ||
+        !videosRoot ||
+        samePath(profile.recordingPath, staging) ||
+        samePath(profile.recordingPath, videosRoot);
+
+      if (!recordsSomewhereKnown) {
         findings.push({
           id: 'path-mismatch',
           level: 'blocker',
@@ -184,13 +202,21 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
       }
     }
 
-    if (installed && !collectionScript) {
+    /*
+     * Not a finding any more.
+     *
+     * Until 1.4.0 a folder per game needed a third party script and a private
+     * Python inside OBS, so its absence was a warning. GoodBit now names the
+     * clip itself from the program that was in front while it was recording,
+     * so an OBS with no scripts at all is the healthy state.
+     */
+    if (collectionScript) {
       findings.push({
-        id: 'script-missing',
-        level: 'warning',
-        title: 'Clips are not sorted into folders',
+        id: 'script-present',
+        level: 'ok',
+        title: 'Smart Replays is still installed',
         detail:
-          'OBS names a recording from the clock and nothing else, so every clip lands in one folder and the whole library looks like one game. Smart Replays fixes that, and GoodBit can install it.',
+          'GoodBit sorts clips itself now, so the script and its Python are no longer needed. Setting up again removes them.',
         fixable: true,
       });
     }
@@ -297,6 +323,9 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
       recordingPath: profile?.recordingPath ?? null,
       replayBufferSeconds: profile?.replayBufferSeconds ?? null,
       hotkey: profile?.saveReplayKey ?? null,
+      audioDeviceIds:
+        obs.collections.find((collection) => collection.name === GOODBIT_COLLECTION)
+          ?.audioDeviceIds ?? [],
       // GoodBit's own if it has one, otherwise the best the machine offers, so
       // the interface can say what the situation is either way.
       python: (own ?? python)
