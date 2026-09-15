@@ -13,7 +13,21 @@ export class EnsureThumbnailAction extends BaseAction<EnsureThumbnailInput, stri
   async execute(input: EnsureThumbnailInput): Promise<string> {
     const clip = 'clip' in input ? input.clip : await AppDataSource.getRepository(Clip).findOneByOrFail({ id: input.clipId });
     const cacheDir = cacheDirFor('thumbnails');
-    const key = crypto.createHash('md5').update(clip.filePath).digest('hex') + '.jpg';
+    /*
+     * Keyed by where the clip sits in the library, not by where the library
+     * sits on disk.
+     *
+     * The absolute path was the key, so moving the clips folder changed every
+     * key at once and the whole library re-derived its thumbnails, having just
+     * carried the perfectly good ones across. `relPath` is `Game/clip.mp4`,
+     * which is the same before and after a move and is what the library is
+     * addressed by anyway.
+     *
+     * Existing caches are keyed the old way and are regenerated once. That is
+     * the last time it happens.
+     */
+    const identity = clip.relPath || path.relative(VIDEOS_ROOT, clip.filePath) || clip.filePath;
+    const key = crypto.createHash('md5').update(identity.split(path.sep).join('/')).digest('hex') + '.jpg';
     const thumbPath = path.join(cacheDir, key);
 
     let needGenerate = true;

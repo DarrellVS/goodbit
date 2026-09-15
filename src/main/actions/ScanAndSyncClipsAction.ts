@@ -61,6 +61,18 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       absolute: true,
     });
 
+    /*
+     * A path is compared by shape, not by spelling.
+     *
+     * fast-glob returns `D:/Clips/Game/clip.mp4` with forward slashes, and
+     * `path.join` produces `D:\Clips\Game\clip.mp4`. They are the same file
+     * and they are not the same string, so a row written by anything other
+     * than this scan looked missing here, and the file it pointed at looked
+     * new. That inserted a second row for every clip and then deleted the
+     * first, which takes its tags, notes, stars and collections with it.
+     */
+    const samePath = (value: string): string => value.split('\\').join('/').toLowerCase();
+
     const nowOnDisk = new Set<string>();
     const gamesFound = new Set<string>();
     let added = 0;
@@ -72,7 +84,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       // not recordings and a row for one is worse than no row at all.
       if (WORKING_FILE.test(path.basename(absPath))) continue;
 
-      nowOnDisk.add(absPath);
+      nowOnDisk.add(samePath(absPath));
       const rel = toRelPath(absPath);
       const game = rel.split(path.sep)[0] || '';
       gamesFound.add(game);
@@ -80,7 +92,16 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       const extension = path.extname(filename).slice(1);
       const stat = await fs.stat(absPath);
 
-      const existing = await clipRepo.findOne({ where: { filePath: absPath } });
+      const existing =
+        (await clipRepo.findOne({ where: { filePath: absPath } })) ??
+        // Written by something that spells the path differently. Found, and
+        // rewritten to this scan's spelling so it is found directly next time.
+        (await clipRepo
+          .createQueryBuilder('clip')
+          .where("REPLACE(LOWER(clip.filePath), '\\', '/') = :key", { key: samePath(absPath) })
+          .getOne());
+
+      if (existing && existing.filePath !== absPath) existing.filePath = absPath;
       if (!existing) {
         const clip = clipRepo.create({
           filePath: absPath,
@@ -138,7 +159,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     }
 
     const allClips = await clipRepo.find();
-    const missing = allClips.filter((clip) => !nowOnDisk.has(clip.filePath));
+    const missing = allClips.filter((clip) => !nowOnDisk.has(samePath(clip.filePath)));
 
     // Deleting a clip row throws away the only copy of its tags, notes, display
     // name, collections and stars. When the videos folder is momentarily
@@ -148,7 +169,10 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     let pruneSkipped: ScanResult['pruneSkipped'];
     const wipingEverything = entries.length === 0 && allClips.length > 0;
     const wipingMost =
-      allClips.length > 0 && missing.length / allClips.length > MAX_PRUNE_FRACTION;
+      // `>=` rather than `>`. Exactly half is not a safe number: a library
+      // whose rows were all duplicated and then all orphaned lands on 0.5 to
+      // the digit, and a strict comparison waved it through.
+      allClips.length > 0 && missing.length / allClips.length >= MAX_PRUNE_FRACTION;
 
     if (wipingEverything || wipingMost) {
       pruneSkipped = {

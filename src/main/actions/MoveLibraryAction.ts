@@ -53,6 +53,17 @@ export interface MoveLibraryOutput {
   jobId: string;
 }
 
+/**
+ * A path spelled the way the library spells it.
+ *
+ * The scan stores what fast-glob returns, which uses forward slashes on
+ * Windows too. Anything else writing a `filePath` has to match, or the row and
+ * the file stop describing each other.
+ */
+function libraryPath(value: string): string {
+  return value.split(path.sep).join('/');
+}
+
 /** Folders that belong to the app rather than to a game. */
 function isOurs(name: string): boolean {
   return name.startsWith('.');
@@ -314,7 +325,19 @@ async function repoint(from: string, to: string): Promise<void> {
       : current.startsWith(prefix);
     if (!inside) continue;
 
-    await repo.update(clip.id, { filePath: path.join(to, current.slice(prefix.length)) });
+    /*
+     * Written the way the scan writes it, forward slashes and all.
+     *
+     * `path.join` gives `D:\Clips\Game\clip.mp4`; fast-glob, which is what
+     * `ScanAndSyncClipsAction` stores, gives `D:/Clips/Game/clip.mp4`. Writing
+     * the first meant the next scan matched none of these rows: it read every
+     * clip as missing and every file as new, inserted a duplicate row for each
+     * one and then deleted the original, and a deleted row takes its tags,
+     * notes, stars and collections with it.
+     */
+    await repo.update(clip.id, {
+      filePath: libraryPath(path.join(to, current.slice(prefix.length))),
+    });
     moved += 1;
   }
 
