@@ -85,12 +85,30 @@ test.describe('the bridge', () => {
   });
 
   test('the watcher indexed the seeded clips', async () => {
+    /*
+     * Waited for rather than assumed.
+     *
+     * Indexing is a watcher event, a settle delay and a scan, and this used to
+     * read the answer once after a fixed sleep. That held while the suite was
+     * short and turned into a flake as it grew: the same assertion passed on
+     * its own and failed in the middle of a full run, which is the least
+     * useful kind of failure.
+     */
+    await expect
+      .poll(
+        async () => {
+          const clips = await ctx.page.evaluate(() =>
+            window.goodbit!.apiRequest({ method: 'GET', path: '/clips', query: { pageSize: 50 } }),
+          );
+          return (clips.body as { items: Array<{ game: string }> }).items;
+        },
+        { timeout: 30_000, intervals: [500] },
+      )
+      .toEqual(expect.arrayContaining([expect.objectContaining({ game: 'TestGame' })]));
+
     const clips = await ctx.page.evaluate(() =>
       window.goodbit!.apiRequest({ method: 'GET', path: '/clips', query: { pageSize: 50 } }),
     );
-
-    const items = (clips.body as { items: Array<{ game: string }> }).items;
-    expect(items.length).toBeGreaterThanOrEqual(2);
-    expect(items.some((c) => c.game === 'TestGame')).toBe(true);
+    expect((clips.body as { items: unknown[] }).items.length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -38,6 +38,15 @@ export interface LaunchOptions {
    * machine running it happens to have.
    */
   env?: Record<string, string>;
+  /**
+   * Extra keys for the profile's `settings.json`.
+   *
+   * For the settings main reads before a window exists, and which therefore
+   * cannot be set through the UI mid-test: the MCP server's port and token are
+   * the case this was added for, since it only listens when it boots and finds
+   * them.
+   */
+  settings?: Record<string, unknown>;
   /** Seed remembered window bounds. */
   window?: {
     x?: number;
@@ -49,7 +58,13 @@ export interface LaunchOptions {
 }
 
 export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
-  const { configured = true, legacyDatabase, dataDir: existing, env = {} } = options;
+  const {
+    configured = true,
+    legacyDatabase,
+    dataDir: existing,
+    env = {},
+    settings = {},
+  } = options;
 
   const base = existing ? dirname(existing) : mkdtempSync(join(tmpdir(), 'goodbit-test-'));
   const dataDir = existing ?? join(base, 'data');
@@ -75,6 +90,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
         keepRunningInTray: false,
         migratedFromWebApp: false,
         ...(options.window ? { window: options.window } : {}),
+        ...settings,
       }),
     );
     mkdirSync(join(base, 'music'), { recursive: true });

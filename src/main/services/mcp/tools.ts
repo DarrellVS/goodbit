@@ -60,6 +60,25 @@ export interface ToolDefinition {
 export function tools(): ToolDefinition[] {
   const clips = () => AppDataSource.getRepository(Clip);
 
+  /**
+   * Which of these ids are real, and which are not.
+   *
+   * Every write tool checks this first, because the failure it prevents is the
+   * worst kind: a tool that reports success for a clip that does not exist.
+   * A model has no way to know it was lied to, so it tells the person their
+   * clip was renamed and moves on.
+   */
+  async function partition(ids: number[]): Promise<{ found: number[]; missing: number[] }> {
+    const rows = await clips()
+      .createQueryBuilder('clip')
+      .select('clip.id', 'id')
+      .where('clip.id IN (:...ids)', { ids })
+      .getRawMany<{ id: number }>();
+
+    const found = rows.map((row) => row.id);
+    return { found, missing: ids.filter((id) => !found.includes(id)) };
+  }
+
   return [
     {
       name: 'search_clips',
@@ -97,6 +116,26 @@ export function tools(): ToolDefinition[] {
           limit?: number;
         };
 
+        /*
+         * A date that is not a date is refused, not ignored.
+         *
+         * `new Date('yesterday')` is Invalid Date, and comparing against it
+         * matches nothing in a way SQLite does not complain about, so the
+         * filter silently did not apply and the newest clips came back looking
+         * like the answer. A model asking for "clips after yesterday" was told
+         * something confidently wrong.
+         */
+        for (const [field, value] of [
+          ['recordedAfter', recordedAfter],
+          ['recordedBefore', recordedBefore],
+        ] as const) {
+          if (value !== undefined && Number.isNaN(new Date(value).getTime())) {
+            return text({
+              error: `${field} is not a date I can read: ${value}. Use an ISO date like 2026-09-01.`,
+            });
+          }
+        }
+
         let qb = clips()
           .createQueryBuilder('clip')
           .leftJoinAndSelect('clip.tags', 'tag')
@@ -115,9 +154,17 @@ export function tools(): ToolDefinition[] {
           qb = qb.andWhere('clip.recordedAt <= :before', { before: new Date(recordedBefore) });
         }
         if (query) {
-          qb = qb.andWhere('(clip.filename LIKE :q OR clip.displayName LIKE :q)', {
-            q: `%${query}%`,
-          });
+          /*
+           * `%` and `_` are wildcards to LIKE and letters to everybody else.
+           * Searching for "100%" matched the whole library without them being
+           * escaped, which reads as a broken search rather than a clever one.
+           */
+          const ESCAPE = '!';
+          const literal = query.replace(/[!%_]/g, (char) => ESCAPE + char);
+          qb = qb.andWhere(
+            `(clip.filename LIKE :q ESCAPE '${ESCAPE}' OR clip.displayName LIKE :q ESCAPE '${ESCAPE}')`,
+            { q: `%${literal}%` },
+          );
         }
         if (tag) {
           // A second query rather than a join filter: filtering on the joined
@@ -133,8 +180,24 @@ export function tools(): ToolDefinition[] {
           qb = qb.andWhere('clip.id IN (:...ids)', { ids: ids.map((row) => row.id) });
         }
 
-        const found = await qb.getMany();
-        return text({ clips: found.map(view), found: found.length });
+        /*
+         * How many there are, as well as how many came back.
+         *
+         * One number for both meant a page of 25 out of 300 looked exactly
+         * like a library with 25 clips in it, and the caller had no way to
+         * tell the difference or to know that asking for more would help.
+         */
+        const matching = await qb.getCount();
+        const page = await qb.getMany();
+
+        return text({
+          clips: page.map(view),
+          returned: page.length,
+          matching,
+          ...(matching > page.length
+            ? { more: `${matching - page.length} more match this; raise limit to see them.` }
+            : {}),
+        });
       },
     },
 
@@ -176,10 +239,34 @@ export function tools(): ToolDefinition[] {
       description: 'Every tag, and how many clips carry it.',
       inputSchema: {},
       async run() {
-        const tags = await AppDataSource.getRepository(Tag).find({ relations: ['clips'] as never });
-        return text({
-          tags: tags.map((tag) => ({ name: tag.name, clips: (tag as { clips?: [] }).clips?.length ?? 0 })),
-        });
+        /*
+         * Counted from the clip side, because the relation only exists there.
+         *
+         * `Tag` deliberately omits the inverse side: the join is owned by
+         * `Clip`. Asking TypeORM to load `relations: ['clips']` threw on every
+         * call, so this tool never once worked, and an `as never` cast is what
+         * let it past the typechecker.
+         *
+         * A left join rather than an inner one, so a tag nobody uses still
+         * appears, with zero, which is the answer somebody tidying up wants.
+         */
+        const rows = await clips()
+          .createQueryBuilder('clip')
+          .leftJoin('clip.tags', 'tag')
+          .select('tag.name', 'name')
+          .addSelect('COUNT(clip.id)', 'clips')
+          .where('tag.name IS NOT NULL')
+          .groupBy('tag.name')
+          .orderBy('clips', 'DESC')
+          .getRawMany<{ name: string; clips: number }>();
+
+        const used = new Set(rows.map((row) => row.name));
+        const unused = (await AppDataSource.getRepository(Tag).find())
+          .map((tag) => tag.name)
+          .filter((name) => !used.has(name))
+          .map((name) => ({ name, clips: 0 }));
+
+        return text({ tags: [...rows, ...unused] });
       },
     },
 
@@ -197,8 +284,21 @@ export function tools(): ToolDefinition[] {
           clipIds: number[];
           tags: string[];
         };
-        await new BatchAddTagsAction().execute({ clipIds, tags: names });
-        return text({ tagged: clipIds.length, tags: names });
+
+        /*
+         * Checked before the write, not counted after it.
+         *
+         * Tagging a clip that does not exist used to report success and, worse,
+         * still created the tag itself: the library gained a tag attached to
+         * nothing, and the caller was told it worked.
+         */
+        const { found, missing } = await partition(clipIds);
+        if (found.length === 0) {
+          return text({ tagged: 0, missing, error: 'None of those clip ids exist.' });
+        }
+
+        await new BatchAddTagsAction().execute({ clipIds: found, tags: names });
+        return text({ tagged: found.length, tags: names, ...(missing.length ? { missing } : {}) });
       },
     },
 
@@ -212,8 +312,14 @@ export function tools(): ToolDefinition[] {
           clipIds: number[];
           starred: boolean;
         };
-        await new BatchStarAction().execute({ clipIds, starred });
-        return text({ updated: clipIds.length, starred });
+
+        const { found, missing } = await partition(clipIds);
+        if (found.length === 0) {
+          return text({ updated: 0, missing, error: 'None of those clip ids exist.' });
+        }
+
+        await new BatchStarAction().execute({ clipIds: found, starred });
+        return text({ updated: found.length, starred, ...(missing.length ? { missing } : {}) });
       },
     },
 
@@ -225,7 +331,12 @@ export function tools(): ToolDefinition[] {
       inputSchema: { clipId: z.number(), name: z.string().min(1) },
       async run(input) {
         const { clipId, name } = input as Record<string, never> & { clipId: number; name: string };
-        await clips().update(clipId, { displayName: name });
+
+        // `update` on a missing row changes nothing and throws nothing, so the
+        // number of rows it touched is the only honest answer.
+        const result = await clips().update(clipId, { displayName: name });
+        if (!result.affected) return text({ error: `No clip with id ${clipId}` });
+
         return text({ clipId, name });
       },
     },
@@ -237,7 +348,10 @@ export function tools(): ToolDefinition[] {
       inputSchema: { clipId: z.number(), note: z.string() },
       async run(input) {
         const { clipId, note } = input as Record<string, never> & { clipId: number; note: string };
-        await clips().update(clipId, { notes: note });
+
+        const result = await clips().update(clipId, { notes: note });
+        if (!result.affected) return text({ error: `No clip with id ${clipId}` });
+
         return text({ clipId, note });
       },
     },
@@ -254,7 +368,35 @@ export function tools(): ToolDefinition[] {
         if (!clip) return text({ error: `No clip with id ${clipId}` });
 
         const result = await new EnsureClipSuggestionsAction().execute({ clipId });
-        return text({ clipId, suggestions: result });
+
+        /*
+         * The moments and why, not the machinery.
+         *
+         * The raw result carries the analysis internals: `spreadLu`, `peakZ`,
+         * `bar`, `basis`, a feature vector. They are the right thing to keep in
+         * the cache and the wrong thing to put in a model's context, where they
+         * read as numbers worth reasoning about.
+         */
+        const events = (result.events ?? []).map((event) => ({
+          atSec: Math.round(event.atSec * 10) / 10,
+          untilSec: Math.round((event.untilSec ?? event.atSec) * 10) / 10,
+          reason: event.reason,
+          confidence: Math.round(event.confidence * 100) / 100,
+        }));
+
+        return text({
+          clipId,
+          durationSec: result.durationSec,
+          from: result.watchesScreen ? 'the game HUD and the sound' : 'the sound',
+          confident: result.confident,
+          suggestions: events.length
+            ? events
+            : (result.moments ?? []).map((moment) => ({
+                atSec: Math.round(moment.t * 10) / 10,
+                reason: 'the loudest moment in the clip',
+                confidence: Math.round(moment.score * 100) / 100,
+              })),
+        });
       },
     },
 
@@ -275,6 +417,29 @@ export function tools(): ToolDefinition[] {
           endSec: number;
         };
         if (endSec <= startSec) return text({ error: 'endSec has to be after startSec' });
+
+        /*
+         * Everything checked before the file is touched.
+         *
+         * This is the one tool that cannot be undone, so a mistake has to be
+         * caught while it is still only a mistake. An id that does not exist
+         * used to surface as a raw TypeORM "Could not find any entity of type
+         * Clip", which is not something to hand a person.
+         */
+        const clip = await clips().findOneBy({ id: clipId });
+        if (!clip) return text({ error: `No clip with id ${clipId}` });
+
+        const length = clip.durationSec ?? null;
+        if (length !== null && startSec >= length) {
+          return text({
+            error: `That clip is ${length.toFixed(1)}s long, so a cut starting at ${startSec}s would keep nothing.`,
+          });
+        }
+        if (length !== null && endSec > length + 0.5) {
+          return text({
+            error: `That clip is ${length.toFixed(1)}s long; ${endSec}s is past the end.`,
+          });
+        }
 
         await new TrimAndSwapClipAction().execute({ clipId, startSec, endSec });
         const after = await clips().findOne({ where: { id: clipId }, relations: ['tags'] });
@@ -299,12 +464,25 @@ export function tools(): ToolDefinition[] {
           .addSelect('MAX(clip.recordedAt)', 'newest')
           .getRawOne<{ bytes: number; seconds: number; oldest: string; newest: string }>();
 
-        const games = await AppDataSource.getRepository(Game).count();
+        /*
+         * Games with clips, which is what `list_games` returns.
+         *
+         * This used to count rows in the `game` table, which also holds games
+         * whose clips have since been moved or deleted. The two tools then
+         * disagreed by sixteen on this machine, and nothing said why.
+         */
+        const withClips = await clips()
+          .createQueryBuilder('clip')
+          .select('COUNT(DISTINCT clip.game)', 'n')
+          .getRawOne<{ n: number }>();
+
+        const known = await AppDataSource.getRepository(Game).count();
 
         return text({
           clips: total,
           starred,
-          games,
+          games: Number(withClips?.n ?? 0),
+          gamesKnownWithNoClips: known - Number(withClips?.n ?? 0),
           totalGb: sizes?.bytes ? Math.round((sizes.bytes / 1024 ** 3) * 10) / 10 : 0,
           totalHours: sizes?.seconds ? Math.round((sizes.seconds / 3600) * 10) / 10 : 0,
           oldest: sizes?.oldest ?? null,
