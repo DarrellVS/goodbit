@@ -281,6 +281,26 @@ export function stopServices(): void {
 }
 
 /**
+ * The same, but actually finished before the caller continues.
+ *
+ * `stopServices` fires both closes and returns, which is fine when the app is
+ * quitting and fatal when something is about to move the folder being watched.
+ * chokidar holds directory handles, and on Windows a held handle does not slow
+ * a delete down, it blocks it: the move copied a folder to its destination and
+ * then hung for ever trying to remove the source.
+ */
+export async function stopWatchers(): Promise<void> {
+  if (reconcileTimer) {
+    clearInterval(reconcileTimer);
+    reconcileTimer = null;
+  }
+
+  const closing = watcher?.close();
+  watcher = null;
+  await Promise.allSettled([closing, stopWatchingIncoming()]);
+}
+
+/**
  * Hold everything that looks at the library, for an operation that moves it.
  *
  * Not a nicety. The watcher fires `unlink` for every clip a move takes away
@@ -292,8 +312,19 @@ export function stopServices(): void {
  * So the library is deaf until the move has finished and the rows have caught
  * up with the files.
  */
-export function suspendLibrary(): void {
-  stopServices();
+export async function suspendLibrary(): Promise<void> {
+  await stopWatchers();
+
+  /*
+   * A closed watcher is not the same as a released handle.
+   *
+   * chokidar resolves `close()` before Windows has finished tearing down the
+   * `ReadDirectoryChangesW` handles underneath it, and a directory with a
+   * handle still open cannot be deleted. A short settle is the difference
+   * between a move that completes and one that stops halfway with the source
+   * folder still on disk.
+   */
+  await new Promise((resolve) => setTimeout(resolve, 750));
   console.log('[service] library suspended');
 }
 

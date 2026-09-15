@@ -97,9 +97,11 @@ export function useAppSettings() {
     return result?.closed ?? false;
   }
 
-  async function startMove(destination: string): Promise<void> {
-    await window.goodbit?.moveLibrary(destination);
+  /** Returns the job's id, so the caller can follow it rather than guess. */
+  async function startMove(destination: string): Promise<{ jobId: string } | undefined> {
+    const started = await window.goodbit?.moveLibrary(destination);
     await load();
+    return started;
   }
 
   return {

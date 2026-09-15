@@ -434,3 +434,17 @@ export async function revealFileInExplorer(filePath: string): Promise<void> {
   await axios.post('/api/clips/reveal-file', { filePath });
 }
 
+
+export interface JobView {
+  id: string;
+  status: 'running' | 'done' | 'error' | 'cancelled';
+  progress: number;
+  message?: string;
+  error?: string;
+}
+
+/** Everything running or recently finished, for a caller waiting on one of them. */
+export async function listJobs(): Promise<JobView[]> {
+  const { data } = await axios.get<JobView[]>('/clips/jobs/list');
+  return data;
+}

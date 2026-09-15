@@ -5,7 +5,7 @@ import { useAppSettings } from '../../composables/useAppSettings';
 import { usePublisher } from '../../composables/usePublisher';
 import SettingToggle from './SettingToggle.vue';
 import { useToastStore } from '../../stores/toast';
-import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
+import { getEncoderInfo, listJobs, type EncoderInfo } from '../../services/clips';
 
 /**
  * The settings the app itself runs on, folders, the publisher, autostart,
@@ -116,11 +116,50 @@ async function moveClipsFolder(): Promise<void> {
     }
   }
 
-  await startMove(picked.chosen);
-  toast.success(
+  const { jobId } = (await startMove(picked.chosen)) ?? {};
+  toast.info(
     'Leave OBS closed until this finishes, or a replay will land in the old folder.',
     'Moving your clips',
   );
+
+  if (jobId) void followMove(jobId);
+}
+
+/**
+ * Say what the move is doing, and say when it stops.
+ *
+ * Without this the toast is fired once and never updated, so a move that
+ * failed looks exactly like a move that is still going: the user waits on a
+ * message that is never coming. A library move is minutes and touches every
+ * file they own, which is the last place to leave somebody guessing.
+ */
+async function followMove(jobId: string): Promise<void> {
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    let job;
+    try {
+      job = (await listJobs()).find((entry) => entry.id === jobId);
+    } catch {
+      continue;
+    }
+
+    if (!job) return;
+
+    if (job.status === 'done') {
+      await load();
+      toast.success('Your clips are in the new folder, tags and dates included.', 'Move finished');
+      return;
+    }
+
+    if (job.status === 'error' || job.status === 'cancelled') {
+      toast.error(
+        job.error ?? 'The move stopped. Your clips are safe: each one is either in the old folder or the new one.',
+        'The move did not finish',
+      );
+      return;
+    }
+  }
 }
 
 async function savePublisher(): Promise<void> {

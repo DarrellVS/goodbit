@@ -169,7 +169,7 @@ export class MoveLibraryAction extends BaseAction<MoveLibraryInput, MoveLibraryO
       }
 
       // Deaf for the duration. See the note at the top of the file.
-      suspendLibrary();
+      await suspendLibrary();
 
       const folders = readdirSync(from, { withFileTypes: true })
         .filter((entry) => entry.isDirectory() && !isOurs(entry.name))
@@ -263,8 +263,33 @@ async function move(from: string, to: string): Promise<void> {
      * URL, so the library would re-analyse and re-thumbnail itself entirely.
      */
     await cp(from, to, { recursive: true, preserveTimestamps: true });
-    await rm(from, { recursive: true, force: true });
+
+    /*
+     * The copy is the move; removing the original is tidying up.
+     *
+     * A source folder Windows will not let go of must not take the rest of the
+     * library with it. The clip is already at its destination and the row
+     * already points there, so the worst case of a failed delete is a stale
+     * folder the user can remove themselves, and the worst case of waiting for
+     * it is a move that stops halfway through with no way to tell why.
+     */
+    await withTimeout(rm(from, { recursive: true, force: true }), 30_000).catch((error) => {
+      console.warn(
+        `[library] copied ${from} but could not remove the original:`,
+        error instanceof Error ? error.message : error,
+      );
+    });
   }
+}
+
+/** Never let one filesystem call hang a job that is holding the whole library. */
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms),
+    ),
+  ]);
 }
 
 /**
