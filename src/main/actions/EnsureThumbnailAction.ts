@@ -6,6 +6,7 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { GenerateThumbnailAction } from './GenerateThumbnailAction.js';
 import { cacheDir as cacheDirFor } from '../services/cachePaths.js';
+import { onceLimited } from '../services/mediaQueue.js';
 
 export type EnsureThumbnailInput = { clip: Clip } | { clipId: number };
 
@@ -40,7 +41,22 @@ export class EnsureThumbnailAction extends BaseAction<EnsureThumbnailInput, stri
     } catch {}
 
     if (needGenerate) {
-      await new GenerateThumbnailAction().execute({ inputPath: clip.filePath, outputPath: thumbPath, seekSec: 1, quality: 4 });
+      /*
+       * Queued, and once per thumbnail.
+       *
+       * Every card in the library asks for its own, and a card scrolled back
+       * into view asks again. Unqueued, that was one `ffprobe` and one
+       * `ffmpeg` per visible clip, dozens at a time, each holding a few
+       * hundred megabytes to decode a 3440x1440 source for a single frame.
+       */
+      await onceLimited(thumbPath, () =>
+        new GenerateThumbnailAction().execute({
+          inputPath: clip.filePath,
+          outputPath: thumbPath,
+          seekSec: 1,
+          quality: 4,
+        }),
+      );
     }
     return thumbPath;
   }

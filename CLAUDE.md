@@ -220,6 +220,42 @@ script used to do from inside OBS.
   `Headliners-Win64-Shipping` because that is what the old script called it, and writing the better
   name would leave two folders for one game.
 
+### An MCP server, for Claude
+
+`src/main/services/mcp/` lets Claude Code, Claude Desktop or Cursor work on the library. **Off
+unless the user turns it on**, in Settings, Connections.
+
+- **HTTP, not stdio, and that is forced.** A stdio server is spawned by the client, so it would be a
+  second process that does not own the database, the ffmpeg jobs or the watcher. The app is already
+  running and owns all three, so the client has to come to it.
+- **Which is a port again**, after the internal API deliberately moved off one. So it carries what
+  the pipe made unnecessary: bound to `127.0.0.1`, a bearer token checked before the request reaches
+  the protocol, and `enableDnsRebindingProtection` with an Origin allow list, which the MCP spec
+  makes a MUST rather than a suggestion. Verified: a request with `Origin: https://evil.example`
+  gets 403, one with no token gets 401.
+- **A server and a transport per request.** Holding one pair open answers the first request and then
+  returns 500 for ever, because a stateless transport carries no session and refuses to be
+  initialised twice. Building both per request is what the SDK expects and costs nothing.
+- **Eleven tools, not seventy six endpoints.** A model picks a tool by reading its description, so
+  the internal API is not mirrored. The tools are task shaped, and the interesting ones are the
+  things only this app knows: `suggest_highlights` is the `ebur128` analysis and the HUD modules.
+- **Nothing returns a video, and nothing deletes a clip.** Metadata and paths only. `trim_clip` is
+  the one destructive tool and its description says so.
+- **The token is not a defence against local software.** It lives in the reader's own Claude config,
+  so anything running as that user can read it. It stops web pages and other machines, which is what
+  a desktop app can honestly promise.
+- **Claude Desktop's config is not where the documentation says.** It ships as an MSIX package, so
+  Windows redirects its `%APPDATA%` into `%LOCALAPPDATA%/Packages/Claude_<id>/LocalCache/Roaming`.
+  Writing the documented path on a Store install produces a file the app never reads.
+
+### Keeping ffmpeg under control
+
+`services/mediaQueue.ts` caps how many ffmpegs exist at once and collapses duplicate work by key.
+**Every cache builder goes through it.** A thumbnail is one frame and costs nothing, which is why
+nothing limited it, and then a few hundred cards scrolled past and each asked for its own: dozens of
+`ffprobe` and `ffmpeg` pairs, each holding a few hundred megabytes to decode a 3440x1440 AV1 source
+for a single frame. Four at a time, and one job per output path.
+
 ### Encoding
 
 `services/encoders.ts` probes `h264_nvenc` / `qsv` / `amf` and `cuda` / `d3d11va` / `qsv` once per

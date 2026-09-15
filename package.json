@@ -1,7 +1,7 @@
 {
   "name": "goodbit",
   "productName": "GoodBit",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Finds the good bit in your game clips, and keeps it.",
   "author": "Darrell van Swinderen",
   "private": true,
@@ -24,6 +24,7 @@
     "check:packaged": "node scripts/smoke-packaged.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
     "sqlite3": "^5.1.7"

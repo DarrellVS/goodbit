@@ -50,6 +50,17 @@ export interface Settings {
    * every clip after it rather than only that one.
    */
   gameOverrides?: Record<string, string>;
+  /**
+   * The MCP server, for connecting Claude Code to this library.
+   *
+   * Off unless asked for: it is a listening socket into a database that holds
+   * the only copy of everybody's tags and notes. The token is generated once
+   * and kept, because a saved Claude Code config has to keep working across
+   * restarts.
+   */
+  mcpEnabled?: boolean;
+  mcpPort?: number;
+  mcpToken?: string;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
   /**

@@ -19,6 +19,10 @@ const api = {
   moveLibrary: (destination: string) => ipcRenderer.invoke('library:move', destination),
   canMoveLibrary: (destination: string) => ipcRenderer.invoke('library:canMove', destination),
   closeObs: (force?: boolean) => ipcRenderer.invoke('obs:close', force),
+  mcpState: () => ipcRenderer.invoke('mcp:state'),
+  mcpEnable: (enabled: boolean) => ipcRenderer.invoke('mcp:enable', enabled),
+  mcpRegister: (wanted: boolean, ids?: string[]) =>
+    ipcRenderer.invoke('mcp:register', wanted, ids),
 
   /**
    * Importing hands over paths, not bytes: form data cannot cross the bridge,

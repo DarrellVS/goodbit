@@ -22,6 +22,26 @@ interface GoodBitBridge {
   canMoveLibrary: (
     destination: string,
   ) => Promise<{ problem: string | null; obsRunning: boolean }>;
+  mcpState: () => Promise<{
+    enabled: boolean;
+    running: boolean;
+    url: string;
+    token: string;
+    command: string;
+    clients: Array<{
+      id: string;
+      label: string;
+      installed: boolean;
+      registered: boolean;
+      configPath: string | null;
+      note?: string;
+    }>;
+  }>;
+  mcpEnable: (enabled: boolean) => Promise<{ ok: boolean }>;
+  mcpRegister: (
+    wanted: boolean,
+    ids?: string[],
+  ) => Promise<Array<{ id: string; label: string; ok: boolean; error?: string }>>;
   closeObs: (
     force?: boolean,
   ) => Promise<{

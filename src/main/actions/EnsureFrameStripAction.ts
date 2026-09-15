@@ -5,6 +5,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { GenerateFrameStripAction } from './GenerateFrameStripAction.js';
+import { onceLimited } from '../services/mediaQueue.js';
 import { cacheDir as cacheDirFor } from '../services/cachePaths.js';
 
 export type EnsureFrameStripInput = { clip: Clip } | { clipId: number };
@@ -23,7 +24,16 @@ export class EnsureFrameStripAction extends BaseAction<EnsureFrameStripInput, st
     } catch {}
 
     if (need) {
-      await new GenerateFrameStripAction().execute({ inputPath: clip.filePath, outputPath: stripPath, frames: 10, scale: 320 });
+      // Through the same queue as the thumbnails: a strip is ten frames and
+      // the trim page asks for one per clip it shows.
+      await onceLimited(stripPath, () =>
+        new GenerateFrameStripAction().execute({
+          inputPath: clip.filePath,
+          outputPath: stripPath,
+          frames: 10,
+          scale: 320,
+        }),
+      );
     }
     return stripPath;
   }

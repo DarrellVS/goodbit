@@ -95,6 +95,23 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     env: { ...process.env, GOODBIT_USER_DATA: dataDir, ...env },
   });
 
+  /*
+   * The main process's own log, when asked for.
+   *
+   * A failing test can only see what the window renders, and most of what goes
+   * wrong in this app goes wrong in main: a scan that threw, a watcher that
+   * never started, a boot step that failed. Without this the only way to find
+   * out is to rebuild the scenario by hand outside Playwright, which is slow
+   * and gets the conditions subtly wrong.
+   *
+   *   GOODBIT_TEST_LOG=1 npx playwright test tests/e2e/trim.spec.ts
+   */
+  if (process.env.GOODBIT_TEST_LOG) {
+    const node = app.process();
+    node.stdout?.on('data', (chunk: Buffer) => process.stdout.write(`[main] ${chunk}`));
+    node.stderr?.on('data', (chunk: Buffer) => process.stdout.write(`[main!] ${chunk}`));
+  }
+
   const page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
 

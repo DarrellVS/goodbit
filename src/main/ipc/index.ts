@@ -91,6 +91,40 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return new CloseObsAction().execute({ force: force === true });
   });
 
+  /**
+   * The MCP server, and getting Claude Code pointed at it.
+   *
+   * Everything the dialog needs to say is returned rather than assumed, so the
+   * screen shows what is actually true of this machine: whether it is
+   * listening, at which URL, and whether Claude Code already knows about it.
+   */
+  ipcMain.handle('mcp:state', async () => {
+    const { mcpRunning, mcpUrl, mcpToken } = await import('../services/mcp/server.js');
+    const { clientStates, manualCommand } = await import('../services/mcp/register.js');
+    const { loadSettings } = await import('../settings.js');
+
+    return {
+      enabled: loadSettings().mcpEnabled === true,
+      running: mcpRunning(),
+      url: mcpUrl(),
+      token: mcpToken(),
+      command: manualCommand(),
+      clients: clientStates(),
+    };
+  });
+
+  ipcMain.handle('mcp:enable', async (_event, enabled: boolean) => {
+    const { setMcpEnabled } = await import('../services/mcp/server.js');
+    await setMcpEnabled(enabled === true);
+    return { ok: true };
+  });
+
+  /** No ids means every client actually on this machine, which is the one press. */
+  ipcMain.handle('mcp:register', async (_event, wanted: boolean, ids?: string[]) => {
+    const { setRegistered } = await import('../services/mcp/register.js');
+    return setRegistered(wanted === true, ids as never);
+  });
+
   ipcMain.handle('library:rescan', async () => {
     await reconcile();
     return { ok: true };

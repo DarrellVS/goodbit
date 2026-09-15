@@ -232,18 +232,51 @@ export async function startServices(): Promise<void> {
   // than regenerated.
   migrateLegacyCacheDir();
 
+  /*
+   * Watching starts before any of the work below, and that ordering is the
+   * feature rather than a detail.
+   *
+   * It used to come last, after every boot step had finished. That was fine
+   * while the steps were quick, and stopped being fine the moment one of them
+   * had to compile a helper: a clip that OBS wrote during those few seconds
+   * arrived before anything was listening, and nothing indexed it until the
+   * next sweep minutes later. The clip somebody saved while the app was
+   * starting is exactly the clip they are about to go looking for.
+   *
+   * Nothing is lost by starting early. chokidar is told to ignore what is
+   * already there, so the scan below still owns the existing library, and a
+   * file that arrives during the scan is now seen by both: the watcher queues
+   * it and the scan is idempotent.
+   */
+  startWatching();
+  watchIncoming();
+
   const steps: Array<[string, () => Promise<unknown>]> = [
     ['folder cleanup', () => cleanupEmptyFolders(VIDEOS_ROOT)],
     ['scan', () => reconcile()],
     ['games sync', () => new SyncGamesAction().execute()],
     ['creation dates', () => new SyncClipCreationDatesAction().execute()],
-    // Before the staging drain, so a clip left there by a crash has at least
-    // a chance of a name, and before OBS starts, so nothing is missed.
-    ['foreground sampler', () => startForegroundHistory()],
+    /*
+     * Not awaited. It compiles a helper the first time, and nothing else here
+     * depends on it: a clip that lands before the first sample is named
+     * Unsorted rather than making the rest of the boot wait.
+     */
+    ['foreground sampler', async () => void startForegroundHistory()],
     ['staging', () => drainIncoming()],
     // After the library is ready, because a clip that lands while this is
     // still scanning should find a watcher waiting for it.
     ['start OBS', () => startObsIfWanted()],
+    // Last, and only if asked for. Nothing else waits on it.
+    /*
+     * Imported here rather than at the top.
+     *
+     * The MCP server pulls in the SDK and, through it, enough of the module
+     * graph to change how the main bundle is split. A static import moved
+     * TypeORM's connection options reader into the entry chunk, which has no
+     * `__dirname`, and the app stopped loading before it drew a window. It is
+     * optional and it starts last; a dynamic import keeps it out of the way.
+     */
+    ['mcp', async () => (await import('./services/mcp/server.js')).startMcp()],
   ];
 
   // Publishing is optional now: with no publisher configured these would fail
@@ -262,9 +295,6 @@ export async function startServices(): Promise<void> {
       console.error(`[service] ${name} failed:`, error instanceof Error ? error.message : error);
     }
   }
-
-  startWatching();
-  watchIncoming();
 
   reconcileTimer = setInterval(() => void reconcile(), RECONCILE_INTERVAL_MS);
   console.log('[service] ready');
