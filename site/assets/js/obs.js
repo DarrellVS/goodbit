@@ -77,6 +77,19 @@
     )
     .join('');
 
+  /** Back to the two routes, from wherever the reader is. */
+  function toRoutes({ scroll = true } = {}) {
+    quick.hidden = true;
+    guided.hidden = true;
+    root.hidden = false;
+    try {
+      localStorage.removeItem(`${STORE}.route`);
+    } catch {
+      /* nothing to do */
+    }
+    if (scroll) root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   function show(index, { scroll = true } = {}) {
     at = Math.max(0, Math.min(steps.length - 1, index));
     steps.forEach((step, i) => {
@@ -85,7 +98,16 @@
     Array.from(rail.children).forEach((li, i) => {
       li.dataset.state = i === at ? 'current' : i < at ? 'done' : 'todo';
     });
-    prev.disabled = at === 0;
+    /*
+     * Never disabled.
+     *
+     * Back on the first step used to be dead, which left somebody who picked
+     * the by-hand route with no way to change their mind: the only link back
+     * to the two routes was on the last step, seven pages away from the
+     * decision they wanted to undo.
+     */
+    prev.disabled = false;
+    prev.textContent = at === 0 ? '← Both routes' : '← Back';
     next.textContent = at === steps.length - 1 ? 'Done' : 'Next →';
     counter.textContent = `Step ${at + 1} of ${steps.length}`;
     if (scroll) guided.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -96,7 +118,7 @@
     if (button) show(Number(button.dataset.stepTo));
   });
 
-  prev.addEventListener('click', () => show(at - 1));
+  prev.addEventListener('click', () => (at === 0 ? toRoutes() : show(at - 1)));
   next.addEventListener('click', () => {
     if (at === steps.length - 1) {
       window.location.hash = '#top';
@@ -131,15 +153,7 @@
     const back = event.target.closest('[data-restart]');
     if (!back) return;
     event.preventDefault();
-    quick.hidden = true;
-    guided.hidden = true;
-    root.hidden = false;
-    try {
-      localStorage.removeItem(`${STORE}.route`);
-    } catch {
-      /* nothing to do */
-    }
-    root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toRoutes();
   });
 
   /* Pick up where the reader left off, the way the publisher guide does. */
