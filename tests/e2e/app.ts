@@ -30,6 +30,14 @@ export interface LaunchOptions {
   legacyDatabase?: string;
   /** Reuse an existing profile, to test what survives a restart. */
   dataDir?: string;
+  /**
+   * Extra environment for the app process.
+   *
+   * `GOODBIT_OBS_DIR` is the one that matters: it points the OBS reader and
+   * writer at a directory of fixtures, so a test never touches the OBS the
+   * machine running it happens to have.
+   */
+  env?: Record<string, string>;
   /** Seed remembered window bounds. */
   window?: {
     x?: number;
@@ -41,7 +49,7 @@ export interface LaunchOptions {
 }
 
 export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
-  const { configured = true, legacyDatabase, dataDir: existing } = options;
+  const { configured = true, legacyDatabase, dataDir: existing, env = {} } = options;
 
   const base = existing ? dirname(existing) : mkdtempSync(join(tmpdir(), 'goodbit-test-'));
   const dataDir = existing ?? join(base, 'data');
@@ -84,7 +92,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
       ? { executablePath: packaged, args: [] }
       : { args: ['out/main/index.js'] }),
     cwd: process.cwd(),
-    env: { ...process.env, GOODBIT_USER_DATA: dataDir },
+    env: { ...process.env, GOODBIT_USER_DATA: dataDir, ...env },
   });
 
   const page = await app.firstWindow();

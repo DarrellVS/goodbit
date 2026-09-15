@@ -856,6 +856,65 @@ tbody tr:last-child td {
   color: var(--accent);
 }
 
+/*
+ * The OBS guide's choices: what the setup should do, ticked before the handoff.
+ *
+ * A fieldset rather than a list of links, because these travel: what is ticked
+ * here becomes the `steps` parameter on the `goodbit://` link, and arrives in
+ * the app as the boxes already ticked in its own dialog.
+ */
+.choices {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  padding: 1.1rem 1.25rem;
+  margin: 1.4rem 0 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.choices label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.choices input {
+  margin-top: 0.25rem;
+  accent-color: var(--accent);
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin-bottom: 1.6rem;
+  font-size: 0.92rem;
+  color: var(--ink-2);
+}
+
+.field-row input,
+.field-row select {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  margin: 0 0.35rem;
+}
+
+.field-row input:focus-visible,
+.field-row select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* The step rail: which step you are on, and how many are left. */
 .steps {
   display: flex;

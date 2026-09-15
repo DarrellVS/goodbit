@@ -5,6 +5,7 @@ import BaseToast from './components/Base/BaseToast.vue';
 import TitleBar from './components/App/TitleBar.vue';
 import UpdateBanner from './components/App/UpdateBanner.vue';
 import PublisherInviteDialog from './components/App/PublisherInviteDialog.vue';
+import ObsSetupInviteListener from './components/App/ObsSetupInviteListener.vue';
 
 // The tray menu opens screens, "trim the latest clip", and main only knows
 // paths, so the router is asked from here, the one place that always exists.
@@ -31,4 +32,5 @@ onUnmounted(() => {
   <BaseToast />
   <UpdateBanner />
   <PublisherInviteDialog />
+  <ObsSetupInviteListener />
 </template>

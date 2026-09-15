@@ -66,6 +66,18 @@ export type ServiceEvent =
       stage: 'cutting' | 'done' | 'failed';
       /** 0-100 through the cut. */
       percent: number;
+    }
+  /**
+   * Fetching OBS, or the script that sorts clips into folders. An installer is
+   * a hundred megabytes over whatever connection the user has, and the window
+   * needs something to show other than a spinner.
+   */
+  | {
+      type: 'obs-setup-progress';
+      stage: 'downloading' | 'running' | 'done' | 'failed';
+      /** 0-100 while downloading, absent otherwise. */
+      percent?: number;
+      message: string;
     };
 
 /**
@@ -181,6 +193,33 @@ function startWatching(): void {
 }
 
 /**
+ * Start OBS, if that is what the user asked for.
+ *
+ * GoodBit is already a background service: registered at login, alive in the
+ * tray, watching the folder. The program that fills that folder is the one
+ * thing it was not starting, so a replay key pressed after a reboot saved
+ * nothing until somebody remembered to open OBS.
+ *
+ * Minimised to the tray and with `--startreplaybuffer`, so the only visible
+ * difference is that pressing the key works.
+ */
+async function startObsIfWanted(): Promise<void> {
+  if (!loadSettings().startObsWithGoodbit) return;
+
+  const { LaunchObsAction } = await import('./actions/LaunchObsAction.js');
+  const result = await new LaunchObsAction().execute({
+    startReplayBuffer: true,
+    minimized: true,
+  });
+
+  console.log(
+    result.alreadyRunning
+      ? '[service] OBS is already running'
+      : `[service] started OBS: ${result.args.join(' ')}`,
+  );
+}
+
+/**
  * The boot sequence, each step isolated.
  *
  * One failing step must not stop the rest, a clip library that cannot reach
@@ -196,6 +235,9 @@ export async function startServices(): Promise<void> {
     ['scan', () => reconcile()],
     ['games sync', () => new SyncGamesAction().execute()],
     ['creation dates', () => new SyncClipCreationDatesAction().execute()],
+    // After the library is ready, because a clip that lands while this is
+    // still scanning should find a watcher waiting for it.
+    ['start OBS', () => startObsIfWanted()],
   ];
 
   // Publishing is optional now: with no publisher configured these would fail

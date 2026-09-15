@@ -39,6 +39,9 @@ npm run build          # typecheck, then all three bundles into out/
 npm run test:e2e       # builds, then Playwright drives the real app
 npm run build:win      # check:pre-release (typecheck + e2e) then electron-builder
 node scripts/backup-db.mjs   # verified snapshot of the library database
+node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
+node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
+node scripts/obs-apply-check.mjs  # apply the setup against a throw-away OBS directory
 node scripts/trim-check.mjs  # run the shipped trim on a real clip and check where it landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -134,6 +137,59 @@ a real library by bundling `src/main` with esbuild, so the bench and the app can
 Nothing belongs in the registry until those sheets show the thing it claims to find. Battlefield 6 is
 the only module: 2042's HUD is different and four recordings is too thin to check a second one
 against.
+
+### Setting OBS up, from inside GoodBit
+
+`src/main/services/obs/` reads and writes another program's configuration, which is why it is the
+most defensive code here. Everything it knows was checked against a real OBS on a real machine;
+none of it is from documentation, because OBS documents its plugin API and not its config files.
+
+**The rules.**
+
+- **Nothing is written while OBS runs.** It parses `basic.ini` once and rewrites the whole file from
+  memory at every save point, so an edit underneath it is discarded, and a profile folder created
+  while it runs stays invisible until restart.
+- **Nothing the user made is edited.** A profile and a scene collection of GoodBit's own, both named
+  `GoodBit`. The only keys touched outside them are `[Python] Path64bit` and `[General] FirstRun`.
+- **A preview before every write**, in OBS's own vocabulary, and a manifest of what was written so
+  `undoObsSetup` can put it back.
+- **The launch flags choose the profile** (`--profile GoodBit --collection GoodBit
+  --startreplaybuffer`), never `[Basic] Profile`. Switching somebody's active profile is not ours to
+  do.
+
+**Things that cost a debugging session each, and are load-bearing:**
+
+- **OBS cannot name a file after a game.** `os_generate_formatted_filename` takes the clock and the
+  video settings, and nothing else; an unknown token silently loses its `%`. A folder per game needs
+  code inside OBS, which is why Smart Replays is downloaded at all.
+- **The hotkey is the output's, not the frontend's.** `[Hotkeys] OBSBasic.SaveReplayBuffer` with a
+  `bindings` array is the documented shape and binds nothing on OBS 31: what works, and what the
+  hotkey list shows, is `ReplayBuffer={"ReplayBuffer.Save":[…]}`.
+- **Colour and encoder are one decision.** `ColorFormat=P010` with an 8 bit encoder makes the replay
+  buffer refuse to start, and OBS blames your drivers. `chooseEncoder` reads what the machine's own
+  profiles already ask for before trusting a probe.
+- **HDR has to be detected, not inferred.** Electron reports an HDR display as `P3/sRGB`, 8 bits per
+  channel. `displayQuery.ts` asks Windows through `QueryDisplayConfig`, with a C# shim PowerShell
+  compiles on demand, and gets the HDR state **and** the device path OBS stores for a display
+  capture in the same call.
+- **Recording an HDR screen as SDR is unrecoverable.** OBS tone maps and quantises at capture, so
+  the highlights are gone from the file. The reverse is recoverable: GoodBit tone maps every frame
+  it decodes.
+- **A new profile is not an empty profile.** OBS fills one with 1920x1080 at 30, downscaled to 720p.
+  Leaving `[Video]` alone is only right for a profile somebody else made.
+- **Python is GoodBit's own.** OBS loads 3.10 to 3.12 and refuses 3.13 with one line in its log. The
+  installer ignores `TargetDir` when the same minor is already installed, and upgrades *that* one
+  instead, so `pickPrivateVersion` chooses a minor the machine does not have. The embeddable and
+  NuGet builds have no Tkinter, which Smart Replays imports at module level.
+- **An empty `Untitled` collection is not "scenes you have built".** Deciding from "has a profile"
+  meant a fresh OBS got no scene and opened on a blank one.
+- **Installed means the executable exists**, not the config folder: OBS writes that on its first
+  run, so a machine that has just installed it has one and not the other.
+
+`scripts/obs-check.mjs` prints the diagnostic against the real OBS on this machine;
+`scripts/obs-apply-check.mjs` applies the whole thing against a throw-away `GOODBIT_OBS_DIR` and
+reads back what landed; `scripts/obs-backup.mjs` takes a verified copy of a real OBS configuration
+before any of this is trusted with it.
 
 ### Encoding
 

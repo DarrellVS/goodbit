@@ -81,6 +81,15 @@ test.describe('first run', () => {
 
       expect(ctx.page.url()).toContain('#/welcome');
       await expect(ctx.page.getByText('Welcome to GoodBit')).toBeVisible();
+
+      /*
+       * The first run is a wizard now, and it opens by saying what GoodBit is:
+       * a companion to OBS, which is the one thing a new user cannot work out
+       * from a folder picker. The folder is the step after it.
+       */
+      await expect(ctx.page.getByText('GoodBit is a companion to OBS')).toBeVisible();
+      await ctx.page.getByRole('button', { name: 'Continue' }).click();
+
       // The phrase also appears on the disabled confirm button; match the row.
       await expect(ctx.page.getByText('Required: choose a folder')).toBeVisible();
     } finally {

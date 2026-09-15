@@ -63,6 +63,7 @@ interface AppSettingsWire {
   publisherToken?: string;
   startAtLogin: boolean;
   keepRunningInTray: boolean;
+  startObsWithGoodbit?: boolean;
   migratedFromWebApp: boolean;
   learnFromTrims?: boolean;
   compressTrims?: boolean;

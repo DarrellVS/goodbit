@@ -30,6 +30,18 @@ export interface Settings {
   startAtLogin: boolean;
   /** Keep running in the tray when the window is closed. */
   keepRunningInTray: boolean;
+  /**
+   * Start OBS, minimised, with the replay buffer running, when GoodBit starts.
+   *
+   * The point of the whole app is that the last thirty seconds are always
+   * there when something happens, and that is only true if OBS is running with
+   * its buffer on. Leaving that to the user means the one time they forget is
+   * the time worth clipping.
+   *
+   * Turned on by the setup, because by then GoodBit has a profile to start OBS
+   * with. Off for anyone who would rather open OBS themselves.
+   */
+  startObsWithGoodbit?: boolean;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
   /**

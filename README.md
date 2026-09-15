@@ -6,10 +6,19 @@
 
 **You pressed the hotkey for a reason.**
 
-Thirty seconds of game lands on your disk every time you reach for the replay key, and about ten of
-them are the reason you reached. GoodBit watches the folder OBS records into, indexes every clip as
-it arrives, listens for which few seconds those were, and in a game it has been taught, reads what
-the game itself put on screen, then gives you somewhere to tag, trim and cut them together.
+**GoodBit is a companion to OBS.** OBS keeps the last thirty seconds of your game in memory and
+writes them to a file when you press a key. GoodBit is what happens next: it watches that folder,
+indexes every clip as it arrives, listens for which few seconds were the reason you reached for the
+key, and in a game it has been taught, reads what the game itself put on screen. Then it gives you
+somewhere to tag, trim and cut them together.
+
+It does not record anything itself, and it does not replace OBS. **It can set OBS up for you**,
+including the part OBS cannot do on its own: a folder per game. GoodBit's whole library is
+`<folder>/<Game name>/clip.mp4`, and OBS's filename format has no token for the game you are
+playing, so *Settings → Recording* offers to install OBS if it is missing, turn on the replay
+buffer, bind a key, and add the script that sorts each clip into a folder named after what you were
+playing. It writes into a profile of its own, leaves yours alone, and shows every line it would
+write first.
 
 Everything happens on your own machine. Nothing is uploaded unless you ask it to be.
 

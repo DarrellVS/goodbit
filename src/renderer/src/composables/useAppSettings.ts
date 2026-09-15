@@ -18,6 +18,8 @@ export interface AppSettings {
   publisherToken?: string;
   startAtLogin: boolean;
   keepRunningInTray: boolean;
+  /** Start OBS, minimised with its buffer running, when GoodBit starts. */
+  startObsWithGoodbit?: boolean;
   migratedFromWebApp: boolean;
   /** Re-encode a trim to share size. Unset means off. */
   compressTrims?: boolean;

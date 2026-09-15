@@ -64,8 +64,14 @@
             <h1>You pressed the hotkey for a reason.</h1>
             <p class="lede">
               Thirty seconds of game lands on your disk every time you reach for the replay key.
-              About ten of them are the reason you reached. GoodBit indexes every clip the moment
-              OBS finishes writing it, and listens for which few seconds those were.
+              About ten of them are the reason you reached. GoodBit is the companion to OBS that
+              keeps them: it indexes every clip the moment OBS finishes writing it, and listens for
+              which few seconds those were.
+            </p>
+            <p class="fineprint">
+              It does not record anything itself, and it can
+              <a href="obs.html">set OBS up for you</a>, including the folder-per-game part OBS
+              cannot do on its own.
             </p>
 
             <div class="actions">
@@ -432,6 +438,11 @@
                 Anything that writes video files into one folder per game will do, including
                 ShadowPlay, Medal's export folder, or a script of your own. The only rule is that the
                 top-level folder name is taken as the game name.
+              </p>
+              <p>
+                OBS is the one it sets up for you, though: one button turns on the replay buffer,
+                binds a key and adds the script that makes those per-game folders, into a profile of
+                its own. <a href="obs.html">How that works</a>.
               </p>
             </div>
             <div>

@@ -6,18 +6,25 @@ import SettingsSidebar from '../components/Settings/SettingsSidebar.vue';
 import GeneralSettings from '../components/Settings/GeneralSettings.vue';
 import AppSettings from '../components/Settings/AppSettings.vue';
 import GamesSettings from '../components/Settings/GamesSettings.vue';
+import RecordingSettings from '../components/Settings/RecordingSettings.vue';
 import PlaybackSettings from '../components/Settings/PlaybackSettings.vue';
 import AdvancedSettings from '../components/Settings/AdvancedSettings.vue';
 
 const route = useRoute();
 const router = useRouter();
 
-const VALID_SECTIONS = ['general', 'app', 'games', 'playback', 'advanced'] as const;
+const VALID_SECTIONS = ['general', 'app', 'recording', 'games', 'playback', 'advanced'] as const;
 type SettingSection = typeof VALID_SECTIONS[number];
 
 const sections = [
   { id: 'general', label: 'General', icon: 'material-symbols:settings', description: 'General application settings' },
   { id: 'app', label: 'App', icon: 'material-symbols:tune', description: 'Folders, startup and publishing' },
+  {
+    id: 'recording',
+    label: 'Recording',
+    icon: 'material-symbols:fiber-manual-record',
+    description: 'OBS, the replay buffer, and a folder per game',
+  },
   { id: 'games', label: 'Games', icon: 'material-symbols:videogame-asset', description: 'Hide games from your library' },
   { id: 'playback', label: 'Playback', icon: 'material-symbols:play-circle', description: 'Video playback preferences' },
   { id: 'advanced', label: 'Advanced', icon: 'material-symbols:tune', description: 'Advanced configuration' },
@@ -60,6 +67,7 @@ const { resetToDefaults, exportSettings, importSettings } = useSettingsManagemen
       <div class="max-w-4xl mx-auto p-8">
         <GeneralSettings v-if="activeSection === 'general'" />
         <AppSettings v-if="activeSection === 'app'" />
+        <RecordingSettings v-if="activeSection === 'recording'" />
         <GamesSettings v-if="activeSection === 'games'" />
         <PlaybackSettings v-if="activeSection === 'playback'" />
         <AdvancedSettings v-if="activeSection === 'advanced'" />

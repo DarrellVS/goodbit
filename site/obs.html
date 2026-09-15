@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Setting up OBS | GoodBit</title>
+    <meta
+      name="description"
+      content="GoodBit is a companion to OBS: OBS records, GoodBit keeps what you record. Turn on the replay buffer, bind a key, and get a folder per game. One button from inside the app, or by hand here."
+    />
+    <link rel="icon" href="assets/img/icon.png" />
+    <link rel="canonical" href="https://darrellvs.github.io/goodbit/obs.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GoodBit" />
+    <meta property="og:url" content="https://darrellvs.github.io/goodbit/obs.html" />
+    <meta property="og:title" content="Setting up OBS | GoodBit" />
+    <meta
+      property="og:description"
+      content="The replay buffer, a hotkey, and a folder per game. One button, or step by step."
+    />
+    <meta property="og:image" content="https://darrellvs.github.io/goodbit/assets/img/og-card.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://darrellvs.github.io/goodbit/assets/img/og-card.jpg" />
+    <meta name="theme-color" content="#08090a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header" id="top">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <img src="assets/img/icon.png" alt="" width="24" height="24" />
+          GoodBit
+        </a>
+        <nav class="site-nav" aria-label="Sections">
+          <a href="docs.html" data-small-hide>Documentation</a>
+          <a href="https://github.com/DarrellVS/goodbit" data-optional target="_blank" rel="noopener">Source</a>
+          <a class="cta" href="index.html#get">Get it</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="wrap guide">
+      <article class="prose">
+        <p class="tag">Required, and it takes a minute</p>
+        <h1>GoodBit records nothing. OBS does.</h1>
+        <p>
+          GoodBit is a companion to OBS. <strong>OBS</strong> keeps the last thirty seconds of your
+          game in memory and writes them to a file when you press a key.
+          <strong>GoodBit</strong> watches the folder those files land in: it sorts them by game,
+          measures where the loud part was, and gives you somewhere to trim, tag and share them.
+        </p>
+        <p>
+          Three things have to be true before a clip appears in your library, and the third is the
+          one nobody finds on their own.
+        </p>
+        <ol>
+          <li><strong>The replay buffer is running</strong>, and a key saves it.</li>
+          <li><strong>OBS writes where GoodBit watches</strong>, the same folder for both.</li>
+          <li>
+            <strong>Each clip lands in a folder named after the game.</strong> OBS cannot do this.
+            Its filename format takes the clock and the video settings and nothing else, so without
+            help every clip lands in one folder and your whole library looks like a single game.
+          </li>
+        </ol>
+
+        <div class="route" id="routes">
+          <button type="button" data-route="app">
+            <b>Let GoodBit do it</b>
+            <span>
+              One button in the app. It makes its own OBS profile, leaves yours alone, and shows you
+              every line it would write before it writes any.
+            </span>
+            <span class="who">If you would rather not learn OBS today</span>
+          </button>
+          <button type="button" data-route="manual">
+            <b>Do it by hand</b>
+            <span>
+              Seven steps in OBS's own settings. Worth reading either way, because it says what the
+              button is doing and why the last step exists at all.
+            </span>
+            <span class="who">If you already use OBS</span>
+          </button>
+        </div>
+
+        <!-- ------------------------------------------------ the one button -->
+        <section class="quick" id="quick" hidden>
+          <h2>One button, and a list of what it changes</h2>
+          <p>
+            In the app: <em>Settings → Recording</em>, or the first run, which walks the same
+            ground. There are two routes inside it. <strong>Quick setup</strong> takes your main
+            screen, thirty seconds, F8, your usual sound and a folder per game, and shows you the
+            four lines it has decided. <strong>Step by step</strong> asks about each of them.
+          </p>
+          <p>
+            <strong>OBS itself is part of it.</strong> With no OBS on the machine, the first step
+            installs it from the OBS project's own release: Windows asks for permission, and
+            nothing else needs clicking. It also brings its own Python for the sorting script, into
+            its own folder, because OBS only loads Python 3.10 to 3.12 and says so nowhere except
+            its log.
+          </p>
+
+          <p>Tick what you want it to do. The link at the bottom opens the app with these chosen.</p>
+
+          <fieldset class="choices" id="choices">
+            <label><input type="checkbox" value="profile" checked /> Create an OBS profile called GoodBit</label>
+            <label><input type="checkbox" value="buffer" checked /> Turn the replay buffer on</label>
+            <label><input type="checkbox" value="hotkey" checked /> Bind a key to Save Replay</label>
+            <label><input type="checkbox" value="scene" checked /> Create a scene that captures the game</label>
+            <label><input type="checkbox" value="desktop" checked /> Capture the screen too, not only fullscreen games</label>
+            <label><input type="checkbox" value="script" checked /> Sort clips into a folder per game</label>
+          </fieldset>
+
+          <div class="field-row">
+            <label>
+              Keep the last
+              <input type="number" id="buffer-seconds" value="30" min="5" max="300" /> seconds
+            </label>
+            <label>
+              Save with
+              <select id="hotkey">
+                <option>F8</option>
+                <option>F9</option>
+                <option>F10</option>
+                <option>F12</option>
+              </select>
+            </label>
+          </div>
+
+          <!--
+            The handoff, the same shape as the publisher guide's. GoodBit answers
+            to `goodbit://`, and the link only fills the dialog in: see
+            `src/main/deeplink.ts` for why a link is never allowed to apply
+            anything on its own.
+          -->
+          <div class="handoff">
+            <a class="button primary" id="deeplink" href="#">Set it up in GoodBit</a>
+            <p id="deeplink-note">
+              Opens the app and shows you the changes. Nothing is written until you press Apply
+              there.
+            </p>
+          </div>
+
+          <h3>What it actually writes</h3>
+          <p>
+            A profile folder of its own and a scene collection of its own, both called GoodBit, plus
+            two keys in OBS's own config: where Python is, and the flag that stops OBS opening its
+            auto-configuration wizard over the settings this has just chosen. It never edits a
+            profile you made, never switches the profile OBS opens with, and keeps a record of every
+            key it set so it can put things back.
+          </p>
+          <p>
+            The profile carries the resolution and frame rate of the screen you picked, at full
+            size, and its colour. If that screen is in HDR mode it records in HDR with a ten bit
+            encoder, because recording an HDR display as standard colour clips the highlights in the
+            file itself and nothing afterwards can bring them back. The scene has game capture on
+            top, the screen underneath for anything that is not a fullscreen game, and whichever
+            audio devices you chose, each on its own fader.
+          </p>
+          <p>
+            It refuses to write anything while OBS is open, and says so. OBS holds its settings in
+            memory and rewrites the whole file when it saves, so an edit made underneath it is
+            thrown away rather than merged.
+          </p>
+          <p><a href="#top" data-restart>← Back to the two routes</a></p>
+        </section>
+
+        <!-- --------------------------------------------------- by hand ---- -->
+        <section class="guided" id="guided" hidden>
+          <ol class="steps" id="steps"></ol>
+
+          <section class="step" data-step="Install OBS" hidden>
+            <h2>Install OBS</h2>
+            <p>
+              Free and open source, from <a href="https://obsproject.com/download" target="_blank" rel="noopener">obsproject.com</a>.
+              On Windows you can also run
+              <code>winget install -e --id OBSProject.OBSStudio</code>.
+            </p>
+            <p>
+              Open it once after installing. It writes its configuration on first run, and nothing
+              below exists until it has.
+            </p>
+          </section>
+
+          <section class="step" data-step="The folder" hidden>
+            <h2>One folder, used by both</h2>
+            <p>
+              In OBS: <em>Settings → Output → Recording → Recording Path</em>. In GoodBit:
+              <em>Settings → App → Clips folder</em>. Point them at the same place.
+            </p>
+            <p>
+              GoodBit reads <code>&lt;that folder&gt;/&lt;Game name&gt;/clip.mp4</code>. The folder
+              name is the game name, which is what the last step is for.
+            </p>
+          </section>
+
+          <section class="step" data-step="Replay buffer" hidden>
+            <h2>Turn on the replay buffer</h2>
+            <p>
+              <em>Settings → Output</em>. In Simple mode, tick <strong>Enable Replay Buffer</strong>
+              and set <strong>Maximum Replay Time</strong> to about 30 seconds. That is how much of
+              the past OBS keeps in memory, ready to write out.
+            </p>
+            <p>
+              Then press <strong>Start Replay Buffer</strong> in the main window, or pass
+              <code>--startreplaybuffer</code> when launching OBS so it is always on.
+            </p>
+          </section>
+
+          <section class="step" data-step="Hotkey" hidden>
+            <h2>Bind a key to Save Replay</h2>
+            <p>
+              <em>Settings → Hotkeys → Save Replay</em>. F8 is a common choice. This is the key you
+              press after something good happens.
+            </p>
+            <p>
+              It works while the game has focus, which is the whole point, so pick something no game
+              uses.
+            </p>
+          </section>
+
+          <section class="step" data-step="Capture" hidden>
+            <h2>Capture the game</h2>
+            <p>
+              Add a <strong>Game Capture</strong> source and leave its mode on
+              <em>Capture any fullscreen application</em>. It then needs no per-game setup and no
+              choice of monitor.
+            </p>
+            <p>
+              Add a <strong>Desktop audio</strong> source too, or your clips are silent. If a game
+              refuses to be captured this way, a Display Capture source underneath it is the usual
+              fallback.
+            </p>
+          </section>
+
+          <section class="step" data-step="A folder per game" hidden>
+            <h2>A folder per game</h2>
+            <p>
+              This is the part OBS cannot do. Its filename format has 23 tokens and every one of
+              them is a clock, a resolution or a frame rate; there is no token for the game you are
+              playing. Typing <code>%GAME</code> silently writes the literal text
+              <code>GAME</code> into every filename.
+            </p>
+            <p>
+              The answer everyone uses is
+              <a href="https://obsproject.com/forum/resources/smart-replays.2039/" target="_blank" rel="noopener">Smart Replays</a>,
+              an OBS script by qvvonk, AGPL-3.0. It watches which application is in front when you
+              press the key and moves the saved clip into a folder named after it.
+            </p>
+            <ol>
+              <li>
+                Install <strong>Python between 3.10 and 3.12</strong>, with the
+                <strong>tcl/tk</strong> option ticked in the installer. Not newer: OBS refuses to
+                load 3.13 and reports that in its log and nowhere else. The script imports tkinter
+                at startup, so a build without tcl/tk does not load at all.
+              </li>
+              <li>
+                In OBS: <em>Tools → Scripts → Python Settings</em>, and point it at that Python
+                folder. OBS runs no script at all until this is set.
+              </li>
+              <li>
+                Download <code>smart_replays.py</code> from
+                <a href="https://github.com/qvvonk/smart_replays" target="_blank" rel="noopener">its repository</a>
+                and add it under <em>Tools → Scripts</em> with the <code>+</code> button.
+              </li>
+              <li>
+                Set <strong>Base path for clips</strong> to the same folder as before. It must be on
+                the same drive as OBS's recording path, because the script moves files rather than
+                copying them.
+              </li>
+              <li>Leave <strong>Sort clips into folders</strong> ticked. That is the whole point.</li>
+              <li>
+                Add an <strong>alias</strong> per game so the folder gets a name a person would
+                recognise. The format is
+                <code>C:\path\to\game > Game Name</code>, and a folder works as well as an
+                executable, so one line covers whatever the game's exe is called.
+              </li>
+            </ol>
+            <p class="muted">
+              Two things worth knowing before you rely on it. Its
+              <em>Restart every</em> option is on by default and has an open crash report against
+              it, so consider setting it to 0. And it reads which process is in front by opening a
+              handle to it, so if you play something with strict anti-cheat and would rather it did
+              not, its <em>name from the current scene</em> mode never touches another process.
+            </p>
+          </section>
+
+          <section class="step" data-step="Check it" hidden>
+            <h2>Check it works</h2>
+            <p>
+              Start a game, press your key, and alt-tab. A folder named after the game should appear
+              in your clips folder, with one file in it, and GoodBit should already be showing it:
+              it watches that folder whether or not its window is open.
+            </p>
+            <p>
+              If nothing appears, open <em>Settings → Recording</em> in GoodBit. It reads OBS's own
+              configuration and names the setting that is wrong, in a sentence, rather than leaving
+              you to guess which of the six above it was.
+            </p>
+            <p><a href="#top" data-restart>← Back to the two routes</a></p>
+          </section>
+
+          <div class="nav">
+            <button type="button" id="prev">← Back</button>
+            <span class="spacer"></span>
+            <span class="muted" id="counter"></span>
+            <button type="button" id="next" class="primary">Next →</button>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>GoodBit</span>
+        <span class="spacer"></span>
+        <a href="index.html">Home</a>
+        <a href="docs.html">Documentation</a>
+        <a href="https://github.com/DarrellVS/goodbit" target="_blank" rel="noopener">Source</a>
+      </div>
+    </footer>
+
+    <script src="assets/js/site.js" defer></script>
+    <script src="assets/js/obs.js" defer></script>
+  </body>
+</html>

@@ -11,6 +11,7 @@ import CarouselSlide from '../components/App/CarouselSlide.vue';
 import CarouselNavigation from '../components/App/CarouselNavigation.vue';
 import ThumbnailStrip from '../components/App/ThumbnailStrip.vue';
 import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
+import ObsNotReadyBanner from '../components/App/ObsNotReadyBanner.vue';
 
 const { todayClips, clipsStore } = useTodayClips();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
@@ -63,6 +64,9 @@ watch(todayClips, async () => {
 
 <template>
   <div class="p-6 space-y-6 max-w-7xl mx-auto">
+    <!-- Same reason as the library: this is where the waiting happens. -->
+    <ObsNotReadyBanner class="mx-0 mt-0" />
+
     <div class="embla relative group">
       <div class="embla__viewport" ref="emblaRef">
         <div class="embla__container">

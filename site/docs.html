@@ -54,7 +54,9 @@
         <p>Contents</p>
         <ol>
           <li><a href="#install">Installing</a></li>
+          <li><a href="#companion">GoodBit and OBS</a></li>
           <li><a href="#first-run">First run</a></li>
+          <li><a href="obs.html">Setting up OBS →</a></li>
           <li><a href="#folders">Folder layout</a></li>
           <li><a href="#library">The library</a></li>
           <li><a href="#highlights">How the highlight works</a></li>
@@ -93,9 +95,74 @@
           </p>
         </div>
 
+        <h2 id="companion">GoodBit and OBS</h2>
+        <p>
+          GoodBit does not record anything. <strong>OBS</strong> does: it holds the last thirty
+          seconds of your game in memory and writes them to a file when you press a key.
+          <strong>GoodBit</strong> is everything after that, and three things have to be true before
+          a single clip appears.
+        </p>
+        <ol>
+          <li>OBS's <strong>replay buffer</strong> is running, and a key saves it.</li>
+          <li>OBS <strong>writes where GoodBit watches</strong>, the same folder for both.</li>
+          <li>
+            Each clip lands in a <strong>folder named after the game</strong>, because here that
+            folder name <em>is</em> the game name.
+          </li>
+        </ol>
+        <p>
+          The third is not something OBS can do. Its filename format takes the clock and the video
+          settings and nothing else, with no token for the game in front of you, so left alone it
+          drops every clip into one folder and the whole library reads as a single game. The usual
+          answer is an OBS script, and GoodBit can install and configure one for you.
+        </p>
+        <p>
+          <strong>Settings → Recording</strong> reads OBS's own configuration and says, in a
+          sentence, which of the three is wrong. The same screen sets it up, and so does the first
+          run. There are two routes: <em>Quick</em>, which takes sensible answers and shows you what
+          it decided, and <em>Step by step</em>, which asks.
+        </p>
+        <p>What it does, given the chance:</p>
+        <ul>
+          <li>
+            <strong>Installs OBS</strong> if the machine has none, from the OBS project's own
+            release. Windows asks for permission; there is no installer to click through, and no
+            auto-configuration wizard afterwards.
+          </li>
+          <li>
+            <strong>Makes a profile and a scene collection of its own</strong>, both called GoodBit,
+            with the replay buffer on, a key bound, and your screen's real resolution and frame
+            rate rather than OBS's 1080p30 default.
+          </li>
+          <li>
+            <strong>Records in HDR when your screen is in HDR</strong>, with an encoder that can do
+            ten bit. An HDR display recorded as standard colour is clipped in the file itself, and
+            that is the washed out look nothing can undo later.
+          </li>
+          <li>
+            <strong>Captures the game and the screen</strong>, so a clip of a browser or a windowed
+            game is not black, plus whichever audio devices you pick, each on its own fader.
+          </li>
+          <li>
+            <strong>Sorts clips into a folder per game</strong>, with the script that does it and a
+            private copy of the Python it needs, and names the folders after the games already on
+            your machine.
+          </li>
+        </ul>
+        <p>
+          It never edits a profile you made, never changes which profile OBS opens with, and shows
+          every file and key it would touch before it writes anything. Undo is in the same screen.
+          There is a <a href="obs.html">guide with both routes</a>, the button and by hand.
+        </p>
+
         <h2 id="first-run">First run</h2>
         <p>
-          GoodBit asks for one thing: the folder your recordings land in. In OBS that is
+          The first run walks the same ground: what GoodBit is, the folder both programs share, OBS
+          itself if it is missing, and then the recording setup. Everything past the folder can be
+          skipped and picked up later in Settings.
+        </p>
+        <p>
+          The folder is the one thing it cannot guess. In OBS that is
           <em>Settings → Output → Recording → Recording Path</em>, or the replay buffer path if you
           keep those separately.
         </p>

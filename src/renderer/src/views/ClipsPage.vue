@@ -12,6 +12,7 @@ import { useClipListKeyboardShortcuts } from '../composables/useClipListKeyboard
 import { useClipListHandlers } from '../composables/useClipListHandlers';
 import type { Clip } from '../types/clip';
 import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
+import ObsNotReadyBanner from '../components/App/ObsNotReadyBanner.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
 import ClipsPaginationControls from '../components/App/ClipsPaginationControls.vue';
 import FloatingControlsBar from '../components/App/FloatingControlsBar.vue';
@@ -207,6 +208,13 @@ onMounted(() => {
       v-model:view-mode="viewMode"
       :total-count="total"
     />
+
+    <!--
+      Why the library is empty, said where the emptiness is. Settings has the
+      whole diagnostic, but nobody opens Settings to find out why nothing is
+      happening.
+    -->
+    <ObsNotReadyBanner />
 
     <div class="p-6 pb-16 space-y-6">
       <ClipsDisplay
