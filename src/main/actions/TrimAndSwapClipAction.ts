@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fsPromises from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
+import { cancelSource } from '../services/mediaQueue.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { TrimVideoAction, type TrimMode } from './TrimVideoAction.js';
@@ -119,8 +120,27 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     }
 
     try { await fsPromises.rm(bakPath, { force: true }); } catch {}
-    await fsPromises.rename(clip.filePath, bakPath);
-    await fsPromises.rename(tmpPath, clip.filePath);
+
+    /*
+     * Nothing may be reading the file while it is swapped, so stop it.
+     *
+     * The trim page asks for a frame strip of the clip it is showing, which is
+     * an ffmpeg holding a read handle on exactly the file about to be renamed.
+     * On Windows an open handle makes `rename` fail outright with `EBUSY`, and
+     * the user saw the cut finish and then an error naming two paths they have
+     * never heard of.
+     *
+     * Cancelled rather than waited for. Every job in that queue is building a
+     * cache of this file, and this file is about to become a different one, so
+     * anything still running is producing a picture of a clip that will not
+     * exist in a moment. Waiting would delay the cut to finish work that has
+     * to be thrown away and redone regardless.
+     */
+    say('cutting', 100);
+    await cancelSource(clip.filePath);
+
+    await swap(clip.filePath, bakPath);
+    await swap(tmpPath, clip.filePath);
     try { await fsPromises.rm(bakPath, { force: true }); } catch {}
 
     /*
@@ -172,5 +192,29 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     }
 
     return { ...trimmed, sizeBytes: st.size };
+  }
+}
+
+/**
+ * Rename, and keep trying for a moment.
+ *
+ * Waiting for our own jobs covers the cause we know about. It cannot cover a
+ * virus scanner opening the file the instant ffmpeg closes it, or a `<video>`
+ * that has not let go yet, and both produce the same `EBUSY` on Windows. These
+ * clear in milliseconds, so a few short retries turn a failed trim into a
+ * slightly slower one.
+ */
+async function swap(from: string, to: string): Promise<void> {
+  const BUSY = new Set(['EBUSY', 'EPERM', 'EACCES']);
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await fsPromises.rename(from, to);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? '';
+      if (!BUSY.has(code) || attempt >= 20) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
   }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import GameArt from './GameArt.vue';
 import { useGamesList } from '../../composables/useGamesList';
 import { useGameVisibility } from '../../composables/useGameVisibility';
 import { useGamesStore } from '../../stores/games';
@@ -48,6 +49,15 @@ function toggleShowAll() {
   showAllGames.value = !showAllGames.value;
 }
 
+/** Hand the appid to Steam and let Steam decide the rest. */
+async function playOnSteam(game: Game) {
+  openMenuGame.value = null;
+  const result = await window.goodbit?.steamLaunch(game.game);
+  if (!result?.launched) {
+    toastStore.error('Steam does not know this game.', 'Could not launch');
+  }
+}
+
 async function hideGame(game: Game) {
   await setHidden(game.game, true, game.displayName || game.game).catch(() => {});
 }
@@ -94,7 +104,11 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         @click="!props.disabled && emit('select-game', '')"
       >
         <div class="flex items-center gap-3">
-          <div class="w-2 h-2 rounded-full bg-orange-500" />
+          <!-- The same sixteen pixel box every game row uses, so All lines up
+               with them rather than sitting two pixels to the left. -->
+          <span class="w-4 h-4 flex items-center justify-center flex-shrink-0">
+            <span class="w-2 h-2 rounded-full bg-orange-500" />
+          </span>
           <span class="font-medium">All</span>
         </div>
       </button>
@@ -112,7 +126,21 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
           class="flex items-center gap-3 min-w-0 flex-1"
           @click="!props.disabled && emit('select-game', game.game)"
         >
-          <div class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
+          <!--
+            The game's own icon where Steam has cached one, and the dot the
+            sidebar has always used where it has not. Most libraries are a mix
+            of both, so neither can be the only case that looks right.
+          -->
+          <!--
+            Both branches occupy the same box, or the rows do not line up: an
+            icon is sixteen pixels and the dot is eight, so a mixed list looked
+            ragged down the left edge.
+          -->
+          <span class="w-4 h-4 flex items-center justify-center flex-shrink-0">
+            <GameArt :game="game.game" kind="icon" class="w-4 h-4 rounded">
+              <span class="w-2 h-2 rounded-full bg-orange-500" />
+            </GameArt>
+          </span>
           <span 
             class="font-medium truncate" 
             :title="game.displayName || game.game || 'Unknown'"
@@ -148,6 +176,18 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
                 align="end"
                 :side-offset="4"
               >
+                <!--
+                  Only for a game Steam actually knows. Everything else in this
+                  library is a game from another store, or a browser.
+                -->
+                <DropdownMenuItem
+                  v-if="game.steamAppId"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+                  @click="playOnSteam(game)"
+                >
+                  <Icon icon="mdi:steam" class="text-base" />
+                  <span>Play on Steam</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
                   @click="openRenameDialog(game)"

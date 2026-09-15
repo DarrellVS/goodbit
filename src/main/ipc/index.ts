@@ -125,6 +125,27 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return setRegistered(wanted === true, ids as never);
   });
 
+  /**
+   * Launch a game through Steam.
+   *
+   * `rungameid` rather than `run`, because `steam://run/<id>//<args>/` passes
+   * its tail to the game as launch parameters. The appid is checked against
+   * digits before it is put anywhere near a URL, and it comes from the
+   * database rather than from the caller, so a renderer cannot ask Steam to
+   * run something by handing over a string.
+   */
+  ipcMain.handle('steam:launch', async (_event, game: string) => {
+    const { AppDataSource } = await import('../data-source.js');
+    const { Game } = await import('../entity/Game.js');
+
+    const row = await AppDataSource.getRepository(Game).findOneBy({ name: String(game) });
+    const appId = row?.steamAppId ?? '';
+    if (!/^\d+$/.test(appId)) return { launched: false, reason: 'not a Steam game' };
+
+    await shell.openExternal(`steam://rungameid/${appId}`);
+    return { launched: true, appId };
+  });
+
   ipcMain.handle('library:rescan', async () => {
     await reconcile();
     return { ok: true };

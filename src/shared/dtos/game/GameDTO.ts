@@ -9,6 +9,14 @@ export class GameDTO extends BaseDTO<GameDTO> {
   displayName!: string | null;
   clipCount!: number;
   hidden!: boolean;
+  /**
+   * The Steam appid, when this game is one.
+   *
+   * Carried so the client can ask for artwork and offer to launch the game,
+   * without the client ever having to work out which game a folder is. Null
+   * for everything that is not a Steam game, which is an ordinary answer.
+   */
+  steamAppId!: string | null;
 
   /**
    * Create a GameDTO from query result
@@ -19,6 +27,7 @@ export class GameDTO extends BaseDTO<GameDTO> {
     dto.displayName = result.displayName ?? null;
     dto.clipCount = parseInt(result.clipCount, 10) || 0;
     dto.hidden = result.hidden === true || result.hidden === 1;
+    dto.steamAppId = result.steamAppId ?? null;
     return dto;
   }
 

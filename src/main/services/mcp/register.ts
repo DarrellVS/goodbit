@@ -28,6 +28,14 @@ export type ClientId = 'claude-code' | 'claude-desktop' | 'cursor';
 interface ClientTarget {
   id: ClientId;
   label: string;
+  /**
+   * False when this client cannot be set up by writing its config file.
+   *
+   * It is still listed, because the person has it and wants to use it. What
+   * changes is that GoodBit hands over the address instead of writing a file
+   * the client will reject.
+   */
+  writable: boolean;
   /** Where the config lives, or null when this client is not on the machine. */
   configPath: () => string | null;
   /**
@@ -83,6 +91,7 @@ export const CLIENTS: ClientTarget[] = [
   {
     id: 'claude-code',
     label: 'Claude Code',
+    writable: true,
     configPath: () => path.join(process.env.CLAUDE_CONFIG_DIR || home(), '.claude.json'),
     installed() {
       const file = this.configPath();
@@ -111,11 +120,27 @@ export const CLIENTS: ClientTarget[] = [
       const file = desktopConfigPath();
       return file !== null && existsSync(path.dirname(file));
     },
-    note: 'Claude Desktop reads this at startup, and only recent versions load a server they do not launch themselves.',
+    /*
+     * Listed, never written, and that is not a limitation of this code.
+     *
+     * `claude_desktop_config.json` describes servers Claude Desktop starts
+     * itself, so every entry needs a `command` to run. An entry pointing at a
+     * URL is rejected: the app shows "the following entries are not valid MCP
+     * server configurations and were skipped" at every launch, which is a
+     * worse outcome than doing nothing.
+     *
+     * GoodBit is already running and owns the database, so a `command` is
+     * exactly what it cannot offer. The route that does work is Claude
+     * Desktop's own connector settings, where a person pastes the address, so
+     * that is what the screen gives them.
+     */
+    writable: false,
+    note: 'Claude Desktop only starts servers itself, so it cannot be set up from here. Add it in Claude Desktop under Settings, Connectors, using the address below.',
   },
   {
     id: 'cursor',
     label: 'Cursor',
+    writable: true,
     configPath: () => path.join(home(), '.cursor', 'mcp.json'),
     installed() {
       return existsSync(path.join(home(), '.cursor'));
@@ -136,6 +161,7 @@ export interface ClientState {
   id: ClientId;
   label: string;
   installed: boolean;
+  writable: boolean;
   registered: boolean;
   configPath: string | null;
   note?: string;
@@ -171,7 +197,9 @@ export function clientStates(): ClientState[] {
       id: client.id,
       label: client.label,
       installed: client.installed(),
-      registered: configPath !== null && existsSync(configPath) && isRegistered(configPath),
+      writable: client.writable,
+      registered:
+        client.writable && configPath !== null && existsSync(configPath) && isRegistered(configPath),
       configPath,
       note: client.note,
     };
@@ -194,6 +222,12 @@ export interface RegisterResult {
 function write(client: ClientTarget, wanted: boolean): RegisterResult {
   const configPath = client.configPath();
   const base = { id: client.id, label: client.label, configPath };
+
+  // A client that rejects what we would write is left alone entirely. Writing
+  // it anyway produced a warning dialog on that client's every start.
+  if (!client.writable) {
+    return { ...base, ok: false, error: `${client.label} has to be set up in its own settings` };
+  }
 
   if (configPath === null) {
     return { ...base, ok: false, error: `${client.label} is not installed` };
@@ -240,7 +274,7 @@ function write(client: ClientTarget, wanted: boolean): RegisterResult {
  */
 export function setRegistered(wanted: boolean, ids?: ClientId[]): RegisterResult[] {
   const chosen = CLIENTS.filter((client) =>
-    ids ? ids.includes(client.id) : client.installed(),
+    ids ? ids.includes(client.id) : client.installed() && client.writable,
   );
   return chosen.map((client) => write(client, wanted));
 }

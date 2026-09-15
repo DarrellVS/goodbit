@@ -28,7 +28,22 @@ export class EnsureThumbnailAction extends BaseAction<EnsureThumbnailInput, stri
      * the last time it happens.
      */
     const identity = clip.relPath || path.relative(VIDEOS_ROOT, clip.filePath) || clip.filePath;
-    const key = crypto.createHash('md5').update(identity.split(path.sep).join('/')).digest('hex') + '.jpg';
+
+    /*
+     * The shape of the picture is part of the key.
+     *
+     * Thumbnails used to be written at the recording's own size, and a cache
+     * full of 3440x1440 JPEGs is not wrong so much as enormous: nineteen
+     * megabytes each once the renderer decodes one. Changing what a thumbnail
+     * is has to change its name too, or every library keeps the old ones for
+     * ever and only new clips get the cheap version.
+     */
+    const SHAPE = 'w1280';
+    const key =
+      crypto
+        .createHash('md5')
+        .update(`${SHAPE}:${identity.split(path.sep).join('/')}`)
+        .digest('hex') + '.jpg';
     const thumbPath = path.join(cacheDir, key);
 
     let needGenerate = true;
@@ -49,13 +64,16 @@ export class EnsureThumbnailAction extends BaseAction<EnsureThumbnailInput, stri
        * `ffmpeg` per visible clip, dozens at a time, each holding a few
        * hundred megabytes to decode a 3440x1440 source for a single frame.
        */
-      await onceLimited(thumbPath, () =>
+      await onceLimited(thumbPath, (signal) =>
         new GenerateThumbnailAction().execute({
           inputPath: clip.filePath,
           outputPath: thumbPath,
           seekSec: 1,
           quality: 4,
+          signal,
         }),
+        // What the job reads, so a trim knows to wait for it.
+        clip.filePath,
       );
     }
     return thumbPath;

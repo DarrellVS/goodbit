@@ -23,6 +23,7 @@ interface McpClient {
   id: string;
   label: string;
   installed: boolean;
+  writable: boolean;
   registered: boolean;
   configPath: string | null;
   note?: string;
@@ -98,9 +99,28 @@ async function toggleRegistration(wanted: boolean, id?: string): Promise<void> {
 }
 
 const found = computed(() => state.value?.clients.filter((client) => client.installed) ?? []);
+/*
+ * Only the clients GoodBit can actually set up.
+ *
+ * Claude Desktop is listed because the person has it, but it only runs servers
+ * it starts itself, so an address written into its config is rejected and it
+ * complains at every launch. It gets the address to paste instead, and it must
+ * not count towards "all set up" or the switch would never look finished.
+ */
+const settable = computed(() => found.value.filter((client) => client.writable));
 const allRegistered = computed(
-  () => found.value.length > 0 && found.value.every((client) => client.registered),
+  () => settable.value.length > 0 && settable.value.every((client) => client.registered),
 );
+
+/** The URL and token on their own, for a client that is set up by pasting. */
+async function copyAddress(): Promise<void> {
+  if (!state.value) return;
+  await navigator.clipboard.writeText(
+    `${state.value.url}
+Authorization: Bearer ${state.value.token}`,
+  );
+  toast.success('Address and token copied. Paste them into that app’s connector settings.');
+}
 
 async function copyCommand(): Promise<void> {
   if (!state.value) return;
@@ -176,10 +196,13 @@ async function copyCommand(): Promise<void> {
             >
               <div class="min-w-0">
                 <p class="text-sm text-foreground">{{ client.label }}</p>
-                <p class="text-xs text-muted-500 truncate">{{ client.configPath }}</p>
+                <p v-if="client.writable" class="text-xs text-muted-500 truncate">
+                  {{ client.configPath }}
+                </p>
                 <p v-if="client.note" class="text-xs text-muted-500 mt-1">{{ client.note }}</p>
               </div>
               <button
+                v-if="client.writable"
                 class="px-2.5 py-1.5 rounded-lg border text-xs flex-shrink-0"
                 :class="
                   client.registered
@@ -190,6 +213,13 @@ async function copyCommand(): Promise<void> {
                 @click="toggleRegistration(!client.registered, client.id)"
               >
                 {{ client.registered ? 'Connected' : 'Connect' }}
+              </button>
+              <button
+                v-else
+                class="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted-50 text-xs text-foreground flex-shrink-0"
+                @click="copyAddress"
+              >
+                Copy address
               </button>
             </div>
           </div>

@@ -41,6 +41,19 @@ export function audioUrl(trackId: string, ts?: string | Date): string {
   return `${MEDIA}/audio/${encodeURIComponent(trackId)}${suffix}`;
 }
 
+/**
+ * A game's own artwork, out of Steam's local cache.
+ *
+ * Addressed by game name rather than by appid: the client never learns which
+ * Steam game a folder is, main decides that once and a game with no match is
+ * simply a 404 the caller falls back from.
+ */
+export type GameArt = 'header' | 'hero' | 'portrait' | 'logo' | 'icon';
+
+export function gameArtUrl(game: string, kind: GameArt = 'header'): string {
+  return `${MEDIA}/art/${encodeURIComponent(game)}/${kind}`;
+}
+
 export function frameStripUrl(clipId: number): string {
   return `${MEDIA}/strip/${clipId}`;
 }

@@ -16,6 +16,24 @@ export class Game {
   @Column('boolean', { default: false })
   hidden!: boolean;
 
+  /**
+   * The Steam appid, when this game is one.
+   *
+   * Kept so the artwork keeps working after a game is uninstalled, and so the
+   * match is made once rather than on every render. Null is an ordinary value:
+   * most libraries hold folders that are a browser, a drone camera, or a game
+   * from somewhere else entirely.
+   *
+   * `steamAppIdLocked` means a person said which game this is, so the matcher
+   * must not overwrite it. That is the only repair available for a folder
+   * named after an executable, which is the whole of the miss list.
+   */
+  @Column('text', { nullable: true })
+  steamAppId!: string | null;
+
+  @Column('boolean', { default: false })
+  steamAppIdLocked!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 

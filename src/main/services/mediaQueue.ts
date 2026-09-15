@@ -63,6 +63,55 @@ export async function runLimited<T>(work: () => Promise<T>): Promise<T> {
 const inFlight = new Map<string, Promise<unknown>>();
 
 /**
+ * What each job is reading, so somebody can wait for a file to be free.
+ *
+ * ffmpeg holds a read handle for as long as it runs, and on Windows a file
+ * with an open handle cannot be renamed: the attempt fails with `EBUSY`. That
+ * is fine while the only thing that touches a clip is the cache, and not fine
+ * the moment a trim tries to swap the file underneath it. Queuing made it more
+ * likely rather than less, because a job that used to start immediately can
+ * now still be waiting when the cut finishes.
+ */
+const bySource = new Map<string, Set<AbortController>>();
+
+function track(source: string, controller: AbortController, work: Promise<unknown>): void {
+  const key = source.toLowerCase();
+  const running = bySource.get(key) ?? new Set();
+  running.add(controller);
+  bySource.set(key, running);
+
+  void work.catch(() => {}).finally(() => {
+    running.delete(controller);
+    if (running.size === 0) bySource.delete(key);
+  });
+}
+
+/**
+ * Stop whatever this queue is doing with that file, and wait for it to let go.
+ *
+ * Called before a clip is rewritten. Cancelling rather than waiting, because
+ * every job here is building a cache *of the file that is about to change*: a
+ * frame strip finished a moment before a trim is a frame strip of a clip that
+ * no longer exists, so waiting for it costs seconds and produces something
+ * that has to be thrown away regardless.
+ *
+ * The wait afterwards is short but not optional. `kill` asks the process to
+ * end and Windows releases the file handle when it actually does, which is not
+ * the same instant.
+ */
+export async function cancelSource(source: string): Promise<void> {
+  const key = source.toLowerCase();
+
+  for (const controller of bySource.get(key) ?? []) controller.abort();
+
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const running = bySource.get(key);
+    if (!running || running.size === 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+}
+
+/**
  * One job per key, however many callers ask for it.
  *
  * The result is shared, and the entry is dropped as soon as it settles, so a
@@ -77,9 +126,29 @@ export function once<T>(key: string, work: () => Promise<T>): Promise<T> {
   return started;
 }
 
-/** Both, which is what every cache builder wants. */
-export function onceLimited<T>(key: string, work: () => Promise<T>): Promise<T> {
-  return once(key, () => runLimited(work));
+/**
+ * Both, which is what every cache builder wants.
+ *
+ * `source` is the file the work reads. Pass it, or a trim can rename that file
+ * out from under a running ffmpeg.
+ */
+export function onceLimited<T>(
+  key: string,
+  work: (signal: AbortSignal) => Promise<T>,
+  source?: string,
+): Promise<T> {
+  const controller = new AbortController();
+  const started = once(key, () => runLimited(() => work(controller.signal)));
+  if (source) track(source, controller, started);
+  return started;
+}
+
+/** Thrown when a cache job was cancelled because its source is being replaced. */
+export class Cancelled extends Error {
+  constructor() {
+    super('cancelled');
+    this.name = 'Cancelled';
+  }
 }
 
 /** For a diagnostic, and for a test that wants to prove the ceiling holds. */

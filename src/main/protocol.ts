@@ -60,6 +60,29 @@ async function resolveMedia(kind: string, id: string): Promise<string | null> {
     return resolveAudioPath(decodeURIComponent(id));
   }
 
+  /*
+   * `goodbit://media/art/<game>/<kind>`, Steam's own cached artwork.
+   *
+   * Addressed by game rather than by appid so the renderer never has to know
+   * one, and so an unmatched game is simply a 404 rather than a special case
+   * every card has to handle. The appid comes from the database, which is the
+   * only place it is allowed to come from: a caller cannot name a folder to
+   * read from.
+   */
+  if (kind === 'art') {
+    const [game, wanted = 'header'] = id.split('/').map((part) => decodeURIComponent(part));
+    if (!game) return null;
+
+    const { artworkFile } = await import('./services/steam/artwork.js');
+    const { Game } = await import('./entity/Game.js');
+    const row = await AppDataSource.getRepository(Game).findOneBy({ name: game });
+    if (!row?.steamAppId) return null;
+
+    const KINDS = ['header', 'hero', 'portrait', 'logo', 'icon'] as const;
+    const chosen = (KINDS as readonly string[]).includes(wanted) ? wanted : 'header';
+    return artworkFile(row.steamAppId, chosen as (typeof KINDS)[number]);
+  }
+
   const clipId = Number(id);
   if (!Number.isFinite(clipId)) return null;
 
@@ -134,7 +157,10 @@ export function registerProtocolHandler(): void {
       // goodbit://media/clip/12 → host "media", path "/clip/12"
       if (url.hostname !== 'media') return new Response('Not found', { status: 404 });
 
-      const [, kind, id] = url.pathname.split('/');
+      // The rest is kept whole rather than taken as one segment: artwork is
+      // addressed as `art/<game>/<kind>`, and a clip is still `clip/<id>`.
+      const [, kind, ...rest] = url.pathname.split('/');
+      const id = rest.join('/');
       if (!kind || !id) return new Response('Not found', { status: 404 });
 
       const filePath = await resolveMedia(kind, id);

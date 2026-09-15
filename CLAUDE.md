@@ -248,6 +248,50 @@ unless the user turns it on**, in Settings, Connections.
   Windows redirects its `%APPDATA%` into `%LOCALAPPDATA%/Packages/Claude_<id>/LocalCache/Roaming`.
   Writing the documented path on a Store install produces a file the app never reads.
 
+### Steam, off the local disk
+
+`src/main/services/steam/` reads what Steam has already downloaded. No key, no account, no network,
+nothing that can be switched off.
+
+- **The artwork is already here.** `appcache/librarycache/<appid>/` holds header, hero, portrait,
+  logo and icon for every game whose library page Steam has drawn: 1011 games and 349 MB on the
+  machine this was built against.
+- **Glob by filename, one level deep.** Two layouts are live at once: most files sit in
+  `<appid>/`, some in a forty character hex folder under it. That hash is Valve's content hash for
+  the asset, so it changes when Valve re-cuts an image. **Never store it**, resolve each time.
+- **Two names for one picture.** `header.jpg` and `library_header.jpg` never appear together, nor do
+  `library_600x900.jpg` and `library_capsule.jpg`.
+- **The appid comes from the database, never from a caller.** `Game.steamAppId` is matched once by
+  `SyncGamesAction` from the install manifests and the registry, and `steamAppIdLocked` stops the
+  matcher overwriting a person's correction.
+- **`rungameid`, never `run`.** `steam://run/<id>//<args>/` passes its tail to the game as launch
+  parameters. The appid is checked against `^\d+$` in main before it reaches a URL.
+- **Art is for this machine's windows.** It is Valve's and the publisher's, cached locally.
+  Displaying it here is not serving it: it must never reach `publisher/` or a public link.
+- Name matching alone reaches about two thirds of a real library. The misses are folders named after
+  an executable (`cs2`, `Headliners-Win64-Shipping`) and games from other stores, which is what the
+  override is for. `scripts/steam-check.mjs` prints what matches on this machine.
+
+### Deriving a picture from an HDR clip
+
+Every recording here is PQ/bt2020 10 bit, so the tone map is the normal path rather than the
+exception, and **its position in the filter chain is the whole cost**.
+
+- **Shrink first, then tone map.** `TONEMAP_FILTER` converts every pixel to float32 and back, on the
+  CPU. Run over 3440x1440 it took **28 seconds** for one frame strip; run over the 320 wide
+  thumbnails it is **3 seconds**, about a hundred and fifteen times fewer pixels for the same
+  picture (identical dimensions, mean brightness 49 against 48).
+- **`-hwaccel cuda` alone is half a fix.** It decodes on the card and copies every frame back at
+  full size. `-hwaccel_output_format cuda` plus `scale_cuda` keeps them there until they are small.
+- **Always carry a CPU fallback, and not only for machines without a GPU.** NVDEC refuses files it
+  looks like it should take: a plain h264 High 3440x1440 clip fails with `CUDA_ERROR_INVALID_VALUE`
+  and ffmpeg silently decodes it in software, leaving a `scale_cuda` graph meeting system memory
+  frames and failing outright. That wrote no file, and a missing thumbnail looks exactly like one
+  not made yet, so those cards stayed black for ever.
+- **A thumbnail is 1280 wide, and the width is in its cache key.** It used to be the recording's own
+  size: 181 KB on disk, and **18.9 MB once the renderer decoded it**, so forty cards carried three
+  quarters of a gigabyte of bitmaps.
+
 ### Keeping ffmpeg under control
 
 `services/mediaQueue.ts` caps how many ffmpegs exist at once and collapses duplicate work by key.

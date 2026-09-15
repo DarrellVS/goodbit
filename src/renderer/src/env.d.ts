@@ -22,6 +22,9 @@ interface GoodBitBridge {
   canMoveLibrary: (
     destination: string,
   ) => Promise<{ problem: string | null; obsRunning: boolean }>;
+  steamLaunch: (
+    game: string,
+  ) => Promise<{ launched: boolean; appId?: string; reason?: string }>;
   mcpState: () => Promise<{
     enabled: boolean;
     running: boolean;
@@ -32,6 +35,7 @@ interface GoodBitBridge {
       id: string;
       label: string;
       installed: boolean;
+      writable: boolean;
       registered: boolean;
       configPath: string | null;
       note?: string;

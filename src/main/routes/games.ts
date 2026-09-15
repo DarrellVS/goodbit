@@ -38,6 +38,7 @@ gamesRouter.get('/', asyncHandler(async (req, res) => {
       const game = gameMap.get(row.game);
       dto.displayName = game?.displayName ?? null;
       dto.hidden = game?.hidden ?? false;
+      dto.steamAppId = game?.steamAppId ?? null;
       return dto;
     });
 

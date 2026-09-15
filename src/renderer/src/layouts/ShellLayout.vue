@@ -115,8 +115,21 @@ async function rescan(): Promise<void> {
     if (result.updated) changes.push(`${clips(result.updated)} updated`);
     if (result.removed) changes.push(`${clips(result.removed)} no longer on disk`);
 
+    /*
+     * The number the screen is showing, not the number in the table.
+     *
+     * The scan counted every row and the library header counts what is on
+     * screen, so a library with hidden games had the two disagreeing by
+     * exactly the hidden count, with nothing saying why. The visible figure
+     * leads, and the hidden ones are named rather than folded in.
+     */
+    const visible = result.total - (result.hidden ?? 0);
+    const tally = result.hidden
+      ? `${clips(visible)}, and ${clips(result.hidden)} in hidden games.`
+      : `${clips(result.total)} in all.`;
+
     toastStore.success(
-      changes.length ? `${changes.join(', ')}. ${clips(result.total)} in all.` : `Nothing new. ${clips(result.total)} in all.`,
+      changes.length ? `${changes.join(', ')}. ${tally}` : `Nothing new. ${tally}`,
       'Scanned',
     );
   } catch (error) {

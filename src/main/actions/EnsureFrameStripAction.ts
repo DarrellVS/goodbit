@@ -26,13 +26,30 @@ export class EnsureFrameStripAction extends BaseAction<EnsureFrameStripInput, st
     if (need) {
       // Through the same queue as the thumbnails: a strip is ten frames and
       // the trim page asks for one per clip it shows.
-      await onceLimited(stripPath, () =>
-        new GenerateFrameStripAction().execute({
+      /*
+       * Timed, because the difference between the recipe and the experience
+       * was twenty five seconds and nothing said where it went. `waited` is
+       * time spent queued behind other work; `took` is the ffmpeg itself.
+       */
+      const asked = Date.now();
+      let started = asked;
+
+      await onceLimited(stripPath, (signal) => {
+        started = Date.now();
+        return new GenerateFrameStripAction().execute({
           inputPath: clip.filePath,
           outputPath: stripPath,
           frames: 10,
           scale: 320,
-        }),
+          signal,
+        });
+      },
+        // What the job reads, so a trim knows to wait for it.
+        clip.filePath,
+      );
+
+      console.log(
+        `[strip] ${clip.filename}: waited ${started - asked}ms, took ${Date.now() - started}ms`,
       );
     }
     return stripPath;

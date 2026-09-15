@@ -13,6 +13,14 @@ export type ScanResult = {
   removed: number;
   total: number;
   /**
+   * Clips in games the user has hidden.
+   *
+   * Reported separately because `total` counts the library and the screen
+   * counts what is on it. Saying only the total made the scan disagree with
+   * the header by exactly this number, with nothing to explain the gap.
+   */
+  hidden: number;
+  /**
    * Set when pruning was refused because the folder looked wrong rather than
    * emptied. The rows are left alone and the reason is passed up.
    */
@@ -210,7 +218,14 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     }
 
     const total = await clipRepo.count();
-    return { added, updated, removed, total, pruneSkipped };
+
+    const hiddenRow = await clipRepo
+      .createQueryBuilder('clip')
+      .select('COUNT(*)', 'n')
+      .where('clip.game IN (SELECT name FROM game WHERE hidden = 1)')
+      .getRawOne<{ n: number }>();
+
+    return { added, updated, removed, total, hidden: Number(hiddenRow?.n ?? 0), pruneSkipped };
   }
 }
 

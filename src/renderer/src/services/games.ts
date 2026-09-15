@@ -16,6 +16,8 @@ export async function fetchGames(includeHidden = false): Promise<Game[]> {
 
 /** What a scan found, so the window can say so rather than just spinning. */
 export interface ScanResult {
+  /** Clips in games the user has hidden, which the library header leaves out. */
+  hidden?: number;
   added: number;
   updated: number;
   removed: number;

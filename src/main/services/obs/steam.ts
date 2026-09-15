@@ -27,6 +27,20 @@ export interface SteamGame {
   appId: string;
 }
 
+let cachedRoot: string | null | undefined;
+
+/**
+ * Where Steam is, asked once.
+ *
+ * Reading the registry costs a process launch, and the answer does not change
+ * while the app is running. Exported because the artwork cache lives under the
+ * same root and there is no reason to find it twice.
+ */
+export async function steamRootPath(): Promise<string | null> {
+  if (cachedRoot === undefined) cachedRoot = await steamRoot();
+  return cachedRoot;
+}
+
 /** Where Steam is, from its own registry key. */
 async function steamRoot(): Promise<string | null> {
   if (process.platform !== 'win32') return null;
