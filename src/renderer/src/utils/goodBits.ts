@@ -1,3 +1,4 @@
+import { LEAD_IN, TAIL_ROOM } from '@shared/constants/suggestionWindow';
 import { formatTimestamp } from './timestampParser';
 import type { GoodBit, NewGoodBit } from '../types/goodbit';
 import type { SuggestionEvent } from '../services/clips';
@@ -319,23 +320,17 @@ export function clipGoodBitRanges(clip: unknown): Span[] {
   );
 }
 
-/**
- * How far before a detected moment a GoodBit kept from it should open.
+/*
+ * The window around a detected reading, from `@shared`.
  *
- * The same 2.5 seconds `AnalyzeClipAction.LEAD_IN` uses, and for the same
- * reason: what a detector marks is the *reaction*, the kill banner or the
- * spike, and the shot that caused it already happened. Opening on the banner
- * keeps the aftermath and drops the thing.
- *
- * **Restated here rather than imported.** The numbers live in `src/main`, which
- * the renderer cannot import from, and `src/shared` is the only place both
- * processes are allowed to agree. Moving them there is a change to main's
- * surface, so it is in the report rather than in this commit.
+ * These were restated here as `2.5` and `1.5` with a comment saying they match
+ * `AnalyzeClipAction`, because they lived in main and the renderer cannot
+ * import from there. A comment is not a constraint: two copies of a measured
+ * number drift the first time somebody retunes one, and nothing fails when
+ * they do. They are one declaration now.
  */
-export const ANCHOR_LEAD_SEC = 2.5;
-
-/** And how long after it to keep, matching `AnalyzeClipAction.TAIL_ROOM`. */
-export const ANCHOR_TAIL_SEC = 1.5;
+export const ANCHOR_LEAD_SEC = LEAD_IN;
+export const ANCHOR_TAIL_SEC = TAIL_ROOM;
 
 /**
  * What a detected moment becomes when somebody presses keep.

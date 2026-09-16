@@ -32,6 +32,10 @@ export * from './constants/ui.js';
 // Which files are clips, so the scan and the watcher cannot disagree again
 export * from './constants/videoFiles.js';
 
+// Where a window opens and closes around a moment, so the analysis and a
+// GoodBit made from one cannot disagree about the same reading
+export * from './constants/suggestionWindow.js';
+
 // Export formats and crop maths, shared so the crop frame and the ffmpeg
 // filter cannot drift apart
 export * from './constants/exportFormats.js';

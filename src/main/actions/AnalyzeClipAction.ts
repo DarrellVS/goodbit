@@ -46,17 +46,14 @@ const FFMPEG = FFMPEG_PATH;
  */
 export const MIN_ROOM = 1.4;
 
-/**
- * How far to start before the loud part, in seconds.
- *
- * What the sound marks is the *reaction*. The explosion, the shout, the
- * killfeed, and the thing that caused it already happened. Cutting exactly on
- * the spike drops the shot that led to it, so the window opens a beat earlier.
+/*
+ * Where a window opens and closes around a moment now lives in
+ * `@shared/constants/suggestionWindow.ts`, because the renderer needs the same
+ * two numbers to place a GoodBit made from a detected reading, and it cannot
+ * import from main. Re-exported here so every existing caller is untouched.
  */
-export const LEAD_IN = 2.5;
-
-/** Keep this much of the clip after the peak, so the payoff is not cut off. */
-export const TAIL_ROOM = 1.5;
+export { LEAD_IN, TAIL_ROOM } from '@shared/constants/suggestionWindow.js';
+import { LEAD_IN, TAIL_ROOM } from '@shared/constants/suggestionWindow.js';
 
 /**
  * The shortest suggestion worth making, in seconds.
