@@ -33,10 +33,15 @@ const emit = defineEmits<Emits>();
 
     An accent tint reads on both grounds and cannot collide with the surface
     it sits on, which is what the settings list beside this one already did.
-    Hover is `--muted-50`, a real step on the ladder, so hover and active are
-    now two different things rather than the same class twice.
+
+    One ladder for both navigation columns, since they sit side by side on the
+    settings screen and were two different materials: the panel is
+    `--muted-50`, a row under the pointer is `--muted-100`, and the row you are
+    on is the accent. Three real steps, each visible against the one below it
+    in both palettes, rather than fractions of a colour that is already the
+    colour behind it.
   -->
-  <aside class="w-64 bg-card/5 backdrop-blur-sm border-r border-border flex flex-col h-full">
+  <aside class="w-64 bg-muted-50 border-r border-border flex flex-col h-full">
     <!--
       No name or mark here. The title bar already carries both, a hand's width
       above, and saying it twice is one of them wasted.
@@ -58,7 +63,7 @@ const emit = defineEmits<Emits>();
       
         <RouterLink
           to="/"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-50 transition-colors group"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
           exact-active-class="bg-orange-500/10 text-orange-500"
         >
           <Icon icon="material-symbols:video-library" class="text-lg" />
@@ -67,7 +72,7 @@ const emit = defineEmits<Emits>();
 
         <RouterLink
           to="/today"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-50 transition-colors group"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
           exact-active-class="bg-orange-500/10 text-orange-500"
         >
           <Icon icon="material-symbols:schedule" class="text-lg" />
@@ -76,7 +81,7 @@ const emit = defineEmits<Emits>();
 
         <RouterLink
           to="/editor"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-50 transition-colors group"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
           exact-active-class="bg-orange-500/10 text-orange-500"
         >
           <Icon icon="material-symbols:movie-edit" class="text-lg" />
@@ -94,7 +99,7 @@ const emit = defineEmits<Emits>();
     <div class="p-3 space-y-1 border-t border-border">
       <RouterLink
         to="/tag-patterns"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-50 transition-colors group"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
         exact-active-class="bg-orange-500/10 text-orange-500"
       >
         <Icon icon="material-symbols:auto-awesome" class="text-lg" />
@@ -103,7 +108,7 @@ const emit = defineEmits<Emits>();
 
       <RouterLink
         to="/stats"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-50 transition-colors group"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
         exact-active-class="bg-orange-500/10 text-orange-500"
       >
         <Icon icon="material-symbols:bar-chart" class="text-lg" />
@@ -112,7 +117,7 @@ const emit = defineEmits<Emits>();
 
       <RouterLink
         to="/settings"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-50 transition-colors group"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
         exact-active-class="bg-orange-500/10 text-orange-500"
       >
         <Icon icon="material-symbols:settings" class="text-lg" />

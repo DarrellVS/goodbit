@@ -23,7 +23,7 @@ function selectSection(sectionId: string): void {
 </script>
 
 <template>
-  <aside class="w-64 shrink-0 border-r border-border bg-muted-50/50 flex flex-col min-h-0">
+  <aside class="w-64 shrink-0 border-r border-border bg-muted-50 flex flex-col min-h-0">
     <!--
       The search, above the list it makes optional. The page owns the field
       rather than this component, so the keystroke that opens a result does not
@@ -38,7 +38,7 @@ function selectSection(sectionId: string): void {
         class="w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-colors text-left"
         :class="activeSection === section.id 
           ? 'bg-orange-500/10 text-orange-600' 
-          : 'hover:bg-card/50 text-muted-700'"
+          : 'hover:bg-muted-100 text-muted-700'"
         @click="selectSection(section.id)"
       >
         <Icon :icon="section.icon" class="text-xl mt-0.5 shrink-0" />
@@ -51,14 +51,14 @@ function selectSection(sectionId: string): void {
 
     <div class="p-3 border-t border-border space-y-2">
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-card/50 transition-colors text-sm text-muted-700"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted-100 transition-colors text-sm text-muted-700"
         @click="emit('export')"
       >
         <Icon icon="material-symbols:download" />
         Export Settings
       </button>
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-card/50 transition-colors text-sm text-muted-700"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted-100 transition-colors text-sm text-muted-700"
         @click="emit('import')"
       >
         <Icon icon="material-symbols:upload" />
