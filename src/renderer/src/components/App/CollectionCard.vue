@@ -39,6 +39,7 @@ const emit = defineEmits<Emits>();
 <template>
   <RouterLink
     :to="`/collections/${collection.id}`"
+    data-collection-card
     class="group flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-3 transition-colors"
     :class="isDragOver
       ? 'border-orange-500 bg-orange-500/10'
