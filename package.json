@@ -4,6 +4,7 @@
   "version": "1.10.0",
   "description": "Finds the good bit in your game clips, and keeps it.",
   "author": "Darrell van Swinderen",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "type": "module",
   "main": "./out/main/index.js",

@@ -1,5 +1,20 @@
 # Licence decision
 
+> **Decided: GPL-3.0-or-later.** Applied on 2026-09-16. `LICENSE` at the
+> repository root holds the full text, and `package.json` carries
+> `"license": "GPL-3.0-or-later"`.
+>
+> The reasoning that follows is kept as the record of what the choice was
+> between, because the next person to wonder why this project is copyleft
+> deserves the argument rather than the outcome. In short: the concern that
+> decided it was a fork being repackaged and sold closed, which is the one
+> thing GPL-3.0 prevents and MIT explicitly permits.
+>
+> Worth knowing, since it follows from the section below rather than from the
+> choice: the bundled ffmpeg binary was already GPL-3.0-or-later, so this adds
+> no new obligation to the installer. It means one licence now covers the whole
+> thing instead of two.
+
 `package.json` has no `license` field and there is no `LICENSE` file. As the
 README already says, that legally means all rights reserved. This is the
 owner's decision, not something to default into by adding a template file,
