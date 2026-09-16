@@ -33,7 +33,7 @@
  */
 import { app, globalShortcut } from 'electron';
 import { execFile } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const KEYS = ['F9', 'F8'];
@@ -55,6 +55,57 @@ function say(line) {
   }
 }
 
+/**
+ * What had focus when the key fired, and whether we can even see it.
+ *
+ * This is the whole point of the test, and it was being left to whoever
+ * pressed the key to keep track of. A press with this console in front proves
+ * nothing; a press with Task Manager in front is the answer. Printing it turns
+ * "which window was that?" into a line you can read back.
+ *
+ * **"denied" is itself a result.** `Get-Process` on a process at higher
+ * integrity than ours is refused, so a window we cannot name is a window more
+ * privileged than this one, which is exactly the case being tested. If the key
+ * still fired, `RegisterHotKey` reached across an integrity boundary that
+ * `GetAsyncKeyState`, and therefore OBS, cannot.
+ *
+ * Written to a file and run with `-File` rather than passed with `-Command`.
+ * The script needs both kinds of quote for its `DllImport` attributes, and
+ * threading those through a JavaScript string, `execFile`, and PowerShell's own
+ * parser is three chances to get it wrong. It was wrong the first time.
+ */
+const PROBE = join(process.cwd(), 'tmp', 'foreground-probe.ps1');
+
+function writeProbe() {
+  mkdirSync(join(process.cwd(), 'tmp'), { recursive: true });
+  writeFileSync(
+    PROBE,
+    [
+      'Add-Type -Namespace W -Name N -MemberDefinition @"',
+      '[DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();',
+      '[DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint p);',
+      '"@',
+      '$p = 0',
+      '[void][W.N]::GetWindowThreadProcessId([W.N]::GetForegroundWindow(), [ref]$p)',
+      'try { (Get-Process -Id $p -ErrorAction Stop).ProcessName }',
+      'catch { "denied (a window more privileged than this one)" }',
+      '',
+    ].join('\n'),
+    'utf-8',
+  );
+}
+
+function foreground() {
+  return new Promise((resolve) => {
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', PROBE],
+      { windowsHide: true, timeout: 5000 },
+      (error, stdout) => resolve(error ? 'unknown' : stdout.trim() || 'unknown'),
+    );
+  });
+}
+
 /** Are we the thing with the privilege, which would make the test meaningless? */
 function elevated() {
   return new Promise((resolve) => {
@@ -72,6 +123,7 @@ function elevated() {
 }
 
 app.whenReady().then(async () => {
+  writeProbe();
   const admin = await elevated();
 
   say('');
@@ -82,7 +134,11 @@ app.whenReady().then(async () => {
     const ok = globalShortcut.register(key, () => {
       const next = counts.get(key) + 1;
       counts.set(key, next);
-      say(`  ${key} fired  (${next})  ${new Date().toLocaleTimeString()}`);
+      // Which window was in front is the entire measurement, so it is printed
+      // rather than left to whoever is pressing the key to remember.
+      void foreground().then((where) =>
+        say(`  ${key} fired  (${next})  ${new Date().toLocaleTimeString()}   in front: ${where}`),
+      );
     });
 
     // `register` returns false when another program already owns the
