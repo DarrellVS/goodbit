@@ -14,6 +14,8 @@ test.describe('window state', () => {
   test('size and position survive a restart', async () => {
     const first = await launchApp();
     const dataDir = first.dataDir;
+    /** The bounds the window actually took, filled in below. */
+    let asked: { width: number; height: number } | undefined;
 
     try {
       await first.page.waitForTimeout(1500);
@@ -45,10 +47,30 @@ test.describe('window state', () => {
          */
         const area = screen.getDisplayMatching(w.getBounds()).workArea;
         w.setBounds({ x: area.x + 120, y: area.y + 90, width: 1180, height: 760 });
+
       });
 
       // Past the debounce, then closed, which is when it must be written.
       await first.page.waitForTimeout(1200);
+
+      /*
+       * What it ended up with, read after it has settled.
+       *
+       * Two things make the asked-for number the wrong thing to assert. On a
+       * fractionally scaled display Windows rounds a window to whole physical
+       * pixels, so 1180 logical pixels comes back as 1182. And the size keeps
+       * moving for a moment after `setBounds`, so reading it immediately gave
+       * 1182 while what eventually got saved was 1188.
+       *
+       * What is under test is that the bounds a window had survive a restart,
+       * not that Windows honours a request to the pixel, so this reads the
+       * window once it has stopped moving and asserts against that.
+       */
+      asked = await first.app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()
+          .find((candidate) => !candidate.webContents.getURL().startsWith('data:'))!
+          .getNormalBounds(),
+      );
     } finally {
       await first.app.close();
     }
@@ -57,10 +79,33 @@ test.describe('window state', () => {
       window?: { width: number; height: number; maximized: boolean };
     };
 
+    expect(asked, 'the app window should have been found and resized').toBeTruthy();
     expect(saved.window).toBeTruthy();
-    expect(saved.window!.width).toBe(1180);
-    expect(saved.window!.height).toBe(760);
     expect(saved.window!.maximized).toBe(false);
+
+    /*
+     * Close to what the window had, not equal to the pixel.
+     *
+     * On a display scaled at anything other than 100% Windows rounds a window
+     * to whole physical pixels, and it does it more than once: asking for
+     * 1180 logical pixels settles at 1182, and restoring 1182 comes back as
+     * 1188, which is then what gets saved. So a window on a 125% display
+     * creeps a few pixels wider each launch, which is worth knowing and is not
+     * what this test is for.
+     *
+     * What it is for is that a deliberate size is written down and read back,
+     * rather than reset to the default of 1400x900 or lost entirely. A
+     * tolerance says that and survives a machine whose second monitor is
+     * scaled; asserting equality here was asserting that Windows does not
+     * round, which it does.
+     */
+    const NEAR = 12;
+    expect(Math.abs(saved.window!.width - asked!.width)).toBeLessThanOrEqual(NEAR);
+    expect(Math.abs(saved.window!.height - asked!.height)).toBeLessThanOrEqual(NEAR);
+
+    // And it is still the size this test chose, not the default it started at.
+    expect(Math.abs(saved.window!.width - 1180)).toBeLessThanOrEqual(NEAR);
+    expect(Math.abs(saved.window!.height - 760)).toBeLessThanOrEqual(NEAR);
 
     // Relaunch into the same profile and check it was actually read back.
     const second = await launchApp({ dataDir });
@@ -73,8 +118,8 @@ test.describe('window state', () => {
           .getNormalBounds(),
       );
 
-      expect(bounds.width).toBe(1180);
-      expect(bounds.height).toBe(760);
+      expect(Math.abs(bounds.width - saved.window!.width)).toBeLessThanOrEqual(NEAR);
+      expect(Math.abs(bounds.height - saved.window!.height)).toBeLessThanOrEqual(NEAR);
     } finally {
       await second.close();
     }
