@@ -24,9 +24,11 @@
         :loading="suggestionsLoading"
         :applied="suggestionApplied"
         :watches-screen="watchesScreen"
+        :good-bits="goodBits"
         @apply="applySuggestion"
         @seek="seek"
         @reject="rejectThisSuggestion"
+        @keep="keepAnchor"
       />
 
       <TimelineEditor
@@ -46,16 +48,42 @@
         :playhead-percentage="timeToPercentage(currentTime)"
         :playhead="formatTime(currentTime)"
         :is-playing="isPlaying"
+        :good-bits="goodBits"
+        :selected-good-bit-id="selectedGoodBitId"
         @save="handleSave"
         @toggle-playback="togglePlayback"
         @seek="scrubTo"
+        @select-goodbit="selectGoodBit"
+      />
+
+      <!--
+        Under the timeline, not beside the trim button.
+
+        The handles pick a range and then there are two things to do with it,
+        and only one of them replaces the recording. Putting the marking control
+        in its own bar under the strip keeps the destructive one where it has
+        always been, inside the timeline's own footer, rather than making two
+        buttons of equal weight out of two decisions of very different weight.
+      -->
+      <GoodBitMarkBar
+        class="flex-shrink-0"
+        :range="range"
+        :selected="selectedGoodBit"
+        :count="goodBits.length"
+        :saving="goodBitSaving"
+        :clashes="clashes"
+        :valid="isValidRange"
+        @mark="markRange"
+        @save="saveSelected"
+        @deselect="selectedGoodBitId = null"
+        @forget="removeGoodBit"
       />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useClipsStore } from '../../stores/clips';
 import {
   getClip,
@@ -66,6 +94,7 @@ import {
   trimClip,
   updateClipName,
   type ClipSuggestions,
+  type SuggestionEvent,
 } from '../../services/clips';
 import type { Clip } from '../../types/clip';
 import type { ClipMeta } from '../../services/clips';
@@ -74,9 +103,18 @@ import { streamUrl, frameStripUrl } from '../../utils/mediaUrl';
 import { formatBytes } from '../../utils/formatters';
 import { useTrimRange } from '../../composables/useTrimRange';
 import { useVideoPlayer } from '../../composables/useVideoPlayer';
+import { useGoodBits } from '../../composables/useGoodBits';
+import {
+  anchorToGoodBit,
+  goodBitLabel,
+  goodBitsLostToTrim,
+  overlapping,
+} from '../../utils/goodBits';
+import type { GoodBit } from '../../types/goodbit';
 import VideoPreview from './VideoPreview.vue';
 import TimelineEditor from './TimelineEditor.vue';
 import SuggestionBanner from './SuggestionBanner.vue';
+import GoodBitMarkBar from './GoodBitMarkBar.vue';
 
 interface Props {
   id: string;
@@ -229,9 +267,151 @@ function applySuggestion(start: number, end: number): void {
   seek(start);
 }
 
+/*
+ * ## GoodBits, marked with the same two handles
+ *
+ * The handles pick a range; a trim replaces the recording with it and a GoodBit
+ * writes it down and leaves the recording whole. Sharing the control rather than
+ * building a second one is the point: there is no other sensible way to choose a
+ * start and an end on this screen, and a second range picker would be a second
+ * place for them to disagree.
+ *
+ * Pressing a band on the strip puts the handles on that GoodBit, which makes
+ * editing one the same gesture as marking one. `selectedGoodBitId` is what says
+ * whether the bar below is marking or editing.
+ */
+const {
+  goodBits,
+  saving: goodBitSaving,
+  load: loadGoodBits,
+  mark,
+  edit: editGoodBit,
+  remove: forgetGoodBit,
+} = useGoodBits(computed(() => Number(props.id)));
+
+const selectedGoodBitId = ref<number | null>(null);
+
+const selectedGoodBit = computed<GoodBit | null>(
+  () => goodBits.value.find((row) => row.id === selectedGoodBitId.value) ?? null,
+);
+
+/**
+ * A GoodBit that has gone takes the selection with it.
+ *
+ * The delete goes through a confirmation toast, so it happens later and it may
+ * not happen at all. Watching the list rather than clearing the selection at
+ * the press means a cancelled delete leaves the bar exactly as it was.
+ *
+ * A shallow watch is enough because the delete *replaces* the array rather than
+ * splicing it, which is the only change that can remove the selected row. A
+ * rename assigns into the array in place and deliberately does not fire this.
+ */
+watch(goodBits, (rows) => {
+  if (selectedGoodBitId.value === null) return;
+  if (!rows.some((row) => row.id === selectedGoodBitId.value)) selectedGoodBitId.value = null;
+});
+
+/** What the handles currently sit on top of, the selected one excepted. */
+const clashes = computed(() =>
+  overlapping(
+    { startSec: range.value[0], endSec: range.value[1] },
+    goodBits.value.filter((row) => row.id !== selectedGoodBitId.value),
+  ),
+);
+
+function selectGoodBit(goodBit: GoodBit): void {
+  selectedGoodBitId.value = goodBit.id;
+  range.value = [goodBit.startSec, Math.min(goodBit.endSec, duration.value)];
+  seek(goodBit.startSec);
+}
+
+/**
+ * Marking leaves nothing selected, deliberately.
+ *
+ * Selecting what was just marked reads well for a second and then bites: the
+ * next thing anybody does is move the handles to the next moment, and with that
+ * GoodBit still selected the primary button would be *Save changes*, which
+ * would move the one just made instead of marking a new one. Unselected, the
+ * new band appears under the handles, the bar says that range is taken, and
+ * moving a handle makes *Mark this range* live again.
+ */
+async function markRange(name: string | null): Promise<void> {
+  if (!isValidRange.value) return;
+  await mark({ startSec: range.value[0], endSec: range.value[1], name, source: 'manual' });
+  selectedGoodBitId.value = null;
+}
+
+async function saveSelected(name: string | null): Promise<void> {
+  const selected = selectedGoodBit.value;
+  if (!selected) return;
+
+  await editGoodBit(selected, {
+    name,
+    startSec: range.value[0],
+    endSec: range.value[1],
+  });
+}
+
+function removeGoodBit(goodBit: GoodBit): void {
+  forgetGoodBit(goodBit);
+}
+
+/**
+ * Keep one of the readings the game's own HUD produced.
+ *
+ * The strongest reading gets the window the server already placed around it, so
+ * this and the banner's *Use it* agree about the same moment. Every other one
+ * gets the lead-in and the tail. See `anchorToGoodBit`.
+ */
+async function keepAnchor(anchor: SuggestionEvent): Promise<void> {
+  const isStrongest = suggestions.value?.anchors?.[0]?.atSec === anchor.atSec;
+  const created = await mark(
+    anchorToGoodBit(
+      anchor,
+      duration.value,
+      isStrongest ? (suggestions.value?.window ?? null) : null,
+    ),
+  );
+  // Put the handles on what was kept, so it can be adjusted while it is still
+  // the thing being looked at. A detected range is a starting point.
+  if (created) selectGoodBit(created);
+}
+
 async function handleSave(): Promise<void> {
   if (isSaving.value || !isValidRange.value) return;
-  
+
+  /*
+   * A trim renumbers the timeline the GoodBits are written against.
+   *
+   * Keeping 0 to 10 seconds of a thirty second recording leaves a GoodBit
+   * marked at 20 to 25 pointing outside the file, and one at 8 to 14 half in
+   * it. Nothing corrects them: `TrimAndSwapClipAction` does not know the table
+   * exists, so the rows survive the cut unchanged and are then wrong.
+   *
+   * This is a warning and not a fix, and the fix belongs where the cut happens.
+   * What it buys is that somebody finds out before pressing rather than after,
+   * which for the one irreversible operation in this app is worth a click.
+   */
+  const orphaned = goodBitsLostToTrim(goodBits.value, {
+    startSec: range.value[0],
+    endSec: range.value[1],
+  });
+
+  if (orphaned.length > 0) {
+    toastStore.confirm(
+      `${orphaned.map(goodBitLabel).join(', ')} ${orphaned.length === 1 ? 'is' : 'are'} outside this cut, and a trim replaces the recording. ${orphaned.length === 1 ? 'That mark' : 'Those marks'} will point at the wrong part of the file afterwards.`,
+      () => void runTrim(),
+      'Trim anyway?',
+    );
+    return;
+  }
+
+  await runTrim();
+}
+
+async function runTrim(): Promise<void> {
+  if (isSaving.value || !isValidRange.value) return;
+
   isSaving.value = true;
   saveProgress.value = 0;
   
@@ -272,6 +452,15 @@ onMounted(() => {
   else void loadClip();
 
   void loadSuggestions();
+  /*
+   * The marks on this clip, read fresh on every open.
+   *
+   * The trimmer and the details panel are the two surfaces that show GoodBits
+   * and they are never mounted at the same time: the modal is keyed on the
+   * view, so one replaces the other and each loads on mount. That is what keeps
+   * them from disagreeing, and it is why there is no store here.
+   */
+  void loadGoodBits();
   // Nothing depends on this arriving; it only changes what the wait says.
   void getHudWatchedGames()
     .then((games) => {

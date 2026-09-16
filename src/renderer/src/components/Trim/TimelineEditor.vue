@@ -7,7 +7,14 @@
         </div>
         <div>
           <h2 class="font-semibold text-lg">Timeline</h2>
-          <p class="text-xs text-muted-400">Drag the handles to trim your clip</p>
+          <!--
+            The handles do two things now, so the line says both. Trimming
+            replaces the recording and marking a GoodBit does not, which is the
+            one distinction somebody has to hold in their head on this screen.
+          -->
+          <p class="text-xs text-muted-400">
+            Drag the handles to pick a range, then mark it or trim to it
+          </p>
         </div>
       </div>
       
@@ -82,6 +89,22 @@
           <div class="absolute -top-px left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow" />
         </div>
       </div>
+
+      <!--
+        The GoodBits already marked on this clip.
+
+        Last in the strip, so it paints over the shading rather than under it:
+        the reason to see the other GoodBits while trimming is to see the other
+        GoodBits, and half of them are outside the handles by definition, which
+        is exactly where the shading is. It costs the playhead its bottom six
+        pixels, which is five percent of a line that runs the full height.
+      -->
+      <GoodBitBands
+        :good-bits="goodBits"
+        :duration-sec="maxDuration"
+        :selected-id="selectedGoodBitId"
+        @select="(goodBit) => emit('select-goodbit', goodBit)"
+      />
     </div>
 
     <!-- The preview has no controls of its own, so the transport lives here. -->
@@ -149,7 +172,9 @@ import { ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseRangeSlider from '../Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
+import GoodBitBands from './GoodBitBands.vue';
 import type { TimeRange } from '../../composables/useTrimRange';
+import type { GoodBit } from '../../types/goodbit';
 import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
@@ -170,14 +195,31 @@ interface Props {
   /** The same position, formatted. */
   playhead: string;
   isPlaying: boolean;
+  /**
+   * Every range already marked on this clip, drawn along the strip.
+   *
+   * This timeline showed one range with two handles, which is all a trim ever
+   * needs: a trim replaces the file, so there is only ever one answer. A clip
+   * can hold several GoodBits, and the strip is the only place they can be seen
+   * against the footage they point at.
+   */
+  goodBits?: readonly GoodBit[];
+  /** Which of them the handles are sitting on, so the band can say so. */
+  selectedGoodBitId?: number | null;
 }
 
-const props = withDefaults(defineProps<Props>(), { saveProgress: 0 });
+const props = withDefaults(defineProps<Props>(), {
+  saveProgress: 0,
+  goodBits: () => [],
+  selectedGoodBitId: null,
+});
 
 interface Emits {
   (e: 'save'): void;
   (e: 'toggle-playback'): void;
   (e: 'seek', time: number): void;
+  /** A band was pressed: put the handles on it. */
+  (e: 'select-goodbit', goodBit: GoodBit): void;
 }
 
 const emit = defineEmits<Emits>();

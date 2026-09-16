@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import AppMark from '../App/AppMark.vue';
-import type { ClipSuggestions } from '../../services/clips';
+import { momentCovered } from '../../utils/goodBits';
+import type { ClipSuggestions, SuggestionEvent } from '../../services/clips';
+import type { GoodBit } from '../../types/goodbit';
 
 interface Props {
   suggestions: ClipSuggestions | null;
@@ -14,15 +16,22 @@ interface Props {
    * before the answer arrives, so the wait can say what is taking the time.
    */
   watchesScreen?: boolean;
+  /**
+   * What is already marked on this clip, so a reading that has been kept can
+   * say so instead of offering to keep it twice.
+   */
+  goodBits?: readonly GoodBit[];
 }
 
 interface Emits {
   (e: 'apply', start: number, end: number): void;
   (e: 'seek', time: number): void;
   (e: 'reject'): void;
+  /** Keep this reading as a GoodBit, in one press. */
+  (e: 'keep', anchor: SuggestionEvent): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { goodBits: () => [] });
 const emit = defineEmits<Emits>();
 
 /**
@@ -83,6 +92,45 @@ const seconds = computed(() => {
 });
 
 /**
+ * Every reading confident enough to stand on its own, best first.
+ *
+ * **Not the same thing as `goodBits`**, which is where inside the suggested
+ * window the sound peaked, and which this banner has always drawn as jump
+ * chips. An anchor is something the game itself put on screen, with a sentence
+ * saying what, and `decide()` used to keep the strongest and throw the rest
+ * away: eight found moments across a real library, discarded.
+ *
+ * They are only worth a row of their own when there is more than one. With a
+ * single anchor the headline above already names it and *Use it* already puts
+ * the handles on it, so a chip repeating it is a second control for one
+ * decision.
+ */
+const anchors = computed<SuggestionEvent[]>(() => {
+  const found = props.suggestions?.anchors ?? [];
+  return found.length > 1 ? [...found].sort((a, b) => a.atSec - b.atSec) : [];
+});
+
+/** The window the server placed, which belongs to the strongest reading only. */
+const strongest = computed(() => props.suggestions?.anchors?.[0] ?? null);
+
+function keptAlready(anchor: SuggestionEvent): boolean {
+  return momentCovered(anchor.atSec, props.goodBits);
+}
+
+/**
+ * One press keeps it, and moves the player to it.
+ *
+ * The seek is not decoration. Keeping a reading writes a row that is then only
+ * visible as a band on a strip, and taking on trust that the app marked the
+ * right two seconds is exactly the thing this feature should not ask for. The
+ * player goes there so what was kept is on screen.
+ */
+function keep(anchor: SuggestionEvent): void {
+  emit('seek', anchor.atSec);
+  emit('keep', anchor);
+}
+
+/**
  * Saying the suggestion is wrong is the only thing the app cannot work out for
  * itself. A trim records where you cut; ignoring a banner records nothing.
  */
@@ -133,8 +181,9 @@ function reject(): void {
   <div
     v-else-if="show && window"
     key="answer"
-    class="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-300 bg-orange-500/6"
+    class="px-4 py-2.5 rounded-xl border border-orange-300 bg-orange-500/6 space-y-2"
   >
+    <div class="flex flex-wrap items-center gap-3">
     <!--
       The app's own mark when the game told us what happened, a level meter when
       all we did was listen. `material-symbols:crosshair` is not a real icon
@@ -175,6 +224,77 @@ function reject(): void {
       >
         {{ dismissed ? 'Noted' : 'Wrong' }}
       </button>
+    </div>
+    </div>
+
+    <!--
+      A second row, only when the game showed more than one thing.
+
+      **One press keeps one.** These are cached measurements, not decisions:
+      nothing writes a GoodBit row on its own, so keeping a reading is an
+      explicit save that carries the reading's own sentence and confidence with
+      it. The press also seeks, so what has just been kept is on screen rather
+      than taken on trust.
+
+      This is the convenience half of the feature and it is deliberately second.
+      Four percent of a real library holds two or more of these, against a bar
+      of fifteen for building the release on them, so the bar below the timeline
+      is the primary path and this row fills in the few it happens to find.
+    -->
+    <div
+      v-if="anchors.length > 0"
+      class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-orange-300/50"
+    >
+      <span class="text-xs text-muted-500 mr-1">
+        This game showed {{ anchors.length }} moments. Keep any of them:
+      </span>
+
+      <button
+        v-for="anchor in anchors"
+        :key="`${anchor.kind}-${anchor.atSec}`"
+        type="button"
+        class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors disabled:cursor-default"
+        :class="
+          keptAlready(anchor)
+            ? 'border-orange-300/60 text-muted-500 bg-orange-500/4'
+            : 'border-orange-300 text-orange-700 hover:bg-orange-500/16'
+        "
+        :disabled="keptAlready(anchor)"
+        :title="
+          keptAlready(anchor)
+            ? `Already marked: ${anchor.reason}`
+            : `${anchor.reason}. Keep it as a GoodBit, and jump there.`
+        "
+        @click="keep(anchor)"
+      >
+        <Icon
+          :icon="
+            keptAlready(anchor)
+              ? 'material-symbols:bookmark-rounded'
+              : 'material-symbols:bookmark-add-outline-rounded'
+          "
+          class="text-sm"
+        />
+        <span class="font-mono tabular-nums">{{ format(anchor.atSec) }}</span>
+        <!--
+          The confidence, because these are readings rather than facts and the
+          one at 0.81 deserves less trust than the one at 0.98. Three of the
+          seven multi-event clips in the measurement had a reading at exactly
+          0.0s, which is a kill banner already on screen when the buffer
+          started: the tail of something that happened before the recording.
+        -->
+        <span class="text-[10px] text-muted-500">
+          {{ Math.round(anchor.confidence * 100) }}%
+        </span>
+      </button>
+
+      <!--
+        Where *Use it* puts the handles, named, so the row above and this one
+        are visibly about the same clip rather than two unrelated readings.
+      -->
+      <span v-if="strongest" class="text-[11px] text-muted-400 ml-auto">
+        Strongest: {{ format(strongest.atSec) }}
+      </span>
     </div>
   </div>
       </Transition>
