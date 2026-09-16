@@ -10,21 +10,21 @@ import { ffmpegConfigured } from '../services/ffmpeg.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
 import { setJobProgress } from '../services/jobs.js';
 import { runFfmpeg } from '../services/ffmpegRun.js';
+import { detectEncoders, decodeArgs, probeVideo } from '../services/encoders.js';
 import {
-  detectEncoders,
-  decodeArgs,
-  encoderArgs,
-  probeVideo,
-  TONEMAP_FILTER,
-  type EncoderInfo,
-  type ProbeInfo,
-} from '../services/encoders.js';
-import {
-  cropFilterFor,
-  outputSizeFor,
-  targetKbpsFor,
-  type ExportFormat,
-} from '@shared/index.js';
+  buildCutCommand,
+  buildDissolveCommand,
+  buildRenderPlan,
+  planWork,
+  COPY_PASS_WEIGHT,
+  MIN_SEGMENT_SEC,
+  type ExportClip,
+  type RenderStep,
+  type SegmentCommand,
+  type SegmentOptions,
+  type SourceContext,
+} from '../services/exportPlan.js';
+import type { ExportFormat, ProjectTimelineTransition } from '@shared/index.js';
 import type { FfmpegCommand } from 'fluent-ffmpeg';
 
 /**
@@ -62,6 +62,12 @@ interface TimelineAudioData {
 interface ExportTimelineInput {
   clips: TimelineClipData[];
   audio?: TimelineAudioData[];
+  /**
+   * Cross dissolves, in the gaps between adjacent clips. See
+   * `services/exportPlan.ts`: a dissolve is taken out of both of its
+   * neighbours, so asking for one makes the movie shorter.
+   */
+  transitions?: ProjectTimelineTransition[];
   outputName?: string;
   exportId?: string;
   /** The shape of the finished movie. Defaults to the source's own shape. */
@@ -81,6 +87,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const {
       clips,
       audio = [],
+      transitions = [],
       exportId,
       format = 'original',
       framePos = 0.5,
@@ -159,73 +166,110 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     try {
       const encoders = await detectEncoders();
 
-      // Every segment is normalised to the same shape and timebase so the
-      // concat demuxer can copy them together afterwards.
       const stamp = Date.now();
-      // Music and loudness each add a pass after the cutting.
-      const extraPasses = (audible.length > 0 ? 1 : 0) + (normalizeLoudness ? 1 : 0);
-      const totalSteps = clips.length + 1 + extraPasses;
 
-      for (let i = 0; i < clips.length; i++) {
-        if (signal?.aborted) throw new Error('Cancelled');
-
-        const timelineClip = clips[i];
+      // What to render, worked out before any of it runs, so the progress bar
+      // knows the size of the job and a dissolve that will not fit is reported
+      // once rather than discovered by ffmpeg.
+      const timeline: ExportClip[] = clips.map((timelineClip) => {
         const dbClip = clipMap.get(timelineClip.clipId);
         if (!dbClip) throw new Error(`Clip ${timelineClip.clipId} not found`);
+        return {
+          clipId: timelineClip.clipId,
+          filePath: dbClip.filePath,
+          trimStart: timelineClip.trimStart,
+          trimEnd: timelineClip.trimEnd,
+          volume: timelineClip.volume,
+          muted: timelineClip.muted,
+        };
+      });
 
+      const plan = buildRenderPlan(timeline, transitions);
+      for (const note of plan.notes) console.log(`[export] ${note}`);
+
+      // Music and loudness each add a pass after the cutting, on top of the
+      // join. All three copy the picture, so they are cheap next to a segment.
+      const copyPasses = 1 + (audible.length > 0 ? 1 : 0) + (normalizeLoudness ? 1 : 0);
+      // Floored at the shortest segment anyone can ask for, because this is
+      // about to be a divisor and an empty plan would make it zero.
+      const totalWork = Math.max(planWork(plan, copyPasses), MIN_SEGMENT_SEC);
+      /** What one of those passes is worth on the bar, in the same unit. */
+      const copyWork = plan.durationSec * COPY_PASS_WEIGHT;
+      let doneWork = 0;
+
+      const segmentOptions: SegmentOptions = { format, framePos, encoders };
+
+      /*
+       * One probe and one `decodeArgs` per *file*, not per step.
+       *
+       * A dissolve reads the same two files its neighbouring cuts do, so a
+       * three clip timeline with two dissolves went from three probes to
+       * five, and `decodeArgs` runs a second ffprobe of its own to ask whether
+       * the file carries a discard flagged pre-roll. Both answers are
+       * properties of the file, and the file does not change during a render.
+       */
+      const contexts = new Map<string, SourceContext>();
+      const contextFor = async (filePath: string): Promise<SourceContext> => {
+        const existing = contexts.get(filePath);
+        if (existing) return existing;
+
+        const context: SourceContext = {
+          info: await probeVideo(filePath),
+          decode: await decodeArgs(encoders, filePath),
+        };
+        contexts.set(filePath, context);
+        return context;
+      };
+
+      for (let i = 0; i < plan.steps.length; i++) {
+        if (signal?.aborted) throw new Error('Cancelled');
+
+        const step = plan.steps[i];
         const tempOutputPath = path.join(tempDir, `segment_${i}_${stamp}.mp4`);
         tempFiles.push(tempOutputPath);
 
-        const info = await probeVideo(dbClip.filePath);
-        const segmentDuration = Math.max(0.05, timelineClip.trimEnd - timelineClip.trimStart);
+        const command = await this.buildSegment(step, segmentOptions, contextFor);
+        const at = doneWork;
 
-        await this.processClipSegment({
-          inputPath: dbClip.filePath,
-          outputPath: tempOutputPath,
-          trimStart: timelineClip.trimStart,
-          duration: segmentDuration,
-          volume: timelineClip.volume,
-          muted: timelineClip.muted,
-          format,
-          framePos,
-          encoders,
-          info,
+        await this.runSegment(command, tempOutputPath, {
           signal,
+          durationSec: step.durationSec,
           onProgress: (fraction) =>
-            progress(
-              ((i + fraction) / totalSteps) * 100,
-              `Cutting clip ${i + 1} of ${clips.length}`,
-            ),
+            progress(((at + fraction * step.durationSec) / totalWork) * 100, step.label),
         });
+
+        doneWork += step.durationSec;
       }
 
-      progress((clips.length / totalSteps) * 100, 'Joining the clips');
+      progress((doneWork / totalWork) * 100, 'Joining the clips');
 
       const concatContent = tempFiles.map((f) => `file '${f.replace(/'/g, "'\\''")}'`).join('\n');
       await fs.writeFile(concatListPath, concatContent, 'utf-8');
 
       // The picture is finished after the join and is only ever copied from
-      // here on, so the encode above is the one and only generation.
+      // here on, so the encode above is the one and only generation. That is
+      // as true of a dissolve as of a cut: the blend is its own segment, so
+      // the frames on either side of it are never encoded twice.
       let current = path.join(tempDir, `joined_${stamp}.mp4`);
       await this.concatenateClips(concatListPath, current, signal);
-      let step = clips.length + 1;
+      doneWork += copyWork;
 
       if (audible.length > 0) {
         if (signal?.aborted) throw new Error('Cancelled');
-        progress((step / totalSteps) * 100, 'Mixing the music');
+        progress((doneWork / totalWork) * 100, 'Mixing the music');
         const mixed = path.join(tempDir, `mixed_${stamp}.mp4`);
         await this.mixAudioTracks(current, audible, mixed, signal);
         current = mixed;
-        step++;
+        doneWork += copyWork;
       }
 
       if (normalizeLoudness) {
         if (signal?.aborted) throw new Error('Cancelled');
-        progress((step / totalSteps) * 100, 'Evening out the sound');
+        progress((doneWork / totalWork) * 100, 'Evening out the sound');
         const evened = path.join(tempDir, `loud_${stamp}.mp4`);
         await this.normalizeLoudness(current, evened, signal);
         current = evened;
-        step++;
+        doneWork += copyWork;
       }
 
       await fs.rename(current, outputPath).catch(async () => {
@@ -275,70 +319,55 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
   }
 
   /**
-   * Cut one segment and make it match every other segment.
+   * What ffmpeg is asked for, for one step of the plan.
    *
-   * Three things happen here that did not before. The source is decoded on the
-   * GPU where there is one, these are 3440x1440 AV1 files and software
-   * decoding them runs at 0.44x realtime, so this is the single biggest cost in
-   * the whole export. An HDR source is tone mapped, without which the PQ curve
-   * is read as sRGB and the result is the grey, washed-out picture the exports
-   * used to have. And only the first audio track is taken, because OBS writes
-   * six identical copies of the same mix.
+   * The deciding is in `services/exportPlan.ts` and returns plain arrays; this
+   * only resolves what each source needs probing for. Split that way because a
+   * filter graph is a string built out of a dozen numbers and labels, it is
+   * wrong by one label at runtime and not before, and a value can be read back
+   * in a unit test while a `FfmpegCommand` cannot.
    */
-  private async processClipSegment(opts: {
-    inputPath: string;
-    outputPath: string;
-    trimStart: number;
-    duration: number;
-    volume: number;
-    muted: boolean;
-    format: ExportFormat;
-    framePos: number;
-    encoders: EncoderInfo;
-    info: ProbeInfo;
-    signal?: AbortSignal;
-    onProgress?: (fraction: number) => void;
-  }): Promise<void> {
-    const {
-      inputPath, outputPath, trimStart, duration, volume, muted,
-      format, framePos, encoders, info, signal, onProgress,
-    } = opts;
-
-    const filters: string[] = [];
-    if (info.isHdr) filters.push(TONEMAP_FILTER);
-
-    const crop = cropFilterFor(format, info.width, info.height, framePos);
-    if (crop) filters.push(crop);
-
-    const targetKbps = targetKbpsFor(format, info.width, info.height, info.kbps);
-
-    let command: FfmpegCommand = ffmpegConfigured(inputPath)
-      .inputOptions([...(await decodeArgs(encoders, inputPath)), `-ss ${trimStart.toFixed(3)}`])
-      .outputOptions([`-t ${duration.toFixed(3)}`]);
-
-    if (filters.length) command = command.outputOptions([`-vf ${filters.join(',')}`]);
-
-    command = command.outputOptions([
-      ...encoderArgs(encoders, { quality: 21, targetKbps }),
-      '-map 0:v:0',
-      // Every segment needs the same stream layout or the concat demuxer
-      // refuses to join them.
-      '-r 60',
-      '-video_track_timescale 60000',
-    ]);
-
-    if (muted || info.audioStreams === 0) {
-      command = command.outputOptions(['-an']);
-    } else {
-      command = command.outputOptions(['-map 0:a:0']);
-      if (volume !== 1) command = command.outputOptions([`-af volume=${volume.toFixed(3)}`]);
-      command = command.outputOptions(['-c:a aac', '-b:a 256k', '-ac 2', '-ar 48000']);
+  private async buildSegment(
+    step: RenderStep,
+    options: SegmentOptions,
+    contextFor: (filePath: string) => Promise<SourceContext>,
+  ): Promise<SegmentCommand> {
+    if (step.kind === 'cut') {
+      return buildCutCommand(step, await contextFor(step.source.filePath), options);
     }
 
-    await runFfmpeg(command.outputOptions(['-y']).output(outputPath), {
-      signal,
-      onProgress,
-      durationSec: duration,
+    return buildDissolveCommand(
+      step,
+      await contextFor(step.from.filePath),
+      await contextFor(step.to.filePath),
+      options,
+    );
+  }
+
+  /**
+   * Run one built segment.
+   *
+   * Every input gets its own options, which is not a detail: `-hwaccel` binds
+   * to the input that follows it, and a dissolve can want the GPU for one of
+   * its two files and not the other, because `decodeArgs` refuses it for a file
+   * that still carries a discard flagged pre-roll.
+   */
+  private runSegment(
+    command: SegmentCommand,
+    outputPath: string,
+    opts: { signal?: AbortSignal; durationSec: number; onProgress?: (fraction: number) => void },
+  ): Promise<void> {
+    let built: FfmpegCommand = ffmpegConfigured();
+    for (const input of command.inputs) {
+      built = built.input(input.path).inputOptions(input.options);
+    }
+
+    if (command.complexFilter) built = built.complexFilter(command.complexFilter);
+
+    return runFfmpeg(built.outputOptions(command.outputOptions).output(outputPath), {
+      signal: opts.signal,
+      onProgress: opts.onProgress,
+      durationSec: opts.durationSec,
       timeoutMs: 60 * 60_000,
     });
   }
