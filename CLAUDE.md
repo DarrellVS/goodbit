@@ -35,9 +35,11 @@ One electron-vite project, three builds.
 ```bash
 npm run dev            # electron-vite, hot reload
 npm run typecheck      # tsconfig.node.json (main+preload) and tsconfig.web.json (renderer)
+npm run test:unit      # vitest over the pure logic, under a second, no GPU and no window
+npm run check          # typecheck + unit tests. The gate to run while iterating
 npm run build          # typecheck, then all three bundles into out/
-npm run test:e2e       # builds, then Playwright drives the real app
-npm run build:win      # check:pre-release (typecheck + e2e) then electron-builder
+npm run test:e2e       # builds, then Playwright drives the real app. Minutes, not seconds
+npm run build:win      # check:pre-release (check + e2e) then electron-builder
 node scripts/backup-db.mjs   # verified snapshot of the library database
 node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
 node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
@@ -48,6 +50,11 @@ node scripts/ux-session.mjs  # replay a list of actions and screenshot every ste
 ```
 
 Keep `npm run typecheck` green, `build` runs it first and fails otherwise.
+
+**Check the exit status, never the log text.** vite colours its own failures, so
+`[31merror during build:` does not match a grep for `^error`, and a build that failed reads as a
+build that passed while the app keeps running the previous bundle. `npm run build > out.log 2>&1;
+echo "exit=$?"`.
 
 ## Where things live at runtime
 
@@ -433,6 +440,29 @@ over video), since those grounds do not follow the theme.
 
 ## Testing
 
+Two suites, three orders of magnitude apart, and the split is by what a test needs rather than by
+what it covers.
+
+`tests/unit` is vitest over **anything that takes values and returns values**: `decide.ts` turning a
+measurement into a verdict, `geometry.ts` turning an anchor and a frame height into a pixel box,
+`voteOver` turning a run of foreground samples into the name a clip gets filed under. Under a
+second, so it can run on every edit. Every threshold in there was arrived at by measuring real
+recordings and none of it is re-derivable from reading the code, which is exactly why a `<` quietly
+becoming a `<=` needs to fail something.
+
+What does not belong there: anything that runs ffmpeg, opens a database, writes another program's
+configuration or needs a window. Those have `scripts/*-check.mjs` benches against real inputs, which
+is the honest way to test them.
+
+Two things the unit suite needs to know about. `vitest.config.ts` rewrites main's `.js` import
+specifiers to the `.ts` files they mean, because main is ESM at runtime and Vite does not do what
+`tsc` does here. And `tests/unit/stubs/electron.ts` stands in for `electron`, because `decide.ts`
+reaches it transitively through `model.ts` looking for a trained model. That stub is a symptom worth
+inverting rather than a fixture worth keeping.
+
+A defect that is known and not yet fixed is recorded as `it.fails` with a comment saying which item
+fixes it. Fixing it makes that test fail, which is the announcement.
+
 `tests/e2e` drives the built app with Playwright. Each test gets a throw-away data directory, videos
 root and database; fixtures are generated with the bundled ffmpeg. **A test must never touch the real
 library.**
@@ -467,7 +497,7 @@ by the next scan, and a trim re-probes.
 - **`synchronize: true` with no migrations.** Fine while the only library is one that can be rebuilt
   from disk; **a 1.0 blocker** once strangers have tags and notes they cannot re-derive, because
   TypeORM's SQLite auto-sync resolves some schema changes by rebuilding a table.
-- No linter. Typecheck and the e2e suite are the only automated gates.
+- No linter. Typecheck, the unit suite and the e2e suite are the automated gates.
 - `publisher/` still reads its config from a `.env`; it was deliberately left alone. Setting it up
   is documented at `site/publisher.html`, which is a wizard rather than a page, a quick start
   and a seven-step route that writes the reader's own domain and paths into every command.

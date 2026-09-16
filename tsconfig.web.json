@@ -30,6 +30,8 @@
     "tests/**/*.ts"
   ],
   "exclude": [
-    "src/renderer/src/sw.ts"
+    "src/renderer/src/sw.ts",
+    "tests/unit/main/**",
+    "tests/unit/stubs/**"
   ]
 }

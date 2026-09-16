@@ -144,7 +144,22 @@ export function dominantBetween(
   to: number,
   candidates?: (exePath: string) => boolean,
 ): ForegroundVote | null {
-  const window = samplesBetween(from, to).filter((sample) => sample.exePath);
+  return voteOver(samplesBetween(from, to), candidates);
+}
+
+/**
+ * The vote itself, over samples handed in rather than read from the history.
+ *
+ * Split out so the rule can be checked without a running helper: the history
+ * is two minutes of module state fed by a child process, and the part worth
+ * testing is this arithmetic. `dominantBetween` is the same function with the
+ * window read from that state.
+ */
+export function voteOver(
+  taken: ForegroundSample[],
+  candidates?: (exePath: string) => boolean,
+): ForegroundVote | null {
+  const window = taken.filter((sample) => sample.exePath);
   if (window.length === 0) return null;
 
   const eligible = candidates ? window.filter((sample) => candidates(sample.exePath)) : window;
