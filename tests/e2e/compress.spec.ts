@@ -105,7 +105,12 @@ async function startFakePublisher(): Promise<FakePublisher> {
    * its container and now receives. Raw JPEG bytes, and behind the same token
    * as everything else that writes.
    */
-  app.put(
+  /*
+   * The parameter type is spelled out because Express 5 types `req.params`
+   * values as `string | string[]`: path-to-regexp 8 can repeat a parameter, so
+   * the general case is a list. `:filename` here is one segment and cannot be.
+   */
+  app.put<{ filename: string }>(
     '/api/publish/:filename/thumbnail',
     gate,
     express.raw({ type: 'image/jpeg', limit: '8mb' }),
