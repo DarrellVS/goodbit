@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
+import { posterPathFor, posterUrlFor } from '../utils/posterPath.js';
 
 export interface UnpublishClipInput {
   filePath: string;
@@ -24,7 +25,7 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
     }
 
     // Delete the thumbnail file (.thumb.jpg)
-    const thumbPath = path.join(uploadDir, `${filename}.thumb.jpg`);
+    const thumbPath = posterPathFor(uploadDir, filename);
     try {
       await fs.unlink(thumbPath);
     } catch (err: any) {
@@ -50,7 +51,12 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
       const urlsToPurge = [
         `${baseClean}/${encodeURIComponent(filename)}`, // Main page
         `${baseClean}/media/${encodeURIComponent(filename)}`, // Video file
-        `${baseClean}/thumb/${encodeURIComponent(filename)}`, // Thumbnail
+        // The poster, at the address it is actually served from. This asked
+        // for `/thumb/<clip>` for a while, which is not a route this server
+        // has ever had, so the purge came back successful and the frame of a
+        // clip that had just been taken down went on being served from the
+        // edge. See `utils/posterPath.ts`.
+        posterUrlFor(baseClean, filename),
       ];
       try { 
         await new PurgeCloudflareCacheAction().execute({ urls: urlsToPurge }); 
