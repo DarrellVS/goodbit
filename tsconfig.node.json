@@ -18,13 +18,12 @@
     "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@shared/*": [
-        "src/shared/*"
+        "./src/shared/*"
       ],
       "@main/*": [
-        "src/main/*"
+        "./src/main/*"
       ]
     }
   },
