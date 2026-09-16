@@ -28,7 +28,7 @@ Everything happens on your own machine. Nothing is uploaded unless you ask it to
 
 **[Download](https://github.com/DarrellVS/goodbit/releases/latest) · [Website](https://darrellvs.github.io/goodbit/) · [Documentation](https://darrellvs.github.io/goodbit/docs.html)**
 
-<img src="site/assets/shots/library.webp" alt="The GoodBit library: Battlefield 6 clips grouped under the day they were recorded, each card showing a thumbnail, a name, size, age and tags." width="900" />
+<img src="site/assets/shots/library.webp" alt="The GoodBit library: clips grouped under the day they were recorded, each card showing a thumbnail, a name, length, size, age and tags, with orange bands over the thumbnail marking the moments marked in that clip." width="900" />
 
 </div>
 

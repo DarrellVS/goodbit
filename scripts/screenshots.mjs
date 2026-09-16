@@ -42,8 +42,66 @@ const KEEP_PNG = process.argv.includes('--keep-png');
 /** Where the real recordings are. Override with `--source <folder>`. */
 const SOURCE_ROOT = libraryRoot();
 
+/**
+ * The size everything is photographed at.
+ *
+ * Taller than the 900 it used to be, because of one screen. The trim page is a
+ * flex column and the preview is the `flex-1` in it, so it gets whatever the
+ * frame strip, the suggestion banner, the scrubber, the range readouts and the
+ * mark bar leave behind. At 900 that was 145 pixels, and a 3440x1440 recording
+ * fitted into a 1310x145 box by height is a 330 pixel picture between two
+ * enormous black bars: the shot was mostly letterbox.
+ *
+ * Nothing in the app was changed for this. That layout is right for somebody
+ * who has a small window, and the website is not the place to argue about it.
+ *
+ * `site/index.html` and `site/docs.html` carry these same numbers as `width`
+ * and `height` on each `<img>`, so a page reserves the right space before the
+ * picture arrives. Change these and change those.
+ */
+const SHOT_WIDTH = 1440;
+const SHOT_HEIGHT = 1080;
+
 /** How much of each recording to copy. Enough for a thumbnail, a strip and a trim. */
 const EXCERPT_SEC = 30;
+
+/**
+ * How short a recording may be and still be photographed.
+ *
+ * Newest-first alone put a wall of four and six second clips on the website,
+ * because the most recent things in this library are already-trimmed keepers
+ * rather than full replays. Every duration on the page read "0:06", the
+ * trimmer had nothing to scrub through, and two marked ranges came out 1.3
+ * seconds each. Length is what makes these screens look like they have
+ * something in them.
+ *
+ * A floor rather than "the longest ones": sorting by length would photograph
+ * the same handful of clips for ever and quietly stop being a sample of the
+ * library.
+ */
+const MIN_SEC = 18;
+
+/**
+ * What a trim leaves behind, which is not a recording.
+ *
+ * The same test `ScanAndSyncClipsAction` uses, and it has to be here for the
+ * same reason the bench needed its own copy: this library really does contain
+ * `.goodbit-trim-Battlefield 6_22.08.2026_16-21-30-1789506667787.mp4`, it
+ * really was recent enough to be picked, and it really was copied in. The app
+ * then skipped it, so twelve excerpts became eleven clips and the only sign
+ * was a number in a log.
+ */
+const WORKING_FILE = /(^\.goodbit-(trim|bak)-|\.tmp-\d+\.[a-z0-9]+$)/i;
+
+/**
+ * `Game_DD.MM.YYYY_HH-MM-SS.mp4`, which is what OBS and GoodBit produce.
+ *
+ * Anything else in a game folder arrived some other way. `Edited_2025-10-10.mp4`
+ * and `Edited_2025-10-10_1.mp4` are both sitting in Satisfactory, and they are
+ * exports, not recordings: no date to read out of the name, and a name nobody
+ * would want photographed.
+ */
+const RECORDING_NAME = /^.+_\d{2}\.\d{2}\.\d{4}_\d{2}-\d{2}-\d{2}\.(mp4|mov|mkv)$/i;
 
 /**
  * The games that appear on the website, and how many clips of each.
@@ -54,22 +112,97 @@ const EXCERPT_SEC = 30;
 const LIBRARY = [
   { game: 'Battlefield 6', take: 4 },
   { game: 'Ready Or Not', take: 3 },
-  { game: 'forzahorizon6', take: 3 },
+  // Was `forzahorizon6`, which is not in this library any more and, being
+  // named after an executable, is exactly the kind of folder name the game
+  // override exists to tidy up before anybody photographs it.
+  { game: 'Satisfactory', take: 3 },
   { game: 'Phasmophobia', take: 1 },
 ];
 
 /**
  * The recording the clip and trim shots are taken of.
  *
- * Picked rather than left to whichever clip happens to be newest, because this
- * one has a kill in it that the Battlefield module finds, so the trim page in
- * the screenshot shows the suggestion banner saying *why*, which is the part
- * worth photographing. Always copied in, whether or not it is recent enough to
- * make the `take` above.
+ * Picked rather than left to whichever clip happens to be newest, and picked
+ * by running the shipped detector over the library rather than by watching
+ * them: `node scripts/hud-check.mjs "Battlefield 6" --limit 30`. This is the
+ * one clip in that sample whose reason reads **"two kills, 5 seconds apart"**,
+ * where every other hit says "you dropped someone here". The suggestion banner
+ * is the part of the trim page worth photographing, so it should be showing
+ * the most interesting thing the detector can say.
+ *
+ * It is also 27 seconds. The clip that was here before was 6, which put "0:06"
+ * on the library card, on the clip page, and three times over on the trimmer,
+ * and made the two marked ranges 1.3 seconds each. Always copied in, whether
+ * or not it is recent enough to make the `take` above.
  */
-const FEATURED = { game: 'Battlefield 6', file: 'Battlefield 6_27.08.2026_20-56-01.mp4' };
+const FEATURED = { game: 'Battlefield 6', file: 'Battlefield 6_20.08.2026_20-45-47.mp4' };
 
 const VIDEO = /\.(mp4|mov|mkv)$/i;
+
+/**
+ * How long a recording is, from the header.
+ *
+ * `ffprobe` is not in `ffmpeg-static`, only `ffmpeg` is, and asking ffmpeg for
+ * a file with no output is an error by definition: it prints what it read and
+ * exits non-zero. So the duration is parsed off the failure, which is the
+ * documented way to do this with only the one binary.
+ */
+function probeSeconds(file) {
+  try {
+    execFileSync(FFMPEG, ['-hide_banner', '-i', file], { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (error) {
+    const said = (error.stderr ?? '').toString();
+    const found = /Duration: (\d+):(\d+):([\d.]+)/.exec(said);
+    if (found) return Number(found[1]) * 3600 + Number(found[2]) * 60 + Number(found[3]);
+  }
+  return 0;
+}
+
+/**
+ * At most `PROBE_LIMIT` headers read per game before settling for what we have.
+ *
+ * A header read is cheap, but Battlefield 6 has 176 clips in it and reading
+ * every one to choose four is a slow way to be thorough about something that
+ * only has to look right.
+ */
+const PROBE_LIMIT = 40;
+
+/**
+ * The clips to photograph from one game folder: newest first, long enough, and
+ * actually recordings.
+ *
+ * Newest first is still the order, because the site should show what is being
+ * played now rather than the best clips of all time. The floor just refuses
+ * the ones with nothing in them to look at, and if a game cannot field enough
+ * of those, the longest of whatever was read is better than a 3.8 second one
+ * picked on its timestamp.
+ */
+function pick(from, take) {
+  const candidates = readdirSync(from)
+    .filter((name) => VIDEO.test(name) && !WORKING_FILE.test(name) && RECORDING_NAME.test(name))
+    .map((name) => ({ name, at: statSync(join(from, name)).mtimeMs }))
+    .sort((a, b) => b.at - a.at);
+
+  const kept = [];
+  const probed = [];
+
+  for (const candidate of candidates.slice(0, PROBE_LIMIT)) {
+    const seconds = probeSeconds(join(from, candidate.name));
+    probed.push({ ...candidate, seconds });
+    if (seconds >= MIN_SEC) kept.push(candidate);
+    if (kept.length === take) return kept;
+  }
+
+  // Not enough long ones. Fill the rest with the longest that were read, still
+  // newest first among those, and never the same clip twice.
+  const filler = probed
+    .filter((row) => !kept.some((row2) => row2.name === row.name))
+    .sort((a, b) => b.seconds - a.seconds)
+    .slice(0, take - kept.length)
+    .sort((a, b) => b.at - a.at);
+
+  return [...kept, ...filler];
+}
 
 function seed(videosRoot) {
   let copied = 0;
@@ -83,12 +216,7 @@ function seed(videosRoot) {
     }
 
     const wanted = FEATURED.game === game ? FEATURED.file : null;
-    const files = readdirSync(from)
-      .filter((name) => VIDEO.test(name))
-      .map((name) => ({ name, at: statSync(join(from, name)).mtimeMs }))
-      // Newest first, so the site shows what is actually being played.
-      .sort((a, b) => b.at - a.at)
-      .slice(0, take);
+    const files = pick(from, take);
 
     // The featured one goes in whether or not it made the cut above.
     if (wanted && existsSync(join(from, wanted)) && !files.some((f) => f.name === wanted)) {
@@ -158,7 +286,7 @@ const TAGS = {
     ['squad wipe', 'funny'],
   ],
   'Ready Or Not': [['breach'], ['clutch', 'no casualties'], ['breach', 'flashbang']],
-  forzahorizon6: [['drift'], ['near miss'], ['jump']],
+  Satisfactory: [['factory'], ['belts'], ['trains']],
   Phasmophobia: [['jumpscare', 'funny']],
 };
 
@@ -179,12 +307,66 @@ const NAMES = {
     'Tank, from the rooftop',
   ],
   'Ready Or Not': ['Breach and clear, eventually', 'Nobody got hit', 'Flashbang, then regret'],
-  forzahorizon6: ['Held the drift all the way', 'Missed the wall by nothing', 'Off the ramp'],
+  Satisfactory: ['The factory finally runs', 'Belt jam, fixed', 'Train arrives on time'],
   Phasmophobia: ['It followed us out'],
 };
 
+/**
+ * The moments marked on the demo clips, per game, as fractions of the clip.
+ *
+ * Two on some, one on others, none at all on the rest, which is what a real
+ * library looks like. Marking every clip would photograph a feature nobody
+ * uses that evenly, and the library card's bands read as a progress bar rather
+ * than as marks when every card carries them.
+ */
+const MARKS = {
+  'Battlefield 6': [
+    [[0.18, 0.42, 'The smoke goes up'], [0.61, 0.79, 'Last one down']],
+    [[0.3, 0.55, 'Direct hit']],
+    [[0.24, 0.41, 'Both of them at once']],
+  ],
+  'Ready Or Not': [
+    [[0.22, 0.4, 'Door goes in'], [0.58, 0.76, 'Corner, cleared']],
+    [[0.35, 0.6, 'Flash lands right']],
+  ],
+  Satisfactory: [[[0.4, 0.66, 'The belts line up']]],
+  Phasmophobia: [[[0.55, 0.72, 'It was behind us']]],
+};
+
+/**
+ * The featured clip's own marks.
+ *
+ * Separate from the list above because this recording is photographed twice,
+ * on the clip page and on the trim page, and both shots are about what has
+ * been marked on it. Two, spread apart, so the bands are legibly two things
+ * rather than one wide one.
+ */
+const FEATURED_MARKS = [
+  [0.24, 0.46, 'Coming up the steps'],
+  [0.63, 0.84, 'The one that counted'],
+];
+
 /** What the featured recording is called, since the trim shot is about it. */
 const FEATURED_NAME = 'Caught him coming up the steps';
+
+/**
+ * A note on the featured clip, because that panel is in the shot.
+ *
+ * "No notes yet. Add context, or mark a moment with a timestamp." is what the
+ * clip page showed underneath everything else, which photographs a feature by
+ * showing the state it is in before anybody uses it.
+ *
+ * The timestamps are real positions in this recording and they are the point:
+ * the editor turns `0:17` into a chip that seeks there, so a note written like
+ * this is also a set of jumps into the clip. Markdown works, hence the bold.
+ */
+const FEATURED_NOTE = [
+  'Went wide along the containers and waited instead of pushing.',
+  '',
+  '**0:17** is the pair of them, about five seconds apart, and neither one',
+  'worked out where it was coming from. 0:06 is getting into position, which',
+  'is the boring half and the reason the rest worked.',
+].join('\n');
 
 /** The collection that appears on the clip page, and in the sidebar. */
 const COLLECTION = 'Best of the month';
@@ -198,7 +380,16 @@ const COLLECTION = 'Best of the month';
  */
 async function dressTheLibrary(page) {
   const applied = await page.evaluate(
-    async ({ tags, names, collectionName, featured, featuredName }) => {
+    async ({
+      tags,
+      names,
+      marks,
+      featuredMarks,
+      collectionName,
+      featured,
+      featuredName,
+      note,
+    }) => {
       const api = (method, path, body) => window.goodbit.apiRequest({ method, path, body });
 
       const clips = (
@@ -239,21 +430,89 @@ async function dressTheLibrary(page) {
         await api('POST', `/collections/${collection.id}/clips/${clip.id}`, undefined);
       }
 
+      // The featured clip gets a note, since its panel is in the shot.
+      const noted = clips.find((clip) => clip.filename === featured);
+      if (noted) await api('PATCH', `/clips/${noted.id}`, { notes: note });
+
       // One starred clip, so the Starred tab is not empty either.
       if (clips[1]) await api('POST', `/clips/${clips[1].id}/star`, undefined);
 
-      return { tagged, named, collected: picked.length };
+      /*
+       * Mark some GoodBits, because a screenshot without them argues the app
+       * has nothing to point at.
+       *
+       * They are the feature the product is named after and they show in three
+       * of these pictures: as bands over a library card, as highlights on the
+       * player's progress bar, and as a list beside the trimmer. A trim page
+       * photographed with nothing marked is the emptiest possible version of
+       * the screen that matters most.
+       *
+       * Keyed by game like the tags and the names above, and for the same
+       * reason: these are labels a person would write, so "Breach goes in" on
+       * a Battlefield clip reads as placeholder text the moment anybody looks.
+       *
+       * The ranges are fractions of each clip's own length rather than fixed
+       * seconds, because the excerpts run to `EXCERPT_SEC` but a recording
+       * shorter than that stays short, and a hardcoded 18.0 on a nine second
+       * clip is a mark past the end of it.
+       */
+      let marked = 0;
+      const mark = async (clip, ranges) => {
+        const length = clip?.durationSec ?? 0;
+        if (!clip || length <= 1) return;
+
+        for (const [from, to, label] of ranges) {
+          await api('POST', `/clips/${clip.id}/goodbits`, {
+            startSec: Number((length * from).toFixed(2)),
+            endSec: Number((length * to).toFixed(2)),
+            name: label,
+            source: 'manual',
+          });
+          marked += 1;
+        }
+      };
+
+      const seenPerGame = {};
+      for (const clip of clips) {
+        if (clip.filename === featured) continue;
+
+        const list = marks[clip.game];
+        if (!list) continue;
+
+        const index = seenPerGame[clip.game] ?? 0;
+        seenPerGame[clip.game] = index + 1;
+
+        // One game runs out of written marks before it runs out of clips, and
+        // a library where every single clip is marked is its own kind of lie.
+        const ranges = list[index];
+        if (ranges) await mark(clip, ranges);
+      }
+
+      // And the featured recording, which is what the clip and the trim shots
+      // are both of, so each shows the bands rather than an empty bar.
+      await mark(
+        clips.find((clip) => clip.filename === featured),
+        featuredMarks,
+      );
+
+      return { tagged, named, collected: picked.length, marked };
     },
     {
       tags: TAGS,
       names: NAMES,
+      marks: MARKS,
+      featuredMarks: FEATURED_MARKS,
       collectionName: COLLECTION,
       featured: FEATURED.file,
       featuredName: FEATURED_NAME,
+      note: FEATURED_NOTE,
     },
   );
 
-  console.log(`  named and tagged ${applied.named} of ${applied.tagged} clips, collected ${applied.collected}`);
+  console.log(
+    `  named and tagged ${applied.named} of ${applied.tagged} clips, ` +
+      `collected ${applied.collected}, marked ${applied.marked} GoodBits`,
+  );
 }
 
 /**
@@ -327,6 +586,28 @@ async function waitForStrips(page, timeoutMs = 120_000) {
   console.warn('  frame strips never finished; shooting anyway');
 }
 
+/**
+ * The window with the app in it, which is not reliably the first one.
+ *
+ * The clip toast is a second `BrowserWindow`, built during boot so the first
+ * replay of a session does not wait for one to be constructed, and it can win
+ * that race. `firstWindow()` then hands back a transparent 344 pixel overlay,
+ * and every screenshot below is of that. The same fix as `tests/e2e/app.ts`,
+ * and told apart the same way: the overlay is a self contained `data:` page,
+ * the app is a file.
+ */
+async function mainWindow(app) {
+  const isApp = (candidate) => !candidate.url().startsWith('data:');
+
+  const existing = app.windows().find(isApp);
+  if (existing) return existing;
+
+  for (;;) {
+    const opened = await app.waitForEvent('window', { timeout: 30_000 });
+    if (isApp(opened)) return opened;
+  }
+}
+
 /** `Battlefield 6_17.05.2026_21-09-49` → a Date. */
 function dateFromName(name) {
   const m = /_(\d{2})\.(\d{2})\.(\d{4})_(\d{2})-(\d{2})-(\d{2})$/.exec(name);
@@ -364,7 +645,7 @@ async function main() {
       startAtLogin: false,
       keepRunningInTray: false,
       migratedFromWebApp: false,
-      window: { width: 1440, height: 900, maximized: false },
+      window: { width: 1440, height: SHOT_HEIGHT, maximized: false },
     }),
   );
 
@@ -377,9 +658,9 @@ async function main() {
     env: { ...process.env, GOODBIT_USER_DATA: dataDir },
   });
 
-  const page = await app.firstWindow();
+  const page = await mainWindow(app);
   await page.waitForLoadState('domcontentloaded');
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: SHOT_WIDTH, height: SHOT_HEIGHT });
 
   // The watcher waits for a file to stop changing before it indexes it, and
   // these are real 3440x1440 recordings whose thumbnails take a moment. Wait
@@ -404,7 +685,22 @@ async function main() {
 
   await dressTheLibrary(page);
 
-  await page.evaluate(() => localStorage.setItem('goodbit-theme', 'dark'));
+  await page.evaluate(() => {
+    localStorage.setItem('goodbit-theme', 'dark');
+
+    /*
+     * Put the OBS banner away before anything is photographed.
+     *
+     * It is correct, and it is the single loudest thing on the library shot: a
+     * full width orange warning saying OBS is not set up to record into your
+     * library, above the clips. It is correct because this *is* a throw-away
+     * library in a temp folder that no OBS has ever recorded into, which makes
+     * it a true statement about the screenshot rig and a false impression of
+     * the app. The same key the dismiss button writes, so nothing here has to
+     * know how the banner decides.
+     */
+    sessionStorage.setItem('goodbit.obs-banner-dismissed', 'yes');
+  });
   await page.reload();
   await page.waitForTimeout(3000);
 
@@ -439,6 +735,73 @@ async function main() {
   }, FEATURED.file);
 
   await go(`#/clips/${subject}`);
+  /*
+   * Hold the player still, just before the first marked range.
+   *
+   * The `<video>` autoplays, so without this the shot lands wherever the clip
+   * happened to be two and a half seconds in, with the button caught between
+   * its two states.
+   *
+   * The position is the part that matters, and two things decide it.
+   *
+   * The played portion is `orange-500` and it is drawn *over* the bands, which
+   * are `orange-400/80`, so a playhead past a mark covers it and a playhead
+   * between the two joins them into one long orange run: the bar stops reading
+   * as "two moments in here" and starts reading as a progress bar that has
+   * lost track of itself. That rules out everything from the first mark on.
+   *
+   * Which leaves the opening few seconds, and those were looked at rather than
+   * guessed: rendering the candidates as a contact sheet puts a sniper scope
+   * over the middle of this clip, so 12% and 16% are both a big black donut.
+   * 4% is the open shot, water and sky and the weapon in frame, with the HUD
+   * legible. The fill is short there, which is the honest thing for a clip
+   * that has just started.
+   */
+  await page.evaluate(async () => {
+    /*
+     * The biggest `<video>` on the page, not the first one.
+     *
+     * `document.querySelector('video')` does not return the player. A card's
+     * thumbnail is a `<video>` too (`AppClipCard.vue`), the library is still
+     * mounted behind the modal because a clip is a layer over it rather than a
+     * route, and those come first in the document. So every pause and every
+     * seek was being applied to a 270 pixel thumbnail in the grid underneath,
+     * while the player carried on playing: the shot kept coming back at 0:03
+     * with the button showing the playing state, from code that looked right.
+     *
+     * Area tells them apart with nothing to keep in sync.
+     */
+    const videos = Array.from(document.querySelectorAll('video'));
+    const player = videos
+      .map((element) => {
+        const box = element.getBoundingClientRect();
+        return { element, area: box.width * box.height };
+      })
+      .sort((a, b) => b.area - a.area)[0]?.element;
+
+    if (!player) return;
+    if (!Number.isFinite(player.duration) || player.duration <= 0) return;
+
+    await new Promise((resolve) => {
+      player.addEventListener('seeked', resolve, { once: true });
+      player.currentTime = player.duration * 0.04;
+      // A seek that lands on the frame it is already showing fires nothing.
+      setTimeout(resolve, 3000);
+    });
+    player.pause();
+  });
+  await page.waitForTimeout(1200);
+  /*
+   * Pause everything, with nothing between this and the shutter.
+   *
+   * The element autoplays, so a pause issued while it is still opening is
+   * simply overtaken. Asking again once it has settled leaves nothing that can
+   * restart it in between, and every video rather than the player alone,
+   * because the thumbnails behind the modal are playing too.
+   */
+  await page.evaluate(() => {
+    for (const video of document.querySelectorAll('video')) video.pause();
+  });
   await shoot('clip');
 
   await go(`#/trim/${subject}`, 4000);
@@ -461,6 +824,21 @@ async function main() {
   // analysis found rather than "no clip selected".
   await page.locator('.cursor-grab').first().click({ timeout: 3000 }).catch(() => {});
   await page.waitForTimeout(2000);
+
+  /*
+   * Zoom out until the whole movie is on screen.
+   *
+   * The editor opens at 100%, which is 50 pixels per second, so a minute and
+   * a half of clips runs several screens wide and the shot showed the first
+   * thirteen seconds of it: one block, no sense that there is a sequence here
+   * at all. The point of this screen is the arrangement, so the arrangement
+   * has to fit in the picture.
+   */
+  for (let i = 0; i < 3; i += 1) {
+    await page.getByTitle('Zoom out').click();
+    await page.waitForTimeout(500);
+  }
+  await page.waitForTimeout(1500);
 
   // The strip behind a timeline block is a CSS background, generated on demand
   // from the source clip, which for a real 3440x1440 recording takes several
