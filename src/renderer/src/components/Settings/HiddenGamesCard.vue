@@ -3,10 +3,13 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { fetchGames } from '../../services/games';
 import { useGameVisibility } from '../../composables/useGameVisibility';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 import type { Game } from '../../types/game';
 import AppLoading from '../App/AppLoading.vue';
 
 const { setHidden } = useGameVisibility();
+/* The cards here carry their own name from `utils/settingsCatalog.ts`. */
+const { settingRing } = useSettingsSearch();
 
 const games = ref<Game[]>([]);
 const loading = ref(false);
@@ -50,10 +53,18 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-1">Games</h2>
-      <p class="text-sm text-muted-500">
+  <!--
+    This was a settings section of its own, with a heading and no settings in
+    it. It is a card at the foot of Watching now: hiding a game is a thing you
+    do to your library rather than a thing you configure about games.
+  -->
+  <section
+    data-setting="Hidden games"
+    :class="['space-y-4 pt-2 border-t border-border', settingRing('Hidden games')]"
+  >
+    <div class="pt-4">
+      <h3 class="font-medium text-foreground">Hidden games</h3>
+      <p class="text-sm text-muted-500 mt-1">
         Hide folders you don't want in your library. The files stay on disk, they just stop showing up
         in clips, stats and the editor.
       </p>

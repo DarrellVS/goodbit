@@ -2,10 +2,18 @@
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import SettingToggle from './SettingToggle.vue';
+import PublisherCard from './PublisherCard.vue';
 import { useToastStore } from '../../stores/toast';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 
 /**
- * Connecting Claude Code to the library.
+ * The two programs GoodBit talks to, and nothing else.
+ *
+ * Claude was here on its own and the publisher was under App, where nothing in
+ * the name suggested that "where does GoodBit publish to" was answered there.
+ * They are the same kind of thing from either end: an address, a token, and
+ * another program at the far side of it, each of them optional and each off
+ * until somebody sets it up.
  *
  * Two switches, and they are genuinely separate decisions. The first starts a
  * server. The second tells Claude Code it exists. Somebody who manages their
@@ -18,6 +26,8 @@ import { useToastStore } from '../../stores/toast';
  */
 
 const toast = useToastStore();
+/* The cards here carry their own name from `utils/settingsCatalog.ts`. */
+const { settingRing } = useSettingsSearch();
 
 interface McpClient {
   id: string;
@@ -133,11 +143,14 @@ async function copyCommand(): Promise<void> {
   <section class="space-y-6">
     <div>
       <h2 class="text-xl font-semibold mb-1">Connections</h2>
-      <p class="text-sm text-muted-500">Let Claude work on your clips</p>
+      <p class="text-sm text-muted-500">
+        Claude, and the server that hosts your public links. Both optional, both off until you set
+        them up.
+      </p>
     </div>
 
     <div class="p-4 bg-card rounded-lg border border-border space-y-4">
-      <div class="flex items-start gap-3">
+      <div data-setting="Claude" :class="['flex items-start gap-3', settingRing('Claude')]">
         <Icon icon="material-symbols:robot-2-outline" class="text-xl text-orange-500 mt-0.5" />
         <div class="min-w-0">
           <p class="font-medium text-foreground">Claude</p>
@@ -259,5 +272,7 @@ async function copyCommand(): Promise<void> {
         </div>
       </template>
     </div>
+
+    <PublisherCard />
   </section>
 </template>

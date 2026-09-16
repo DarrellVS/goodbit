@@ -141,7 +141,7 @@ function close(): void {
  */
 function notNow(): void {
   toast.confirm(
-    'Settings, Recording has this waiting whenever you want it, and Advanced can replay the whole first run.',
+    'Settings, Recording has this waiting whenever you want it, and can replay the whole first run.',
     () => close(),
     'Leave the setup for now?',
   );

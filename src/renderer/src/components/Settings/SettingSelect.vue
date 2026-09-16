@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import BaseComboBox from '../Base/BaseComboBox.vue';
 import type { ComboBoxOption, ComboBoxValue } from '../Base/types';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 
 /**
  * One row of the settings screen: what the choice is, what it does, and the
@@ -35,8 +37,12 @@ interface Emits {
   (e: 'update:modelValue', value: ComboBoxValue): void;
 }
 
-withDefaults(defineProps<Props>(), { searchable: false, disabled: false });
+const props = withDefaults(defineProps<Props>(), { searchable: false, disabled: false });
 const emit = defineEmits<Emits>();
+
+/* The row's name in `utils/settingsCatalog.ts`. See `SettingToggle.vue`. */
+const { settingRing } = useSettingsSearch();
+const ring = computed(() => settingRing(props.label));
 
 /**
  * A settings row always has a value. The dropdown can report `null`, since a
@@ -51,11 +57,13 @@ function onChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
 
 <template>
   <div
-    :class="
+    :data-setting="label"
+    :class="[
       flat
         ? 'flex items-center justify-between gap-4 py-3'
-        : 'flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border'
-    "
+        : 'flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border',
+      ring,
+    ]"
   >
     <div>
       <label class="font-medium text-foreground">{{ label }}</label>
