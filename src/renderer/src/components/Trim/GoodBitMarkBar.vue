@@ -30,8 +30,15 @@ interface Props {
   range: readonly [number, number];
   /** The GoodBit the handles were put on, if any. */
   selected: GoodBit | null;
-  /** How many this clip holds, so the bar can say when there is nothing yet. */
-  count: number;
+  /**
+   * Every GoodBit on this clip, newest handling first as the API returns them.
+   *
+   * The bar used to take a bare `count`, which could say "3 marked on this
+   * clip" and then leave you hunting three bands a few pixels wide on the
+   * strip above to find one. It lists them now, so the ones you have made are
+   * readable and reachable from the place you made them.
+   */
+  goodBits: readonly GoodBit[];
   /** A create, rename or delete is in flight. */
   saving?: boolean;
   /** Which saved GoodBits this range would sit on top of. A remark, not a block. */
@@ -51,7 +58,11 @@ const emit = defineEmits<{
   (e: 'save', name: string | null): void;
   (e: 'deselect'): void;
   (e: 'forget', goodBit: GoodBit): void;
+  (e: 'select', goodBit: GoodBit): void;
 }>();
+
+/** How many this clip holds, read off the list rather than passed beside it. */
+const count = computed(() => props.goodBits.length);
 
 /**
  * What is in the name field.
@@ -111,7 +122,19 @@ function submit(): void {
     if (dirty.value) emit('save', submitted.value);
     return;
   }
-  if (!duplicate.value) emit('mark', submitted.value);
+  if (duplicate.value) return;
+
+  emit('mark', submitted.value);
+  /*
+   * The field empties on mark, because the name belonged to the range that
+   * has just been marked.
+   *
+   * Marking deliberately leaves nothing selected, so the watch above never
+   * fires and the name simply stayed. The next range then arrived carrying
+   * the last one's name, already typed, and the button reads *Mark this
+   * range*, so the second one would quietly be named after the first.
+   */
+  name.value = '';
 }
 </script>
 
@@ -218,8 +241,44 @@ function submit(): void {
         whole, unlike a trim, which replaces it.
       </template>
       <template v-else>
-        {{ count }} marked on this clip. Press a band on the strip to change one.
+        {{ count }} marked on this clip. Press one below, or a band on the strip,
+        to change it.
       </template>
     </p>
+
+    <!--
+      What is already marked, listed where it was made.
+
+      The strip above draws these as bands, which is right for showing *where*
+      they are and useless for reading *what* they are: a one second moment in
+      a five minute clip is a few pixels wide and carries no name. So the same
+      GoodBits are also chips here, in the order they happen, and pressing one
+      does exactly what pressing its band does.
+    -->
+    <div v-if="goodBits.length > 0" class="flex flex-wrap items-center gap-1.5 pt-1">
+      <button
+        v-for="goodBit in goodBits"
+        :key="goodBit.id"
+        type="button"
+        class="inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors"
+        :class="goodBit.id === selected?.id
+          ? 'border-orange-500 bg-orange-500/16 text-orange-600'
+          : 'border-border bg-card text-muted-700 hover:border-muted-300 hover:bg-muted-50'"
+        :title="`Put the handles on ${goodBitLabel(goodBit)}`"
+        :aria-pressed="goodBit.id === selected?.id"
+        @click="emit('select', goodBit)"
+      >
+        <Icon
+          :icon="goodBit.source === 'manual'
+            ? 'material-symbols:bookmark-rounded'
+            : 'material-symbols:auto-awesome-rounded'"
+          class="shrink-0 text-sm"
+        />
+        <span class="truncate">{{ goodBitLabel(goodBit) }}</span>
+        <span class="shrink-0 font-mono tabular-nums text-muted-400">
+          {{ rangeLabel(goodBit.startSec, goodBit.endSec) }}
+        </span>
+      </button>
+    </div>
   </div>
 </template>

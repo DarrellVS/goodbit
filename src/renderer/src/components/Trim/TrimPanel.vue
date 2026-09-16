@@ -76,7 +76,7 @@
         class="shrink-0"
         :range="range"
         :selected="selectedGoodBit"
-        :count="goodBits.length"
+        :good-bits="goodBits"
         :saving="goodBitSaving"
         :clashes="clashes"
         :valid="isValidRange"
@@ -84,6 +84,7 @@
         @save="saveSelected"
         @deselect="selectedGoodBitId = null"
         @forget="removeGoodBit"
+        @select="selectGoodBit"
       />
     </main>
   </div>
