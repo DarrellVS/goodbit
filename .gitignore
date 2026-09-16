@@ -171,7 +171,12 @@ design/library-mockups/shots/
 # AUDIO_ROOT is still empty, which makes it the relative path `Editor`. Two
 # uploaded mp3 files were committed that way. The bug is fixed; this is so a
 # stale build or an older checkout cannot do it again.
-Editor/
+#
+# Anchored with a leading slash, because a bare `Editor/` matches a directory
+# of that name at any depth, and `src/renderer/src/components/Editor/` is one.
+# Every file already in there is tracked, so nothing disappeared, but a new
+# component added to the editor would have been ignored without a word.
+/Editor/
 
 # The four package web app this was ported from.
 #
