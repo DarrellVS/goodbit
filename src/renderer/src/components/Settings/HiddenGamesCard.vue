@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseToggle from '../Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { fetchGames } from '../../services/games';
@@ -129,18 +130,23 @@ onMounted(load);
           </p>
         </div>
 
-        <button
-          class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 disabled:opacity-50"
-          :class="game.hidden ? 'bg-muted-300' : 'bg-orange-500'"
-          :title="game.hidden ? 'Show in library' : 'Hide from library'"
+        <!--
+          `BaseToggle`, not a switch of its own.
+          
+          This was a hand-rolled button with its own knob and its own
+          translate, which CLAUDE.md's "one switch component" rule exists to
+          prevent, and it is the most-seen switch on the screen because there
+          is one per game. The model is inverted deliberately: the row says
+          "shown in your library", so on means visible, while the column
+          stores `hidden`.
+        -->
+        <BaseToggle
+          :model-value="!game.hidden"
+          :label="`Show ${game.game} in your library`"
           :disabled="busy === game.game"
-          @click="toggle(game)"
-        >
-          <span
-            class="inline-block h-4 w-4 transform rounded-full bg-card transition-transform"
-            :class="game.hidden ? 'translate-x-1' : 'translate-x-6'"
-          />
-        </button>
+          class="flex-shrink-0"
+          @update:model-value="toggle(game)"
+        />
       </div>
     </div>
   </section>
