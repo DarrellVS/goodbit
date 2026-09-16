@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { copyFileSync, existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { backupsDir, databasePath, loadSettings, saveSettings } from './settings.js';
 
 /**
@@ -66,21 +66,21 @@ function freshBackupPath(name: string): string {
  * `VACUUM INTO` is answered by SQLite itself, so what lands is always a valid
  * database, and compacted on the way out. A read-only connection is enough;
  * the source is never modified.
+ *
+ * That last sentence is the load-bearing one, and no document states it.
+ * SQLite's own docs say `VACUUM INTO` is read-only with respect to the source,
+ * and better-sqlite3 adds no guard of its own (there is no readonly check
+ * anywhere in its binding: `Statement#readonly` is a frozen informational
+ * property that is never read back to gate execution). So whether this works
+ * is entirely SQLite core's behaviour on a `SQLITE_OPEN_READONLY` handle.
+ * Checked directly, under the real Electron, before the driver was swapped.
  */
-async function snapshot(source: string, target: string): Promise<void> {
-  const db = await new Promise<sqlite3.Database>((resolve, reject) => {
-    const handle = new sqlite3.Database(source, sqlite3.OPEN_READONLY, (error) =>
-      error ? reject(error) : resolve(handle),
-    );
-  });
+function snapshot(source: string, target: string): void {
+  const db = new Database(source, { readonly: true, fileMustExist: true });
 
   try {
-    await new Promise<void>((resolve, reject) =>
-      // The path is a literal, not a bindable parameter, so quotes are doubled.
-      db.run(`VACUUM INTO '${target.replace(/'/g, "''")}'`, (error) =>
-        error ? reject(error) : resolve(),
-      ),
-    );
+    // The path is a literal, not a bindable parameter, so quotes are doubled.
+    db.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
   } finally {
     db.close();
   }
@@ -90,12 +90,13 @@ async function snapshot(source: string, target: string): Promise<void> {
  * Open the copy and make it prove itself: SQLite's own integrity check, then a
  * row count that has to match the original.
  */
-async function verify(path: string): Promise<number> {
+function verify(path: string): number {
   /*
    * Read-write, on the copy, and that is not a slip.
    *
-   * `PRAGMA quick_check` validates an FTS5 table's inverted index, and doing
-   * that needs somewhere to write. Opened `OPEN_READONLY` it fails with
+   * `PRAGMA quick_check` validates an FTS5 table's inverted index. Under
+   * node-sqlite3 that needed somewhere to write, and opened `OPEN_READONLY` it
+   * failed with
    *
    *   unable to validate the inverted index for FTS5 table main.clip_search:
    *   attempt to write a readonly database
@@ -106,32 +107,32 @@ async function verify(path: string): Promise<number> {
    * button, and worst of all `restoreBackup`, which verifies before it will
    * put anything back. A search index quietly disabled the safety net.
    *
-   * This opens the **copy**, which was made moments ago by `VACUUM INTO` and
-   * belongs to us. The source is still never opened for writing anywhere in
-   * this file. Letting SQLite write its own validation scratch into a file
-   * whose only purpose is to be checked costs nothing.
+   * **On SQLite 3.53.4, which better-sqlite3 bundles, a read-only open passes
+   * that check too.** Measured, not assumed, when the driver was swapped. So
+   * the read-write open is no longer load-bearing, and it stays anyway: it
+   * opens the **copy**, made moments ago by `VACUUM INTO` and ours alone, the
+   * source is still never opened for writing anywhere in this file, and
+   * letting SQLite write its own validation scratch into a file whose only
+   * purpose is to be checked costs nothing. What it buys is not caring which
+   * way a future SQLite decides this, in the one function whose failure mode
+   * is refusing to restore a good backup.
    */
-  const db = await new Promise<sqlite3.Database>((resolve, reject) => {
-    const handle = new sqlite3.Database(path, sqlite3.OPEN_READWRITE, (error) =>
-      error ? reject(error) : resolve(handle),
-    );
-  });
+  const db = new Database(path, { fileMustExist: true });
 
   try {
-    const check = await new Promise<string>((resolve, reject) =>
-      db.get('PRAGMA quick_check', (error, row: Record<string, string> | undefined) =>
-        error ? reject(error) : resolve(Object.values(row ?? {})[0] ?? 'no answer'),
-      ),
-    );
+    const check = String(db.pragma('quick_check', { simple: true }) ?? 'no answer');
     if (check !== 'ok') throw new Error(`the copy did not read back cleanly: ${check}`);
 
-    return await new Promise<number>((resolve) =>
-      db.get('SELECT COUNT(*) AS n FROM clip', (error, row: { n: number } | undefined) =>
-        // A database from before the first scan has no `clip` table yet, and
-        // that is not a failure, only a corrupt copy is.
-        resolve(error ? 0 : (row?.n ?? 0)),
-      ),
-    );
+    try {
+      const row = db.prepare('SELECT COUNT(*) AS n FROM clip').get() as { n: number } | undefined;
+      return row?.n ?? 0;
+    } catch {
+      // A database from before the first scan has no `clip` table yet, and
+      // that is not a failure, only a corrupt copy is. This driver throws on
+      // `prepare` rather than handing an error to a callback, so the guard
+      // moved from a branch to a catch.
+      return 0;
+    }
   } finally {
     db.close();
   }
@@ -175,8 +176,8 @@ export async function backupBeforeSchemaSync(databaseFile: string): Promise<Back
   const target = freshBackupPath(`goodbit-${version}-${stamp()}`);
 
   try {
-    await snapshot(databaseFile, target);
-    const clips = await verify(target);
+    snapshot(databaseFile, target);
+    const clips = verify(target);
     prune();
 
     console.log(`[backup] ${target} (${clips} clips) before ${version} touches the schema`);
@@ -214,8 +215,8 @@ export async function takeBackup(databaseFile: string): Promise<BackupResult> {
   const target = freshBackupPath(`goodbit-manual-${stamp()}`);
 
   try {
-    await snapshot(databaseFile, target);
-    const clips = await verify(target);
+    snapshot(databaseFile, target);
+    const clips = verify(target);
     prune();
     return { taken: true, reason: 'copied and read back', path: target, clips };
   } catch (error) {
@@ -287,7 +288,7 @@ export async function restoreBackup(backupPath: string): Promise<RestoreResult> 
 
   let clips: number;
   try {
-    clips = await verify(chosen);
+    clips = verify(chosen);
   } catch (error) {
     return { restored: false, reason: `that copy will not open: ${(error as Error).message}` };
   }
@@ -298,8 +299,8 @@ export async function restoreBackup(backupPath: string): Promise<RestoreResult> 
   if (existsSync(live)) {
     previousPath = freshBackupPath(`goodbit-before-restore-${stamp()}`);
     try {
-      await snapshot(live, previousPath);
-      await verify(previousPath);
+      snapshot(live, previousPath);
+      verify(previousPath);
     } catch (error) {
       // Refuse rather than proceed. Without a good copy of what is there now,
       // this stops being a restore and becomes a one-way replacement.

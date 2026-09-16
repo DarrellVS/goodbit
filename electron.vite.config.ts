@@ -16,7 +16,7 @@ const shared = resolve('src/shared');
  */
 const NATIVE_OR_BINARY = [
   // A .node addon cannot be bundled or loaded from inside an asar.
-  'sqlite3',
+  'better-sqlite3',
   // These export the path to an executable, which must be a real file to spawn.
   'ffmpeg-static',
   'ffprobe-static',

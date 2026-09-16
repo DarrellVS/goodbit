@@ -15,7 +15,6 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "rebuild": "electron-rebuild -f -w sqlite3",
     "postinstall": "electron-builder install-app-deps",
     "build:win": "npm run check:pre-release && electron-builder --win && npm run check:packaged",
     "test:e2e": "npm run build && playwright test",
@@ -28,15 +27,15 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "better-sqlite3": "^13.0.3",
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
-    "reka-ui": "^2.10.4",
-    "sqlite3": "^6.0.1"
+    "reka-ui": "^2.10.4"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.2.0",
     "@iconify/vue": "^5.0.0",
     "@playwright/test": "^1.63.0",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/ffprobe-static": "^2.0.3",
@@ -80,5 +79,10 @@
     "vue": "^3.5.8",
     "vue-router": "^4.4.5",
     "vue-tsc": "^2.2.12"
+  },
+  "overrides": {
+    "typeorm": {
+      "better-sqlite3": "$better-sqlite3"
+    }
   }
 }

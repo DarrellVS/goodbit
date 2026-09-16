@@ -72,7 +72,42 @@ export async function initDatabase(): Promise<DataSource> {
   lastBackup = await backupBeforeSchemaSync(databasePath());
 
   AppDataSource = new DataSource({
-    type: 'sqlite',
+    /*
+     * `better-sqlite3`, not `sqlite3`.
+     *
+     * TryGhost archived node-sqlite3 read-only on 2026-07-01, so 5.1.7/6.0.1
+     * is the end of it: no further SQLite version, no fix for the next
+     * Electron. It was also the last thing in the tree pulling a vulnerable
+     * `tar`, through an optional `node-gyp` it needed because it built from
+     * source on every install.
+     *
+     * The driver underneath is a different shape, and only two of the
+     * differences reach this file:
+     *
+     * - It is **synchronous**, which is why `backup.ts` lost its promise
+     *   wrappers. TypeORM's own driver handles that; nothing here awaits
+     *   differently.
+     * - It ships **one Node-API binary per platform**, resolved as
+     *   `prebuilds/win32-x64.node` with no runtime or ABI version in the name,
+     *   so there is no per-Electron rebuild any more. Verified loading under
+     *   Electron 44.4.1 / Node 24.21.0 from the prebuild alone.
+     *
+     * TypeORM declares its peer as `^8 || … || ^12` and 13 is what this uses,
+     * deliberately, pinned by an `overrides` entry. The peer range is a
+     * declaration that lags: the 12 line is the one with the problem, four of
+     * its releases are marked "NOT A VIABLE RELEASE" because Electron 41 and
+     * 42 moved the V8 APIs it compiled against, and its newest claimed
+     * prebuild is Electron 43. 13 dropped that whole coupling by moving to
+     * Node-API. On Electron 44, staying inside the declared range would be
+     * the riskier choice.
+     *
+     * What actually had to be checked, and was, against a copy of the real
+     * library rather than against the release notes: FTS5 is compiled in
+     * (`SQLITE_ENABLE_FTS5`, SQLite 3.53.4), a quoted prefix `MATCH` still
+     * returns rows, and `VACUUM INTO` still works from a read-only handle,
+     * which every backup depends on and which no document states.
+     */
+    type: 'better-sqlite3',
     database: databasePath(),
     entities: [Clip, Tag, Collection, Game, Project, TagPattern, HighlightLabel, GoodBit],
     /*

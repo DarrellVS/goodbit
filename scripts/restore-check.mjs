@@ -25,28 +25,25 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 
 const TMP = join(process.cwd(), 'tmp', 'restore-check');
 const BUNDLE = join(TMP, 'backup-bundle.mjs');
 
 /*
- * `mode` is omitted rather than passed as undefined.
+ * Read-write and creating by default, read-only on request.
  *
- * node-sqlite3 picks its callback out of the argument list by position and
- * type, so `new Database(path, undefined, cb)` does not see a callback at all:
- * the promise never settles and the script hangs with no error.
+ * This used to carry a warning about node-sqlite3 picking its callback out of
+ * the argument list by position and type, so that `new Database(path,
+ * undefined, cb)` saw no callback at all and the script hung with no error.
+ * That hazard belonged to that driver and is gone with it: this one takes an
+ * options object and is synchronous, so there is no callback to lose and
+ * nothing to hang.
  */
-const open = (path, mode) =>
-  new Promise((resolve, reject) => {
-    const done = (error) => (error ? reject(error) : resolve(handle));
-    const handle =
-      mode === undefined ? new sqlite3.Database(path, done) : new sqlite3.Database(path, mode, done);
-  });
-const run = (db, sql) =>
-  new Promise((resolve, reject) => db.run(sql, (error) => (error ? reject(error) : resolve())));
-const get = (db, sql) =>
-  new Promise((resolve, reject) => db.get(sql, (error, row) => (error ? reject(error) : resolve(row))));
+const open = (path, readonly = false) =>
+  readonly ? new Database(path, { readonly: true, fileMustExist: true }) : new Database(path);
+const run = (db, sql) => db.exec(sql);
+const get = (db, sql) => db.prepare(sql).get();
 
 let failures = 0;
 const ok = (label, passed, detail = '') => {
@@ -55,24 +52,24 @@ const ok = (label, passed, detail = '') => {
 };
 
 /** A database with a `clip` table and a known number of rows in it. */
-async function makeLibrary(path, rows, note) {
-  const db = await open(path);
+function makeLibrary(path, rows, note) {
+  const db = open(path);
   try {
-    await run(db, 'CREATE TABLE IF NOT EXISTS clip (id integer primary key, notes text)');
-    await run(db, 'DELETE FROM clip');
+    run(db, 'CREATE TABLE IF NOT EXISTS clip (id integer primary key, notes text)');
+    run(db, 'DELETE FROM clip');
     for (let i = 0; i < rows; i++) {
-      await run(db, `INSERT INTO clip (id, notes) VALUES (${i + 1}, '${note}')`);
+      run(db, `INSERT INTO clip (id, notes) VALUES (${i + 1}, '${note}')`);
     }
   } finally {
     db.close();
   }
 }
 
-async function readLibrary(path) {
-  const db = await open(path, sqlite3.OPEN_READONLY);
+function readLibrary(path) {
+  const db = open(path, true);
   try {
-    const count = await get(db, 'SELECT COUNT(*) AS n FROM clip');
-    const sample = await get(db, 'SELECT notes FROM clip LIMIT 1');
+    const count = get(db, 'SELECT COUNT(*) AS n FROM clip');
+    const sample = get(db, 'SELECT notes FROM clip LIMIT 1');
     return { rows: count.n, note: sample?.notes ?? null };
   } finally {
     db.close();
@@ -129,21 +126,21 @@ const { restoreBackup, takeBackup } = await import(pathToFileURL(BUNDLE).href);
 const live = join(profile, 'goodbit.db');
 
 // The library as it was, and a verified copy of it.
-await makeLibrary(live, 12, 'the old library');
+makeLibrary(live, 12, 'the old library');
 const taken = await takeBackup(live);
 ok('a copy can be taken to restore from', taken.taken === true, taken.reason);
 const goodCopy = taken.path;
 
 // And then the library moves on, which is the state somebody restores from.
-await makeLibrary(live, 3, 'the current library');
-ok('the live library is the newer one', (await readLibrary(live)).rows === 3);
+makeLibrary(live, 3, 'the current library');
+ok('the live library is the newer one', readLibrary(live).rows === 3);
 
 console.log('');
 
 // 1. A path that is not ours.
 {
   const outside = join(TMP, 'somewhere-else.db');
-  await makeLibrary(outside, 99, 'not ours');
+  makeLibrary(outside, 99, 'not ours');
   const refused = await restoreBackup(outside);
   ok('refuses a database outside the backups folder', refused.restored === false, refused.reason);
 
@@ -160,7 +157,7 @@ console.log('');
   const refusedMissing = await restoreBackup(missing);
   ok('refuses a copy that is not on disk', refusedMissing.restored === false);
 
-  ok('the live library is untouched by any of those', (await readLibrary(live)).rows === 3);
+  ok('the live library is untouched by any of those', readLibrary(live).rows === 3);
 }
 
 // 2. A file with the right name that is not a database.
@@ -172,7 +169,7 @@ console.log('');
   ok('refuses a copy that will not open', refused.restored === false, refused.reason);
   ok(
     'the live library survives a refused restore',
-    (await readLibrary(live)).rows === 3,
+    readLibrary(live).rows === 3,
     'still 3 rows',
   );
 }
@@ -185,7 +182,7 @@ console.log('');
   ok('restores a good copy', result.restored === true, result.reason);
   ok('reports how many clips came back', result.clips === 12, `said ${result.clips}`);
 
-  const now = await readLibrary(live);
+  const now = readLibrary(live);
   ok('the restored rows are the ones from the copy', now.rows === 12, `${now.rows} rows`);
   ok('and their contents came with them', now.note === 'the old library', String(now.note));
 }
@@ -200,7 +197,7 @@ console.log('');
     const back = await restoreBackup(safety.path);
     ok('that copy can itself be restored', back.restored === true, back.reason);
 
-    const now = await readLibrary(live);
+    const now = readLibrary(live);
     ok(
       'which puts the library back to where it started',
       now.rows === 3 && now.note === 'the current library',
@@ -217,7 +214,7 @@ console.log('');
   await restoreBackup(goodCopy);
   ok('the stale -wal is gone after a restore', !existsSync(`${live}-wal`));
   ok('the stale -shm is gone after a restore', !existsSync(`${live}-shm`));
-  ok('and the restore still landed', (await readLibrary(live)).rows === 12);
+  ok('and the restore still landed', readLibrary(live).rows === 12);
 }
 
 console.log(`\n${failures === 0 ? 'all checks passed' : `${failures} check(s) failed`}`);

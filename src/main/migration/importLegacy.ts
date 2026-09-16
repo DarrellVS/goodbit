@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import sqlite3 from 'sqlite3';
+import Database, { type Database as SqliteDatabase } from 'better-sqlite3';
 import { backupsDir, databasePath, loadSettings, saveSettings } from '../settings.js';
 
 /**
@@ -25,33 +25,17 @@ export interface ImportReport {
   rows?: Record<string, number | null>;
 }
 
-function open(path: string): Promise<sqlite3.Database> {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(path, sqlite3.OPEN_READONLY, (err) =>
-      err ? reject(err) : resolve(db),
-    );
-  });
-}
-
-function all<T>(db: sqlite3.Database, sql: string): Promise<T[]> {
-  return new Promise((resolve, reject) =>
-    db.all(sql, (err, rows) => (err ? reject(err) : resolve(rows as T[]))),
-  );
-}
-
-function run(db: sqlite3.Database, sql: string): Promise<void> {
-  return new Promise((resolve, reject) => db.run(sql, (err) => (err ? reject(err) : resolve())));
-}
-
-function close(db: sqlite3.Database): Promise<void> {
-  return new Promise((resolve) => db.close(() => resolve()));
-}
-
-async function countRows(db: sqlite3.Database): Promise<Record<string, number | null>> {
+/*
+ * The four promise wrappers that used to live here are gone: this driver is
+ * synchronous, so `open`, `all`, `run` and `close` were each a function whose
+ * whole body existed to turn a callback into a promise, and they now say
+ * nothing that the call itself does not.
+ */
+function countRows(db: SqliteDatabase): Record<string, number | null> {
   const counts: Record<string, number | null> = {};
   for (const table of TABLES) {
     try {
-      const [row] = await all<{ n: number }>(db, `SELECT COUNT(*) AS n FROM "${table}"`);
+      const row = db.prepare(`SELECT COUNT(*) AS n FROM "${table}"`).get() as { n: number };
       counts[table] = row.n;
     } catch {
       // A table the old schema never had is not an error.
@@ -87,22 +71,19 @@ export async function importLegacyDatabase(): Promise<ImportReport> {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const backup = join(backupsDir(), `legacy-${stamp}.db`);
 
-  const source = await open(legacy);
-  const before = await countRows(source);
-  await run(source, `VACUUM INTO '${backup.replace(/'/g, "''")}'`);
-  await close(source);
+  const source = new Database(legacy, { readonly: true, fileMustExist: true });
+  const before = countRows(source);
+  source.exec(`VACUUM INTO '${backup.replace(/'/g, "''")}'`);
+  source.close();
 
   // The verified snapshot becomes the new library, so what opens here is known
   // to be intact rather than whatever state the live file was in.
   copyFileSync(backup, target);
 
-  const adopted = await open(target);
-  const [{ integrity_check: integrity }] = await all<{ integrity_check: string }>(
-    adopted,
-    'PRAGMA integrity_check',
-  );
-  const after = await countRows(adopted);
-  await close(adopted);
+  const adopted = new Database(target, { fileMustExist: true });
+  const integrity = String(adopted.pragma('integrity_check', { simple: true }) ?? 'no answer');
+  const after = countRows(adopted);
+  adopted.close();
 
   const mismatched = TABLES.filter((t) => before[t] !== after[t]);
   if (integrity !== 'ok' || mismatched.length > 0) {

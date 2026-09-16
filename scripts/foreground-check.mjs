@@ -66,7 +66,7 @@ await build({
   format: 'esm',
   platform: 'node',
   outfile: bundle,
-  external: ['better-sqlite3', 'sqlite3', 'typeorm'],
+  external: ['better-sqlite3', 'typeorm'],
   alias: { electron: shim },
   logLevel: 'error',
 });

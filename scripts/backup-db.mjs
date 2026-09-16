@@ -15,7 +15,7 @@
 import { mkdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 
 const APPDATA = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming');
 
@@ -34,32 +34,11 @@ const OUT_DIR =
 /** Tables worth counting, so the report says what was actually preserved. */
 const TABLES = ['clip', 'tag', 'collection', 'game', 'project', 'tag_pattern'];
 
-function open(path, mode) {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(path, mode, (err) => (err ? reject(err) : resolve(db)));
-  });
-}
-
-function run(db, sql) {
-  return new Promise((resolve, reject) => db.run(sql, (err) => (err ? reject(err) : resolve())));
-}
-
-function all(db, sql) {
-  return new Promise((resolve, reject) =>
-    db.all(sql, (err, rows) => (err ? reject(err) : resolve(rows))),
-  );
-}
-
-function close(db) {
-  return new Promise((resolve) => db.close(() => resolve()));
-}
-
-async function countRows(db) {
+function countRows(db) {
   const counts = {};
   for (const table of TABLES) {
     try {
-      const [row] = await all(db, `SELECT COUNT(*) AS n FROM "${table}"`);
-      counts[table] = row.n;
+      counts[table] = db.prepare(`SELECT COUNT(*) AS n FROM "${table}"`).get().n;
     } catch {
       // A table that does not exist yet is not an error; the schema grows.
       counts[table] = null;
@@ -79,18 +58,18 @@ async function main() {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const target = join(OUT_DIR, `filmpje-${stamp}.db`);
 
-  const source = await open(DB_PATH, sqlite3.OPEN_READONLY);
-  const before = await countRows(source);
+  const source = new Database(DB_PATH, { readonly: true, fileMustExist: true });
+  const before = countRows(source);
 
   // Single-quoted SQL literal; the path is ours, but escape quotes anyway.
-  await run(source, `VACUUM INTO '${target.replace(/'/g, "''")}'`);
-  await close(source);
+  source.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
+  source.close();
 
   // Prove the snapshot is readable and intact rather than assuming it.
-  const copy = await open(target, sqlite3.OPEN_READONLY);
-  const [{ integrity_check: integrity }] = await all(copy, 'PRAGMA integrity_check');
-  const after = await countRows(copy);
-  await close(copy);
+  const copy = new Database(target, { readonly: true, fileMustExist: true });
+  const integrity = String(copy.pragma('integrity_check', { simple: true }));
+  const after = countRows(copy);
+  copy.close();
 
   const mismatched = TABLES.filter((t) => before[t] !== after[t]);
 

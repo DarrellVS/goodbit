@@ -32,7 +32,7 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 import { userDataDir } from './lib/libraryRoot.mjs';
 
 const TMP = join(process.cwd(), 'tmp', 'migration-check');
@@ -61,41 +61,37 @@ function pickSource() {
   return existsSync(live) ? live : null;
 }
 
-const open = (path, mode) =>
-  new Promise((resolve, reject) => {
-    const handle = new sqlite3.Database(path, mode, (error) =>
-      error ? reject(error) : resolve(handle),
-    );
-  });
+/*
+ * The driver is synchronous, so these are direct calls rather than the
+ * promise wrappers they used to be. The names stay because the call sites
+ * below read the same either way, and a bench that reads like the thing it
+ * checks is easier to trust.
+ */
+const open = (path, readonly = true) => new Database(path, { readonly, fileMustExist: true });
+const all = (db, sql) => db.prepare(sql).all();
+const get = (db, sql) => db.prepare(sql).get();
+const run = (db, sql) => db.exec(sql);
 
-const all = (db, sql) =>
-  new Promise((resolve, reject) => db.all(sql, (error, rows) => (error ? reject(error) : resolve(rows))));
-const get = (db, sql) =>
-  new Promise((resolve, reject) => db.get(sql, (error, row) => (error ? reject(error) : resolve(row))));
-const run = (db, sql) =>
-  new Promise((resolve, reject) => db.run(sql, (error) => (error ? reject(error) : resolve())));
-
-async function snapshot(source, target) {
-  const db = await open(source, sqlite3.OPEN_READONLY);
+function snapshot(source, target) {
+  const db = open(source);
   try {
-    await run(db, `VACUUM INTO '${target.replace(/'/g, "''")}'`);
+    run(db, `VACUUM INTO '${target.replace(/'/g, "''")}'`);
   } finally {
     db.close();
   }
 }
 
 /** Every table and its row count, which is the thing that must not change. */
-async function census(path) {
-  const db = await open(path, sqlite3.OPEN_READONLY);
+function census(path) {
+  const db = open(path);
   try {
-    const tables = await all(
+    const tables = all(
       db,
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
     );
     const counts = {};
     for (const { name } of tables) {
-      const row = await get(db, `SELECT COUNT(*) AS n FROM "${name}"`);
-      counts[name] = row.n;
+      counts[name] = get(db, `SELECT COUNT(*) AS n FROM "${name}"`).n;
     }
     return counts;
   } finally {
@@ -104,10 +100,10 @@ async function census(path) {
 }
 
 /** The schema, normalised enough that two databases can be compared by eye. */
-async function schema(path) {
-  const db = await open(path, sqlite3.OPEN_READONLY);
+function schema(path) {
+  const db = open(path);
   try {
-    const rows = await all(
+    const rows = all(
       db,
       "SELECT type, name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name",
     );
@@ -117,11 +113,12 @@ async function schema(path) {
   }
 }
 
-async function columnsOf(path, table) {
-  const db = await open(path, sqlite3.OPEN_READONLY);
+function columnsOf(path, table) {
+  const db = open(path);
   try {
-    const rows = await all(db, `PRAGMA table_info("${table}")`);
-    return rows.map((row) => row.name);
+    // `db.pragma` rather than a prepared statement, which is what this driver
+    // asks for: it normalises the pragmas that both set and report.
+    return db.pragma(`table_info("${table}")`).map((row) => row.name);
   } finally {
     db.close();
   }
@@ -211,15 +208,15 @@ await esbuild.build({
 const upgradedProfile = join(TMP, 'upgraded');
 mkdirSync(upgradedProfile, { recursive: true });
 const upgraded = join(upgradedProfile, 'goodbit.db');
-await snapshot(source, upgraded);
+snapshot(source, upgraded);
 
-const before = await census(upgraded);
+const before = census(upgraded);
 console.log(`\nbefore     ${Object.entries(before).map(([t, n]) => `${t}:${n}`).join('  ')}`);
 
 const appliedUpgrade = await migrate(upgradedProfile);
 console.log(`migrations ${appliedUpgrade.join(', ')}`);
 
-const after = await census(upgraded);
+const after = census(upgraded);
 console.log(`after      ${Object.entries(after).map(([t, n]) => `${t}:${n}`).join('  ')}\n`);
 
 for (const [table, count] of Object.entries(before)) {
@@ -229,16 +226,16 @@ for (const [table, count] of Object.entries(before)) {
 ok('the good_bit table exists', 'good_bit' in after);
 ok('the search index exists', 'clip_search' in after);
 
-const clipColumns = await columnsOf(upgraded, 'clip');
+const clipColumns = columnsOf(upgraded, 'clip');
 ok('clip gained lastOpenedAt', clipColumns.includes('lastOpenedAt'));
 ok('clip gained openCount', clipColumns.includes('openCount'));
 
 // 2. The search index has to have been backfilled, not just created. An empty
 //    index is a search that finds nothing, which reads as a broken search.
 {
-  const db = await open(upgraded, sqlite3.OPEN_READONLY);
+  const db = open(upgraded);
   try {
-    const indexed = await get(db, 'SELECT COUNT(*) AS n FROM "clip_search"');
+    const indexed = get(db, 'SELECT COUNT(*) AS n FROM "clip_search"');
     ok(
       'the search index was backfilled',
       indexed.n === after.clip,
@@ -246,10 +243,10 @@ ok('clip gained openCount', clipColumns.includes('openCount'));
     );
 
     // And that it answers. A populated index that cannot match is no better.
-    const game = await get(db, 'SELECT game FROM clip WHERE game IS NOT NULL LIMIT 1');
+    const game = get(db, 'SELECT game FROM clip WHERE game IS NOT NULL LIMIT 1');
     if (game) {
       const term = String(game.game).split(/[^A-Za-z0-9]+/).filter(Boolean)[0];
-      const hit = await get(
+      const hit = get(
         db,
         `SELECT COUNT(*) AS n FROM "clip_search" WHERE "clip_search" MATCH '${term.replace(/'/g, "''")}'`,
       );
@@ -263,7 +260,7 @@ ok('clip gained openCount', clipColumns.includes('openCount'));
 // 3. Running them again must do nothing at all.
 const appliedAgain = await migrate(upgradedProfile);
 ok('a second boot applies no migrations', appliedAgain.length === appliedUpgrade.length);
-const afterTwice = await census(upgraded);
+const afterTwice = census(upgraded);
 ok(
   'a second boot changes no row counts',
   JSON.stringify(afterTwice) === JSON.stringify(after),
@@ -279,8 +276,8 @@ ok(
   `${appliedFresh.length} of ${appliedUpgrade.length}`,
 );
 
-const freshSchema = await schema(join(freshProfile, 'goodbit.db'));
-const upgradedSchema = await schema(upgraded);
+const freshSchema = schema(join(freshProfile, 'goodbit.db'));
+const upgradedSchema = schema(upgraded);
 const missing = upgradedSchema.filter((item) => !freshSchema.includes(item));
 const extra = freshSchema.filter((item) => !upgradedSchema.includes(item));
 ok(
@@ -289,8 +286,8 @@ ok(
   missing.length || extra.length ? `missing ${missing.join(', ')} | extra ${extra.join(', ')}` : '',
 );
 
-const freshClipColumns = await columnsOf(join(freshProfile, 'goodbit.db'), 'clip');
-const upgradedClipColumns = await columnsOf(upgraded, 'clip');
+const freshClipColumns = columnsOf(join(freshProfile, 'goodbit.db'), 'clip');
+const upgradedClipColumns = columnsOf(upgraded, 'clip');
 ok(
   'clip has the same columns either way',
   JSON.stringify([...freshClipColumns].sort()) === JSON.stringify([...upgradedClipColumns].sort()),

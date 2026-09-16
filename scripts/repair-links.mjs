@@ -19,7 +19,7 @@
  */
 import { existsSync, copyFileSync } from 'node:fs';
 import { join } from 'node:path';
-import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3';
 
 const backupPath = process.argv[2];
 const write = process.argv.includes('--write');
@@ -49,28 +49,21 @@ if (!existsSync(livePath)) {
 const key = (path) =>
   path.replace(/\\/g, '/').toLowerCase().split('/').slice(-2).join('/');
 
-const open = (file, mode) =>
-  new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(file, mode, (error) => (error ? reject(error) : resolve(db)));
-  });
+const open = (file, readonly = true) => new Database(file, { readonly, fileMustExist: true });
+const all = (db, sql, params = []) => db.prepare(sql).all(...params);
 
-const all = (db, sql, params = []) =>
-  new Promise((resolve, reject) =>
-    db.all(sql, params, (error, rows) => (error ? reject(error) : resolve(rows))),
-  );
+/*
+ * The count of rows the statement changed, which is what this script reports.
+ * It used to come off `this.changes` inside a callback, and comes off the
+ * object `run` returns now.
+ */
+const run = (db, sql, params = []) => db.prepare(sql).run(...params).changes;
 
-const run = (db, sql, params = []) =>
-  new Promise((resolve, reject) =>
-    db.run(sql, params, function (error) {
-      return error ? reject(error) : resolve(this.changes);
-    }),
-  );
+const old = open(backupPath);
+const live = open(livePath, !write);
 
-const old = await open(backupPath, sqlite3.OPEN_READONLY);
-const live = await open(livePath, write ? sqlite3.OPEN_READWRITE : sqlite3.OPEN_READONLY);
-
-const oldClips = await all(old, 'select id, filePath from clip');
-const liveClips = await all(live, 'select id, filePath from clip');
+const oldClips = all(old, 'select id, filePath from clip');
+const liveClips = all(live, 'select id, filePath from clip');
 
 // old id -> new id, by the path both of them describe.
 const byPath = new Map(liveClips.map((clip) => [key(clip.filePath), clip.id]));
@@ -86,14 +79,14 @@ console.log(`  matched by path: ${remap.size}\n`);
 const work = [
   {
     what: 'collection links',
-    rows: await all(old, 'select collectionId, clipId from collection_clips_clip'),
+    rows: all(old, 'select collectionId, clipId from collection_clips_clip'),
     insert: 'insert or ignore into collection_clips_clip (collectionId, clipId) values (?, ?)',
     map: (row) => [row.collectionId, remap.get(row.clipId)],
     id: (row) => row.clipId,
   },
   {
     what: 'tag links',
-    rows: await all(old, 'select clipId, tagId from clip_tags_tag'),
+    rows: all(old, 'select clipId, tagId from clip_tags_tag'),
     insert: 'insert or ignore into clip_tags_tag (clipId, tagId) values (?, ?)',
     map: (row) => [remap.get(row.clipId), row.tagId],
     id: (row) => row.clipId,
@@ -116,12 +109,12 @@ for (const job of work) {
   }
 
   let done = 0;
-  for (const row of usable) done += await run(live, job.insert, job.map(row));
+  for (const row of usable) done += run(live, job.insert, job.map(row));
   console.log(`  ${job.what}: ${done} restored${lost ? `, ${lost} unmatched` : ''}`);
 }
 
 // Things that live on the clip row itself rather than in a join table.
-const carried = await all(
+const carried = all(
   old,
   "select filePath, starred, notes, displayName from clip where starred = 1 or (notes is not null and notes <> '') or (displayName is not null and displayName <> '')",
 );
@@ -134,7 +127,7 @@ if (carried.length) {
     for (const row of carried) {
       const id = byPath.get(key(row.filePath));
       if (id === undefined) continue;
-      done += await run(live, 'update clip set starred = ?, notes = ?, displayName = ? where id = ?', [
+      done += run(live, 'update clip set starred = ?, notes = ?, displayName = ? where id = ?', [
         row.starred,
         row.notes,
         row.displayName,

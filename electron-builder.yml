@@ -21,13 +21,15 @@ files:
   - out/**
   - package.json
 
-# ffmpeg and ffprobe are binaries that get spawned, and sqlite3 is a native
-# module. A packaged .exe cannot be executed from inside an asar archive, and a
-# .node cannot be loaded from one — so these stay unpacked on disk.
+# ffmpeg and ffprobe are binaries that get spawned, and better-sqlite3 is a
+# native module. A packaged .exe cannot be executed from inside an asar
+# archive, and a .node cannot be loaded from one, so these stay unpacked on
+# disk. better-sqlite3 ships one Node-API binary per platform under
+# prebuilds/, which is the file that has to survive packaging.
 asarUnpack:
   - '**/node_modules/ffmpeg-static/**'
   - '**/node_modules/ffprobe-static/**'
-  - '**/node_modules/sqlite3/**'
+  - '**/node_modules/better-sqlite3/**'
 
 # The tray needs the icon as a file at runtime; the exe's embedded icon is not
 # reachable from JavaScript. Lands at process.resourcesPath/icon.png.
