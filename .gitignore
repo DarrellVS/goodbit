@@ -157,3 +157,6 @@ design/library-mockups/shots/
 # vitest cache, kept beside the checkout so git worktrees sharing one
 # node_modules junction do not write to the same directory
 .vitest-cache
+
+# Agent worktrees, which are checkouts rather than content
+.claude/worktrees/
