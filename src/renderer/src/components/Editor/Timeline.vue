@@ -45,6 +45,8 @@ const contentRef = shallowRef<HTMLElement | null>(null);
 const isDraggingRuler = shallowRef(false);
 
 const pixelsPerSecond = computed(() => EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * props.zoom);
+/** Time zero, in pixels from the scroller's edge. The lanes are inset by it. */
+const offsetPx = EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
 /** The lane itself: exactly as wide as the clips it holds. */
 const laneWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
 
@@ -170,7 +172,14 @@ function handleRulerMouseUp(): void {
       class="flex-1 relative overflow-x-auto overflow-y-hidden"
       @scroll="syncScroll"
     >
-      <div class="relative h-full p-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
+      <div
+        class="relative h-full py-3 space-y-2"
+        :style="{
+          width: `${timelineWidth}px`,
+          minWidth: '100%',
+          paddingInline: `${offsetPx}px`,
+        }"
+      >
         <!--
           The lane starts at `TIMELINE_OFFSET_PX`, because so does time zero.
 
@@ -195,6 +204,12 @@ function handleRulerMouseUp(): void {
           lanes and not the playhead, which is the same bug wearing a different
           hat. `border-box` keeps the container `timelineWidth` wide overall,
           so it still scrolls in step with the ruler beside it.
+
+          The padding is written from `TIMELINE_OFFSET_PX` rather than as a
+          `px-6` class on purpose. A class would be a second copy of a number
+          the ruler and the playhead already read from the constant, and this
+          has now drifted apart twice. Changing the gutter should be changing
+          one number.
         -->
         <div class="relative h-16 bg-orange-500/4 rounded-lg border border-border">
           <TimelineTrack
