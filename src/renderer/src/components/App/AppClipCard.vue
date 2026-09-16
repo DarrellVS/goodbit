@@ -13,6 +13,7 @@ import { useToastStore } from '../../stores/toast';
 import { useGamesStore } from '../../stores/games';
 import { moveClipToGame } from '../../services/clips';
 import { clipGoodBitRanges } from '../../utils/goodBits';
+import { liveGoodBitRanges } from '../../composables/useGoodBits';
 import type { Clip } from '../../types/clip';
 import ClipGoodBitPips from './ClipGoodBitPips.vue';
 import ClipActionsMenu from './ClipActionsMenu.vue';
@@ -58,15 +59,22 @@ const showMoveDialog = ref(false);
 /**
  * The GoodBits on this clip, if the row it came with carries any.
  *
- * Today it does not: `ClipDTO` has no such field, so this is an empty array on
- * every card and the marker layer draws nothing. It is read through one
- * function on purpose, see `clipGoodBitRanges`, so that turning the card's
- * markers on is a change to what the list query selects rather than a change
- * here. Asking per card is the thing not to do: fifty requests on the first
- * page and more on every scroll, for a library that already learned this lesson
- * with thumbnails.
+ * The row carries them: the list routes attach every clip's ranges with one
+ * query for the page, rather than this asking per card. Fifty requests on the
+ * first page and more on every scroll is the thing not to do, and it is the
+ * lesson the thumbnails already taught.
+ *
+ * **The live list wins when there is one.** A card holds whatever the list
+ * query gave it, which goes stale the moment a GoodBit is marked in the panel
+ * over the top: the row was fetched before the mark existed, and closing the
+ * panel does not refetch the library. So if this clip's GoodBits have actually
+ * been read, by the panel or the trimmer, the card follows that list and
+ * updates as it changes. Otherwise it draws what it was handed, which is right
+ * for the hundreds of clips nobody has opened.
  */
-const goodBitRanges = computed(() => clipGoodBitRanges(props.clip));
+const goodBitRanges = computed(
+  () => liveGoodBitRanges(props.clip.id) ?? clipGoodBitRanges(props.clip),
+);
 
 const videoEl = ref<HTMLVideoElement | null>(null);
 const hoverScrubEnabled = computed(() => config.public.value.hoverScrub);
@@ -371,8 +379,7 @@ function handleCardClick(event: MouseEvent) {
 
         Hidden while scrubbing, because the scrub strip draws its own band in
         the same place and two overlapping readouts of position is neither.
-        See `ClipGoodBitPips` for what trying this on a card actually showed,
-        and `clipGoodBitRanges` for why nothing populates it yet.
+        See `ClipGoodBitPips` for what trying this on a card actually showed.
       -->
       <ClipGoodBitPips
         v-if="!isScrubbing"

@@ -2,6 +2,8 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Collection } from '../entity/Collection.js';
 import { Clip } from '../entity/Clip.js';
+import { attachGoodBitRanges } from '../services/goodBitRanges.js';
+import type { ClipDTO } from '@shared/index.js';
 
 export interface GetCollectionClipsInput {
   collectionId: number;
@@ -122,6 +124,10 @@ export class GetCollectionClipsAction extends BaseAction<GetCollectionClipsInput
       ...c,
       tags: (c.tags || []).map((t) => t.name),
     }));
+
+    // Same as the library list: a card in a collection draws its marked ranges
+    // too, so it needs them carried rather than asked for per tile.
+    await attachGoodBitRanges(normalized as unknown as ClipDTO[]);
 
     return {
       items: normalized as any,

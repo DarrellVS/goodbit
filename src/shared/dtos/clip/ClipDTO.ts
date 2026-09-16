@@ -36,6 +36,20 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
   tags?: string[]; // Tag names array
 
   /**
+   * The marked ranges on this clip, when the list was asked to carry them.
+   *
+   * Start and end only, because the one thing reading this is the band drawn
+   * over a library card: a name, a source and a confidence would be bytes per
+   * clip per page for something no card shows. The panel asks
+   * `GET /clips/:id/goodbits` when it needs the rest.
+   *
+   * Optional and absent rather than empty when nothing attached them, so
+   * "this list does not carry GoodBits" and "this clip has none" stay
+   * different answers.
+   */
+  goodBits?: Array<{ startSec: number; endSec: number }>;
+
+  /**
    * Create a ClipDTO from a database entity
    */
   static fromEntity(entity: any): ClipDTO {

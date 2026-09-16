@@ -306,9 +306,9 @@ export function pipLayout(
  *
  * So the card reads the ranges off the clip if they are there, and draws
  * nothing when they are not. The cast is in this one function rather than
- * spread through a template, so when `ClipDTO` grows the array (one `relations`
- * on the list query, which is main's and not the renderer's to add) the field
- * name is declared in one place and this narrows to a plain read.
+ * spread through a template. `ClipDTO` carries the array now: the list routes
+ * attach it with one query for the page, so a card reads what it was given
+ * rather than asking per tile.
  */
 export function clipGoodBitRanges(clip: unknown): Span[] {
   const carried = (clip as { goodBits?: unknown } | null)?.goodBits;

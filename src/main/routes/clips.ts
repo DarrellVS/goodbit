@@ -38,6 +38,7 @@ import {
   setJobProgress,
 } from '../services/jobs.js';
 import { detectEncoders } from '../services/encoders.js';
+import { attachGoodBitRanges } from '../services/goodBitRanges.js';
 import {
   BatchStarAction,
   BatchPublishAction,
@@ -147,6 +148,8 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
 
   const [items, total] = await qb.skip((pageNum - 1) * pageSz).take(pageSz).getManyAndCount();
   const dtos = items.map((c) => ClipDTO.fromEntity(c));
+  // So a card can draw its marked ranges without asking per tile.
+  await attachGoodBitRanges(dtos);
   res.json({ items: dtos, total, page: pageNum, pageSize: pageSz });
 }));
 
