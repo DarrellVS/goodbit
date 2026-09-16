@@ -6,6 +6,7 @@ import { backupsDir, listBackups, takeBackup } from '../backup.js';
 import { refreshRoots } from '../data-source.js';
 import { onServiceEvent, reconcile, restartServices } from '../startup.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
+import { VIDEO_DIALOG_EXTENSIONS } from '@shared/constants/videoFiles.js';
 import { shareService } from '../services/share.js';
 
 /**
@@ -226,7 +227,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     const filters =
       kind === 'audio'
         ? [{ name: 'Audio', extensions: ['mp3', 'wav', 'flac', 'm4a', 'ogg', 'aac'] }]
-        : [{ name: 'Video', extensions: ['mp4', 'mov', 'mkv'] }];
+        : [{ name: 'Video', extensions: [...VIDEO_DIALOG_EXTENSIONS] }];
 
     const options = {
       title: kind === 'audio' ? 'Choose music' : 'Choose clips',

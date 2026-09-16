@@ -29,6 +29,9 @@ export * from './dtos/audio/AudioTrackDTO.js';
 // Sizes shared between the drawn title bar and the native overlay
 export * from './constants/ui.js';
 
+// Which files are clips, so the scan and the watcher cannot disagree again
+export * from './constants/videoFiles.js';
+
 // Export formats and crop maths, shared so the crop frame and the ffmpeg
 // filter cannot drift apart
 export * from './constants/exportFormats.js';

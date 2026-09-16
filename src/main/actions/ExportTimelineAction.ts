@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 
 import { Clip } from '../entity/Clip.js';
@@ -126,7 +127,27 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     }
     await fs.mkdir(editorDir, { recursive: true });
 
-    const tempDir = path.join(VIDEOS_ROOT, '.temp');
+    /*
+     * One scratch directory per export, not one shared by all of them.
+     *
+     * This was `<videosRoot>/.temp` for every export at once, and both exits
+     * from the block below delete it whole. Two exports running together is a
+     * normal thing to do, there is nothing stopping it, and the first one to
+     * finish or fail took the other one's segments out from under ffmpeg
+     * mid-encode. The failure reads as a corrupt render or a missing file,
+     * with nothing in it that points at the other export.
+     *
+     * Stamped so an abandoned one says when it was left behind, and carrying
+     * a random tail because two exports started in the same millisecond, which
+     * a batch or an MCP caller can do, would otherwise share a name again. The
+     * parent `.temp` stays, which costs nothing: it is dot prefixed, so the
+     * watcher, the scan and `cleanupEmptyFolders` all skip it already.
+     */
+    const tempDir = path.join(
+      VIDEOS_ROOT,
+      '.temp',
+      `export-${Date.now()}-${randomUUID().slice(0, 8)}`,
+    );
     await fs.mkdir(tempDir, { recursive: true });
 
     const tempFiles: string[] = [];

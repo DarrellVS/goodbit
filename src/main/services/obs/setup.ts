@@ -195,11 +195,10 @@ export function profileEdits(choices: ObsSetupChoices): IniEdit[] {
       key: 'FilePath',
       value: iniPath(path.join(choices.videosRoot, INCOMING_DIR_NAME)),
     },
-    // GoodBit reads mp4, mov and mkv. Being explicit rather than inheriting
-    // whatever this OBS defaults to, which changed to hybrid_mp4 in 30.2.
-    //
-    // Load bearing beyond tidiness: `ScanAndSyncClipsAction` globs only mp4
-    // and mov, so an mkv would be filed correctly and then indexed by nothing.
+    // GoodBit reads mp4, mov and mkv, see `@shared/constants/videoFiles.ts`.
+    // Pinned rather than inherited because this OBS defaults to whatever its
+    // version decided, which changed to hybrid_mp4 in 30.2, and mp4 is the one
+    // every browser and Discord take without a re-encode.
     { section: 'SimpleOutput', key: 'RecFormat2', value: 'mp4' },
     // So a file sitting in staging is recognisable as ours to anyone who opens
     // the folder, rather than looking like OBS lost track of it.

@@ -29,10 +29,9 @@ import { existsSync, mkdirSync, readdirSync, watch as fsWatch, type FSWatcher as
 import chokidar, { type FSWatcher } from 'chokidar';
 import { VIDEOS_ROOT } from '../../data-source.js';
 import { IngestReplayAction } from '../../actions/IngestReplayAction.js';
+import { isVideoFile } from '@shared/constants/videoFiles.js';
 
 export const INCOMING_DIR_NAME = '.goodbit-incoming';
-
-const VIDEO_EXTENSIONS = /\.(mp4|mov|mkv)$/i;
 
 /**
  * The same four seconds the library watcher waits, and for the same reason.
@@ -122,7 +121,7 @@ export async function drainIncoming(): Promise<void> {
 
   let waiting: string[] = [];
   try {
-    waiting = readdirSync(incomingDir()).filter((name) => VIDEO_EXTENSIONS.test(name));
+    waiting = readdirSync(incomingDir()).filter((name) => isVideoFile(name));
   } catch {
     return;
   }
@@ -142,7 +141,7 @@ export function watchIncoming(): void {
   });
 
   watcher.on('add', (filePath: string) => {
-    if (!VIDEO_EXTENSIONS.test(filePath)) return;
+    if (!isVideoFile(filePath)) return;
     console.log(`[capture] a replay arrived: ${basename(filePath)}`);
     void ingest(filePath);
   });
@@ -179,7 +178,7 @@ export function watchIncoming(): void {
   eager = fsWatch(dir, (_event, filename) => {
     if (!filename) return;
     const name = filename.toString();
-    if (!VIDEO_EXTENSIONS.test(name)) return;
+    if (!isVideoFile(name)) return;
 
     if (!existsSync(join(dir, name))) {
       seen.delete(name);

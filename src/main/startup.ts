@@ -17,6 +17,7 @@ import {
   stopWatchingIncoming,
   watchIncoming,
 } from './services/capture/incoming.js';
+import { isVideoFile } from '@shared/constants/videoFiles.js';
 
 /**
  * What the background service does, and keeps doing.
@@ -26,8 +27,6 @@ import {
  * a clip the moment OBS finishes writing it, so the reconciliation sweep is now
  * the backstop rather than the only mechanism.
  */
-
-const VIDEO_EXTENSIONS = /\.(mp4|mov|mkv)$/i;
 
 /**
  * How long a file has to stop growing before it counts as finished.
@@ -251,7 +250,7 @@ function startWatching(): void {
   });
 
   watcher.on('add', (path: string) => {
-    if (!VIDEO_EXTENSIONS.test(path)) return;
+    if (!isVideoFile(path)) return;
     const game = gameFromPath(path);
     if (!game) return;
 
@@ -264,7 +263,7 @@ function startWatching(): void {
   });
 
   watcher.on('unlink', (path: string) => {
-    if (!VIDEO_EXTENSIONS.test(path)) return;
+    if (!isVideoFile(path)) return;
     console.log(`[service] clip gone: ${basename(path)}`);
     emit({ type: 'clip-removed', filePath: path });
     void reconcile();

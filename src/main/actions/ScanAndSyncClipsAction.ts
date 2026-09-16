@@ -6,6 +6,7 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
 import { probeDurationSec } from '../services/encoders.js';
+import { videoGlobPatterns } from '@shared/constants/videoFiles.js';
 
 export type ScanResult = {
   added: number;
@@ -54,10 +55,23 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
     const clipRepo = AppDataSource.getRepository(Clip);
     const gameRepo = AppDataSource.getRepository(Game);
 
-    const patterns = ['*/*.mp4', '*/*.mov', '*/*.MP4', '*/*.MOV'];
-    const entries = await fg(patterns, {
+    /*
+     * The one list, rather than this action's own.
+     *
+     * These four patterns were `mp4` and `mov` in both casings, while the
+     * watcher, the staging folder, the protocol handler, the share MIME map
+     * and the file dialog all said mp4, mov and mkv. So an mkv was watched,
+     * filed into the right game folder and playable, and then removed from the
+     * library by this sweep, which could not see it and took the row for
+     * missing, along with its tags, notes and stars. Nothing logged it.
+     *
+     * `caseSensitiveMatch: false` replaces the hand-written upper case
+     * variants, which only covered a file that was upper case throughout.
+     */
+    const entries = await fg(videoGlobPatterns(), {
       cwd: VIDEOS_ROOT,
       onlyFiles: true,
+      caseSensitiveMatch: false,
       dot: false,
       // `dot: false` already excludes `.goodbit-incoming`, where OBS writes a
       // replay before GoodBit files it, and `.filmpje-cache`. This says so
