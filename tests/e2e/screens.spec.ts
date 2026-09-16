@@ -15,9 +15,23 @@ const ROUTES = [
   { hash: '#/today', name: 'today' },
   { hash: '#/stats', name: 'stats' },
   { hash: '#/tag-patterns', name: 'tag-patterns' },
-  { hash: '#/settings?section=general', name: 'settings-general' },
-  { hash: '#/settings?section=games', name: 'settings-games' },
-  { hash: '#/settings?section=playback', name: 'settings-playback' },
+  /*
+   * All six settings sections, by their real names.
+   *
+   * This walked `general`, `games`, `playback` and `advanced`. 3.11 renamed the
+   * sections, and those four still *resolve*, because old links are aliased so
+   * somebody's muscle memory and a bench script keep working. So this would
+   * have gone on passing while three of its four visits landed on the same
+   * page, and `editing`, `data` and `connections` were never painted at all.
+   *
+   * An alias that keeps a test green while it stops testing anything is worse
+   * than a broken link, which at least says so.
+   */
+  { hash: '#/settings?section=recording', name: 'settings-recording' },
+  { hash: '#/settings?section=watching', name: 'settings-watching' },
+  { hash: '#/settings?section=editing', name: 'settings-editing' },
+  { hash: '#/settings?section=data', name: 'settings-data' },
+  { hash: '#/settings?section=connections', name: 'settings-connections' },
   { hash: '#/settings?section=advanced', name: 'settings-advanced' },
   { hash: '#/editor', name: 'editor' },
 ];

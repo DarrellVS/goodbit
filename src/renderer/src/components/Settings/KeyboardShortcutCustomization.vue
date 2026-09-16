@@ -16,6 +16,19 @@ function getActionLabel(actionId: string): string {
 }
 </script>
 
+<!--
+  The conflict warning uses the app's own warning colours, not literal yellows.
+  
+  It was `bg-yellow-50` with `text-yellow-900` and `text-yellow-800`, which is
+  light text on a light ground the moment the dark palette is on. It survived
+  because it is doubly conditional: `screens.spec.ts` visits this section, but
+  the editor only renders while keyboard shortcuts are enabled and this box only
+  while there is an actual conflict, so the contrast walk has never painted it.
+  
+  `text-orange-600` on `bg-orange-500/8` with a `border-orange-500/40` is what
+  `BaseToast.vue` uses for a warning, and being a tint rather than a fixed
+  colour it works in both palettes.
+-->
 <template>
   <div class="space-y-4 pt-8">
     <div>
@@ -23,14 +36,14 @@ function getActionLabel(actionId: string): string {
       <p class="text-sm text-muted-500 mt-1">Customize keyboard shortcuts to match your workflow</p>
     </div>
 
-    <div v-if="Object.keys(conflicts).length > 0" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+    <div v-if="Object.keys(conflicts).length > 0" class="p-4 bg-orange-500/8 border border-orange-500/40 rounded-lg">
       <div class="flex gap-3">
-        <Icon icon="material-symbols:warning" class="text-yellow-600 text-xl flex-shrink-0 mt-0.5" />
+        <Icon icon="material-symbols:warning" class="text-orange-600 text-xl flex-shrink-0 mt-0.5" />
         <div class="flex-1">
-          <h4 class="font-medium text-yellow-900 mb-2">Shortcut Conflicts Detected</h4>
-          <div class="space-y-1 text-sm text-yellow-800">
+          <h4 class="font-medium text-foreground mb-2">Shortcut Conflicts Detected</h4>
+          <div class="space-y-1 text-sm text-muted-700">
             <div v-for="(actionIds, key) in conflicts" :key="key" class="flex items-center gap-2">
-              <kbd class="px-2 py-0.5 bg-card rounded border border-yellow-300 font-mono text-xs">
+              <kbd class="px-2 py-0.5 bg-card rounded border border-orange-500/40 font-mono text-xs">
                 {{ getKeyDisplayName(key as ShortcutKey) }}
               </kbd>
               <span>is assigned to:</span>
@@ -71,7 +84,7 @@ function getActionLabel(actionId: string): string {
                 <kbd
                   v-if="shortcuts.getActionKey(action.id)"
                   class="px-3 py-1.5 rounded border font-mono text-sm min-w-[60px] text-center"
-                  :class="shortcuts.isKeyAssigned(shortcuts.getActionKey(action.id)!, action.id) ? 'bg-yellow-50 border-yellow-300 text-yellow-800' : 'bg-muted-50 border-border text-muted-700'"
+                  :class="shortcuts.isKeyAssigned(shortcuts.getActionKey(action.id)!, action.id) ? 'bg-orange-500/8 border-orange-500/40 text-orange-600' : 'bg-muted-50 border-border text-muted-700'"
                 >
                   {{ getKeyDisplayName(shortcuts.getActionKey(action.id)!) }}
                 </kbd>

@@ -47,6 +47,7 @@ node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
 node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
 node scripts/obs-apply-check.mjs  # apply the setup against a throw-away OBS directory
 node scripts/trim-check.mjs  # run the shipped trim on a real clip and check where it landed
+node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
 ```
@@ -509,6 +510,28 @@ Software decoders skip them; **NVDEC decodes them**, against a keyframe that is 
 which shipped as four seconds of flat green with the sound a group of pictures ahead of the picture.
 The second pass reads the file back and writes it out, which drops them because by then they carry
 the flag that says so.
+
+**An export is a list of steps, not a list of clips.** One segment per clip joined by the concat
+demuxer cannot express a transition: `xfade` needs frames from two sources at the same instant and
+the demuxer only puts one finished file after another. So `services/exportPlan.ts` plans steps, a
+`cut` (one source, what a segment always was) or a `dissolve` (two sources overlapping, one command
+reading two files), and the join is unchanged. The blend is its own segment rather than a second
+pass over the joined movie, so **no frame outside a blend is encoded twice**.
+
+- **A dissolve is taken out of both its neighbours**, so the movie is shorter by the overlap. A clip
+  with one on each side gives up the sum, and `buildRenderPlan` scales both down rather than handing
+  ffmpeg a segment of negative length. Borrowing frames from outside the trims instead would keep
+  the length and play frames the person deliberately cut off.
+- **Both sides are asked separately** about HDR and about a discard-flagged pre-roll, because a
+  transition reads two files and the answers differ. One input can go without `-hwaccel` while the
+  other gets it, in the same command.
+- **Crop before tone map.** 2.8 seconds against 5.8 for a five second vertical export, and the frame
+  is bit-identical (`framemd5` matches; they commute because `npl` is a constant rather than
+  something measured off the frame). The same mistake in the same direction as the one that made a
+  frame strip take 28 seconds.
+- Measured: **1.35 s per second of output with cuts**, against 1.37 before the rework, so nothing
+  was traded away. A dissolve costs about three seconds each, mostly fixed per dissolve rather than
+  per second of it, because it opens and seeks two AV1 decoders.
 
 The health of a trim is two numbers. **The range on disk must match the range asked for**, and for a
 lossless cut **the count of packets carrying the discard flag must be zero**.
