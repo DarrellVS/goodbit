@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import BaseComboBox from '../../Base/BaseComboBox.vue';
 import ObsSetupStepToggle from './ObsSetupStepToggle.vue';
+import type { ComboBoxOption, ComboBoxValue } from '../../Base/types';
 import type { SetupStep } from '../../../composables/useObsSetup';
 import type { CaptureDisplay } from '../../../services/obs';
 
@@ -13,15 +15,11 @@ import type { CaptureDisplay } from '../../../services/obs';
  * HDR mode decides the colour format, and a mismatch there is what makes the
  * replay buffer refuse to start.
  *
- * **Still a native `<select>`, and it has to be.** `Base/BaseComboBox.vue` is
- * the app's one dropdown now, and this and the hotkey picker are the two places
- * it cannot go yet: its list is portalled to `document.body` at `z-50`, and
- * this dialog's scrim is `z-[100]` in the same stacking context, so the list
- * lands behind the scrim and a click on an option hits the scrim instead, which
- * closes the wizard. Measured in a browser against the real numbers. A native
- * select's popup is drawn by Windows and is not in the page's stacking context
- * at all, which is why nobody has noticed. The component needs the affordance
- * `Base/BaseDialog.vue` already has, a way for a caller to raise its content.
+ * A `BaseComboBox`, like every other dropdown in the app. It could not be one
+ * at first: the component portalled its list at `z-50` while this dialog's
+ * scrim is `z-[100]` in the same stacking context, so the list landed behind
+ * the scrim and clicking an option hit the scrim, which closes the wizard. The
+ * component now opens above every dialog in the app, see its own note.
  */
 
 interface Props {
@@ -48,25 +46,39 @@ const emit = defineEmits<Emits>();
  * before this page was split up, and reproducing it by hand on a `@change` is a
  * second answer to a question that already has one.
  */
-const chosen = computed<number | null>({
+/*
+ * `ComboBoxValue`, not `number | null`.
+ *
+ * `BaseComboBox` emits the option's own value, which here is a display id and
+ * therefore a number. The cast on the way out is the one place that has to be
+ * stated, because the component's contract is deliberately `string | number`
+ * so it can carry both kinds of list.
+ */
+const chosen = computed<ComboBoxValue | null>({
   get: () => props.displayId,
-  set: (value) => emit('update:displayId', value),
+  set: (value) => emit('update:displayId', value === null ? null : Number(value)),
 });
+
+/** One line per screen: the label, its resolution, and which one is the main. */
+const screenOptions = computed<ComboBoxOption[]>(() =>
+  props.displays.map((screen) => ({
+    value: screen.id,
+    label: `${screen.label} · ${screen.width}x${screen.height}${
+      screen.primary ? ' (main)' : ''
+    }`,
+  })),
+);
 </script>
 
 <template>
   <label v-if="displays.length" class="p-4 rounded-xl border border-border block">
     <span class="block text-xs text-muted-500 mb-1.5">Record this screen</span>
-    <select
-      v-model.number="chosen"
-      class="w-full bg-muted-50 border border-border rounded-lg px-2.5 py-2 text-sm text-foreground"
-    >
-      <option v-for="screen in displays" :key="screen.id" :value="screen.id">
-        {{ screen.label }} &middot; {{ screen.width }}x{{ screen.height }}{{
-          screen.primary ? ' (main)' : ''
-        }}
-      </option>
-    </select>
+    <BaseComboBox
+      v-model="chosen"
+      label="Record this screen"
+      class="w-full"
+      :options="screenOptions"
+    />
   </label>
 
   <div v-if="display" class="p-4 rounded-xl border border-border">

@@ -174,6 +174,35 @@ function onValueChange(value: unknown): void {
   }
   emit('update:modelValue', (value ?? null) as ComboBoxValue | null);
 }
+
+/**
+ * The open list sits above every dialog in the app.
+ *
+ * It was `z-50`, and that is wrong in any dialog with a higher one, which is
+ * most of them. Reka's `PopperContent` copies the content's computed z-index
+ * onto the wrapper it portals to `document.body`, and `#app` creates no
+ * stacking context, so both end up in the root one and the larger number wins.
+ * Measured against the OBS setup wizard, whose scrim is `z-[100]`: the list
+ * rendered **behind** the scrim, and `elementFromPoint` over the middle of it
+ * returned the overlay, whose `@click.self` closes the dialog. Clicking an
+ * option closed the wizard.
+ *
+ * A native `<select>` never had this problem because Windows draws its popup
+ * outside the page entirely, which is why it took a component to surface it.
+ *
+ * **One value rather than a prop**, and deliberately not the `above` boolean
+ * `BaseDialog` uses. The z-indexes in this app run 50, 60, 100, 200, so a
+ * boolean cannot express "above whichever of those contains me", and a number
+ * prop makes every caller responsible for knowing its own container's depth,
+ * which is the knowledge that goes stale.
+ *
+ * A dropdown is transient and belongs on top of its own context by definition.
+ * Opening a dialog over one closes it, because focus moves, so there is no
+ * ordering left to get wrong. The one thing that stays above it is the toast
+ * viewport at `z-[2147483647]`, which reports on what just happened and has to
+ * outrank everything.
+ */
+const LIST_Z_INDEX = 'z-[300]';
 </script>
 
 <template>
@@ -228,7 +257,10 @@ function onValueChange(value: unknown): void {
         position="popper"
         align="start"
         :side-offset="6"
-        class="z-50 w-[var(--reka-combobox-trigger-width)] min-w-[12rem] rounded-lg border border-border bg-card p-1 shadow-lg outline-none"
+        :class="[
+          LIST_Z_INDEX,
+          'w-[var(--reka-combobox-trigger-width)] min-w-[12rem] rounded-lg border border-border bg-card p-1 shadow-lg outline-none',
+        ]"
       >
         <div
           v-if="searchable"

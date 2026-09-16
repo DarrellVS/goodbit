@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import BaseComboBox from '../../Base/BaseComboBox.vue';
 import ObsSetupStepToggle from './ObsSetupStepToggle.vue';
+import type { ComboBoxOption } from '../../Base/types';
 import type { SetupStep } from '../../../composables/useObsSetup';
 import { OBS_HOTKEYS, readableHotkey } from '../../../utils/obsSetupWizard';
 
@@ -11,8 +13,9 @@ import { OBS_HOTKEYS, readableHotkey } from '../../../utils/obsSetupWizard';
  * frontend's: see `src/main/services/obs/`, which is where that cost a
  * debugging session.
  *
- * The key picker is a native `<select>` for the same reason the screen picker
- * is. See `ObsSetupScreenStep.vue`.
+ * The key picker is a `BaseComboBox`, like every other dropdown in the app. It
+ * could not be until the component learned to open above a dialog: see its own
+ * note, and `ObsSetupScreenStep.vue`, which hit the same wall.
  */
 
 interface Props {
@@ -45,6 +48,11 @@ const seconds = computed<number>({
   set: (value) => emit('update:bufferSeconds', value),
 });
 
+/** The keys OBS will take, each written the way its own hotkey list shows it. */
+const hotkeyOptions = computed<ComboBoxOption[]>(() =>
+  OBS_HOTKEYS.map((candidate) => ({ value: candidate, label: readableHotkey(candidate) })),
+);
+
 const key = computed<string>({
   get: () => props.hotkey,
   set: (value) => emit('update:hotkey', value),
@@ -76,14 +84,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
 
     <label class="p-4 rounded-xl border border-border block">
       <span class="block text-xs text-muted-500 mb-1.5">Save with</span>
-      <select
-        v-model="key"
-        class="w-full bg-muted-50 border border-border rounded-lg px-2.5 py-2 text-sm text-foreground"
-      >
-        <option v-for="candidate in OBS_HOTKEYS" :key="candidate" :value="candidate">
-          {{ readableHotkey(candidate) }}
-        </option>
-      </select>
+      <BaseComboBox v-model="key" label="Save with" class="w-full" :options="hotkeyOptions" />
     </label>
   </div>
 

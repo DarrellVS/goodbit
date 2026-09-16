@@ -58,8 +58,9 @@ collectionsRouter.delete('/:id', asyncHandler(async (req, res) => {
 
 collectionsRouter.get('/:id/clips', asyncHandler(async (req, res) => {
   const collectionId = Number(req.params.id);
-  const { game, q, tags, published, starred, page, pageSize } = req.query as Record<string, string>;
-  
+  const { game, q, tags, published, starred, sort, page, pageSize } =
+    req.query as Record<string, string>;
+
   const action = new GetCollectionClipsAction();
   const result = await action.execute({
     collectionId,
@@ -68,6 +69,10 @@ collectionsRouter.get('/:id/clips', asyncHandler(async (req, res) => {
     tags,
     published,
     starred,
+    // A collection is a view of the library, so it takes the library's orders.
+    // Without this the sort control on that page reordered nothing, which is
+    // why it had to be hidden there.
+    sort,
     page: page ? parseInt(page, 10) : undefined,
     pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
   });

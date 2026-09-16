@@ -12,6 +12,8 @@ export interface GetCollectionClipsInput {
   tags?: string;
   published?: string;
   starred?: string;
+  /** One of `CLIP_SORTS`' values. Anything else falls back to newest first. */
+  sort?: string;
 }
 
 export interface GetCollectionClipsOutput {
@@ -20,6 +22,16 @@ export interface GetCollectionClipsOutput {
   page: number;
   pageSize: number;
 }
+
+const SORTS: Record<string, [string, 'ASC' | 'DESC']> = {
+  newest: ['clip.recordedAt', 'DESC'],
+  oldest: ['clip.recordedAt', 'ASC'],
+  longest: ['clip.durationSec', 'DESC'],
+  shortest: ['clip.durationSec', 'ASC'],
+  largest: ['clip.sizeBytes', 'DESC'],
+  smallest: ['clip.sizeBytes', 'ASC'],
+  name: ['clip.filename', 'ASC'],
+};
 
 export class GetCollectionClipsAction extends BaseAction<GetCollectionClipsInput, GetCollectionClipsOutput> {
   async execute(input: GetCollectionClipsInput): Promise<GetCollectionClipsOutput> {
@@ -45,12 +57,29 @@ export class GetCollectionClipsAction extends BaseAction<GetCollectionClipsInput
     const pageNum = Math.max(input.page || 1, 1);
     const pageSz = Math.min(Math.max(input.pageSize || 50, 1), 200);
 
+    /*
+     * A collection takes the library's orders.
+     *
+     * This was hard-coded to newest first, so the sort control on a collection
+     * reordered nothing and had to be hidden there. A collection is a view of
+     * the library, the same kind of thing as Starred, and the two screens
+     * disagreeing about what "longest" means would be worse than either.
+     *
+     * The same table as `GET /clips`, deliberately duplicated rather than
+     * imported: it is four lines, and a shared constant between a route and an
+     * action is the kind of coupling 3.7 is meant to remove rather than add to.
+     * `addOrderBy('clip.id')` is the tie-break, because a collection of clips
+     * recorded in one session shares a timestamp and an unstable order makes
+     * paging repeat a row.
+     */
+    const [sortColumn, sortDirection] = SORTS[String(input.sort)] ?? SORTS.newest;
+
     let qb = clipRepo
       .createQueryBuilder('clip')
       .leftJoinAndSelect('clip.tags', 'tag')
       .where('clip.id IN (:...clipIds)', { clipIds })
-      .orderBy('clip.recordedAt', 'DESC')
-      .addOrderBy('clip.fileModifiedAt', 'DESC');
+      .orderBy(sortColumn, sortDirection)
+      .addOrderBy('clip.id', 'DESC');
 
     if (input.game && input.game.length > 0) {
       qb = qb.andWhere('clip.game = :game', { game: input.game });
