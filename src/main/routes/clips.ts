@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import multer from 'multer';
 import { EntityNotFoundError, In } from 'typeorm';
+import { RecordClipOpenedAction } from '../actions/RecordClipOpenedAction.js';
 import { planSearch } from '../services/clipSearch.js';
 import { searchIndexUsable } from '../services/clipSearchIndex.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
@@ -210,6 +211,34 @@ clipsRouter.post('/:id/open', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   await videoService.openClip(id);
   res.json({ ok: true });
+}));
+
+/**
+ * Somebody looked at this clip.
+ *
+ * Not the same thing as `/open` above, which reveals the file in Explorer. This
+ * is the renderer saying a clip was opened to be watched, which is the only
+ * place that is known: main sees a metadata fetch, which might be a prefetch,
+ * and a run of Range requests for the video, which is one view arriving as
+ * twenty.
+ *
+ * Nothing reads `lastOpenedAt` yet. It is collected now because it **cannot be
+ * backfilled**, and the retention screen's most useful signal is "never
+ * opened". A failure here is not worth telling anybody about, so a clip that
+ * has since been deleted answers 404 and the renderer ignores it.
+ */
+clipsRouter.post('/:id/opened', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    const result = await new RecordClipOpenedAction().execute({ clipId: id });
+    res.json(result);
+  } catch (error) {
+    if (error instanceof EntityNotFoundError) {
+      return res.status(404).json({ error: 'No clip with that id' });
+    }
+    throw error;
+  }
 }));
 
 clipsRouter.post('/:id/export-audio', asyncHandler(async (req, res) => {

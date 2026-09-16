@@ -24,6 +24,15 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
   publishedUrl!: string | null;
   starred!: boolean;
   notes!: string | null;
+  /**
+   * When this clip was last opened to be watched, and how often.
+   *
+   * Collected from 2.0 and read by nothing until the retention screen, which
+   * wants to say "190 of these have never been opened". Null means never, not
+   * zero: they are different claims, and never is what every row starts as.
+   */
+  lastOpenedAt?: string | null;
+  openCount!: number;
   tags?: string[]; // Tag names array
 
   /**
@@ -56,6 +65,10 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
     dto.publishedUrl = entity.publishedUrl ?? null;
     dto.starred = entity.starred ?? false;
     dto.notes = entity.notes ?? null;
+    dto.lastOpenedAt = entity.lastOpenedAt instanceof Date
+      ? entity.lastOpenedAt.toISOString()
+      : (entity.lastOpenedAt ?? null);
+    dto.openCount = entity.openCount ?? 0;
     
     // Extract tag names if tags relation is loaded
     if (entity.tags && Array.isArray(entity.tags)) {
