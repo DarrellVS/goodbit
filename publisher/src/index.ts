@@ -14,8 +14,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+/*
+ * Where the mark, the source link and every redirect point. Both are the
+ * project's own pages, not anything this server hosts.
+ *
+ * Module level because three things need the first one now: the embed page's
+ * footer, `/`, and a clip that is not here.
+ */
+const SITE_URL = 'https://darrellvs.github.io/goodbit/';
+const REPO_URL = 'https://github.com/DarrellVS/goodbit';
+
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'public');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+/*
+ * The root is not a clip, and this server has no front page of its own.
+ *
+ * It exists to hold the files behind share links, so somebody who trims the
+ * end off one, or who is simply curious what this host is, gets the project's
+ * own page rather than a 404 from a bare Express. 302 rather than 301: this
+ * is where the root points today, not a permanent move of a resource, and a
+ * 301 is cached hard enough that changing your mind means asking people to
+ * clear their browser.
+ */
+app.get('/', (_req, res) => res.redirect(302, SITE_URL));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api', apiRouter);
@@ -46,9 +68,20 @@ app.get('/:filename', (req, res) => {
   const filename = path.basename(req.params.filename);
   const filePath = path.join(UPLOAD_DIR, filename);
 
-  // Check if file exists
+  /*
+   * A clip that is not here is almost always one that was unpublished.
+   *
+   * The link outlives the clip: it is in a Discord message, and unpublishing
+   * deletes the file without reaching into that message. "Video not found" as
+   * bare text told the reader nothing about what this host is or what the
+   * thing they were sent was, so it goes to the project's page instead.
+   *
+   * Only this page redirects. `/media/<file>` stays a 404, because that URL is
+   * the `src` of a `<video>` and an element that follows a redirect to an HTML
+   * page fails in a worse way than one that gets an honest 404.
+   */
   if (!fs.existsSync(filePath)) {
-    return res.status(404).send('Video not found');
+    return res.redirect(302, SITE_URL);
   }
 
   // Check if it's a video file
@@ -86,11 +119,6 @@ app.get('/:filename', (req, res) => {
     ? ''
     : shown.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const sizeLabel = formatBytes(stat.size);
-
-    // Where the mark and the source link point. Both are the project's own
-  // pages, not anything this server hosts.
-  const SITE_URL = 'https://darrellvs.github.io/goodbit/';
-  const REPO_URL = 'https://github.com/DarrellVS/goodbit';
 
   const baseUrl = process.env.PUBLIC_BASE_URL || req.protocol + '://' + req.get('host');
   const videoUrl = `${baseUrl}/media/${encodeURIComponent(filename)}`;
