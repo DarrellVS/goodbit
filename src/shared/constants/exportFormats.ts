@@ -131,6 +131,26 @@ export interface PlatformPreset {
 }
 
 export const PLATFORM_PRESETS: PlatformPreset[] = [
+  /*
+   * First, and not a platform.
+   *
+   * The row is called "Made for", and every answer in it named somewhere to
+   * post the file. Plenty of exports are not for anywhere: you want the movie
+   * on disk. Without this the only way to say that was to pick Discord and
+   * ignore the word, or to leave the row alone and wonder whether the
+   * highlighted one had already changed something.
+   *
+   * It does the same thing Discord does, and that is fine. Two choices that
+   * happen to agree today are not one choice, and saying "general" out loud
+   * costs a button and removes a guess.
+   */
+  {
+    id: 'general',
+    label: 'General',
+    hint: 'As recorded. Nothing is changed to suit a platform',
+    format: 'original',
+    normalizeLoudness: false,
+  },
   {
     id: 'youtube',
     label: 'YouTube',

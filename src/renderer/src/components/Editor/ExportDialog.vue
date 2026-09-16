@@ -66,13 +66,40 @@ const cleanName = computed(() => name.value.replace(/[<>:"/\\|?*\x00-\x1f]/g, ''
 const isValid = computed(() => cleanName.value.length > 0);
 const wasCleaned = computed(() => cleanName.value !== name.value.trim());
 
-/** Which preset, if any, the current choices already match. */
-const activePreset = computed(
+/**
+ * Which preset is lit, which is a choice rather than a deduction.
+ *
+ * It used to be worked out purely from the format and the loudness, which was
+ * exact while every preset produced a different pair. *General* and *Discord*
+ * deliberately produce the same one, so a search would always return whichever
+ * came first and the other could never be picked at all.
+ *
+ * So the press is remembered, and only until it stops being true: change the
+ * shape or the sound by hand and the remembered one no longer matches, at
+ * which point this falls back to naming whichever preset those settings
+ * describe. A highlight that outlived the settings it stands for would be
+ * worse than none.
+ */
+const chosenPresetId = ref<string | null>(null);
+
+const matchingPreset = computed(
   () =>
     PLATFORM_PRESETS.find(
       (p) => p.format === format.value && p.normalizeLoudness === normalizeLoudness.value,
     ) ?? null,
 );
+
+const activePreset = computed(() => {
+  const chosen = PLATFORM_PRESETS.find((p) => p.id === chosenPresetId.value);
+  if (
+    chosen &&
+    chosen.format === format.value &&
+    chosen.normalizeLoudness === normalizeLoudness.value
+  ) {
+    return chosen;
+  }
+  return matchingPreset.value;
+});
 
 /** A crop that keeps the whole frame has nothing to position. */
 const canPosition = computed(() => format.value !== 'original');
@@ -112,6 +139,7 @@ function applyPreset(id: string): void {
   // Nothing a preset does is hidden. It sets the same controls shown below.
   format.value = preset.format;
   normalizeLoudness.value = preset.normalizeLoudness;
+  chosenPresetId.value = preset.id;
 }
 
 const etaLabel = computed(() => {
@@ -141,6 +169,9 @@ watch(
   async (isOpen) => {
     if (!isOpen) return;
     name.value = props.defaultName;
+    // A preset is a choice about this export, not a setting, so it does not
+    // follow the dialog into the next one.
+    chosenPresetId.value = null;
     await nextTick();
     input.value?.select();
   }
