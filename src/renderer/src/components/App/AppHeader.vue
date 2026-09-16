@@ -1,16 +1,24 @@
 <script lang="ts" setup>
 import { Icon } from '@iconify/vue';
-import BasePopover from '../Base/BasePopover.vue';
 
-defineProps<{ 
-  search: string; 
-  rescanLoading?: boolean;
+/**
+ * The title of the screen, and the search field. Nothing else.
+ *
+ * It held two more things and neither belonged here. **Rescan** was solid
+ * orange, the colour this app keeps for the thing it wants you to press, for an
+ * operation that is a backstop: the watcher, the incoming folder and a six
+ * hourly sweep have already done it. It is in Settings now, next to the folder
+ * it scans. **Tags** was a button that opened a filter, one row above the
+ * filters, so filtering by tag was in a different place from filtering by
+ * everything else; it is a dropdown in the filter row now.
+ */
+defineProps<{
+  search: string;
   title?: string;
   subtitle?: string;
 }>();
 defineEmits<{
   (e: 'update:search', value: string): void;
-  (e: 'rescan'): void;
 }>();
 </script>
 
@@ -20,48 +28,25 @@ defineEmits<{
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-2xl font-bold">{{ title || 'My Library' }}</h2>
-          <p 
-            v-if="subtitle" 
+          <p
+            v-if="subtitle"
             class="text-sm mt-1 text-muted-500"
           >
             {{ subtitle }}
           </p>
         </div>
-        <div class="flex items-center gap-3">
-          <div class="relative">
-            <Icon icon="material-symbols:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
-            <input
-              id="global-search-input"
-              type="text"
-              :value="search"
-              placeholder="Search names, dates and tags"
-              class="pl-10 pr-4 py-2.5 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-400 outline-none focus:ring-2 focus:ring-orange-500/50 transition w-96"
-              @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
-          
-          <BasePopover side="bottom" :side-offset="10">
-            <template #trigger>
-              <button class="rounded-lg inline-flex items-center justify-center border border-border bg-card/5 hover:bg-card/10 px-3 py-2 outline-none gap-2">
-                <Icon icon="material-symbols:label" class="text-lg" />
-                <span>Tags</span>
-              </button>
-            </template>
-            <slot name="tags-filter" />
-          </BasePopover>
-
-          <button
-            class="rounded-lg inline-flex items-center justify-center bg-orange-500 hover:bg-orange-600 px-4 py-2.5 outline-none gap-2 text-white font-medium transition"
-            :disabled="rescanLoading"
-            @click="$emit('rescan')"
-          >
-            <Icon icon="material-symbols:refresh" :class="{ 'animate-spin': rescanLoading }" />
-            <span>Rescan</span>
-          </button>
+        <div class="relative">
+          <Icon icon="material-symbols:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400" />
+          <input
+            id="global-search-input"
+            type="text"
+            :value="search"
+            placeholder="Search names, dates and tags"
+            class="pl-10 pr-4 py-2.5 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-400 outline-none focus:ring-2 focus:ring-orange-500/50 transition w-96"
+            @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
+          />
         </div>
       </div>
     </div>
   </header>
 </template>
-
-

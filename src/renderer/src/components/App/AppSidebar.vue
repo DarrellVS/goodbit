@@ -2,7 +2,6 @@
 import { RouterLink } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import SidebarGames from './SidebarGames.vue';
-import SidebarCollections from './SidebarCollections.vue';
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
 
 interface Props {
@@ -30,8 +29,12 @@ const emit = defineEmits<Emits>();
 
     <!--
       min-h-0 and its own scroll: a flex child defaults to min-height:auto, so a
-      long games or collections list grew the sidebar past the window instead of
-      scrolling, and the whole page picked up a second scrollbar.
+      long games list grew the sidebar past the window instead of scrolling, and
+      the whole page picked up a second scrollbar.
+
+      Collections used to sit under the games here. They are a row of cards
+      above the clips now: a collection is a view of the library, the same kind
+      of thing as Starred, and this column is navigation.
     -->
     <nav class="flex-1 min-h-0 overflow-y-auto px-3 space-y-6">
       <div class="space-y-1">
@@ -70,8 +73,6 @@ const emit = defineEmits<Emits>();
         :disabled="props.disableGamesFilter"
         @select-game="emit('select-game', $event)" 
       />
-
-      <SidebarCollections />
     </nav>
 
     <div class="p-3 space-y-1 border-t border-border">

@@ -1,4 +1,4 @@
-import { ref, computed, type Ref } from 'vue';
+import { ref, computed, toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBatchOperationsStore } from '../stores/batchOperations';
 import { useToastStore } from '../stores/toast';
@@ -13,7 +13,14 @@ import type { BatchOperationResult } from '../services/clips';
 interface UseBatchOperationsOptions {
   clips: Ref<Clip[]>;
   onClipsUpdated: () => Promise<void>;
-  collectionId?: number;
+  /**
+   * Which collection the clips are being shown in, when they are.
+   *
+   * Read through `toValue` rather than taken once, because `/collections/:id`
+   * keeps the same component across a change of id: a number captured at setup
+   * would remove clips from whichever collection was open first.
+   */
+  collectionId?: MaybeRefOrGetter<number | undefined>;
 }
 
 function getValidClipIds(clips: Clip[]): number[] {
@@ -258,23 +265,24 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
   }
 
   function handleBatchRemoveFromCollection(): void {
-    if (!options.collectionId) return;
+    const collectionId = toValue(options.collectionId);
+    if (!collectionId) return;
 
     const count = selectedClips.value.length;
 
     toastStore.confirm(
       `${count} ${pluralize(count, 'clip')} stay in the library; only this collection loses them.`,
-      () => void removeFromCollection(count),
+      () => void removeFromCollection(collectionId, count),
       'Remove from this collection?'
     );
   }
 
-  async function removeFromCollection(count: number): Promise<void> {
+  async function removeFromCollection(collectionId: number, count: number): Promise<void> {
     isProcessing.value = true;
     
     try {
       const promises = selectedClips.value.map(clip => 
-        collectionsStore.removeClipFromCollection(options.collectionId!, clip.id)
+        collectionsStore.removeClipFromCollection(collectionId, clip.id)
       );
       
       await Promise.all(promises);

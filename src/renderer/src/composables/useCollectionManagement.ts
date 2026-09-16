@@ -4,8 +4,15 @@ import { useCollectionsStore } from '../stores/collections';
 import { useToastStore } from '../stores/toast';
 import { useDragAndDrop, type DragData } from './useDragAndDrop';
 
-const MAX_VISIBLE_ITEMS = 5;
-
+/**
+ * Making, renaming, deleting and dropping clips on a collection.
+ *
+ * How many of them are drawn is no longer in here. It was, as a cap of five,
+ * for the sidebar list that has been replaced by the row of cards above the
+ * clips; that row's rule is four and two overflow behaviours, and it lives in
+ * `utils/collectionsRow.ts`. Two answers to "how many are visible" in one
+ * codebase is how they drift.
+ */
 export function useCollectionManagement() {
   const router = useRouter();
   const route = useRoute();
@@ -18,15 +25,8 @@ export function useCollectionManagement() {
   const editingCollectionId = ref<number | null>(null);
   const editingCollectionName = ref('');
   const dragOverCollectionId = ref<number | null>(null);
-  const showAllCollections = ref(false);
 
   const collections = computed(() => collectionsStore.items);
-
-  const visibleCollections = computed(() => {
-    return showAllCollections.value ? collections.value : collections.value.slice(0, MAX_VISIBLE_ITEMS);
-  });
-
-  const hasMoreCollections = computed(() => collections.value.length > MAX_VISIBLE_ITEMS);
 
   function startCreateCollection() {
     showNewCollectionInput.value = true;
@@ -133,9 +133,6 @@ export function useCollectionManagement() {
 
   return {
     collections,
-    visibleCollections,
-    hasMoreCollections,
-    showAllCollections,
     showNewCollectionInput,
     newCollectionName,
     editingCollectionId,
