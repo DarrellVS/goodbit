@@ -174,6 +174,7 @@ docker build -t goodbit-publisher .</code></pre>
             <tbody>
               <tr><td><code>GET /api/health</code></td><td><code>{ ok: true }</code>, open. What the Test button in GoodBit calls.</td></tr>
               <tr><td><code>POST /api/publish</code></td><td>Multipart upload, field <code>file</code>, plus <code>displayName</code> and <code>game</code>. Token required.</td></tr>
+              <tr><td><code>PUT /api/publish/:filename/thumbnail</code></td><td>The poster frame for the embed, a JPEG body. GoodBit sends the one it already made for its library card, so this server needs no ffmpeg. Token required.</td></tr>
               <tr><td><code>DELETE /api/publish/:filename</code></td><td>Removes the file and purges it from Cloudflare. Token required.</td></tr>
               <tr><td><code>PATCH /api/publish/:filename/metadata</code></td><td>Renames what the embed shows.</td></tr>
               <tr><td><code>GET /media/:filename</code></td><td>The file itself, with revalidation headers.</td></tr>
@@ -395,6 +396,13 @@ docker build -t goodbit-publisher .</code></pre>
               You want <code>{"ok":true}</code>. If you get nothing, the container did not start,
               <code>docker compose logs</code> will say why, and it is almost always the storage path
               not existing or not being writable.
+            </p>
+            <p>
+              Those logs also say whether the token arrived. A publisher that started with one says
+              <code>PUBLISH_TOKEN is set, so uploads are protected</code>; one that started without
+              prints a block saying it will refuse every upload. Worth a look either way, since a
+              token lost to a stray quote or an <code>env_file</code> that is not being read looks
+              exactly like a working server until the first clip.
             </p>
 
             <div class="watch">

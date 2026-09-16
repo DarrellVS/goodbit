@@ -59,11 +59,58 @@ export const requireToken: RequestHandler = (req, res, next) => {
   next();
 };
 
-/** Said once at boot, because a publisher that refuses everything should say why. */
-export function warnIfUnprotected(): void {
-  if (!process.env.PUBLISH_TOKEN?.trim()) {
-    console.warn(
-      '[publisher] PUBLISH_TOKEN is not set. Uploads and deletions are refused until it is.',
-    );
+/**
+ * Said at boot, loudly, because the alternative is finding out mid upload.
+ *
+ * A publisher with no token starts, serves every clip it already has, and
+ * refuses every write with a 503. All of that is deliberate. What was wrong is
+ * where it was announced: one grey `console.warn` under a line reading
+ * "Publisher listening", which is a log that looks like a successful start, so
+ * the first real sign of trouble was a publish failing in GoodBit weeks later.
+ * That reads as a broken app rather than as a variable nobody set.
+ *
+ * So: a block that cannot be skimmed past, naming the variable, what to set it
+ * to and where the rest of the setup is written down. And a single line in the
+ * healthy case, because "did my token reach the container" is the other
+ * question this log gets asked, and quoting or a missed `env_file` is the usual
+ * answer.
+ *
+ * Printed last, after the address, since the end of the log is where anybody
+ * running `docker compose logs` starts reading.
+ */
+export function reportTokenState(): void {
+  if (process.env.PUBLISH_TOKEN?.trim()) {
+    console.log('[publisher] PUBLISH_TOKEN is set, so uploads are protected.');
+    return;
   }
+
+  const lines = [
+    'PUBLISH_TOKEN is not set, so this publisher REFUSES EVERY UPLOAD.',
+    '',
+    'Reading still works: every clip already published is still being',
+    'served. Nothing new can be added, and GoodBit will report a 503 the',
+    'moment somebody presses Publish.',
+    '',
+    'Set PUBLISH_TOKEN to a long random string, give GoodBit the same',
+    'string under Settings, App, and start this container again:',
+    '',
+    '    environment:',
+    '      PUBLISH_TOKEN: "a long random string"',
+    '',
+    'One to paste, if you have no way of making one to hand:',
+    '',
+    '    openssl rand -base64 32',
+    '',
+    'The whole setup: https://darrellvs.github.io/goodbit/publisher.html',
+  ];
+
+  // Sized from the text, so the box closes whatever the text says.
+  const width = Math.max(...lines.map((line) => line.length)) + 4;
+  const rule = '#'.repeat(width);
+
+  console.warn('');
+  console.warn(rule);
+  for (const line of lines) console.warn(`# ${line.padEnd(width - 4)} #`);
+  console.warn(rule);
+  console.warn('');
 }

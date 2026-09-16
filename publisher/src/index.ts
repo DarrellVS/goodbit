@@ -5,7 +5,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
-import { warnIfUnprotected } from './middlewares/requireToken.js';
+import { reportTokenState } from './middlewares/requireToken.js';
+import { posterPathFor, posterUrlFor } from './utils/posterPath.js';
 
 dotenv.config();
 
@@ -33,9 +34,18 @@ app.use('/media', express.static(UPLOAD_DIR, {
 
 // Video embed page with Open Graph meta tags for Discord/social media
 app.get('/:filename', (req, res) => {
-  const filename = req.params.filename;
+  /*
+   * `path.basename`, because a route parameter is not a filename.
+   *
+   * Express matches `/:filename` against the still-encoded path and decodes
+   * the parameter afterwards, so `/..%2F..%2Fetc%2Fpasswd` never contains a
+   * slash where the router looks for one and arrives here as `../../etc/passwd`.
+   * That went into a `path.join` and then, for anything that did not end in
+   * `.mp4`, into `res.sendFile`, which takes an absolute path as given.
+   */
+  const filename = path.basename(req.params.filename);
   const filePath = path.join(UPLOAD_DIR, filename);
-  
+
   // Check if file exists
   if (!fs.existsSync(filePath)) {
     return res.status(404).send('Video not found');
@@ -85,8 +95,25 @@ app.get('/:filename', (req, res) => {
   const baseUrl = process.env.PUBLIC_BASE_URL || req.protocol + '://' + req.get('host');
   const videoUrl = `${baseUrl}/media/${encodeURIComponent(filename)}`;
   const pageUrl = `${baseUrl}/${encodeURIComponent(filename)}`;
-  const thumbnailUrl = `${baseUrl}/media/${encodeURIComponent(filename)}.thumb.jpg`;
-  
+  const thumbnailUrl = posterUrlFor(baseUrl, filename);
+
+  /*
+   * The poster is named only if there is one.
+   *
+   * It arrives with the clip now, from the desktop's own thumbnail cache, so
+   * this server no longer carries ffmpeg to draw one. Three things can leave a
+   * clip without one: a desktop older than that change, a poster request that
+   * failed after the upload succeeded, and a file somebody removed by hand.
+   * In all three `poster=""` and `og:image` would point at a 404, which is
+   * worse than leaving them out: the player paints a broken image over the
+   * first frame it has decoded, and Discord shows a placeholder where it would
+   * otherwise show the video's own frame.
+   *
+   * Clips published before any of this keep working untouched: their
+   * `.thumb.jpg` is already here, and nothing deletes one except unpublishing.
+   */
+  const hasPoster = fs.existsSync(posterPathFor(UPLOAD_DIR, filename));
+
   // Title with game name if available
   const title = game ? `${displayName} | ${game}` : displayName;
   
@@ -124,16 +151,16 @@ app.get('/:filename', (req, res) => {
     <meta property="og:video:type" content="video/mp4">
     <meta property="og:video:width" content="1280">
     <meta property="og:video:height" content="720">
-    <meta property="og:image" content="${thumbnailUrl}">
-    
+    ${hasPoster ? `<meta property="og:image" content="${thumbnailUrl}">` : ''}
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="player">
     <meta name="twitter:title" content="${escapeHtml(title)}">
     <meta name="twitter:player" content="${videoUrl}">
     <meta name="twitter:player:width" content="1280">
     <meta name="twitter:player:height" content="720">
-    <meta name="twitter:image" content="${thumbnailUrl}">
-    
+    ${hasPoster ? `<meta name="twitter:image" content="${thumbnailUrl}">` : ''}
+
     <title>${escapeHtml(title)}</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -496,7 +523,7 @@ app.get('/:filename', (req, res) => {
     <main>
       <div class="wrap">
         <div class="player">
-          <video id="video" controls preload="metadata" poster="${thumbnailUrl}">
+          <video id="video" controls preload="metadata"${hasPoster ? ` poster="${thumbnailUrl}"` : ''}>
             <source src="${videoUrl}" type="video/mp4">
             Your browser does not support the video tag.
           </video>
@@ -606,7 +633,7 @@ const PORT = Number(process.env.PORT || 5000);
 app.listen(PORT, () => {
   console.log(`Publisher listening on http://localhost:${PORT}`);
   console.log(`UPLOAD_DIR=${UPLOAD_DIR}`);
-  warnIfUnprotected();
+  reportTokenState();
 });
 
 

@@ -49,14 +49,17 @@ const sha = (filePath: string) => createHash('sha1').update(readFileSync(filePat
 
 /**
  * The publisher, as far as the app can tell: `POST /api/publish` takes a
- * multipart upload named `file` and answers with a filename and a URL. What it
- * received is kept so the test can look at it.
+ * multipart upload named `file` and answers with a filename and a URL, and
+ * `PUT /api/publish/:filename/thumbnail` takes the poster frame for the embed
+ * page. What it received is kept so the test can look at it.
  */
 interface FakePublisher {
   server: Server;
   url: string;
   dir: string;
   received: Array<{ filename: string; sizeBytes: number; path: string; displayName?: string }>;
+  /** The poster frames, which the real publisher no longer makes for itself. */
+  posters: Array<{ filename: string; bytes: Buffer }>;
   /** What it will accept as a publish token, the way the real one does. */
   token: string;
   close: () => Promise<void>;
@@ -65,6 +68,7 @@ interface FakePublisher {
 async function startFakePublisher(): Promise<FakePublisher> {
   const dir = mkdtempSync(join(tmpdir(), 'goodbit-fake-publisher-'));
   const received: FakePublisher['received'] = [];
+  const posters: FakePublisher['posters'] = [];
   const app = express();
   const upload = multer({
     storage: multer.diskStorage({
@@ -76,14 +80,15 @@ async function startFakePublisher(): Promise<FakePublisher> {
 
   // The real publisher refuses every write without this, so the fake one does
   // too: otherwise the test would pass whether or not the app sent it.
-  app.post('/api/publish', (req, res, next) => {
+  const gate: express.RequestHandler = (req, res, next) => {
     const given = /^Bearer\s+(.+)$/i.exec(req.header('authorization') ?? '')?.[1];
     if (given !== TOKEN) {
       res.status(401).json({ message: 'Wrong or missing publish token.' });
       return;
     }
     next();
-  });
+  };
+  app.post('/api/publish', gate);
 
   app.post('/api/publish', upload.single('file'), (req, res) => {
     const file = req.file!;
@@ -95,6 +100,20 @@ async function startFakePublisher(): Promise<FakePublisher> {
     });
     res.json({ filename: file.originalname, url: `http://publisher.test/media/${file.originalname}` });
   });
+  /*
+   * The poster, which the publisher used to cut for itself with an ffmpeg in
+   * its container and now receives. Raw JPEG bytes, and behind the same token
+   * as everything else that writes.
+   */
+  app.put(
+    '/api/publish/:filename/thumbnail',
+    gate,
+    express.raw({ type: 'image/jpeg', limit: '8mb' }),
+    (req, res) => {
+      posters.push({ filename: req.params.filename, bytes: req.body as Buffer });
+      res.json({ stored: true });
+    },
+  );
   app.delete('/api/publish/:filename', (_req, res) => res.json({ removed: true }));
 
   const server = createServer(app);
@@ -105,6 +124,7 @@ async function startFakePublisher(): Promise<FakePublisher> {
     url: `http://127.0.0.1:${port}`,
     dir,
     received,
+    posters,
     token: TOKEN,
     close: async () => {
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -222,6 +242,19 @@ test.describe('compressing what gets shared', () => {
     expect(upload, 'the copy must carry the clip\'s own filename, or it can never be unpublished').toBeTruthy();
     expect(upload!.sizeBytes).toBeLessThan(originalSize);
     expect(probe(upload!.path).codec).toBe('h264');
+
+    /*
+     * And the poster went with it. The publisher has no ffmpeg any more, so if
+     * the app does not send this the embed page has no picture at all: the
+     * upload succeeding is not the whole of publishing working.
+     *
+     * The clip's own name, because that is what the poster is stored under at
+     * the other end, and a real JPEG rather than an empty body.
+     */
+    const poster = publisher.posters.find((p) => p.filename === clip.filename);
+    expect(poster, 'the embed page has no picture unless the app sends one').toBeTruthy();
+    expect(poster!.bytes.length).toBeGreaterThan(0);
+    expect([poster!.bytes[0], poster!.bytes[1]]).toEqual([0xff, 0xd8]);
     // What the test seeded is byte-for-byte what is still there.
     expect(sha(clip.filePath)).toBe(originalHash);
     // The size the library shows is the file's, not the copy's.

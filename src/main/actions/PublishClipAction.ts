@@ -5,7 +5,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
-import { publisherService } from '../services/publisherService.js';
+import { publisherService, posterForClip } from '../services/publisherService.js';
 import { CompressVideoAction } from './CompressVideoAction.js';
 import { compressPublished } from '../settings.js';
 import { announce } from '../startup.js';
@@ -54,10 +54,26 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
 
       const compress = input.compress ?? compressPublished();
 
+      /*
+       * The poster for the embed page goes up with the clip.
+       *
+       * The publisher used to cut its own frame, which is why its image
+       * carried an ffmpeg and an ffprobe to make one JPEG. This is the same
+       * picture the card in the library is already showing, so it costs a
+       * cache lookup, and it is resolved from the clip rather than from the
+       * file being uploaded because those are not the same file when the copy
+       * is compressed.
+       */
+      const posterPath = await posterForClip(clip);
+
       const result = compress
-        ? await this.publishCompressed(clip, gameDisplayName, say)
-        : await publisherService.publish(clip.filePath, name, gameDisplayName, (f) =>
-            say('uploading', Math.round(f * 100)),
+        ? await this.publishCompressed(clip, gameDisplayName, posterPath, say)
+        : await publisherService.publish(
+            clip.filePath,
+            name,
+            gameDisplayName,
+            (f) => say('uploading', Math.round(f * 100)),
+            posterPath,
           );
 
       clip.published = true;
@@ -79,6 +95,7 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
   private async publishCompressed(
     clip: Clip,
     gameDisplayName: string,
+    posterPath: string | undefined,
     say: (stage: 'compressing' | 'uploading' | 'done' | 'failed', percent: number) => void,
   ) {
     const scratch = await fsPromises.mkdtemp(path.join(tmpdir(), 'goodbit-publish-'));
@@ -96,6 +113,9 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
         clip.displayName || clip.filename,
         gameDisplayName,
         (fraction) => say('uploading', Math.round(fraction * 100)),
+        // The scratch copy has no row of its own, so the poster is the
+        // library's own picture of the clip this came from.
+        posterPath,
       );
     } finally {
       await fsPromises.rm(scratch, { recursive: true, force: true }).catch(() => {});
