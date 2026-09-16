@@ -34,7 +34,7 @@ const { settingRing } = useSettingsSearch();
       </p>
     </div>
     <button
-      class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm flex items-center gap-2 flex-shrink-0"
+      class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm flex items-center gap-2 shrink-0"
       :disabled="rescanning"
       @click="rescan"
     >

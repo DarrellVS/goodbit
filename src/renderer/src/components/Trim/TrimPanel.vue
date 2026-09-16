@@ -19,7 +19,7 @@
       />
 
       <SuggestionBanner
-        class="flex-shrink-0"
+        class="shrink-0"
         :suggestions="suggestions"
         :loading="suggestionsLoading"
         :applied="suggestionApplied"
@@ -32,7 +32,7 @@
       />
 
       <TimelineEditor
-        class="flex-shrink-0"
+        class="shrink-0"
         v-model="range"
         :max-duration="duration"
         :duration="timecode(duration)"
@@ -73,7 +73,7 @@
         buttons of equal weight out of two decisions of very different weight.
       -->
       <GoodBitMarkBar
-        class="flex-shrink-0"
+        class="shrink-0"
         :range="range"
         :selected="selectedGoodBit"
         :count="goodBits.length"

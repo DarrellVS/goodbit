@@ -118,7 +118,7 @@ onMounted(refresh);
   -->
   <div class="p-4 bg-card border border-border rounded-lg space-y-4">
     <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-xl bg-orange-500/12 flex items-center justify-center flex-shrink-0">
+      <div class="w-10 h-10 rounded-xl bg-orange-500/12 flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:graphic-eq" class="text-xl text-orange-500" />
       </div>
       <div class="min-w-0 flex-1">
@@ -153,7 +153,7 @@ onMounted(refresh);
 
       <div v-if="summary.model" class="px-3 py-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm space-y-1">
         <div class="flex items-center gap-2 text-foreground">
-          <Icon icon="material-symbols:model-training" class="text-lg text-emerald-500 flex-shrink-0" />
+          <Icon icon="material-symbols:model-training" class="text-lg text-emerald-500 shrink-0" />
           <span>
             Using a model fitted to <strong>{{ summary.model.examples }}</strong> of your decisions
             <template v-if="summary.model.trainedAt">on {{ when(summary.model.trainedAt) }}</template>.

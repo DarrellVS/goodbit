@@ -51,7 +51,7 @@ function sectionIcon(entry: SettingEntry): string {
           @click="emit('select', entry)"
           @mouseenter="activeIndex = index"
         >
-          <Icon :icon="sectionIcon(entry)" class="text-xl text-muted-400 flex-shrink-0 mt-0.5" />
+          <Icon :icon="sectionIcon(entry)" class="text-xl text-muted-400 shrink-0 mt-0.5" />
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="font-medium text-foreground">{{ entry.label }}</span>
@@ -61,7 +61,7 @@ function sectionIcon(entry: SettingEntry): string {
                 by where the row happens to sit.
               -->
               <span
-                class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-muted-100 text-muted-600"
+                class="px-1.5 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide bg-muted-100 text-muted-600"
               >
                 {{ sectionLabel(entry.section) }}
               </span>
@@ -70,7 +70,7 @@ function sectionIcon(entry: SettingEntry): string {
           </div>
           <Icon
             icon="material-symbols:chevron-right"
-            class="text-xl text-muted-400 flex-shrink-0 mt-0.5"
+            class="text-xl text-muted-400 shrink-0 mt-0.5"
           />
         </button>
       </li>

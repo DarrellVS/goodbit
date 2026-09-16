@@ -29,7 +29,7 @@
       :key="i"
       :aria-label="i === 0 ? 'Start time' : 'End time'"
       :title="i === 0 ? 'Drag to move the start' : 'Drag to move the end'"
-      class="group relative block h-full w-0 outline-none pointer-events-auto touch-none"
+      class="group relative block h-full w-0 outline-hidden pointer-events-auto touch-none"
     >
       <!--
         A hairline you can see, and a target eight times wider you can hit. A
@@ -37,7 +37,7 @@
       -->
       <div class="absolute inset-y-0 -left-2 -right-2 cursor-ew-resize" />
       <div
-        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] bg-orange-500 rounded-sm shadow-[0_0_0_1px_rgba(0,0,0,0.35)] pointer-events-none transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-orange-400"
+        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] bg-orange-500 rounded-xs shadow-[0_0_0_1px_rgba(0,0,0,0.35)] pointer-events-none transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-orange-400"
       />
 
       <div

@@ -28,7 +28,7 @@ withDefaults(defineProps<Props>(), { size: 20, bare: false });
     viewBox="0 0 512 512"
     role="img"
     aria-label="GoodBit"
-    class="flex-shrink-0"
+    class="shrink-0"
   >
     <rect v-if="!bare" width="512" height="512" rx="96" fill="#f97316" />
     <g :fill="bare ? 'currentColor' : '#ffffff'" :opacity="bare ? 0.38 : 0.34">

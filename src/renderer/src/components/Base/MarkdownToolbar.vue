@@ -45,7 +45,7 @@ const emit = defineEmits<Emits>();
     <button
       v-if="hasPlayhead"
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors text-orange-600"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors text-orange-600"
       title="Insert the time on screen now"
       @click="emit('insert-playhead')"
     >
@@ -56,7 +56,7 @@ const emit = defineEmits<Emits>();
 
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Bold (Ctrl+B)"
       @click="emit('insert', '**', '**')"
     >
@@ -65,7 +65,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Italic (Ctrl+I)"
       @click="emit('insert', '*', '*')"
     >
@@ -74,7 +74,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Heading"
       @click="emit('insert', '## ')"
     >
@@ -85,7 +85,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Link"
       @click="emit('insert', '[', '](url)')"
     >
@@ -94,7 +94,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Bullet List"
       @click="emit('insert', '- ')"
     >
@@ -103,7 +103,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Code"
       @click="emit('insert', '`', '`')"
     >
@@ -112,7 +112,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="p-2 rounded hover:bg-muted-200 transition-colors"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors"
       title="Quote"
       @click="emit('insert', '> ')"
     >
@@ -123,7 +123,7 @@ const emit = defineEmits<Emits>();
     
     <button
       type="button"
-      class="px-3 py-1.5 rounded hover:bg-muted-200 transition-colors flex items-center gap-2 text-sm font-medium"
+      class="px-3 py-1.5 rounded-sm hover:bg-muted-200 transition-colors flex items-center gap-2 text-sm font-medium"
       :class="{ 'bg-orange-500/16 text-orange-600': showPreview }"
       @click="emit('toggle-preview')"
     >

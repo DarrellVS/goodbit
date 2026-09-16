@@ -153,7 +153,7 @@ async function followMove(jobId: string): Promise<void> {
         </span>
       </p>
     </div>
-    <div class="flex items-center gap-2 flex-shrink-0">
+    <div class="flex items-center gap-2 shrink-0">
       <button
         class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
         @click="moveClipsFolder"

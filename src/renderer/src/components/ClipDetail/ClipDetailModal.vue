@@ -258,7 +258,7 @@ async function onTrimmed(): Promise<void> {
       <Transition name="clip-modal" mode="out-in" appear>
         <DialogContent
           :key="view"
-          class="fixed inset-8 z-50 bg-card rounded-2xl shadow-2xl border border-border flex flex-col outline-none overflow-hidden"
+          class="fixed inset-8 z-50 bg-card rounded-2xl shadow-2xl border border-border flex flex-col outline-hidden overflow-hidden"
           @open-auto-focus="(event: Event) => event.preventDefault()"
         >
         <!--
@@ -266,7 +266,7 @@ async function onTrimmed(): Promise<void> {
           The name is editable in place, which is where anybody would try to
           rename it first.
         -->
-        <header class="flex items-start gap-4 px-6 py-4 border-b border-border flex-shrink-0">
+        <header class="flex items-start gap-4 px-6 py-4 border-b border-border shrink-0">
           <!--
             Back out of the trimmer without closing the clip. Trimming is a face
             of this layer, so leaving it lands on the other face rather than on
@@ -274,7 +274,7 @@ async function onTrimmed(): Promise<void> {
           -->
           <button
             v-if="view === 'trim'"
-            class="flex-shrink-0 w-9 h-9 mt-1 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
+            class="shrink-0 w-9 h-9 mt-1 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
             aria-label="Back to the clip"
             title="Back to the clip"
             @click="back"
@@ -293,7 +293,7 @@ async function onTrimmed(): Promise<void> {
           </div>
 
           <button
-            class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
+            class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
             aria-label="Close"
             title="Close (Esc)"
             @click="close"

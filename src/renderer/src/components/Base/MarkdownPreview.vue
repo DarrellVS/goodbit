@@ -56,6 +56,19 @@ function onKeydown(event: KeyboardEvent): void {
 
 <style scoped>
 /*
+ * Tailwind 4 compiles every `<style>` block on its own, and a scoped block in
+ * an SFC is a separate stylesheet that has never seen the theme. So `@apply`
+ * below cannot resolve `text-muted-800` or any other token utility without
+ * being pointed back at the sheet that defines them, and the build stops with
+ * "Cannot apply unknown utility class".
+ *
+ * `@reference` reads that file for its theme and utilities and emits nothing,
+ * so this costs no bytes in the output. Under Tailwind 3 the whole thing was
+ * one compilation and this was unnecessary.
+ */
+@reference "../../styles.css";
+
+/*
  * `.markdown-preview :deep(p)`, never `:deep(.markdown-preview p)`.
  *
  * They read the same and only one of them works. A bare `:deep(.x)` compiles
@@ -139,7 +152,7 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .markdown-preview :deep(.timestamp-link:focus-visible) {
-  @apply outline-none ring-2 ring-orange-500/50;
+  @apply outline-hidden ring-2 ring-orange-500/50;
 }
 
 .markdown-preview :deep(.timestamp-link)::before {

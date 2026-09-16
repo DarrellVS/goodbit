@@ -150,11 +150,11 @@ function openGuide(): void {
       :class="['p-4 bg-card rounded-lg border border-border space-y-4', settingRing('OBS setup')]"
     >
       <div class="flex items-start gap-3">
-        <AppLoading v-if="!status" class="text-xl flex-shrink-0 mt-0.5 text-muted-400" />
+        <AppLoading v-if="!status" class="text-xl shrink-0 mt-0.5 text-muted-400" />
         <Icon
           v-else
           :icon="status.ready ? 'material-symbols:check-circle' : 'material-symbols:error-circle-rounded'"
-          class="text-xl flex-shrink-0 mt-0.5"
+          class="text-xl shrink-0 mt-0.5"
           :class="status.ready ? 'text-emerald-500' : 'text-orange-500'"
         />
         <div class="min-w-0">
@@ -189,7 +189,7 @@ function openGuide(): void {
                   ? 'material-symbols:block'
                   : 'material-symbols:info-outline'
               "
-              class="text-base flex-shrink-0 mt-0.5"
+              class="text-base shrink-0 mt-0.5"
               :class="finding.level === 'blocker' ? 'text-red-500' : 'text-muted-400'"
             />
             <div class="min-w-0">
@@ -262,7 +262,7 @@ function openGuide(): void {
         </p>
       </div>
       <button
-        class="px-3 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground flex-shrink-0"
+        class="px-3 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground shrink-0"
         @click="runOnboarding"
       >
         Start it
@@ -356,7 +356,7 @@ function openGuide(): void {
               Press Show me after changing it, to hear where it lands
             </p>
           </div>
-          <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="flex items-center gap-3 shrink-0">
             <input
               :value="settings.clipToastVolume ?? 75"
               type="range"
@@ -400,7 +400,7 @@ function openGuide(): void {
             </p>
           </div>
           <button
-            class="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-700 hover:bg-muted-50 transition-colors flex-shrink-0"
+            class="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-700 hover:bg-muted-50 transition-colors shrink-0"
             @click="previewToast"
           >
             Show me
@@ -409,7 +409,7 @@ function openGuide(): void {
 
         <!-- The one thing that can make this look broken, said once and quietly. -->
         <p class="flex items-start gap-2 pt-3 text-xs text-muted-500 border-t border-border">
-          <Icon icon="material-symbols:info-outline" class="flex-shrink-0 mt-0.5 text-sm" />
+          <Icon icon="material-symbols:info-outline" class="shrink-0 mt-0.5 text-sm" />
           <span>
             Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
             games default to, is fine.

@@ -69,7 +69,7 @@ function delay(index: number): string {
     viewBox="0 0 512 512"
     role="img"
     :aria-label="label"
-    class="flex-shrink-0 goodbit-loading"
+    class="shrink-0 goodbit-loading"
   >
     <rect
       v-for="i in FRAMES"

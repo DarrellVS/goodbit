@@ -155,11 +155,11 @@ function notNow(): void {
   <div
     v-if="open"
     data-testid="obs-setup"
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-6"
+    class="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-6"
     @click.self="close"
   >
     <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-2xl border border-border shadow-2xl">
-      <header class="flex items-start justify-between gap-4 p-5 pb-3 flex-shrink-0">
+      <header class="flex items-start justify-between gap-4 p-5 pb-3 shrink-0">
         <div class="min-w-0">
           <h2 class="text-lg font-semibold text-foreground">{{ pages[at]?.title ?? 'Set up OBS' }}</h2>
           <p v-if="page !== 'route'" class="text-sm text-muted-500 mt-0.5">
@@ -174,7 +174,7 @@ function notNow(): void {
         </button>
       </header>
 
-      <ol v-if="page !== 'route'" class="flex items-center gap-1.5 px-5 pb-4 flex-shrink-0">
+      <ol v-if="page !== 'route'" class="flex items-center gap-1.5 px-5 pb-4 shrink-0">
         <li
           v-for="(entry, index) in pages"
           :key="entry.id"
@@ -269,7 +269,7 @@ function notNow(): void {
 
       <footer
         v-if="page !== 'route'"
-        class="flex items-center justify-between gap-2 p-5 pt-3 border-t border-border flex-shrink-0"
+        class="flex items-center justify-between gap-2 p-5 pt-3 border-t border-border shrink-0"
       >
         <button
           v-if="at > 0 && page !== 'done'"

@@ -20,7 +20,7 @@ const emit = defineEmits<Emits>();
     <button
       v-for="(clip, index) in clips"
       :key="`thumb-${clip.id}`"
-      class="flex-shrink-0 w-[180px] cursor-pointer bg-transparent border-0 p-0 transition-all duration-300"
+      class="shrink-0 w-[180px] cursor-pointer bg-transparent border-0 p-0 transition-all duration-300"
       :aria-current="selectedIndex === index"
       :aria-label="`View clip ${index + 1}: ${clip.displayName || clip.filename}`"
       @click="emit('select', index)"
@@ -28,10 +28,10 @@ const emit = defineEmits<Emits>();
       <div 
         class="relative p-[3px] rounded-xl transition-all duration-300"
         :class="selectedIndex === index 
-          ? 'bg-gradient-to-br from-orange-500 to-orange-600' 
-          : 'bg-transparent hover:bg-gradient-to-br hover:from-orange-500/30 hover:to-orange-600/30'"
+          ? 'bg-linear-to-br from-orange-500 to-orange-600' 
+          : 'bg-transparent hover:bg-linear-to-br hover:from-orange-500/30 hover:to-orange-600/30'"
       >
-        <div class="relative rounded-[10px] overflow-hidden aspect-[21/9] bg-card shadow-md transition-all duration-300 group">
+        <div class="relative rounded-[10px] overflow-hidden aspect-21/9 bg-card shadow-md transition-all duration-300 group">
           <img 
             :src="getThumbUrl(clip)" 
             :alt="clip.displayName || clip.filename"
@@ -39,7 +39,7 @@ const emit = defineEmits<Emits>();
             :class="{ 'group-hover:scale-105': true }"
           />
           <div 
-            class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 pointer-events-none"
+            class="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 pointer-events-none"
             :class="{ 'group-hover:opacity-100': true, 'opacity-100': selectedIndex === index }"
           />
         </div>

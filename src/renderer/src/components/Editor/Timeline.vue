@@ -124,7 +124,7 @@ function handleRulerMouseUp(): void {
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden select-none">
     <div
       ref="rulerRef"
-      class="flex-shrink-0 h-7 bg-orange-500/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
+      class="shrink-0 h-7 bg-orange-500/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
@@ -202,7 +202,29 @@ function handleRulerMouseUp(): void {
           class="absolute top-0 bottom-0 w-0.5 bg-orange-500 pointer-events-none z-20 shadow-lg shadow-orange-500/50"
           :style="{ left: `${playheadPosition}px` }"
         >
-          <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50 border-2 border-card" />
+          <!--
+            `top-0`, not `-top-1`, and what it fixes was being held up by an
+            accident.
+
+            The scroller has `overflow-y-hidden`, so anything above its top
+            edge is cut off. This handle asked to sit 4px above that edge and
+            was drawn in full anyway: Tailwind 3 implemented `space-y-2` as a
+            margin-top on every child after the first, and the playhead bar
+            this sits in is one of those children. An absolutely positioned
+            element still takes a margin, so the bar, and the handle with it,
+            was pushed 8px down into view by a rule meant for the lanes beside
+            it. That also hid the bar's own top end behind the handle.
+
+            Tailwind 4 puts the margin on the bottom of every child except the
+            last. This is the last child, so it gets nothing: the -4px became
+            real and the top half of the handle vanished under the ruler.
+
+            At `top-0` the handle starts exactly where the bar does, so
+            nothing is clipped and the bar has no stub poking out above it,
+            without either of those depending on a spacing rule reaching an
+            element it was never aimed at.
+          -->
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50 border-2 border-card" />
         </div>
       </div>
     </div>

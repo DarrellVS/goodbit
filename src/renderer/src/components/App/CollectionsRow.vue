@@ -45,7 +45,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
     <div class="flex items-center gap-2">
       <h2 id="collections-heading" class="text-xs font-semibold text-muted-500">COLLECTIONS</h2>
       <button
-        class="rounded p-1 text-muted-500 transition-colors hover:bg-muted-100 hover:text-foreground"
+        class="rounded-sm p-1 text-muted-500 transition-colors hover:bg-muted-100 hover:text-foreground"
         title="New collection"
         @click="actions.startCreateCollection"
       >
@@ -53,7 +53,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
       </button>
       <button
         v-if="layout.toggleLabel"
-        class="ml-auto rounded px-2 py-1 text-xs text-muted-400 transition-colors hover:bg-muted-100 hover:text-foreground"
+        class="ml-auto rounded-sm px-2 py-1 text-xs text-muted-400 transition-colors hover:bg-muted-100 hover:text-foreground"
         @click="showAll = !showAll"
       >
         {{ layout.toggleLabel }}
@@ -68,7 +68,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
       <input
         v-model="createInputValue"
         placeholder="Name it, then press Enter"
-        class="w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-500/50"
+        class="w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:ring-2 focus:ring-orange-500/50"
         @keyup.enter="actions.createCollection"
         @keyup.esc="showCreateInput = false"
       />

@@ -67,7 +67,7 @@ function clear(): void {
         placeholder="Search settings"
         autocomplete="off"
         spellcheck="false"
-        class="w-full pl-10 pr-9 py-2.5 rounded-lg bg-card text-foreground placeholder:text-muted-400 border border-border text-sm outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+        class="w-full pl-10 pr-9 py-2.5 rounded-lg bg-card text-foreground placeholder:text-muted-400 border border-border text-sm outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
         @input="onInput"
         @keydown.down.prevent="move(1)"
         @keydown.up.prevent="move(-1)"
@@ -76,7 +76,7 @@ function clear(): void {
       />
       <button
         v-if="query"
-        class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-400 hover:text-foreground transition-colors"
+        class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-sm text-muted-400 hover:text-foreground transition-colors"
         aria-label="Clear the search"
         @click="clear"
       >

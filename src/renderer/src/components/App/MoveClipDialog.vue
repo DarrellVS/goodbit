@@ -93,7 +93,7 @@ onMounted(() => {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-none modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >
         <div class="p-6 border-b border-border">
           <DialogTitle class="text-xl font-bold text-foreground mb-1">
@@ -128,7 +128,7 @@ onMounted(() => {
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search or create new game..."
-                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 @keydown.enter="selectFromSearch"
               />
             </div>
@@ -140,7 +140,7 @@ onMounted(() => {
             >
               <Icon icon="material-symbols:add-circle" class="text-green-600 text-lg" />
               <span class="text-sm text-green-700">
-                Press <kbd class="px-1.5 py-0.5 bg-card border border-green-300 rounded text-xs font-mono">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
+                Press <kbd class="px-1.5 py-0.5 bg-card border border-green-300 rounded-sm text-xs font-mono">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
               </span>
             </div>
             
@@ -166,7 +166,7 @@ onMounted(() => {
               >
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                   <div 
-                    class="w-2 h-2 rounded-full flex-shrink-0"
+                    class="w-2 h-2 rounded-full shrink-0"
                     :class="{
                       'bg-orange-500': selectedGame === game.game,
                       'bg-gray-400': selectedGame !== game.game,
@@ -184,7 +184,7 @@ onMounted(() => {
                   </span>
                 </div>
                 <span 
-                  class="text-xs flex-shrink-0 ml-2"
+                  class="text-xs shrink-0 ml-2"
                   :class="{
                     'text-orange-600': selectedGame === game.game,
                     'text-muted-400': selectedGame !== game.game,

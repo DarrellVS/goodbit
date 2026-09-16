@@ -50,7 +50,7 @@ function applyFadePreset(seconds: number): void {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border">
+    <div class="shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:tune" class="text-orange-500" />
         Track Properties
@@ -59,7 +59,7 @@ function applyFadePreset(seconds: number): void {
 
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
     <div class="flex items-start gap-2">
-      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+      <div class="w-9 h-9 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:music-note" class="text-card" />
       </div>
       <div class="min-w-0">

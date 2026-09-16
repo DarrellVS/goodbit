@@ -41,7 +41,7 @@ function handleDelete(): void {
       <video 
         :src="videoUrl" 
         :poster="posterUrl"
-        class="w-full aspect-[21/9] object-cover" 
+        class="w-full aspect-21/9 object-cover" 
         controls
       />
     </div>
@@ -53,7 +53,7 @@ function handleDelete(): void {
       >
         <EditableArea class="text-lg font-semibold text-foreground">
           <EditablePreview />
-          <EditableInput class="bg-transparent outline-none border-b border-border" />
+          <EditableInput class="bg-transparent outline-hidden border-b border-border" />
         </EditableArea>
       </EditableRoot>
       

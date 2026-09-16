@@ -38,12 +38,12 @@ function getActionLabel(actionId: string): string {
 
     <div v-if="Object.keys(conflicts).length > 0" class="p-4 bg-orange-500/8 border border-orange-500/40 rounded-lg">
       <div class="flex gap-3">
-        <Icon icon="material-symbols:warning" class="text-orange-600 text-xl flex-shrink-0 mt-0.5" />
+        <Icon icon="material-symbols:warning" class="text-orange-600 text-xl shrink-0 mt-0.5" />
         <div class="flex-1">
           <h4 class="font-medium text-foreground mb-2">Shortcut Conflicts Detected</h4>
           <div class="space-y-1 text-sm text-muted-700">
             <div v-for="(actionIds, key) in conflicts" :key="key" class="flex items-center gap-2">
-              <kbd class="px-2 py-0.5 bg-card rounded border border-orange-500/40 font-mono text-xs">
+              <kbd class="px-2 py-0.5 bg-card rounded-sm border border-orange-500/40 font-mono text-xs">
                 {{ getKeyDisplayName(key as ShortcutKey) }}
               </kbd>
               <span>is assigned to:</span>
@@ -83,7 +83,7 @@ function getActionLabel(actionId: string): string {
               <div v-else class="flex items-center gap-2">
                 <kbd
                   v-if="shortcuts.getActionKey(action.id)"
-                  class="px-3 py-1.5 rounded border font-mono text-sm min-w-[60px] text-center"
+                  class="px-3 py-1.5 rounded-sm border font-mono text-sm min-w-[60px] text-center"
                   :class="shortcuts.isKeyAssigned(shortcuts.getActionKey(action.id)!, action.id) ? 'bg-orange-500/8 border-orange-500/40 text-orange-600' : 'bg-muted-50 border-border text-muted-700'"
                 >
                   {{ getKeyDisplayName(shortcuts.getActionKey(action.id)!) }}

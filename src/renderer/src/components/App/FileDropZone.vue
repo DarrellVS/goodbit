@@ -25,7 +25,7 @@ defineProps<Props>();
       :class="{ 'pointer-events-none': isUploading }"
     >
       <div
-        class="bg-gradient-to-br from-orange-500/20 to-orange-600/20 border-4 border-dashed rounded-3xl px-16 py-20 text-center transition-all"
+        class="bg-linear-to-br from-orange-500/20 to-orange-600/20 border-4 border-dashed rounded-3xl px-16 py-20 text-center transition-all"
         :class="{
           'border-orange-500 scale-100': isDragging && !isUploading,
           'border-orange-400/50 scale-95': isUploading,
@@ -67,7 +67,7 @@ defineProps<Props>();
           <div v-if="uploadProgress !== undefined" class="mt-6">
             <div class="w-96 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
               <div
-                class="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300"
+                class="h-full bg-linear-to-r from-orange-500 to-orange-600 transition-all duration-300"
                 :style="{ width: `${uploadProgress}%` }"
               />
             </div>

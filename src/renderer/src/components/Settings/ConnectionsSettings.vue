@@ -178,7 +178,7 @@ async function copyCommand(): Promise<void> {
         <div class="pt-3 border-t border-border space-y-3">
           <div class="flex items-center gap-2 text-sm">
             <span
-              class="w-2 h-2 rounded-full flex-shrink-0"
+              class="w-2 h-2 rounded-full shrink-0"
               :class="state.running ? 'bg-emerald-500' : 'bg-orange-500'"
             />
             <span class="text-foreground">
@@ -216,7 +216,7 @@ async function copyCommand(): Promise<void> {
               </div>
               <button
                 v-if="client.writable"
-                class="px-2.5 py-1.5 rounded-lg border text-xs flex-shrink-0"
+                class="px-2.5 py-1.5 rounded-lg border text-xs shrink-0"
                 :class="
                   client.registered
                     ? 'border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10'
@@ -229,7 +229,7 @@ async function copyCommand(): Promise<void> {
               </button>
               <button
                 v-else
-                class="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted-50 text-xs text-foreground flex-shrink-0"
+                class="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted-50 text-xs text-foreground shrink-0"
                 @click="copyAddress"
               >
                 Copy address
@@ -247,7 +247,7 @@ async function copyCommand(): Promise<void> {
               Or do it yourself. This is the same thing the switch above writes.
             </p>
             <code
-              class="block text-xs text-muted-500 bg-muted-50 rounded p-2 break-all font-mono"
+              class="block text-xs text-muted-500 bg-muted-50 rounded-sm p-2 break-all font-mono"
             >{{ shownCommand }}</code>
             <div class="flex items-center gap-2">
               <button

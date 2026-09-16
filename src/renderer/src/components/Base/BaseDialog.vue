@@ -65,7 +65,7 @@ watch(() => props.open, (isOpen) => {
       <div
         v-if="open"
         class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-        :class="above ? 'z-[60]' : 'z-50'"
+        :class="above ? 'z-60' : 'z-50'"
         @click="handleBackdropClick"
       >
         <Transition name="modal-content">
@@ -76,7 +76,7 @@ watch(() => props.open, (isOpen) => {
             @click.stop
           >
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-orange-500/8 to-amber-500/8">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-linear-to-r from-orange-500/8 to-amber-500/8">
               <h2 class="text-xl font-bold text-foreground">
                 {{ title }}
               </h2>

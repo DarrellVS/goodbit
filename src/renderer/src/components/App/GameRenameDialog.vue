@@ -60,7 +60,7 @@ const folderName = computed(() => props.game?.game || '');
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md flex flex-col outline-none modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md flex flex-col outline-hidden modal-content-animate"
       >
         <div class="p-6 border-b border-border">
           <DialogTitle class="text-xl font-bold text-foreground mb-1">
@@ -81,7 +81,7 @@ const folderName = computed(() => props.game?.game || '');
               v-model="displayName"
               type="text"
               placeholder="Enter a custom display name"
-              class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               @keydown.enter="handleSave"
             />
           </div>
@@ -89,7 +89,7 @@ const folderName = computed(() => props.game?.game || '');
           <!-- Info Box -->
           <div class="rounded-lg bg-muted-50 border border-border p-3 space-y-1">
             <div class="flex items-start gap-2 text-sm text-muted-700">
-              <Icon icon="material-symbols:folder-outline" class="text-lg flex-shrink-0 mt-0.5" />
+              <Icon icon="material-symbols:folder-outline" class="text-lg shrink-0 mt-0.5" />
               <div>
                 <span class="font-medium">Folder name:</span>
                 <span class="ml-1 font-mono text-foreground">{{ folderName }}</span>

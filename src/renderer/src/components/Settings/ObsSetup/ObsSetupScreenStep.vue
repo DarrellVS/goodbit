@@ -17,7 +17,7 @@ import type { CaptureDisplay } from '../../../services/obs';
  *
  * A `BaseComboBox`, like every other dropdown in the app. It could not be one
  * at first: the component portalled its list at `z-50` while this dialog's
- * scrim is `z-[100]` in the same stacking context, so the list landed behind
+ * scrim is `z-100` in the same stacking context, so the list landed behind
  * the scrim and clicking an option hit the scrim, which closes the wizard. The
  * component now opens above every dialog in the app, see its own note.
  */
@@ -94,7 +94,7 @@ const screenOptions = computed<ComboBoxOption[]>(() =>
       -->
       <span
         v-if="display.hdrEnabled"
-        class="px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-orange-500/15 text-orange-500 border border-orange-500/30"
+        class="px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wide bg-orange-500/15 text-orange-500 border border-orange-500/30"
       >
         HDR
       </span>

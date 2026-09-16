@@ -103,7 +103,7 @@ function time(clip: Clip): number {
           timeline, oldest first.
         -->
         <button
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-orange-500 hover:bg-orange-500/10 transition-colors flex-shrink-0"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-orange-500 hover:bg-orange-500/10 transition-colors shrink-0"
           :title="`Open these ${group.clips.length} clips in the editor, oldest first`"
           @click="editDayInEditor(group)"
         >

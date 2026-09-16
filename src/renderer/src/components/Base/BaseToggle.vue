@@ -37,7 +37,7 @@ function toggle(): void {
     :aria-checked="modelValue"
     :aria-label="label"
     :disabled="disabled"
-    class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     :class="modelValue ? 'bg-orange-500' : 'bg-muted-300'"
     @click="toggle"
   >

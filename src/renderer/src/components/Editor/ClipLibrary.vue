@@ -67,7 +67,7 @@ function toggleTag(name: string): void {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
+    <div class="shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:video-library" class="text-orange-500" />
         Clip Library
@@ -75,7 +75,7 @@ function toggleTag(name: string): void {
       <span class="text-xs text-muted-500">{{ clips.length }}</span>
     </div>
 
-    <div class="flex-shrink-0 p-3 space-y-2 border-b border-border">
+    <div class="shrink-0 p-3 space-y-2 border-b border-border">
       <div class="relative">
         <Icon
           icon="material-symbols:search"
@@ -85,11 +85,11 @@ function toggleTag(name: string): void {
           v-model="search"
           type="search"
           placeholder="Search clips and tags"
-          class="w-full pl-9 pr-8 py-2 text-sm rounded-lg bg-card/80 border border-border focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+          class="w-full pl-9 pr-8 py-2 text-sm rounded-lg bg-card/80 border border-border focus:border-orange-500 focus:outline-hidden focus:ring-1 focus:ring-orange-500/40"
         />
         <button
           v-if="search"
-          class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-400 hover:text-muted-700"
+          class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-sm text-muted-400 hover:text-muted-700"
           @click="search = ''"
         >
           <Icon icon="material-symbols:close" class="text-sm" />
@@ -98,7 +98,7 @@ function toggleTag(name: string): void {
 
       <select
         v-model="selectedGame"
-        class="w-full px-2.5 py-2 text-sm rounded-lg bg-card/80 border border-border focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+        class="w-full px-2.5 py-2 text-sm rounded-lg bg-card/80 border border-border focus:border-orange-500 focus:outline-hidden focus:ring-1 focus:ring-orange-500/40"
       >
         <option value="">All games</option>
         <option v-for="game in games" :key="game.game" :value="game.game">
@@ -127,7 +127,7 @@ function toggleTag(name: string): void {
             v-model="tagSearch"
             type="search"
             placeholder="Find a tag"
-            class="w-full px-2.5 py-1.5 text-sm rounded-md bg-card/80 border border-border focus:border-orange-500 focus:outline-none"
+            class="w-full px-2.5 py-1.5 text-sm rounded-md bg-card/80 border border-border focus:border-orange-500 focus:outline-hidden"
           />
           <div class="max-h-32 overflow-y-auto flex flex-wrap gap-1.5">
             <button
@@ -189,13 +189,13 @@ function toggleTag(name: string): void {
         :key="`${group.date}-${group.game}`"
         class="space-y-2"
       >
-        <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-card/85 backdrop-blur-sm py-1 -mx-0.5 rounded">
-          <Icon icon="material-symbols:label" class="text-orange-500 text-base flex-shrink-0" />
+        <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-card/85 backdrop-blur-sm py-1 -mx-0.5 rounded-sm">
+          <Icon icon="material-symbols:label" class="text-orange-500 text-base shrink-0" />
           <span class="text-sm font-semibold text-foreground truncate">
             {{ getGameDisplayName(group.game) }}
           </span>
-          <span class="text-xs text-muted-500 flex-shrink-0">{{ group.displayDate }}</span>
-          <span class="ml-auto text-xs font-medium text-muted-500 bg-muted-100 px-2 py-0.5 rounded-full flex-shrink-0">
+          <span class="text-xs text-muted-500 shrink-0">{{ group.displayDate }}</span>
+          <span class="ml-auto text-xs font-medium text-muted-500 bg-muted-100 px-2 py-0.5 rounded-full shrink-0">
             {{ group.clips.length }}
           </span>
         </header>
@@ -212,7 +212,7 @@ function toggleTag(name: string): void {
           title="Already in the timeline. Click to add another copy"
           @click="emit('add-to-timeline', entry.clip)"
         >
-          <div class="relative w-14 h-8 rounded overflow-hidden flex-shrink-0 bg-black">
+          <div class="relative w-14 h-8 rounded-sm overflow-hidden shrink-0 bg-black">
             <img
               :src="getThumbUrl(entry.clip)"
               :alt="entry.clip.displayName || entry.clip.filename"
@@ -227,7 +227,7 @@ function toggleTag(name: string): void {
             {{ entry.clip.displayName || entry.clip.filename }}
           </span>
 
-          <span class="flex items-center gap-1 text-[10px] font-medium text-orange-700 flex-shrink-0 pr-1">
+          <span class="flex items-center gap-1 text-[10px] font-medium text-orange-700 shrink-0 pr-1">
             <Icon icon="material-symbols:check-circle" class="text-sm" />
             In timeline
           </span>
@@ -244,10 +244,10 @@ function toggleTag(name: string): void {
               :alt="entry.clip.displayName || entry.clip.filename"
               class="w-full h-full object-cover"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            <div class="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-black/20" />
 
             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/40 backdrop-blur-sm">
-              <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-full p-3 shadow-lg shadow-orange-500/30">
+              <div class="bg-linear-to-r from-orange-500 to-orange-600 rounded-full p-3 shadow-lg shadow-orange-500/30">
                 <Icon icon="material-symbols:add" class="text-2xl text-card" />
               </div>
             </div>

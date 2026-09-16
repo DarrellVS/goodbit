@@ -182,7 +182,7 @@ function onValueChange(value: unknown): void {
  * most of them. Reka's `PopperContent` copies the content's computed z-index
  * onto the wrapper it portals to `document.body`, and `#app` creates no
  * stacking context, so both end up in the root one and the larger number wins.
- * Measured against the OBS setup wizard, whose scrim is `z-[100]`: the list
+ * Measured against the OBS setup wizard, whose scrim is `z-100`: the list
  * rendered **behind** the scrim, and `elementFromPoint` over the middle of it
  * returned the overlay, whose `@click.self` closes the dialog. Clicking an
  * option closed the wizard.
@@ -199,10 +199,10 @@ function onValueChange(value: unknown): void {
  * A dropdown is transient and belongs on top of its own context by definition.
  * Opening a dialog over one closes it, because focus moves, so there is no
  * ordering left to get wrong. The one thing that stays above it is the toast
- * viewport at `z-[2147483647]`, which reports on what just happened and has to
+ * viewport at `z-2147483647`, which reports on what just happened and has to
  * outrank everything.
  */
-const LIST_Z_INDEX = 'z-[300]';
+const LIST_Z_INDEX = 'z-300';
 </script>
 
 <template>
@@ -224,7 +224,7 @@ const LIST_Z_INDEX = 'z-[300]';
         :class="[
           COMBO_BOX_HEIGHT,
           'flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm',
-          'text-left outline-none transition-colors',
+          'text-left outline-hidden transition-colors',
           'focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/40',
           'disabled:cursor-not-allowed disabled:opacity-50',
           open ? 'border-orange-500' : 'hover:bg-muted-50',
@@ -233,14 +233,14 @@ const LIST_Z_INDEX = 'z-[300]';
         <Icon
           v-if="triggerIcon"
           :icon="triggerIcon"
-          class="flex-shrink-0 text-base text-muted-500"
+          class="shrink-0 text-base text-muted-500"
         />
         <span class="min-w-0 flex-1 truncate" :class="hasSelection ? 'text-foreground' : 'text-muted-500'">
           {{ triggerLabel }}
         </span>
         <Icon
           icon="material-symbols:expand-more"
-          class="flex-shrink-0 text-lg text-muted-500 transition-transform"
+          class="shrink-0 text-lg text-muted-500 transition-transform"
           :class="open ? 'rotate-180' : ''"
         />
       </ComboboxTrigger>
@@ -259,18 +259,18 @@ const LIST_Z_INDEX = 'z-[300]';
         :side-offset="6"
         :class="[
           LIST_Z_INDEX,
-          'w-[var(--reka-combobox-trigger-width)] min-w-[12rem] rounded-lg border border-border bg-card p-1 shadow-lg outline-none',
+          'w-(--reka-combobox-trigger-width) min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg outline-hidden',
         ]"
       >
         <div
           v-if="searchable"
           class="mb-1 flex items-center gap-2 border-b border-border px-2 pb-1.5 pt-1"
         >
-          <Icon icon="material-symbols:search" class="flex-shrink-0 text-base text-muted-500" />
+          <Icon icon="material-symbols:search" class="shrink-0 text-base text-muted-500" />
           <ComboboxInput
             :placeholder="searchPlaceholder"
             :aria-label="`Search ${label}`"
-            class="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-500"
+            class="w-full bg-transparent text-sm text-foreground outline-hidden placeholder:text-muted-500"
           />
         </div>
         <!--
@@ -291,12 +291,12 @@ const LIST_Z_INDEX = 'z-[300]';
             :value="option.value"
             :disabled="option.disabled"
             :text-value="option.label"
-            class="flex cursor-pointer select-none items-start gap-2 rounded px-2.5 py-1.5 text-sm outline-none data-[highlighted]:bg-muted-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+            class="flex cursor-pointer select-none items-start gap-2 rounded-sm px-2.5 py-1.5 text-sm outline-hidden data-highlighted:bg-muted-100 data-disabled:cursor-not-allowed data-disabled:opacity-50"
           >
             <Icon
               v-if="option.icon"
               :icon="option.icon"
-              class="mt-0.5 flex-shrink-0 text-base text-muted-500"
+              class="mt-0.5 shrink-0 text-base text-muted-500"
             />
             <span class="min-w-0 flex-1">
               <span class="block truncate text-foreground">{{ option.label }}</span>
@@ -306,7 +306,7 @@ const LIST_Z_INDEX = 'z-[300]';
             </span>
             <span
               v-if="option.count !== undefined"
-              class="mt-0.5 flex-shrink-0 text-xs tabular-nums text-muted-500"
+              class="mt-0.5 shrink-0 text-xs tabular-nums text-muted-500"
             >
               {{ option.count }}
             </span>
@@ -314,7 +314,7 @@ const LIST_Z_INDEX = 'z-[300]';
               A fixed slot for the tick, so a row does not shift sideways the
               moment it becomes the chosen one.
             -->
-            <span class="mt-0.5 w-4 flex-shrink-0">
+            <span class="mt-0.5 w-4 shrink-0">
               <ComboboxItemIndicator>
                 <Icon icon="material-symbols:check" class="text-base text-orange-500" />
               </ComboboxItemIndicator>

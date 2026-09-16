@@ -20,7 +20,7 @@ const emit = defineEmits<Emits>();
     <span>{{ title }}</span>
     <button
       v-if="actionIcon"
-      class="p-1 rounded hover:bg-card/10 transition-colors"
+      class="p-1 rounded-sm hover:bg-card/10 transition-colors"
       :title="actionTitle"
       @click="emit('action')"
     >

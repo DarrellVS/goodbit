@@ -64,7 +64,7 @@ const emit = defineEmits<Emits>();
       
       <!-- Nothing plays while a render is reading the same files. -->
       <button
-        class="p-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="p-2.5 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="props.exporting"
         :title="props.exporting ? 'Playback is paused while the export runs' : undefined"
         @click="playing ? emit('pause') : emit('play')"
@@ -131,7 +131,7 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-6 bg-muted-300" />
 
       <button
-        class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-card disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+        class="px-4 py-2 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-card disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
         :disabled="props.exporting"
         @click="emit('export')"
       >

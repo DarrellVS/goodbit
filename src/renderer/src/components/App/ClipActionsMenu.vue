@@ -90,29 +90,29 @@ async function handleMoveToGame(targetGame: string) {
       <MenubarTrigger
         v-if="variant === 'row'"
         title="Publish, move or delete this clip"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left outline-none cursor-pointer"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left outline-hidden cursor-pointer"
       >
         <Icon
           icon="material-symbols:more-horiz"
-          class="text-xl text-muted-500 flex-shrink-0"
+          class="text-xl text-muted-500 shrink-0"
         />
         <span class="text-sm font-medium text-foreground">Publish, move or delete</span>
         <Icon
           icon="material-symbols:chevron-right-rounded"
-          class="ml-auto text-lg text-muted-400 flex-shrink-0"
+          class="ml-auto text-lg text-muted-400 shrink-0"
         />
       </MenubarTrigger>
 
       <MenubarTrigger
         v-else
         title="More actions"
-        class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/30 px-2 py-2 outline-none size-8 hover:bg-black/80 transition cursor-pointer"
+        class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/30 px-2 py-2 outline-hidden size-8 hover:bg-black/80 transition cursor-pointer"
       >
         <Icon icon="material-symbols:more-vert" class="text-white" />
       </MenubarTrigger>
       <MenubarPortal>
         <MenubarContent
-          class="min-w-[200px] bg-card rounded-lg p-1 shadow-lg border border-border outline-none z-50"
+          class="min-w-[200px] bg-card rounded-lg p-1 shadow-lg border border-border outline-hidden z-50"
           align="end"
           :side-offset="8"
         >
@@ -125,14 +125,14 @@ async function handleMoveToGame(targetGame: string) {
               is for, so it is the first item in its own menu.
             -->
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               @click="onTrim"
             >
               <Icon icon="material-symbols:content-cut" class="text-base" />
               <span>Trim to the good bit</span>
             </MenubarItem>
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               @click="onAdvancedEdit"
             >
               <Icon icon="material-symbols:video-settings" class="text-base" />
@@ -144,7 +144,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Reveal in Explorer -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="onReveal"
           >
             <Icon icon="material-symbols:folder-open" class="text-base" />
@@ -153,7 +153,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Export Audio -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isExportingAudio }"
             @click="onExportAudio"
           >
@@ -164,7 +164,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Move to Game -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="showMoveDialog = true"
           >
             <Icon icon="material-symbols:drive-file-move" class="text-base" />
@@ -174,7 +174,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Copy URL (conditional) -->
           <MenubarItem
             v-if="clip.published && clip.publishedUrl"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="onCopyUrl"
           >
             <Icon icon="material-symbols:link" class="text-base" />
@@ -186,7 +186,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Remove from Collection -->
           <MenubarItem
             v-if="collectionId"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-500/8 text-orange-600 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-orange-500/8 text-orange-600 outline-hidden cursor-pointer select-none"
             @click="onRemoveFromCollection"
           >
             <Icon icon="material-symbols:folder-delete" class="text-base" />
@@ -198,7 +198,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Publish/Unpublish -->
           <MenubarItem
             v-if="clip.published"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onUnpublish"
           >
@@ -207,7 +207,7 @@ async function handleMoveToGame(targetGame: string) {
           </MenubarItem>
           <template v-else>
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               :class="{ 'opacity-50 pointer-events-none': isPublishing }"
               @click="onPublish"
             >
@@ -221,7 +221,7 @@ async function handleMoveToGame(targetGame: string) {
               is the file.
             -->
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               :class="{ 'opacity-50 pointer-events-none': isPublishing }"
               @click="compressesPublished ? onPublishOriginal() : onPublishCompressed()"
             >
@@ -239,7 +239,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Delete -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onDelete"
           >

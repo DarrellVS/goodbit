@@ -715,7 +715,7 @@ watch(
 <template>
   <!-- h-full, not h-screen: 100vh ignores the title bar above and overflows by exactly its height. -->
   <div class="h-full flex flex-col bg-background text-foreground overflow-hidden">
-    <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-b border-border">
+    <header class="shrink-0 flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-b border-border">
       <!--
         A real way out, in the app rather than in the window chrome.
 
@@ -737,7 +737,7 @@ watch(
         <div class="w-px h-6 bg-border"></div>
 
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center">
             <Icon icon="material-symbols:movie-edit" class="text-card" />
           </div>
           <div>
@@ -794,8 +794,8 @@ watch(
     </header>
 
     <div class="flex-1 flex gap-3 p-3 overflow-hidden">
-      <aside v-if="showLibrary" class="w-96 flex-shrink-0 flex flex-col gap-2">
-        <div class="flex-shrink-0 grid grid-cols-2 gap-1 p-1 bg-card/60 rounded-lg border border-border">
+      <aside v-if="showLibrary" class="w-96 shrink-0 flex flex-col gap-2">
+        <div class="shrink-0 grid grid-cols-2 gap-1 p-1 bg-card/60 rounded-lg border border-border">
           <button
             class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
             :class="libraryTab === 'clips' ? 'bg-orange-500 text-white' : 'text-muted-700 hover:bg-black/5'"
@@ -847,9 +847,9 @@ watch(
         <!-- The previous session, offered back rather than restored behind your back. -->
         <div
           v-if="resumable"
-          class="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/6 backdrop-blur-sm"
+          class="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/6 backdrop-blur-sm"
         >
-          <Icon icon="material-symbols:history" class="text-xl text-orange-500 flex-shrink-0" />
+          <Icon icon="material-symbols:history" class="text-xl text-orange-500 shrink-0" />
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-foreground">
               {{ resumable.projectId === null ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
@@ -863,7 +863,7 @@ watch(
             </div>
           </div>
           <button
-            class="h-8 px-4 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 flex-shrink-0"
+            class="h-8 px-4 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 shrink-0"
             :disabled="restoring"
             @click="restoreDraft(resumable)"
           >
@@ -871,7 +871,7 @@ watch(
             <span>{{ restoring ? 'Restoring…' : 'Resume' }}</span>
           </button>
           <button
-            class="h-8 px-4 rounded-lg border border-border bg-card/70 text-muted-700 text-xs font-semibold hover:bg-card transition-colors inline-flex items-center justify-center flex-shrink-0"
+            class="h-8 px-4 rounded-lg border border-border bg-card/70 text-muted-700 text-xs font-semibold hover:bg-card transition-colors inline-flex items-center justify-center shrink-0"
             @click="dismissResumable"
           >
             Discard
@@ -923,7 +923,7 @@ watch(
           </div>
         </div>
 
-        <div class="h-56 flex-shrink-0">
+        <div class="h-56 shrink-0">
           <Timeline
             :clips="timelineClips"
             :audio="timelineAudio"
@@ -949,7 +949,7 @@ watch(
         </div>
       </main>
 
-      <aside v-if="showProperties" class="w-80 flex-shrink-0">
+      <aside v-if="showProperties" class="w-80 shrink-0">
         <AudioProperties
           v-if="selectedAudio"
           :item="selectedAudio"

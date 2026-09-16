@@ -118,7 +118,7 @@ function submit(): void {
 <template>
   <div class="rounded-xl border border-border bg-card/40 px-4 py-3 space-y-2">
     <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-lg text-orange-500" />
         <span class="text-sm font-semibold text-foreground">
           {{ selected ? 'Editing a GoodBit' : 'Mark a GoodBit' }}
@@ -129,7 +129,7 @@ function submit(): void {
         The range, read off the handles. Tabular figures, or the row shifts
         sideways every tenth of a second while a handle is being dragged.
       -->
-      <span class="text-xs font-mono tabular-nums text-muted-500 flex-shrink-0">
+      <span class="text-xs font-mono tabular-nums text-muted-500 shrink-0">
         {{ rangeLabel(range[0], range[1]) }} · {{ durationLabel(length) }}
       </span>
 
@@ -137,7 +137,7 @@ function submit(): void {
         v-model="name"
         type="text"
         maxlength="60"
-        class="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-ring/40 transition"
+        class="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:border-orange-500/60 focus:ring-2 focus:ring-ring/40 transition"
         :placeholder="selected ? goodBitLabel(selected) : 'Name it, or leave this blank'"
         :aria-label="selected ? 'Name for this GoodBit' : 'Name for the GoodBit you are about to mark'"
         @keydown.enter.prevent="submit"
@@ -146,7 +146,7 @@ function submit(): void {
       <template v-if="selected">
         <button
           type="button"
-          class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:hover:bg-orange-500"
+          class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:hover:bg-orange-500"
           :disabled="saving || !dirty || !valid"
           :title="dirty ? 'Save the new name and range' : 'Nothing has changed yet'"
           @click="submit"
@@ -157,7 +157,7 @@ function submit(): void {
 
         <button
           type="button"
-          class="flex-shrink-0 rounded-lg px-3 py-1.5 text-sm text-muted-600 hover:bg-muted-50 transition-colors"
+          class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-muted-600 hover:bg-muted-50 transition-colors"
           title="Stop editing this one and mark a new range instead"
           @click="emit('deselect')"
         >
@@ -166,7 +166,7 @@ function submit(): void {
 
         <button
           type="button"
-          class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
+          class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
           :disabled="saving"
           title="Forget this GoodBit. The recording is not touched."
           @click="emit('forget', selected)"
@@ -179,7 +179,7 @@ function submit(): void {
       <button
         v-else
         type="button"
-        class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:hover:bg-orange-500"
+        class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:hover:bg-orange-500"
         :disabled="saving || !valid || duplicate"
         :title="
           duplicate

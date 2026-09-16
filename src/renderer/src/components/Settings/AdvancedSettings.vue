@@ -61,7 +61,7 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
         ]"
       >
         <div class="flex gap-3">
-          <Icon icon="material-symbols:info" class="text-blue-500 text-xl flex-shrink-0" />
+          <Icon icon="material-symbols:info" class="text-blue-500 text-xl shrink-0" />
           <div>
             <h3 class="font-medium text-foreground">Where settings are kept</h3>
             <p class="text-sm text-muted-600 mt-1">

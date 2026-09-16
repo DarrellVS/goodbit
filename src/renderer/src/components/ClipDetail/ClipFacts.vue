@@ -60,7 +60,7 @@ const picture = computed(() => {
 <template>
   <div class="rounded-2xl border border-border/60 px-4 py-3.5 space-y-2.5">
     <div class="flex items-baseline justify-between gap-3">
-      <span class="text-xs text-muted-500 flex-shrink-0">Recorded</span>
+      <span class="text-xs text-muted-500 shrink-0">Recorded</span>
       <!--
         When it was recorded, not when the file last changed. A trim rewrites
         the file, and "Modified" then reported the moment you pressed save.
@@ -79,17 +79,17 @@ const picture = computed(() => {
     </div>
 
     <div v-if="metadata?.durationSec" class="flex items-baseline justify-between gap-3">
-      <span class="text-xs text-muted-500 flex-shrink-0">Length</span>
+      <span class="text-xs text-muted-500 shrink-0">Length</span>
       <span class="text-xs text-muted-600">{{ formatTimeSimple(metadata.durationSec) }}</span>
     </div>
 
     <div v-if="picture" class="flex items-baseline justify-between gap-3">
-      <span class="text-xs text-muted-500 flex-shrink-0">Picture</span>
+      <span class="text-xs text-muted-500 shrink-0">Picture</span>
       <span class="text-xs text-muted-600 text-right">{{ picture }}</span>
     </div>
 
     <div class="flex items-baseline justify-between gap-3">
-      <span class="text-xs text-muted-500 flex-shrink-0">Size</span>
+      <span class="text-xs text-muted-500 shrink-0">Size</span>
       <span class="text-xs text-muted-600">{{ formatBytes(clip.sizeBytes) }}</span>
     </div>
 

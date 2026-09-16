@@ -64,7 +64,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
         v-for="tag in visibleTags"
         :key="tag"
         type="button"
-        class="text-xs bg-card/10 px-1.5 py-0.5 rounded tag-enter-active hover:bg-orange-500/15 hover:text-orange-600 transition-colors"
+        class="text-xs bg-card/10 px-1.5 py-0.5 rounded-sm tag-enter-active hover:bg-orange-500/15 hover:text-orange-600 transition-colors"
         :title="`Show every clip tagged #${tag}`"
         @click.stop="filterByTag(tag)"
       >
@@ -115,7 +115,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
             <button
               v-for="tag in suggestedTags"
               :key="tag"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/20 transition-all text-xs font-medium group scale-on-hover"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-linear-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/20 transition-all text-xs font-medium group scale-on-hover"
               :title="`Category: ${getCategoryForTag(tag)}`"
               @click="applySuggestedTag(tag)"
             >
@@ -129,7 +129,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
         <div class="flex items-center gap-2">
           <input
             v-model="newTagName"
-            class="flex-1 rounded-lg border border-border bg-card/5 px-3 h-9 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="flex-1 rounded-lg border border-border bg-card/5 px-3 h-9 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
             placeholder="New tag name"
             @keyup.enter="addTag()"
           />

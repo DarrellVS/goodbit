@@ -136,7 +136,7 @@ onBeforeUnmount(stopPreview);
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="flex-shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
+    <div class="shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:library-music" class="text-orange-500" />
         Music
@@ -145,7 +145,7 @@ onBeforeUnmount(stopPreview);
     </div>
 
     <div
-      class="flex-shrink-0 m-3 rounded-lg border-2 border-dashed transition-colors"
+      class="shrink-0 m-3 rounded-lg border-2 border-dashed transition-colors"
       :class="isDragOver ? 'border-orange-500 bg-orange-500/8' : 'border-border bg-card/60'"
       @dragover.prevent="isDragOver = true"
       @dragleave="isDragOver = false"
@@ -197,7 +197,7 @@ onBeforeUnmount(stopPreview);
           @click="emit('add-to-timeline', track)"
         >
           <div class="flex items-start gap-2">
-            <div class="mt-0.5 w-7 h-7 rounded-md bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+            <div class="mt-0.5 w-7 h-7 rounded-md bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0">
               <Icon icon="material-symbols:add" class="text-card text-base" />
             </div>
             <div class="min-w-0 flex-1">

@@ -85,7 +85,7 @@ async function apply(): Promise<void> {
 <template>
   <div
     v-if="invite"
-    class="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-6"
+    class="fixed inset-0 z-200 flex items-center justify-center bg-black/50 p-6"
     role="dialog"
     aria-modal="true"
     aria-label="Set up publishing"
@@ -93,7 +93,7 @@ async function apply(): Promise<void> {
   >
     <div class="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
       <div class="flex items-start gap-4 p-6">
-        <div class="flex-shrink-0 w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center">
+        <div class="shrink-0 w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center">
           <Icon icon="material-symbols:cloud-upload" class="text-white text-2xl" />
         </div>
         <div class="min-w-0">

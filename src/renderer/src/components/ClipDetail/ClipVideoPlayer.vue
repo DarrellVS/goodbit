@@ -27,7 +27,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-border">
+  <div class="relative rounded-2xl overflow-hidden bg-linear-to-br from-gray-900 to-black border border-border">
     <video 
       ref="videoElement"
       :src="videoUrl"

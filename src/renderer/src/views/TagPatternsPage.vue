@@ -159,7 +159,7 @@ async function saveNew(): Promise<void> {
     -->
     <TagLibraryCard />
 
-    <div v-if="isAddingNew" class="bg-card border border-border rounded-xl p-6 shadow-sm">
+    <div v-if="isAddingNew" class="bg-card border border-border rounded-xl p-6 shadow-xs">
       <h3 class="text-lg font-semibold mb-4">New Tag Pattern</h3>
       
       <div class="space-y-4">
@@ -169,7 +169,7 @@ async function saveNew(): Promise<void> {
             v-model="newTag"
             type="text"
             placeholder="e.g., headshot"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
           />
         </div>
         
@@ -179,7 +179,7 @@ async function saveNew(): Promise<void> {
             v-model="newPatterns"
             type="text"
             placeholder="e.g., headshot, ace, clutch"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
           />
           <div class="text-xs text-muted-600 mt-2 space-y-1">
             <p><strong>Simple words</strong> (e.g., "clutch", "ace") will match whole words only.</p>
@@ -191,7 +191,7 @@ async function saveNew(): Promise<void> {
           <label class="block text-sm font-medium text-muted-700 mb-2">Category</label>
           <select
             v-model="newCategory"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
@@ -220,13 +220,13 @@ async function saveNew(): Promise<void> {
           v-model="searchQuery"
           type="text"
           placeholder="Search patterns..."
-          class="w-full rounded-lg border border-border bg-card px-4 py-2.5 outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+          class="w-full rounded-lg border border-border bg-card px-4 py-2.5 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition"
         >
       </div>
       
       <select
         v-model="selectedCategory"
-        class="rounded-lg border border-border bg-card pl-4 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-orange-500/50 transition cursor-pointer appearance-none bg-no-repeat"
+        class="rounded-lg border border-border bg-card pl-4 pr-10 py-2.5 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition cursor-pointer appearance-none bg-no-repeat"
         style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27%3e%3cpath fill=%27%23374151%27 d=%27M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z%27/%3e%3c/svg%3e'); background-position: right 1rem center;"
       >
         <option value="All">All Categories</option>
@@ -234,7 +234,7 @@ async function saveNew(): Promise<void> {
       </select>
 
       <button
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-card font-medium shadow-lg shadow-orange-500/20 transition-all"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-card font-medium shadow-lg shadow-orange-500/20 transition-all"
         @click="startAddNew"
       >
         <Icon icon="material-symbols:add" class="text-lg" />
@@ -265,11 +265,11 @@ async function saveNew(): Promise<void> {
                 <input
                   v-model="editPatterns"
                   type="text"
-                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
                 />
                 <select
                   v-model="editCategory"
-                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
                 >
                   <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
@@ -313,7 +313,7 @@ async function saveNew(): Promise<void> {
                     <span
                       v-for="(p, idx) in pattern.patterns"
                       :key="idx"
-                      class="text-xs bg-muted-100 px-2 py-1 rounded"
+                      class="text-xs bg-muted-100 px-2 py-1 rounded-sm"
                       :class="looksLikeRegex(p.source) ? 'font-mono text-muted-600' : ''"
                       :title="looksLikeRegex(p.source) ? `Pattern: ${p.source}` : `Matches the word ${p.source}`"
                     >
@@ -338,11 +338,11 @@ async function saveNew(): Promise<void> {
           <input
             v-model="editPatterns"
             type="text"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
           />
           <select
             v-model="editCategory"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
@@ -386,7 +386,7 @@ async function saveNew(): Promise<void> {
               <span
                 v-for="(p, idx) in pattern.patterns"
                 :key="idx"
-                class="text-xs bg-muted-100 px-2 py-1 rounded"
+                class="text-xs bg-muted-100 px-2 py-1 rounded-sm"
                 :class="looksLikeRegex(p.source) ? 'font-mono text-muted-600' : ''"
                 :title="looksLikeRegex(p.source) ? `Pattern: ${p.source}` : `Matches the word ${p.source}`"
               >

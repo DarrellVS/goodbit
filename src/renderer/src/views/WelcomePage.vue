@@ -177,7 +177,7 @@ async function finish(): Promise<void> {
         >
           <Icon
             :icon="settings.videosRoot ? 'material-symbols:check-circle' : 'material-symbols:folder-open'"
-            class="text-2xl flex-shrink-0"
+            class="text-2xl shrink-0"
             :class="settings.videosRoot ? 'text-orange-500' : 'text-muted-400'"
           />
           <span class="min-w-0 flex-1">
@@ -193,7 +193,7 @@ async function finish(): Promise<void> {
           :disabled="working"
           @click="chooseMusic"
         >
-          <Icon icon="material-symbols:music-note" class="text-2xl text-muted-400 flex-shrink-0" />
+          <Icon icon="material-symbols:music-note" class="text-2xl text-muted-400 shrink-0" />
           <span class="min-w-0 flex-1">
             <span class="block font-medium text-foreground">Music for the editor</span>
             <span class="block text-xs text-muted-500 truncate">
@@ -213,7 +213,7 @@ async function finish(): Promise<void> {
 
         <div v-if="progress" class="space-y-1">
           <p class="text-sm text-muted-500">{{ progress.message }}</p>
-          <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded overflow-hidden">
+          <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
             <div
               class="h-full bg-orange-500 transition-[width] duration-200"
               :style="{ width: `${progress.percent}%` }"

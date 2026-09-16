@@ -80,7 +80,7 @@ function startRenaming(goodBit: GoodBit): void {
  *
  * **The guard is load-bearing.** Three things end an edit and two of them
  * cascade: Enter blurs the field, and Escape hides it, and in both cases the
- * browser then fires `blur` as well. Without the check on `renaming` the same
+ * browser then fires `blur-sm` as well. Without the check on `renaming` the same
  * name was sent twice, and Escape sent the name it was supposed to be
  * abandoning. Clearing `renaming` first and reading it here makes the first
  * finisher the only one.
@@ -121,12 +121,12 @@ const sourceIcon: Record<string, string> = {
   <div class="bg-card rounded-2xl p-5 border border-border">
     <div class="flex items-center gap-3 mb-3">
       <div
-        class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0"
+        class="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0"
       >
         <Icon icon="material-symbols:bookmarks-rounded" class="text-lg text-card" />
       </div>
-      <h2 class="font-semibold text-foreground flex-shrink-0">GoodBits</h2>
-      <span v-if="goodBits.length > 0" class="text-sm text-muted-500 flex-shrink-0">
+      <h2 class="font-semibold text-foreground shrink-0">GoodBits</h2>
+      <span v-if="goodBits.length > 0" class="text-sm text-muted-500 shrink-0">
         {{ goodBits.length }}
       </span>
 
@@ -137,7 +137,7 @@ const sourceIcon: Record<string, string> = {
       -->
       <button
         v-if="goodBits.length > 0"
-        class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 flex-shrink-0"
+        class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 shrink-0"
         title="Open the trimmer to mark a range, or move one you have marked"
         @click="show('trim')"
       >
@@ -191,7 +191,7 @@ const sourceIcon: Record<string, string> = {
 
         <div class="relative flex items-center gap-2">
           <button
-            class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors"
+            class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors"
             :title="`Play ${goodBitLabel(goodBit)}`"
             :aria-label="`Play ${goodBitLabel(goodBit)}`"
             @click="emit('play', goodBit)"
@@ -210,7 +210,7 @@ const sourceIcon: Record<string, string> = {
               v-model="draftName"
               type="text"
               maxlength="60"
-              class="w-full bg-card border border-orange-500/60 rounded px-1.5 py-0.5 text-sm font-medium outline-none"
+              class="w-full bg-card border border-orange-500/60 rounded-sm px-1.5 py-0.5 text-sm font-medium outline-hidden"
               :aria-label="`Name for the GoodBit at ${rangeLabel(goodBit.startSec, goodBit.endSec)}`"
               @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
               @keydown.esc="cancelRenaming"
@@ -218,7 +218,7 @@ const sourceIcon: Record<string, string> = {
             />
             <button
               v-else
-              class="group/name w-full text-left truncate text-sm font-medium text-foreground rounded px-1.5 py-0.5 border border-transparent hover:border-border hover:bg-card/60 transition-colors"
+              class="group/name w-full text-left truncate text-sm font-medium text-foreground rounded-sm px-1.5 py-0.5 border border-transparent hover:border-border hover:bg-card/60 transition-colors"
               :title="`${goodBitLabel(goodBit)}\n\nClick to rename it. The recording keeps its own name.`"
               @click="startRenaming(goodBit)"
             >
@@ -226,10 +226,10 @@ const sourceIcon: Record<string, string> = {
             </button>
 
             <div class="flex items-center gap-2 px-1.5 text-xs text-muted-500 min-w-0">
-              <span class="font-mono tabular-nums flex-shrink-0">
+              <span class="font-mono tabular-nums shrink-0">
                 {{ rangeLabel(goodBit.startSec, goodBit.endSec) }}
               </span>
-              <span class="flex-shrink-0">{{ durationLabel(goodBit.durationSec) }}</span>
+              <span class="shrink-0">{{ durationLabel(goodBit.durationSec) }}</span>
 
               <!--
                 Where it came from, and what the detector said, when a detector
@@ -241,14 +241,14 @@ const sourceIcon: Record<string, string> = {
                 v-if="reasonOf(goodBit)"
                 class="inline-flex items-center gap-1 min-w-0 text-orange-600"
               >
-                <Icon :icon="sourceIcon[goodBit.source]" class="text-sm flex-shrink-0" />
+                <Icon :icon="sourceIcon[goodBit.source]" class="text-sm shrink-0" />
                 <span class="truncate">{{ reasonOf(goodBit) }}</span>
-                <span v-if="goodBit.confidence !== null" class="flex-shrink-0 text-muted-400">
+                <span v-if="goodBit.confidence !== null" class="shrink-0 text-muted-400">
                   {{ Math.round(goodBit.confidence * 100) }}%
                 </span>
               </span>
 
-              <span v-if="renderingId === goodBit.id" class="ml-auto flex-shrink-0 tabular-nums">
+              <span v-if="renderingId === goodBit.id" class="ml-auto shrink-0 tabular-nums">
                 Rendering {{ renderProgress }}%{{ renderEta ? `, ${renderEta} left` : '' }}
               </span>
             </div>
@@ -261,7 +261,7 @@ const sourceIcon: Record<string, string> = {
             understands, rather than a second kind of clip.
           -->
           <button
-            class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors disabled:opacity-40"
+            class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors disabled:opacity-40"
             :disabled="renderingId !== null"
             :title="
               renderingId !== null
@@ -275,7 +275,7 @@ const sourceIcon: Record<string, string> = {
           </button>
 
           <button
-            class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-500 hover:text-danger hover:bg-danger/10 transition-colors disabled:opacity-40"
+            class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-500 hover:text-danger hover:bg-danger/10 transition-colors disabled:opacity-40"
             :disabled="saving || renderingId === goodBit.id"
             title="Forget this GoodBit. The recording is not touched."
             :aria-label="`Forget ${goodBitLabel(goodBit)}`"

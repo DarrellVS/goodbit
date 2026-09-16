@@ -63,7 +63,7 @@ const placed = computed(() =>
       v-for="item in placed"
       :key="item.goodBit.id"
       type="button"
-      class="absolute pointer-events-auto rounded-sm transition-colors"
+      class="absolute pointer-events-auto rounded-xs transition-colors"
       :class="
         item.goodBit.id === selectedId
           ? 'bg-orange-500 ring-1 ring-white/70'

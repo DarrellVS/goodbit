@@ -97,19 +97,19 @@ const someStarred = computed(() =>
       <!-- More Actions Dropdown -->
       <DropdownMenuRoot>
         <DropdownMenuTrigger
-          class="px-3 py-1.5 rounded-lg hover:bg-muted-100 transition-colors flex items-center gap-2 text-sm font-medium outline-none text-muted-700 scale-on-hover"
+          class="px-3 py-1.5 rounded-lg hover:bg-muted-100 transition-colors flex items-center gap-2 text-sm font-medium outline-hidden text-muted-700 scale-on-hover"
         >
           <Icon icon="material-symbols:more-horiz" class="text-base transform-transition" />
           <span>More</span>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuContent
-            class="min-w-[200px] bg-card rounded-lg p-1 shadow-lg border border-border outline-none z-50"
+            class="min-w-[200px] bg-card rounded-lg p-1 shadow-lg border border-border outline-hidden z-50"
             :side-offset="8"
           >
             <!-- Open in Advanced Editor -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
               @click="emit('open-in-editor')"
             >
               <Icon icon="material-symbols:movie-edit" class="text-base" />
@@ -121,7 +121,7 @@ const someStarred = computed(() =>
             <!-- Publish/Unpublish -->
             <DropdownMenuItem
               v-if="!allPublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
               @click="emit('publish')"
             >
               <Icon icon="material-symbols:cloud-upload" class="text-base" />
@@ -129,7 +129,7 @@ const someStarred = computed(() =>
             </DropdownMenuItem>
             <DropdownMenuItem
               v-if="somePublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
               @click="emit('unpublish')"
             >
               <Icon icon="material-symbols:cloud-off" class="text-base" />
@@ -140,7 +140,7 @@ const someStarred = computed(() =>
 
             <!-- Add to Collection -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
               @click="emit('add-to-collection')"
             >
               <Icon icon="material-symbols:create-new-folder" class="text-base" />
@@ -150,7 +150,7 @@ const someStarred = computed(() =>
             <!-- Remove from Collection (if in collection view) -->
             <DropdownMenuItem
               v-if="collectionId"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-orange-500/8 text-orange-600 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-orange-500/8 text-orange-600 outline-hidden cursor-pointer select-none"
               @click="emit('remove-from-collection')"
             >
               <Icon icon="material-symbols:folder-delete" class="text-base" />
@@ -161,7 +161,7 @@ const someStarred = computed(() =>
 
             <!-- Delete -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-red-500/8 text-red-600 outline-none cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
               @click="emit('delete')"
             >
               <Icon icon="material-symbols:delete" class="text-base" />

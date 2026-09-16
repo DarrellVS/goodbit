@@ -112,23 +112,23 @@ function runActive(): void {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-none overflow-hidden panel-drop-animate"
+        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-hidden overflow-hidden panel-drop-animate"
       >
         <DialogTitle class="sr-only">Command palette</DialogTitle>
 
         <div class="flex items-center gap-3 px-4 border-b border-border">
-          <Icon icon="material-symbols:search" class="text-xl text-muted-400 flex-shrink-0" />
+          <Icon icon="material-symbols:search" class="text-xl text-muted-400 shrink-0" />
           <input
             ref="input"
             v-model="query"
             type="text"
             placeholder="Jump to a game, a collection, a page…"
-            class="flex-1 py-3.5 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-400"
+            class="flex-1 py-3.5 text-sm bg-transparent text-foreground outline-hidden placeholder:text-muted-400"
             @keydown.down.prevent="move(1)"
             @keydown.up.prevent="move(-1)"
             @keydown.enter.prevent="runActive"
           />
-          <kbd class="text-[10px] font-mono text-muted-400 border border-border rounded px-1.5 py-0.5">
+          <kbd class="text-[10px] font-mono text-muted-400 border border-border rounded-sm px-1.5 py-0.5">
             esc
           </kbd>
         </div>
@@ -156,7 +156,7 @@ function runActive(): void {
             >
               <Icon
                 :icon="row.command.icon ?? 'material-symbols:chevron-right'"
-                class="text-lg flex-shrink-0"
+                class="text-lg shrink-0"
                 :class="row.index === activeIndex ? 'text-orange-500' : 'text-muted-400'"
               />
               <span class="truncate">{{ row.command.label }}</span>

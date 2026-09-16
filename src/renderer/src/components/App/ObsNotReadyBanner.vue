@@ -115,7 +115,7 @@ async function recheck(): Promise<void> {
     <div class="flex flex-wrap items-center gap-x-3 gap-y-3">
       <Icon
         icon="material-symbols:error-circle-rounded"
-        class="text-xl text-orange-500 flex-shrink-0"
+        class="text-xl text-orange-500 shrink-0"
       />
 
       <div class="min-w-0 flex-1">
@@ -128,7 +128,7 @@ async function recheck(): Promise<void> {
         action, and stacking the buttons underneath gave a four row block the
         height of a clip card.
       -->
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <button
           class="px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium whitespace-nowrap"
           @click="showDialog = true"

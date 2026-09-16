@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-2" :class="containerClass">
-    <div class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
+    <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
     <span class="text-muted-400">{{ label }}:</span>
 
     <span class="flex items-baseline gap-1.5">
@@ -23,7 +23,7 @@
     <span v-if="steppable" class="flex items-center gap-0.5 ml-0.5">
       <button
         type="button"
-        class="w-5 h-5 flex items-center justify-center rounded border border-transparent text-muted-400 hover:text-orange-500 hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
+        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-orange-500 hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
         :title="`Back ${stepName} (left arrow, with this handle selected)`"
         :aria-label="`Move ${label.toLowerCase()} back ${stepName}`"
         :disabled="disabled"
@@ -33,7 +33,7 @@
       </button>
       <button
         type="button"
-        class="w-5 h-5 flex items-center justify-center rounded border border-transparent text-muted-400 hover:text-orange-500 hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
+        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-orange-500 hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
         :title="`Forward ${stepName} (right arrow, with this handle selected)`"
         :aria-label="`Move ${label.toLowerCase()} forward ${stepName}`"
         :disabled="disabled"

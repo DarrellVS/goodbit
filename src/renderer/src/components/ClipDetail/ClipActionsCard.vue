@@ -69,7 +69,7 @@ async function copyPublicUrl(): Promise<void> {
         v-if="clip.published && clip.publishedUrl"
         class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30"
       >
-        <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-emerald-500 flex-shrink-0" />
+        <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-emerald-500 shrink-0" />
         <span class="text-sm font-medium text-foreground">Published</span>
         <button
           class="ml-auto text-xs font-medium text-emerald-500 hover:underline"
@@ -84,7 +84,7 @@ async function copyPublicUrl(): Promise<void> {
         @mouseenter="prefetchFrameStrip(clip.id)"
         @click="onTrim"
       >
-        <Icon icon="material-symbols:content-cut" class="text-xl text-white flex-shrink-0" />
+        <Icon icon="material-symbols:content-cut" class="text-xl text-white shrink-0" />
         <span class="text-sm font-semibold text-white">Trim to the good bit</span>
       </button>
 
@@ -92,7 +92,7 @@ async function copyPublicUrl(): Promise<void> {
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 transition-colors text-left"
         @click="onAdvancedEdit"
       >
-        <Icon icon="material-symbols:video-settings" class="text-xl text-orange-500 flex-shrink-0" />
+        <Icon icon="material-symbols:video-settings" class="text-xl text-orange-500 shrink-0" />
         <span class="text-sm font-medium text-foreground">Open in the editor</span>
       </button>
     </div>
@@ -104,7 +104,7 @@ async function copyPublicUrl(): Promise<void> {
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
         @click="emit('share')"
       >
-        <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 flex-shrink-0" />
+        <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 shrink-0" />
         <span class="text-sm font-medium text-foreground">Share on your wifi</span>
       </button>
 

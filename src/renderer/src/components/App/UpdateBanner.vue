@@ -36,14 +36,14 @@ const top = `${TITLEBAR_HEIGHT + 14}px`;
   >
     <div
       v-if="show"
-      class="update-banner fixed left-1/2 -translate-x-1/2 z-[100] w-[min(620px,calc(100vw-48px))]
+      class="update-banner fixed left-1/2 -translate-x-1/2 z-100 w-[min(620px,calc(100vw-48px))]
              rounded-2xl border border-orange-400/40 bg-card shadow-2xl overflow-hidden"
       :style="{ top }"
       role="status"
     >
       <div class="flex items-center gap-4 px-5 py-4">
         <div
-          class="flex-shrink-0 w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center"
+          class="shrink-0 w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center"
         >
           <Icon icon="material-symbols:rocket-launch" class="text-white text-2xl" />
         </div>
@@ -63,7 +63,7 @@ const top = `${TITLEBAR_HEIGHT + 14}px`;
 
         <button
           v-if="ready"
-          class="flex-shrink-0 px-4 py-2.5 rounded-xl bg-orange-500 text-white font-semibold
+          class="shrink-0 px-4 py-2.5 rounded-xl bg-orange-500 text-white font-semibold
                  hover:bg-orange-600 active:bg-orange-700 transition-colors"
           @click="install"
         >

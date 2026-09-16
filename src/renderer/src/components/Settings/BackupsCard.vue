@@ -96,7 +96,7 @@ onMounted(() => {
   -->
   <div class="p-4 bg-card border border-border rounded-lg space-y-4">
     <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-xl bg-orange-500/12 flex items-center justify-center flex-shrink-0">
+      <div class="w-10 h-10 rounded-xl bg-orange-500/12 flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:database" class="text-xl text-orange-500" />
       </div>
       <div class="min-w-0 flex-1">
@@ -116,10 +116,10 @@ onMounted(() => {
         :key="backup.path"
         class="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted-50 border border-border text-sm"
       >
-        <Icon icon="material-symbols:save" class="text-muted-500 flex-shrink-0" />
+        <Icon icon="material-symbols:save" class="text-muted-500 shrink-0" />
         <span class="font-mono text-xs text-foreground truncate flex-1">{{ backup.name }}</span>
-        <span class="text-xs text-muted-500 flex-shrink-0">{{ formatBytes(backup.sizeBytes) }}</span>
-        <span class="text-xs text-muted-500 flex-shrink-0 hidden sm:inline">
+        <span class="text-xs text-muted-500 shrink-0">{{ formatBytes(backup.sizeBytes) }}</span>
+        <span class="text-xs text-muted-500 shrink-0 hidden sm:inline">
           {{ formatDate(new Date(backup.takenAt)) }}
         </span>
 
@@ -130,7 +130,7 @@ onMounted(() => {
           that hides which one is selected.
         -->
         <button
-          class="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-700 hover:bg-card hover:border-orange-500/50 transition-colors flex-shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+          class="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-700 hover:bg-card hover:border-orange-500/50 transition-colors shrink-0 flex items-center gap-1.5 disabled:opacity-50"
           :disabled="!!restoring || working"
           :title="`Replace the current library with this copy and restart`"
           @click="restore(backup)"

@@ -100,7 +100,7 @@ async function testPublisher(): Promise<void> {
           type="text"
           placeholder="http://192.168.1.20:5555"
           aria-label="Publisher address"
-          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-orange-500"
+          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm outline-hidden focus:ring-2 focus:ring-orange-500"
           @keydown.enter="savePublisher"
         />
         <button
@@ -131,7 +131,7 @@ async function testPublisher(): Promise<void> {
           aria-label="Publish token"
           autocomplete="off"
           spellcheck="false"
-          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono outline-none focus:ring-2 focus:ring-orange-500"
+          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono outline-hidden focus:ring-2 focus:ring-orange-500"
           @keydown.enter="savePublisher"
         />
         <button

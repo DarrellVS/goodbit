@@ -59,7 +59,7 @@ const emit = defineEmits<Emits>();
       <input
         :data-collection-edit="collection.id"
         :value="editingName"
-        class="w-full rounded border border-border bg-card px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-orange-500/50"
+        class="w-full rounded-sm border border-border bg-card px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-orange-500/50"
         @input="emit('update:editing-name', ($event.target as HTMLInputElement).value)"
         @keyup.enter="emit('save-edit')"
         @keyup.esc="emit('cancel-edit')"
@@ -67,7 +67,7 @@ const emit = defineEmits<Emits>();
       />
     </div>
     <div v-else class="flex min-w-0 items-center gap-2">
-      <Icon icon="material-symbols:folder" class="flex-shrink-0 text-lg text-muted-500" />
+      <Icon icon="material-symbols:folder" class="shrink-0 text-lg text-muted-500" />
       <span class="truncate font-medium text-foreground" :title="collection.name">
         {{ collection.name }}
       </span>
@@ -85,14 +85,14 @@ const emit = defineEmits<Emits>();
       <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           v-if="!isEditing"
-          class="rounded p-1 transition-colors hover:bg-orange-500/20"
+          class="rounded-sm p-1 transition-colors hover:bg-orange-500/20"
           title="Rename"
           @click.prevent="emit('start-edit')"
         >
           <Icon icon="material-symbols:edit" class="text-sm text-muted-500" />
         </button>
         <button
-          class="rounded p-1 transition-colors hover:bg-red-500/20"
+          class="rounded-sm p-1 transition-colors hover:bg-red-500/20"
           title="Delete"
           @click.prevent="emit('delete')"
         >

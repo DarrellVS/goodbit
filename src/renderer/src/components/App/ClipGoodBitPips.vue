@@ -131,7 +131,7 @@ const plural = computed(() => (props.ranges.length === 1 ? 'GoodBit' : 'GoodBits
     -->
     <span
       v-else
-      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-[2px] text-white text-[10px] font-medium"
+      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-xs text-white text-[10px] font-medium"
     >
       {{ layout.count }} {{ plural }}
     </span>

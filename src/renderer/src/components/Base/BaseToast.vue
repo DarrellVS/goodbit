@@ -51,11 +51,11 @@ function getIconName(toast: Toast): string {
       v-for="toast in toastStore.toasts"
       :key="toast.id"
       :duration="toast.sticky ? Infinity : toast.duration || 4000"
-      class="rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-[var(--reka-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-[var(--reka-toast-swipe-end-x)]"
+      class="rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-(--reka-toast-swipe-move-x) data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-(--reka-toast-swipe-end-x)"
       :class="getToastClass(toast)"
       @update:open="(open) => !open && toastStore.dismiss(toast.id)"
     >
-      <Icon :icon="getIconName(toast)" class="w-5 h-5 flex-shrink-0 mt-0.5" />
+      <Icon :icon="getIconName(toast)" class="w-5 h-5 shrink-0 mt-0.5" />
       
       <div class="flex-1 space-y-1">
         <ToastTitle v-if="toast.title" class="font-semibold text-sm">
@@ -98,7 +98,7 @@ function getIconName(toast: Toast): string {
       </ToastClose>
     </ToastRoot>
 
-    <ToastViewport class="fixed bottom-0 right-0 flex flex-col p-6 gap-3 w-[420px] max-w-[100vw] z-[2147483647] outline-none" />
+    <ToastViewport class="fixed bottom-0 right-0 flex flex-col p-6 gap-3 w-[420px] max-w-[100vw] z-2147483647 outline-hidden" />
   </ToastProvider>
 </template>
 

@@ -36,7 +36,7 @@ const emit = defineEmits<Emits>();
 
   <div v-if="progress" class="p-4 rounded-xl border border-border space-y-2">
     <p class="text-sm text-muted-500">{{ progress.message }}</p>
-    <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded overflow-hidden">
+    <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
       <div
         class="h-full bg-orange-500 transition-[width] duration-200"
         :style="{ width: `${progress.percent}%` }"

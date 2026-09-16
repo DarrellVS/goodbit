@@ -46,7 +46,7 @@ async function change(): Promise<void> {
       </p>
     </div>
     <button
-      class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm flex-shrink-0"
+      class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm shrink-0"
       @click="change"
     >
       Change

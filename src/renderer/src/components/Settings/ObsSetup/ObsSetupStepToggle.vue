@@ -45,7 +45,7 @@ const emit = defineEmits<Emits>();
     <BaseToggle
       :model-value="step.enabled"
       :label="step.label"
-      class="flex-shrink-0"
+      class="shrink-0"
       @update:model-value="emit('update:enabled', $event)"
     />
   </div>

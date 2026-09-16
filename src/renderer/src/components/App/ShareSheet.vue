@@ -129,9 +129,9 @@ async function copy(): Promise<void> {
         Above the clip layer, which is `z-50`. This sheet is only ever opened
         from inside it, and at the same level the layer wins on document order.
       -->
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-[60] backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-black/50 z-60 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] bg-card rounded-xl shadow-2xl border border-border w-full max-w-sm flex flex-col outline-none modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-60 bg-card rounded-xl shadow-2xl border border-border w-full max-w-sm flex flex-col outline-hidden modal-content-animate"
       >
         <div class="p-6 border-b border-border">
           <DialogTitle class="text-xl font-bold text-foreground mb-1">Share on your wifi</DialogTitle>
@@ -166,7 +166,7 @@ async function copy(): Promise<void> {
               {{ activeUrl }}
             </code>
             <button
-              class="px-3 py-2 rounded-lg border border-border text-muted-700 hover:bg-muted-50 transition-colors flex-shrink-0"
+              class="px-3 py-2 rounded-lg border border-border text-muted-700 hover:bg-muted-50 transition-colors shrink-0"
               title="Copy the link"
               @click="copy"
             >

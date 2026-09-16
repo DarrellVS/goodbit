@@ -35,7 +35,7 @@ defineExpose({
     ref="textareaRef"
     :value="modelValue"
     :placeholder="placeholder"
-    class="w-full p-4 border-0 outline-none focus:ring-0 resize-none font-mono text-sm bg-card"
+    class="w-full p-4 border-0 outline-hidden focus:ring-0 resize-none font-mono text-sm bg-card"
     :style="{ minHeight: `${(rows ?? 6) * 1.5 + 2}rem` }"
     @input="handleInput"
   />

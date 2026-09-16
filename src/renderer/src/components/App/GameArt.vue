@@ -21,7 +21,7 @@ const props = withDefaults(
     /** Tailwind sizing for the image, so each caller keeps its own layout. */
     class?: string;
   }>(),
-  { kind: 'icon', class: 'w-4 h-4 rounded' },
+  { kind: 'icon', class: 'w-4 h-4 rounded-sm' },
 );
 
 const failed = ref(false);

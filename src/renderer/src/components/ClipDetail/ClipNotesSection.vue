@@ -168,7 +168,7 @@ function discard(): void {
 </script>
 
 <template>
-  <div class="bg-gradient-to-br from-card to-orange-500/4 rounded-2xl p-5 border border-border">
+  <div class="bg-linear-to-br from-card to-orange-500/4 rounded-2xl p-5 border border-border">
     <!--
       One header, holding everything. The title, the formatting buttons and the
       preview toggle were on two rows with a border between them, which read as
@@ -176,11 +176,11 @@ function discard(): void {
     -->
     <div class="flex items-center gap-3 mb-3">
       <div
-        class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0"
+        class="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0"
       >
         <Icon icon="material-symbols:note-rounded" class="text-lg text-card" />
       </div>
-      <h2 class="font-semibold text-foreground flex-shrink-0">Notes &amp; Annotations</h2>
+      <h2 class="font-semibold text-foreground shrink-0">Notes &amp; Annotations</h2>
 
       <!--
         Read mode has one control, and the note itself is the other. It sits
@@ -189,7 +189,7 @@ function discard(): void {
       -->
       <button
         v-if="!editing && hasNotes"
-        class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 flex-shrink-0"
+        class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 shrink-0"
         title="Edit this note"
         @click="startEditing"
       >
@@ -209,7 +209,7 @@ function discard(): void {
           @toggle-preview="togglePreview"
         />
 
-        <div class="w-px h-6 bg-border flex-shrink-0" role="presentation"></div>
+        <div class="w-px h-6 bg-border shrink-0" role="presentation"></div>
 
         <!--
           Nothing to press about the note until there is something to press it
@@ -218,14 +218,14 @@ function discard(): void {
         -->
         <template v-if="dirty">
           <button
-            class="px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex-shrink-0"
+            class="px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors shrink-0"
             :disabled="saving"
             @click="discard"
           >
             Discard
           </button>
           <button
-            class="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+            class="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-1.5 shrink-0"
             :disabled="saving"
             @click="save"
           >
@@ -239,7 +239,7 @@ function discard(): void {
         </template>
         <button
           v-else
-          class="px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex-shrink-0"
+          class="px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors shrink-0"
           @click="editing = false"
         >
           Done

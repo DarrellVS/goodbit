@@ -101,7 +101,7 @@ const showDetail = computed(() => props.route !== 'quick' || props.showEverythin
       <AppLoading class="text-lg text-orange-500" />
       <span>{{ progress?.message ?? 'Writing the settings' }}</span>
     </div>
-    <div v-if="progress?.percent !== undefined" class="h-1 bg-muted-100 rounded overflow-hidden">
+    <div v-if="progress?.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
       <div
         class="h-full bg-orange-500 transition-[width] duration-200"
         :style="{ width: `${progress.percent}%` }"

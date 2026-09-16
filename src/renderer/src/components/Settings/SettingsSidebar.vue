@@ -23,7 +23,7 @@ function selectSection(sectionId: string): void {
 </script>
 
 <template>
-  <aside class="w-64 flex-shrink-0 border-r border-border bg-muted-50/50 flex flex-col min-h-0">
+  <aside class="w-64 shrink-0 border-r border-border bg-muted-50/50 flex flex-col min-h-0">
     <!--
       The search, above the list it makes optional. The page owns the field
       rather than this component, so the keystroke that opens a result does not
@@ -41,7 +41,7 @@ function selectSection(sectionId: string): void {
           : 'hover:bg-card/50 text-muted-700'"
         @click="selectSection(section.id)"
       >
-        <Icon :icon="section.icon" class="text-xl mt-0.5 flex-shrink-0" />
+        <Icon :icon="section.icon" class="text-xl mt-0.5 shrink-0" />
         <div class="min-w-0 flex-1">
           <div class="font-medium">{{ section.label }}</div>
           <div class="text-xs text-muted-500 mt-0.5">{{ section.description }}</div>

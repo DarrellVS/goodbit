@@ -71,7 +71,7 @@ function onChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
     </div>
     <!-- A fixed width, so a column of these has one right edge and not four. -->
     <BaseComboBox
-      class="w-44 flex-shrink-0"
+      class="w-44 shrink-0"
       :model-value="modelValue"
       :label="label"
       :options="options"

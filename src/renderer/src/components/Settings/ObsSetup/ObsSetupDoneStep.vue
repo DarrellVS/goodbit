@@ -33,7 +33,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
 
 <template>
   <div class="flex items-start gap-3">
-    <Icon icon="material-symbols:check-circle" class="text-2xl text-emerald-500 flex-shrink-0" />
+    <Icon icon="material-symbols:check-circle" class="text-2xl text-emerald-500 shrink-0" />
     <div>
       <p class="font-medium text-foreground">OBS is set up</p>
       <ul class="mt-1 space-y-0.5">

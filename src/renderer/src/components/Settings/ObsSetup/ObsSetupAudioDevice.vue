@@ -30,7 +30,7 @@ const emit = defineEmits<Emits>();
   >
     <Icon
       :icon="chosen ? 'material-symbols:check-circle' : 'material-symbols:circle-outline'"
-      class="text-lg flex-shrink-0"
+      class="text-lg shrink-0"
       :class="chosen ? 'text-orange-500' : 'text-muted-400'"
     />
     <span class="min-w-0">

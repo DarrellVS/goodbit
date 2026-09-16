@@ -190,7 +190,7 @@ function reject(): void {
       name, so this was a blank space.
     -->
     <AppMark v-if="evidence" bare :size="20" class="text-orange-500" />
-    <Icon v-else icon="material-symbols:graphic-eq" class="text-lg text-orange-500 flex-shrink-0" />
+    <Icon v-else icon="material-symbols:graphic-eq" class="text-lg text-orange-500 shrink-0" />
 
     <div class="text-sm text-muted-800 min-w-0">
       <span class="font-semibold">{{ headline }}</span>
@@ -201,7 +201,7 @@ function reject(): void {
       <button
         v-for="goodBit in suggestions?.goodBits ?? []"
         :key="goodBit.t"
-        class="text-[11px] font-mono px-1.5 py-0.5 rounded border border-orange-300 text-orange-700 hover:bg-orange-500/16 transition-colors"
+        class="text-[11px] font-mono px-1.5 py-0.5 rounded-sm border border-orange-300 text-orange-700 hover:bg-orange-500/16 transition-colors"
         :title="`Jump to ${format(goodBit.t)}`"
         @click="emit('seek', goodBit.t)"
       >

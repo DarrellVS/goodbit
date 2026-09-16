@@ -1,6 +1,6 @@
 <template>
   <section class="relative group min-h-0 flex" aria-label="Video preview">
-    <div class="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl opacity-20 group-hover:opacity-30 blur transition" />
+    <div class="absolute -inset-0.5 bg-linear-to-r from-orange-500 to-orange-600 rounded-2xl opacity-20 group-hover:opacity-30 blur-sm transition" />
 
     <!--
       The preview gives way to the timeline rather than the other way round: a

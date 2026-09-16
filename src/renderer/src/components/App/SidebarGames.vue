@@ -106,7 +106,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         <div class="flex items-center gap-3">
           <!-- The same sixteen pixel box every game row uses, so All lines up
                with them rather than sitting two pixels to the left. -->
-          <span class="w-4 h-4 flex items-center justify-center flex-shrink-0">
+          <span class="w-4 h-4 flex items-center justify-center shrink-0">
             <span class="w-2 h-2 rounded-full bg-orange-500" />
           </span>
           <span class="font-medium">All</span>
@@ -136,8 +136,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             icon is sixteen pixels and the dot is eight, so a mixed list looked
             ragged down the left edge.
           -->
-          <span class="w-4 h-4 flex items-center justify-center flex-shrink-0">
-            <GameArt :game="game.game" kind="icon" class="w-4 h-4 rounded">
+          <span class="w-4 h-4 flex items-center justify-center shrink-0">
+            <GameArt :game="game.game" kind="icon" class="w-4 h-4 rounded-sm">
               <span class="w-2 h-2 rounded-full bg-orange-500" />
             </GameArt>
           </span>
@@ -148,7 +148,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             {{ game.displayName || game.game || 'Unknown' }}
           </span>
         </button>
-        <div class="flex-shrink-0 flex items-center justify-end min-w-[24px]">
+        <div class="shrink-0 flex items-center justify-end min-w-[24px]">
           <!-- Count and the … menu occupy the same slot: hovering the row swaps one for the other. -->
           <span
             class="text-xs text-muted-400"
@@ -163,7 +163,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             @update:open="openMenuGame = $event ? game.game : null"
           >
             <DropdownMenuTrigger
-              class="p-1 rounded hover:bg-card/10 outline-none"
+              class="p-1 rounded-sm hover:bg-card/10 outline-hidden"
               :class="openMenuGame === game.game ? 'block bg-card/10' : 'hidden group-hover:block'"
               :title="`More actions for ${game.displayName || game.game}`"
               @click.stop
@@ -172,7 +172,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             </DropdownMenuTrigger>
             <DropdownMenuPortal>
               <DropdownMenuContent
-                class="min-w-[180px] bg-card rounded-lg p-1 shadow-lg border border-border outline-none z-50"
+                class="min-w-[180px] bg-card rounded-lg p-1 shadow-lg border border-border outline-hidden z-50"
                 align="end"
                 :side-offset="4"
               >
@@ -182,21 +182,21 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
                 -->
                 <DropdownMenuItem
                   v-if="game.steamAppId"
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
                   @click="playOnSteam(game)"
                 >
                   <Icon icon="mdi:steam" class="text-base" />
                   <span>Play on Steam</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
                   @click="openRenameDialog(game)"
                 >
                   <Icon icon="mdi:pencil" class="text-base" />
                   <span>Rename</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-muted-100 outline-none cursor-pointer select-none text-foreground"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
                   @click="hideGame(game)"
                 >
                   <Icon icon="mdi:eye-off-outline" class="text-base" />
