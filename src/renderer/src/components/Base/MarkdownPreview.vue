@@ -135,7 +135,7 @@ function onKeydown(event: KeyboardEvent): void {
  * rather than rely on a link's own cursor and focus ring.
  */
 .markdown-preview :deep(.timestamp-link) {
-  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/16 text-orange-600 font-medium no-underline hover:bg-orange-500/30 transition-colors cursor-pointer;
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 font-medium no-underline hover:bg-orange-500/30 transition-colors cursor-pointer;
 }
 
 .markdown-preview :deep(.timestamp-link:focus-visible) {
