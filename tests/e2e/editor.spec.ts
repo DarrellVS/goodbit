@@ -84,6 +84,87 @@ test.describe('the editor', () => {
     }
   });
 
+  /**
+   * Time zero is one x coordinate, and four things have to agree on it.
+   *
+   * This has now been broken twice, in opposite directions, and neither time
+   * did anything fail. The ruler kept its exact 50px-per-second spacing while
+   * pointing at the wrong place, so both bugs looked like a rounding error
+   * rather than a wrong origin, and the only way to see either was to put a
+   * screenshot next to a ruler.
+   *
+   * Once by removing the lanes' horizontal inset on the reasoning that the
+   * ruler starts at zero, when it starts at `TIMELINE_OFFSET_PX`, which left
+   * every clip 12px left of its own timestamp. Once by centring each tick in a
+   * shrink-to-fit box sized by its label, which put every tick 17px right of
+   * the second it marks.
+   *
+   * Measuring the painted positions is the only thing that catches either,
+   * because each of the four is individually reasonable.
+   */
+  test('the ruler, the lanes and the playhead agree where time zero is', async () => {
+    await openEditor();
+
+    await ctx.page.locator('img[src^="goodbit://media/thumb"]').first().click();
+    await ctx.page.waitForTimeout(1200);
+
+    const at = await ctx.page.evaluate(() => {
+      const left = (element: Element | null | undefined): number | null =>
+        element ? element.getBoundingClientRect().left : null;
+
+      const lane = document.querySelector('.h-16.rounded-lg');
+
+      const playhead = Array.from(document.querySelectorAll('div')).find(
+        (node) =>
+          node.className.includes('w-0.5') &&
+          node.className.includes('bg-orange-500') &&
+          node.className.includes('z-20'),
+      );
+
+      // Each ruler mark is a zero width box holding a 1px tick and a label.
+      const marks = Array.from(document.querySelectorAll('div')).filter(
+        (node) => node.querySelector(':scope > .w-px') && node.querySelector(':scope > span'),
+      );
+
+      return {
+        lane: left(lane),
+        block: left(lane?.querySelector('[class*="absolute"]')),
+        playhead: left(playhead),
+        firstTick: left(marks[0]?.querySelector('.w-px')),
+        secondTick: left(marks[1]?.querySelector('.w-px')),
+      };
+    });
+
+    expect(at.lane, 'the video lane should be measurable').not.toBeNull();
+    expect(at.playhead, 'the playhead should be measurable').not.toBeNull();
+    expect(at.firstTick, 'the first ruler tick should be measurable').not.toBeNull();
+    expect(at.secondTick, 'a second ruler tick should be measurable').not.toBeNull();
+
+    const zero = at.playhead as number;
+
+    expect(
+      Math.abs((at.lane as number) - zero),
+      'the lane should start where the playhead sits at time zero',
+    ).toBeLessThanOrEqual(1);
+
+    expect(
+      Math.abs((at.firstTick as number) - zero),
+      'the first ruler tick should sit on time zero, not beside its label',
+    ).toBeLessThanOrEqual(1);
+
+    // A clip at the start of the timeline, allowing for the lane's own border.
+    expect(
+      Math.abs((at.block as number) - zero),
+      'a clip at time zero should start at time zero',
+    ).toBeLessThanOrEqual(2);
+
+    // And the scale is still the scale: consecutive ticks a whole second apart.
+    expect(
+      (at.secondTick as number) - (at.firstTick as number),
+      'ruler ticks should stay one interval apart',
+    ).toBeGreaterThan(1);
+  });
+
   test('the empty music lane opens the music panel', async () => {
     await openEditor();
 

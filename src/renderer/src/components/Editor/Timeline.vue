@@ -129,14 +129,38 @@ function handleRulerMouseUp(): void {
       @scroll="syncScroll"
     >
       <div class="relative h-full" :style="{ width: `${timelineWidth}px` }">
+        <!--
+          The tick sits on its own timestamp, and the label hangs off it.
+
+          This was a `flex flex-col items-center` box positioned at
+          `mark.position` with no width set, so it shrank to fit its label and
+          centred both children in it. The label is about 35px wide, which put
+          every tick line 17px to the right of the second it marks: the ruler
+          kept perfect 50px spacing while pointing at the wrong place, so it
+          looked like a rounding error rather than an origin error.
+
+          `w-0` is what fixes it. The tick is the first child of a zero width
+          box, so it lands exactly on `mark.position`, which is the same
+          coordinate the playhead and the lanes below now use.
+
+          The label is absolute and left aligned just past the tick rather than
+          centred under it, because centred is what forces the choice between
+          being wrong and being cut off: half of `0:00` sits at a negative x at
+          the start of the timeline and the scroller clips it. Reading left to
+          right from the mark is also what every timeline in every editor does.
+          `whitespace-nowrap` because its parent is zero pixels wide and would
+          otherwise wrap it away to nothing.
+        -->
         <div
           v-for="mark in rulerMarks"
           :key="mark.position"
-          class="absolute top-0 bottom-0 flex flex-col items-center"
+          class="absolute top-0 bottom-0 w-0"
           :style="{ left: `${mark.position}px` }"
         >
           <div class="h-2 w-px bg-muted-300" />
-          <span class="text-[9px] font-mono text-muted-500 mt-0.5">{{ mark.label }}</span>
+          <span
+            class="absolute top-2.5 left-1 text-[9px] font-mono text-muted-500 whitespace-nowrap"
+          >{{ mark.label }}</span>
         </div>
       </div>
     </div>
@@ -146,17 +170,31 @@ function handleRulerMouseUp(): void {
       class="flex-1 relative overflow-x-auto overflow-y-hidden"
       @scroll="syncScroll"
     >
-      <div class="relative h-full py-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
+      <div class="relative h-full p-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
         <!--
-          No horizontal margin, because this lane is a ruler.
+          The lane starts at `TIMELINE_OFFSET_PX`, because so does time zero.
 
-          It had `mx-3`, and a clip inside it is positioned absolutely from the
-          lane's own left edge using the same pixels-per-second the ruler ticks
-          use. So twelve pixels of margin put every clip twelve pixels to the
-          right of the time it is actually at, and made the lane twenty four
-          pixels narrower than the content laid out inside it, so the end of
-          the timeline ran past its own edge. The ruler and the playhead both
-          start at zero; these have to as well.
+          Nothing here starts at the container's left edge. `rulerMarks` puts
+          its first tick at `offset + 0`, `playheadPosition` puts `currentTime`
+          of zero at `offset`, `seekFromMousePosition` subtracts `offset` back
+          off, and `timelineWidth` is the lane plus one `offset` of gutter at
+          each end. The gutter is what stops the playhead handle, which is 12px
+          wide and centred on a 2px bar, from being cut in half by the
+          scroller's own edge at the start of the timeline.
+
+          This lane briefly had no horizontal inset at all, on the reasoning
+          that the ruler and the playhead both start at zero. They do not, they
+          start at `offset`, so removing it left every clip sitting twelve
+          pixels to the left of the tick for the time it is at.
+
+          Padding on the scrolling container rather than a margin here, and
+          that distinction is the whole fix. An absolutely positioned element
+          resolves `left` against its containing block's *padding box*, so the
+          padding moves these two lanes, which are in normal flow, and leaves
+          the playhead's own coordinates alone. A margin would have moved the
+          lanes and not the playhead, which is the same bug wearing a different
+          hat. `border-box` keeps the container `timelineWidth` wide overall,
+          so it still scrolls in step with the ruler beside it.
         -->
         <div class="relative h-16 bg-orange-500/4 rounded-lg border border-border">
           <TimelineTrack
