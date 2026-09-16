@@ -1,14 +1,25 @@
 <script setup lang="ts">
-interface SelectOption {
-  value: string | number;
-  label: string;
-}
+import BaseComboBox from '../Base/BaseComboBox.vue';
+import type { ComboBoxOption, ComboBoxValue } from '../Base/types';
 
+/**
+ * One row of the settings screen: what the choice is, what it does, and the
+ * dropdown itself. The dropdown is `Base/BaseComboBox.vue`. There is one of
+ * those in the app, not one per screen, for the same reason there is one
+ * switch: see `SettingToggle.vue`, which this is the shape of.
+ *
+ * This used to be a bare `<select>`, so every one of these rows was drawn by
+ * Windows at a height, a font and a focus ring the rest of the screen did not
+ * share.
+ */
 interface Props {
-  modelValue: string | number;
+  modelValue: ComboBoxValue;
   label: string;
   description: string;
-  options: SelectOption[];
+  options: ComboBoxOption[];
+  /** A search field in the list. Off unless a list is long enough to need it. */
+  searchable?: boolean;
+  disabled?: boolean;
   /**
    * Inside a group that already has a card around it.
    *
@@ -21,18 +32,20 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'update:modelValue', value: string | number): void;
+  (e: 'update:modelValue', value: ComboBoxValue): void;
 }
 
-const props = defineProps<Props>();
+withDefaults(defineProps<Props>(), { searchable: false, disabled: false });
 const emit = defineEmits<Emits>();
 
-function handleChange(event: Event): void {
-  const target = event.target as HTMLSelectElement;
-  const option = props.options.find(opt => String(opt.value) === target.value);
-  if (option) {
-    emit('update:modelValue', option.value);
-  }
+/**
+ * A settings row always has a value. The dropdown can report `null`, since a
+ * filter is allowed to choose nothing, so that is dropped here rather than
+ * written back over a setting that has to hold something.
+ */
+function onChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
+  if (value === null || Array.isArray(value)) return;
+  emit('update:modelValue', value);
 }
 </script>
 
@@ -49,15 +62,14 @@ function handleChange(event: Event): void {
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>
     </div>
     <!-- A fixed width, so a column of these has one right edge and not four. -->
-    <select
-      :value="modelValue"
-      class="w-44 flex-shrink-0 px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
-      @change="handleChange"
-    >
-      <option v-for="option in options" :key="String(option.value)" :value="option.value">
-        {{ option.label }}
-      </option>
-    </select>
+    <BaseComboBox
+      class="w-44 flex-shrink-0"
+      :model-value="modelValue"
+      :label="label"
+      :options="options"
+      :searchable="searchable"
+      :disabled="disabled"
+      @update:model-value="onChange"
+    />
   </div>
 </template>
-

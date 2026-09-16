@@ -465,6 +465,17 @@ is untouched either way. `shareEncoderArgs` is the share preset both use.
 - **One switch component.** `Base/BaseToggle.vue` is the only on/off control; `Settings/SettingToggle.vue`
   wraps it with a label and a description. Native checkboxes were mixed in with hand-rolled switches
   and read as two different controls for the same kind of decision.
+- **One dropdown component**, for the same reason. `Base/BaseComboBox.vue` on Reka UI's Combobox;
+  `Settings/SettingSelect.vue` wraps it with a label and a description, the way `SettingToggle` wraps
+  the switch. A native `<select>` is drawn by Windows at a height, a font and a focus ring the rest
+  of the screen does not share, and it can hold text and nothing else. An option here carries an
+  icon, a count and a second line, search is a prop and off by default, and multi-select is a prop.
+  **There is one height and it is not a prop** (`COMBO_BOX_HEIGHT` in `Base/types.ts`): the sort and
+  tag dropdowns sit beside each other in the library's filter row and have to match. The closed
+  control is a button rather than the text input Reka's own examples use, so the search field lives
+  at the top of the open list; when search is off there is still a screen reader only, read only
+  input in there, because `ComboboxInput` is where the arrow keys, Enter and
+  `aria-activedescendant` come from.
 - `utils/mediaUrl.ts` is the single place media URLs are built.
 - View preferences live in localStorage via `useConfiguration()`. App settings come from main via
   `useAppSettings()`, different things, do not merge them.

@@ -9,16 +9,20 @@ const config = useConfiguration();
 
 const { theme: themeChoice, setTheme } = useTheme();
 
-// SettingSelect speaks in strings; the theme is a narrower union.
+// SettingSelect speaks in strings and numbers; the theme is a narrower union.
 const theme = computed({
   get: () => themeChoice.value as string,
   set: (value: string | number) => setTheme(String(value) as ThemeChoice),
 });
 
+/*
+ * The icons are new, and they are the reason `BaseComboBox` exists rather than
+ * a styled `<select>`: an `<option>` can hold text and nothing else.
+ */
 const themeOptions = [
-  { value: 'system', label: 'Match my system' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'Match my system', icon: 'material-symbols:computer' },
+  { value: 'light', label: 'Light', icon: 'material-symbols:light-mode' },
+  { value: 'dark', label: 'Dark', icon: 'material-symbols:dark-mode' },
 ];
 
 const pageSizeOptions = [
@@ -30,9 +34,14 @@ const pageSizeOptions = [
   { value: 200, label: '200' },
 ];
 
+/*
+ * The same two icons `Base/BaseViewModeToggle.vue` draws, deliberately: they
+ * were picked once, after every tester read the obvious pair backwards, and one
+ * setting reachable from two places must not illustrate itself two ways.
+ */
 const viewModeOptions = [
-  { value: 'grouped', label: 'Grouped' },
-  { value: 'grid', label: 'Grid' },
+  { value: 'grouped', label: 'Grouped', icon: 'material-symbols:grid-view' },
+  { value: 'grid', label: 'Grid', icon: 'material-symbols:view-agenda' },
 ];
 
 const dateFormatOptions = [
@@ -82,8 +91,15 @@ const dateFormatOptions = [
         description="Reduce spacing and show more content"
       />
 
+      <!--
+        No `.number` on this one any more. A modifier on a component's `v-model`
+        only arrives as a `modelModifiers` prop for the component to apply, and
+        this one never declared it, so it did nothing here except fall through
+        to the row's own `<div>` as an attribute. The dropdown emits the
+        option's own value, and these options are numbers.
+      -->
       <SettingSelect
-        v-model.number="config.public.value.pageSize"
+        v-model="config.public.value.pageSize"
         label="Items Per Page"
         description="Number of clips to load at once (lower = faster)"
         :options="pageSizeOptions"
