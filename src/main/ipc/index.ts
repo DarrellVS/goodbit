@@ -1,4 +1,4 @@
-import { app, dialog, ipcMain, shell, BrowserWindow } from 'electron';
+import { app, dialog, ipcMain, nativeImage, shell, BrowserWindow } from 'electron';
 import { readFile } from 'node:fs/promises';
 import { basename, normalize } from 'node:path';
 import { databasePath, loadSettings, saveSettings } from '../settings.js';
@@ -144,6 +144,67 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
     await shell.openExternal(`steam://rungameid/${appId}`);
     return { launched: true, appId };
+  });
+
+  /**
+   * Drag a clip out of the window and into another program.
+   *
+   * `ipcMain.on` rather than `handle`, and `event.sender.startDrag`, which is
+   * the shape Electron documents: the drag has to be started from the window
+   * that is already in a `dragstart`, and a reply is neither wanted nor
+   * possible once the window manager has taken over.
+   *
+   * The icon is not decoration. Windows refuses a drag whose image is empty,
+   * so the clip's own thumbnail is used, and a small one: the shell scales
+   * whatever it is given and a 1280 wide picture under the cursor looks like a
+   * bug.
+   */
+  ipcMain.on('clip:dragOut', (event, clipId: number) => {
+    void (async () => {
+      try {
+        const { AppDataSource } = await import('../data-source.js');
+        const { Clip } = await import('../entity/Clip.js');
+        const { videoService } = await import('../services/videoService.js');
+
+        const clip = await AppDataSource.getRepository(Clip).findOneBy({ id: Number(clipId) });
+        if (!clip) return;
+
+        let icon = nativeImage.createEmpty();
+        try {
+          const thumb = await videoService.ensureThumbnail(clip);
+          icon = nativeImage.createFromPath(thumb).resize({ width: 128 });
+        } catch {
+          // A clip with no thumbnail yet still drags; it just looks plain.
+        }
+
+        if (icon.isEmpty()) {
+          // 1x1 is enough to satisfy the shell, and invisible in practice.
+          icon = nativeImage.createFromBuffer(Buffer.alloc(4), { width: 1, height: 1 });
+        }
+
+        /*
+         * Blocking, and that is the useful part.
+         *
+         * On Windows this runs a nested message loop and returns when the drop
+         * has happened or been abandoned, which is the only signal either
+         * process gets that the drag is over. The renderer needs it: the shell
+         * offers the file back to the window it came from, and without knowing
+         * the drag is ours the import dropzone opens over the library.
+         */
+        event.sender.startDrag({ file: clip.filePath, icon });
+      } catch (error) {
+        console.error('[drag]', error instanceof Error ? error.message : error);
+      } finally {
+        if (!event.sender.isDestroyed()) event.sender.send('clip:dragOutEnded');
+      }
+    })();
+  });
+
+  /** The overlay, on demand, so a corner and a chime can be judged. */
+  ipcMain.handle('toast:preview', async () => {
+    const { previewClipToast } = await import('../services/clipToast.js');
+    await previewClipToast();
+    return { ok: true };
   });
 
   ipcMain.handle('library:rescan', async () => {

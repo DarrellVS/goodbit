@@ -20,8 +20,14 @@ test.describe('window state', () => {
 
       // A size nothing would pick by accident.
       await first.app.evaluate(({ BrowserWindow }) => {
-        const w = BrowserWindow.getAllWindows()[0];
-        w.setBounds({ x: 120, y: 90, width: 1180, height: 760 });
+        // Not `[0]`. The clip toast is a second window, built during boot, and
+        // it is a transparent 408 pixel overlay loaded from a `data:` URL.
+        // Resizing that one and then asserting on the app's size is how this
+        // spec started reporting a saved width of 408.
+        const w = BrowserWindow.getAllWindows().find(
+          (candidate) => !candidate.webContents.getURL().startsWith('data:'),
+        );
+        w?.setBounds({ x: 120, y: 90, width: 1180, height: 760 });
       });
 
       // Past the debounce, then closed, which is when it must be written.
@@ -45,7 +51,9 @@ test.describe('window state', () => {
       await second.page.waitForTimeout(1500);
 
       const bounds = await second.app.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows()[0].getNormalBounds(),
+        BrowserWindow.getAllWindows()
+          .find((candidate) => !candidate.webContents.getURL().startsWith('data:'))!
+          .getNormalBounds(),
       );
 
       expect(bounds.width).toBe(1180);
@@ -66,7 +74,9 @@ test.describe('window state', () => {
       await ctx.page.waitForTimeout(1500);
 
       const bounds = await ctx.app.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows()[0].getNormalBounds(),
+        BrowserWindow.getAllWindows()
+          .find((candidate) => !candidate.webContents.getURL().startsWith('data:'))!
+          .getNormalBounds(),
       );
 
       // The size is still honoured; only the off-screen position is dropped.

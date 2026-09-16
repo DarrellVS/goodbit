@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import ObsSetupDialog from './ObsSetupDialog.vue';
 import SettingToggle from './SettingToggle.vue';
+import SettingSelect from './SettingSelect.vue';
 import { useAppSettings } from '../../composables/useAppSettings';
 import { useObsSetup } from '../../composables/useObsSetup';
 import { useToastStore } from '../../stores/toast';
@@ -19,6 +20,18 @@ const setup = useObsSetup();
 const { status, loading, working } = setup;
 const toast = useToastStore();
 const { settings, load: loadSettings, save: saveSettings } = useAppSettings();
+
+const CORNERS = [
+  { value: 'top-right', label: 'Top right' },
+  { value: 'top-left', label: 'Top left' },
+  { value: 'bottom-right', label: 'Bottom right' },
+  { value: 'bottom-left', label: 'Bottom left' },
+];
+
+/** Draws the real overlay, with the real corner and the real sound. */
+function previewToast(): void {
+  void window.goodbit?.previewClipToast();
+}
 
 const showDialog = ref(false);
 
@@ -215,6 +228,53 @@ function openGuide(): void {
       :model-value="settings.startObsWithGoodbit === true"
       @update:model-value="saveSettings({ startObsWithGoodbit: $event })"
     />
+
+    <!--
+      Pressing the replay key and getting nothing back is the most uncertain
+      moment in using this app: OBS says nothing useful, its window is behind a
+      game, and the clip takes a few seconds to reach the library. This is the
+      receipt, and it appears only once the clip is actually indexed, so it
+      cannot say "saved" about a buffer that was not running.
+    -->
+    <SettingToggle
+      label="Say when a clip is saved"
+      description="A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it."
+      :model-value="settings.clipToast !== false"
+      @update:model-value="saveSettings({ clipToast: $event })"
+    />
+
+    <template v-if="settings.clipToast !== false">
+      <SettingToggle
+        label="Play a sound with it"
+        description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
+        :model-value="settings.clipToastSound !== false"
+        @update:model-value="saveSettings({ clipToastSound: $event })"
+      />
+
+      <SettingSelect
+        label="Where it appears"
+        description="On whichever screen your pointer is on, which is the one you are playing on."
+        :model-value="settings.clipToastCorner ?? 'top-right'"
+        :options="CORNERS"
+        @update:model-value="saveSettings({ clipToastCorner: $event as never })"
+      />
+
+      <div class="flex items-start gap-3">
+        <button
+          class="px-3 py-2 rounded-lg border border-border text-sm text-muted-700 font-medium hover:bg-muted-50 transition-colors"
+          @click="previewToast"
+        >
+          Show me
+        </button>
+        <p class="text-xs text-muted-500 pt-2.5">
+          A corner and a chime are worth judging rather than guessing.
+          <span class="block">
+            A game in exclusive fullscreen owns the screen outright and nothing can draw over it;
+            borderless windowed, which most games default to, is fine.
+          </span>
+        </p>
+      </div>
+    </template>
 
     <ObsSetupDialog
       v-model:open="showDialog"

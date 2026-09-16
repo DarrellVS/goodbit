@@ -22,6 +22,9 @@ interface GoodBitBridge {
   canMoveLibrary: (
     destination: string,
   ) => Promise<{ problem: string | null; obsRunning: boolean }>;
+  dragOutClip: (clipId: number) => void;
+  previewClipToast: () => Promise<void>;
+  onDragOutEnd: (listener: () => void) => () => void;
   steamLaunch: (
     game: string,
   ) => Promise<{ launched: boolean; appId?: string; reason?: string }>;

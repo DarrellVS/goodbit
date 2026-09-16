@@ -219,6 +219,66 @@ script used to do from inside OBS.
 - **A folder that already exists wins over a better name for it.** The library holds
   `Headliners-Win64-Shipping` because that is what the old script called it, and writing the better
   name would leave two folders for one game.
+- **A filed clip is indexed at once, not by the library watcher.** `incoming.ts` reports what it
+  filed and `startup.ts` indexes that path immediately. The watcher would find it anyway, four
+  seconds later, behind a second `awaitWriteFinish` on top of the four staging already spent; that
+  settle is there because a file being written gives a garbage duration and a black first frame, and
+  it buys nothing for a file that arrived by an atomic same-volume rename and was whole before it
+  appeared.
+
+### Saying the clip was saved, over the game
+
+`src/main/services/clipToast.ts`. Pressing the replay key and getting nothing back is the most
+uncertain moment in using this app: OBS says nothing useful, its window is behind a game, and the
+clip takes seconds to reach the library. **Off by opting out**, in Settings, Recording.
+
+- **Two states, one card.** "Saving your clip" the instant a file appears in staging, becoming
+  "Clip saved · Game · 0:30" once the row exists. The wait is the reason the feature exists, so the
+  wait is the thing to show; a card that only appeared at the end would leave the uncertain seconds
+  exactly as uncertain.
+- **The second state fires on the row, never on the key.** A keypress says a request was made, not
+  that a file arrived, was attributed and was indexed. Saying "saved" about a buffer that was not
+  running is worse than saying nothing, so a clip that is filed but not indexed gets silence and a
+  log line. The first card is a promise, the second is the receipt.
+- **The first card names no game**, deliberately. It could only guess from whatever is in front
+  *now*, and the whole reason attribution is a vote over the clip's own window is that the instant
+  reading is usually wrong. A guess the second card contradicts is worse than no guess.
+- **Nothing about it may disturb a game.** `focusable: false` and `showInactive()`, so it can never
+  alt-tab somebody out of a firefight; `setIgnoreMouseEvents(true)`, so a click cannot be eaten; the
+  `'screen-saver'` always-on-top level, because plain `alwaysOnTop` loses to a maximised game; and
+  it opens on the display the pointer is on, which is the one being played on.
+- **Opaque card, transparent window.** At 92% the button behind it bled through and read as a
+  control of ours. Only the frame around the card is transparent, and only so the shadow and the
+  rounded corners have somewhere to fall. The shadow's offset plus blur must stay inside `BLEED` or
+  the window edge cuts it off in a straight line, and `MARGIN` must be at least `BLEED` or Windows
+  shoves the window back on screen and moves the card with it.
+- **Latency is the product, so both costs were paid up front.** The announce watch is a raw
+  `fs.watch` rather than chokidar, which normalises events and stats every path, and the window is
+  built during boot rather than on first use. Measured 4 ms from the filesystem event to the card,
+  against roughly a second before.
+- **The chime is synthesised**, two sine notes with an exponential tail: no asset to package, no
+  codec to depend on, and no click, which a raw gate on a sine gives you at both ends.
+- **A game in exclusive fullscreen owns the display** and nothing another window draws reaches it.
+  Borderless windowed, the default in most modern games and what OBS display capture wants anyway,
+  is fine. The Settings text says so.
+
+Both windows are real, so **`BrowserWindow.getAllWindows()[0]` is no longer the app**, and neither
+is Playwright's `firstWindow()`. `tests/e2e/app.ts` and `window-state.spec.ts` pick the window whose
+URL is not a `data:` one. Ten tests across six specs failed at once when that was missed.
+
+### Dragging a clip out of the window
+
+`webContents.startDrag`, behind a grip beside the star on each card. The card body already drags,
+into a collection, and `startDrag` takes the drag over completely, so one element cannot do both:
+the grip's `dragstart` carries `.stop` or the clip starts moving into a collection at the same time.
+
+The shell then offers the file back to the window it came from, which opened the import dropzone
+over the library and asked whether to import a clip it was already showing. `useOsDrag.ts` holds a
+module-level flag while a drag is ours, and `useFileImport` ignores both the dragenter and the drop.
+Clearing that flag needs a real end signal, and there is no `dragend` in the renderer because the web
+drag was cancelled to hand over to the shell; `webContents.startDrag` runs a nested message loop on
+Windows and returns when the drop happens or is abandoned, so main sends `clip:dragOutEnded` in a
+`finally` at that point.
 
 ### An MCP server, for Claude
 

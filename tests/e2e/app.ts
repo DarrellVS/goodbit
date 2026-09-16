@@ -128,7 +128,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     node.stderr?.on('data', (chunk: Buffer) => process.stdout.write(`[main!] ${chunk}`));
   }
 
-  const page = await app.firstWindow();
+  const page = await mainWindow(app);
   await page.waitForLoadState('domcontentloaded');
 
   return {
@@ -143,6 +143,31 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
       if (!existing) rmSync(base, { recursive: true, force: true });
     },
   };
+}
+
+/**
+ * The app's own window, rather than whichever one Electron opened first.
+ *
+ * `firstWindow()` was right while there was only ever one. The clip toast is a
+ * second `BrowserWindow`, built during boot so the first replay of a session
+ * does not wait for a window to be constructed, and it is quite capable of
+ * winning that race: ten tests across six specs failed at once, each of them
+ * driving a transparent 344 pixel overlay that has no app in it.
+ *
+ * Told apart by URL. The overlay is a self contained `data:` page with no
+ * bundle behind it; the app is a file or a dev server. Nothing else in either
+ * process needs to know the difference, which is why the fix belongs here.
+ */
+async function mainWindow(app: ElectronApplication): Promise<Page> {
+  const isApp = (candidate: Page): boolean => !candidate.url().startsWith('data:');
+
+  const existing = app.windows().find(isApp);
+  if (existing) return existing;
+
+  for (;;) {
+    const opened = await app.waitForEvent('window', { timeout: 30_000 });
+    if (isApp(opened)) return opened;
+  }
 }
 
 /**

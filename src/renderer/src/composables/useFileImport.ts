@@ -4,6 +4,7 @@ import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { importFiles, pickClipFiles } from '../services/clips';
 import { pathForFile } from '../services/audio';
+import { osDragActive } from './useOsDrag';
 
 const VALID_VIDEO_TYPES = [
   'video/mp4',
@@ -53,7 +54,10 @@ export function useFileImport() {
     
     dragCounter.value++;
     
-    if (e.dataTransfer?.types.includes('Files')) {
+    // Not a drag this window started. Dragging a clip out hands the file to
+    // the shell, which then offers it straight back here, and the app was
+    // asking whether to import a clip it is already showing.
+    if (e.dataTransfer?.types.includes('Files') && !osDragActive.value) {
       isDragging.value = true;
     }
   }
@@ -84,6 +88,10 @@ export function useFileImport() {
     
     isDragging.value = false;
     dragCounter.value = 0;
+
+    // Dropped back where it came from, which is a way of saying "never mind".
+    // Importing here would copy a clip the library already holds.
+    if (osDragActive.value) return;
 
     const files = Array.from(e.dataTransfer?.files || []);
     

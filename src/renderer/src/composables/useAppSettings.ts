@@ -20,6 +20,10 @@ export interface AppSettings {
   keepRunningInTray: boolean;
   /** Start OBS, minimised with its buffer running, when GoodBit starts. */
   startObsWithGoodbit?: boolean;
+  /** Say "clip saved" over the game. Unset means on. */
+  clipToast?: boolean;
+  clipToastSound?: boolean;
+  clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   migratedFromWebApp: boolean;
   /** Re-encode a trim to share size. Unset means off. */
   compressTrims?: boolean;

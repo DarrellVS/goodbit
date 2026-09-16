@@ -10,7 +10,13 @@ import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
 import { CACHE_DIR_NAME, migrateLegacyCacheDir } from './services/cachePaths.js';
 import { startForegroundHistory } from './services/capture/foregroundHistory.js';
-import { drainIncoming, stopWatchingIncoming, watchIncoming } from './services/capture/incoming.js';
+import {
+  drainIncoming,
+  onClipArriving,
+  onClipFiled,
+  stopWatchingIncoming,
+  watchIncoming,
+} from './services/capture/incoming.js';
 
 /**
  * What the background service does, and keeps doing.
@@ -42,6 +48,12 @@ export type ServiceEvent =
   | { type: 'scan-started' }
   | { type: 'scan-finished'; added: number; updated: number; removed: number; total: number }
   | { type: 'clip-added'; filePath: string; game: string }
+  /**
+   * The clip is filed, indexed and openable. `clip-added` only says a file
+   * appeared; this one carries the id, so anything acting on the clip has
+   * something to act on.
+   */
+  | { type: 'clip-ready'; clipId: number; game: string; filePath: string }
   | { type: 'clip-removed'; filePath: string }
   /**
    * Publishing a clip takes as long as it takes to squeeze two hundred
@@ -116,6 +128,77 @@ function gameFromPath(filePath: string): string | null {
   const parts = rel.split(sep);
   // Needs to be <root>/<Game>/<file>; a loose file at the root has no game.
   return parts.length >= 2 ? parts[0] : null;
+}
+
+/**
+ * A clip GoodBit filed itself, indexed at once rather than in eight seconds.
+ *
+ * The library watcher would find this file eventually, behind another four
+ * second `awaitWriteFinish`, on top of the four the staging watcher already
+ * spent. That settle exists because "the file stopped growing" is the only
+ * signal a watcher has while OBS is writing. It buys nothing here: the file
+ * reached this path by an atomic same volume rename from our own staging
+ * folder, so it was whole before it appeared.
+ *
+ * The toast waits for the row, not for the rename. "Saved" should mean the clip
+ * is in the library and openable, which is the thing the user is actually
+ * asking about when they press the key and then look at the screen.
+ */
+function clipWasFiled(filePath: string, game: string): void {
+  void (async () => {
+    emit({ type: 'clip-added', filePath, game });
+    await reconcile();
+
+    try {
+      const { AppDataSource } = await import('./data-source.js');
+      const { Clip } = await import('./entity/Clip.js');
+      const { showClipSaved } = await import('./services/clipToast.js');
+
+      const clip = await AppDataSource.getRepository(Clip)
+        .createQueryBuilder('clip')
+        .where("REPLACE(LOWER(clip.filePath), '\\', '/') = :key", {
+          key: filePath.split('\\').join('/').toLowerCase(),
+        })
+        .getOne();
+
+      // No row means the scan did not take it, and saying "saved" then would be
+      // a lie. Silence is the honest answer; the log says why.
+      if (!clip) {
+        console.warn(`[capture] ${basename(filePath)} was filed but not indexed, no toast`);
+        return;
+      }
+
+      emit({ type: 'clip-ready', clipId: clip.id, game, filePath });
+
+      const length = clip.durationSec ? ` · ${formatLength(clip.durationSec)}` : '';
+      await showClipSaved(`${game}${length}`);
+    } catch (error) {
+      console.error('[capture] could not announce the clip:', error);
+    }
+  })();
+}
+
+/** "0:30", which is how long a replay reads on every other screen in the app. */
+function formatLength(seconds: number): string {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+}
+
+let detachFiled: (() => void) | null = null;
+
+/** Registered once, however many times the services restart. */
+function attachFiledListener(): void {
+  if (detachFiled) return;
+  detachFiled = onClipFiled(clipWasFiled);
+
+  // The promise, as early as anything can know to make it. The receipt is
+  // `clipWasFiled` above, and only it says "saved".
+  onClipArriving(() => {
+    void (async () => {
+      const { showClipSaving } = await import('./services/clipToast.js');
+      await showClipSaving();
+    })();
+  });
 }
 
 /**
@@ -250,6 +333,7 @@ export async function startServices(): Promise<void> {
    */
   startWatching();
   watchIncoming();
+  attachFiledListener();
 
   const steps: Array<[string, () => Promise<unknown>]> = [
     ['folder cleanup', () => cleanupEmptyFolders(VIDEOS_ROOT)],
@@ -263,6 +347,12 @@ export async function startServices(): Promise<void> {
      */
     ['foreground sampler', async () => void startForegroundHistory()],
     ['staging', () => drainIncoming()],
+    // Built now so the first clip of the session does not wait for a window to
+    // be constructed and a page to load before it hears anything.
+    ['toast', async () => {
+      const { warmClipToast } = await import('./services/clipToast.js');
+      warmClipToast();
+    }],
     // After the library is ready, because a clip that lands while this is
     // still scanning should find a watcher waiting for it.
     ['start OBS', () => startObsIfWanted()],

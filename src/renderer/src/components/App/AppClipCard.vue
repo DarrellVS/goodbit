@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
+import { beginOsDrag } from '../../composables/useOsDrag';
 import { useConfiguration } from '../../composables/useConfiguration';
 import { useClipActionsHandlers } from '../../composables/useClipActionsHandlers';
 import { useHoverScrub, scrubBand } from '../../composables/useHoverScrub';
@@ -171,6 +172,24 @@ function handleDragStart(event: DragEvent) {
   startDrag({ type: 'clip', clipId: props.clip.id }, event);
 }
 
+/**
+ * Drag the file itself out of the window, into Discord, Explorer, anything.
+ *
+ * Its own grip rather than the card body, because the card body already drags:
+ * `handleDragStart` moves a clip into a collection, and `webContents.startDrag`
+ * takes the drag over completely. One element cannot do both, so the two live
+ * next to each other and the pointer says which is which.
+ *
+ * `preventDefault` first, then hand off. The web drag has to be cancelled or
+ * the shell ends up running two at once and neither finishes; this is the shape
+ * Electron documents.
+ */
+function handleDragOut(event: DragEvent) {
+  event.preventDefault();
+  beginOsDrag();
+  window.goodbit?.dragOutClip(props.clip.id);
+}
+
 function handleCheckboxClick(event: MouseEvent) {
   event.stopPropagation();
   batchStore.toggleClip(props.clip.id, props.clipIndex);
@@ -241,6 +260,30 @@ function handleCardClick(event: MouseEvent) {
     <ClipPublishedBadge :published="clip.published" />
     
     <ClipStarButton v-if="!isSelectionMode" :clip="clip" @updated="emit('updated', $event)" />
+    
+    <!--
+      Drag this clip somewhere else.
+
+      Beside the star, one button's width to its right: both are things you do
+      to the clip as a whole, so they read as a pair rather than as two controls
+      that happen to be on the same tile. `left-[52px]` is `left-3` plus the
+      star's own 32 pixels plus a gap.
+
+      `.stop` on the dragstart matters. Without it the card's own dragstart runs
+      too and the clip starts moving into a collection at the same time.
+    -->
+    <button
+      v-if="!isSelectionMode"
+      draggable="true"
+      type="button"
+      title="Drag this clip into another program"
+      aria-label="Drag this clip into another program"
+      class="absolute top-3 left-[52px] z-10 size-8 rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 text-white opacity-0 group-hover:opacity-100 opacity-transition hover:bg-black/80 cursor-grab active:cursor-grabbing"
+      @dragstart.stop="handleDragOut"
+      @click.stop
+    >
+      <Icon icon="material-symbols:drag-pan" class="text-lg" />
+    </button>
     
     <div 
       v-if="!isSelectionMode"

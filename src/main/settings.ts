@@ -58,6 +58,21 @@ export interface Settings {
    * and kept, because a saved Claude Code config has to keep working across
    * restarts.
    */
+  /**
+   * Say "clip saved" over the game, in a corner, for a few seconds.
+   *
+   * On by default: pressing the replay key and getting nothing back is the
+   * single most uncertain moment in using this app, and the library takes
+   * several seconds to show the clip. Opt out rather than opt in, because
+   * somebody who does not want it will find the switch and somebody who needs
+   * it will not know to look.
+   */
+  clipToast?: boolean;
+  /** A short chime with it. Separately switchable: the picture and the noise
+   *  are different levels of intrusion. */
+  clipToastSound?: boolean;
+  /** Which corner of the screen the pointer is on. */
+  clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   mcpEnabled?: boolean;
   mcpPort?: number;
   mcpToken?: string;
@@ -110,6 +125,9 @@ const DEFAULTS: Settings = {
   publisherBaseUrl: '',
   startAtLogin: true,
   keepRunningInTray: true,
+  clipToast: true,
+  clipToastSound: true,
+  clipToastCorner: 'top-right',
   migratedFromWebApp: false,
 };
 

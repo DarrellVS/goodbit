@@ -20,6 +20,15 @@ const api = {
   canMoveLibrary: (destination: string) => ipcRenderer.invoke('library:canMove', destination),
   closeObs: (force?: boolean) => ipcRenderer.invoke('obs:close', force),
   steamLaunch: (game: string) => ipcRenderer.invoke('steam:launch', game),
+  /** Fire and forget: the window manager owns the drag from here. */
+  dragOutClip: (clipId: number) => ipcRenderer.send('clip:dragOut', clipId),
+  previewClipToast: () => ipcRenderer.invoke('toast:preview'),
+  /** Fires when the shell is done with a drag this window started. */
+  onDragOutEnd: (listener: () => void) => {
+    const handler = (): void => listener();
+    ipcRenderer.on('clip:dragOutEnded', handler);
+    return () => ipcRenderer.removeListener('clip:dragOutEnded', handler);
+  },
   mcpState: () => ipcRenderer.invoke('mcp:state'),
   mcpEnable: (enabled: boolean) => ipcRenderer.invoke('mcp:enable', enabled),
   mcpRegister: (wanted: boolean, ids?: string[]) =>

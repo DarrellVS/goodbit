@@ -20,6 +20,7 @@ export type ServiceEvent =
   | { type: 'scan-started' }
   | { type: 'scan-finished'; added: number; updated: number; removed: number; total: number }
   | { type: 'clip-added'; filePath: string; game: string }
+  | { type: 'clip-ready'; clipId: number; game: string; filePath: string }
   | { type: 'clip-removed'; filePath: string }
   | {
       type: 'publish-progress';
@@ -66,6 +67,14 @@ export function useServiceEvents() {
         break;
 
       case 'clip-added':
+        lastAdded.value = { game: event.game, at: Date.now() };
+        refreshSoon();
+        break;
+
+      case 'clip-ready':
+        // The row exists now, so this refresh is the one that can actually show
+        // it. `clip-added` fires before the scan has run and often refreshes
+        // into a library that does not have the clip yet.
         lastAdded.value = { game: event.game, at: Date.now() };
         refreshSoon();
         break;
