@@ -13,14 +13,14 @@ import {
 import { formatRelativeTime } from '../../helpers/dateFormat';
 import { useToastStore } from '../../stores/toast';
 import { downloadDraft, parseDraftFile, type DraftFilePayload } from '../../utils/draftFile';
-import type { EditorDraft } from '../../services/editorDraftsDb';
+import type { EditorDraft } from '../../types/editor';
 import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   open: boolean;
   drafts: EditorDraft[];
   /** The draft the timeline is currently autosaving into, if any. */
-  activeId: string | null;
+  activeId: number | null;
   /** Nothing on the timeline means there is nothing worth saving. */
   canSave: boolean;
   saving?: boolean;
@@ -117,7 +117,8 @@ watch(
           <div>
             <DialogTitle class="text-xl font-bold text-foreground mb-1">Drafts</DialogTitle>
             <DialogDescription class="text-sm text-muted-600">
-              Kept on this computer, export one to a file to move it somewhere else
+              Kept in your library, so a backup carries them. Export one to a file to
+              move it to another machine
             </DialogDescription>
           </div>
 
@@ -213,7 +214,7 @@ watch(
             </div>
             <p class="text-sm font-medium text-muted-700">No saved drafts</p>
             <p class="text-xs mt-1 text-muted-500">
-              Your last session is restored automatically. This is for keeping more than one.
+              Your last session is offered back automatically. This is for keeping more than one.
             </p>
           </div>
 

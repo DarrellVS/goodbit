@@ -1,4 +1,4 @@
-import type { EditorDraft, EditorDraftAudio, EditorDraftClip } from '../services/editorDraftsDb';
+import type { DraftAudio, DraftClip, DraftTimeline } from '../types/editor';
 
 /**
  * Draft files: a draft on its way out of the browser and back in.
@@ -19,8 +19,8 @@ const LEGACY_FILE_FORMAT = 'filmpje-editor-draft';
 
 export interface DraftFilePayload {
   name: string;
-  clips: EditorDraftClip[];
-  audio: EditorDraftAudio[];
+  clips: DraftClip[];
+  audio: DraftAudio[];
 }
 
 export function draftFileName(name: string): string {
@@ -33,7 +33,7 @@ export function draftFileName(name: string): string {
   return `${base}${FILE_SUFFIX}`;
 }
 
-export function downloadDraft(draft: EditorDraft): void {
+export function downloadDraft(draft: DraftTimeline): void {
   const payload = {
     format: FILE_FORMAT,
     version: FILE_VERSION,
@@ -60,7 +60,7 @@ function num(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function readClip(raw: unknown, index: number): EditorDraftClip {
+function readClip(raw: unknown, index: number): DraftClip {
   const entry = (raw ?? {}) as Record<string, unknown>;
   const clipId = Number(entry.clipId);
 
@@ -84,7 +84,7 @@ function readClip(raw: unknown, index: number): EditorDraftClip {
   };
 }
 
-function readAudio(raw: unknown, index: number): EditorDraftAudio {
+function readAudio(raw: unknown, index: number): DraftAudio {
   const entry = (raw ?? {}) as Record<string, unknown>;
   const trackId = typeof entry.trackId === 'string' ? entry.trackId : '';
 

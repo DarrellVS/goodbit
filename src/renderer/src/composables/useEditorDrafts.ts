@@ -1,33 +1,48 @@
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue';
-import { v4 as uuidv4 } from 'uuid';
 import {
   AUTOSAVE_ID,
-  deleteDraft,
-  listDrafts,
-  putDraft,
-  type EditorDraft,
-  type EditorDraftAudio,
-  type EditorDraftClip,
+  clearAutosave,
+  deleteStoredDraft,
+  readAutosave,
+  readStoredDrafts,
+  writeAutosave,
+  type StoredDraftRecord,
 } from '../services/editorDraftsDb';
 import {
   createProject,
   deleteProject,
+  importEditorDrafts,
   listProjects,
   updateProject,
+  type Project,
+  type ProjectTimeline,
 } from '../services/projects';
-import type { TimelineAudio, TimelineClip } from '../types/editor';
+import {
+  hasMigratedLocalDrafts,
+  localIdsToDrop,
+  markLocalDraftsMigrated,
+  toImportEntries,
+} from '../utils/draftMigration';
+import { pickResumable } from '../utils/draftResume';
+import type {
+  DraftAudio,
+  DraftClip,
+  EditorDraft,
+  ResumableDraft,
+  TimelineAudio,
+  TimelineClip,
+} from '../types/editor';
 
-/** Writing on every drag frame would hammer IndexedDB; a beat of quiet is enough. */
+/** Writing on every drag frame would hammer both stores; a beat of quiet is enough. */
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
 export interface ActiveDraft {
-  id: string;
+  /** The library row being edited. */
+  id: number;
   name: string;
-  /** Set when this draft is also a project in the library. */
-  serverId?: number;
 }
 
-function toDraftClips(clips: readonly TimelineClip[]): EditorDraftClip[] {
+function toDraftClips(clips: readonly TimelineClip[]): DraftClip[] {
   return clips.map((clip) => ({
     clipId: clip.clipId,
     startTime: clip.startTime,
@@ -40,7 +55,7 @@ function toDraftClips(clips: readonly TimelineClip[]): EditorDraftClip[] {
   }));
 }
 
-function toDraftAudio(audio: readonly TimelineAudio[]): EditorDraftAudio[] {
+function toDraftAudio(audio: readonly TimelineAudio[]): DraftAudio[] {
   return audio.map((item) => ({
     trackId: item.trackId,
     name: item.name,
@@ -56,80 +71,141 @@ function toDraftAudio(audio: readonly TimelineAudio[]): EditorDraftAudio[] {
   }));
 }
 
+function toEditorDraft(project: Project): EditorDraft {
+  return {
+    id: project.id,
+    name: project.name,
+    updatedAt: project.updatedAt,
+    clips: project.timeline.clips ?? [],
+    audio: project.timeline.audio ?? [],
+  };
+}
+
+/**
+ * The editor's drafts, which are rows in the library and nothing else.
+ *
+ * 1.x kept a named draft in IndexedDB *and* mirrored it into `project`, each
+ * write in its own `try`, and merged the two lists by `serverId` on load. A
+ * failed mirror therefore left two copies of one draft with no rule for
+ * deciding between them, and a delete had to reach both or the draft came
+ * back. Item 3.2 of the 2.0 brainstorm is that defect.
+ *
+ * There is one store now. A named draft is a row: it is what gets backed up,
+ * what a restore can put back, and what outlives the Electron profile.
+ * IndexedDB keeps one scratch record of what this window was last doing, which
+ * is a different question and is never listed as a draft. See
+ * `services/editorDraftsDb.ts` for the line, and `utils/draftResume.ts` for
+ * the single place the two meet.
+ */
 export function useEditorDrafts(
   clips: Ref<readonly TimelineClip[]>,
-  audio: Ref<readonly TimelineAudio[]>
+  audio: Ref<readonly TimelineAudio[]>,
 ) {
   const drafts = ref<EditorDraft[]>([]);
   /**
-   * The draft being edited, if any. Autosave writes here instead of to the
-   * rolling record, so opening a draft and carrying on keeps updating *that*
-   * draft rather than quietly forking a shadow copy of it.
+   * The draft being edited, if any. Autosave writes into that row instead of
+   * the scratch record, so opening a draft and carrying on keeps updating
+   * *that* draft rather than quietly forking a shadow copy of it.
    */
   const activeDraft = ref<ActiveDraft | null>(null);
-  /**
-   * The newest stored timeline as it stood when the editor opened, offered back
-   * by the resume banner. Held apart from the database record so that starting
-   * to work before deciding, which overwrites that record, cannot take the offer
-   * away.
-   */
-  const resumable = ref<EditorDraft | null>(null);
+  /** What the resume banner is offering, if anything. */
+  const resumable = ref<ResumableDraft | null>(null);
   const saving = ref(false);
+  /** How many drafts the one-shot migration actually moved, when it moved any. */
+  const migrated = ref<number | null>(null);
 
   const isEmpty = computed(() => clips.value.length === 0 && audio.value.length === 0);
 
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  let carryOver: Promise<void> | null = null;
+  let loading: Promise<void> | null = null;
 
-  /**
-   * Named drafts only. The rolling autosave is the resume banner's business.
-   *
-   * Local records first, then anything the library holds that this browser has
-   * never seen: a draft saved on another machine, or one that outlived a
-   * cleared IndexedDB. The server being unreachable is not fatal; the local
-   * list still works, which is the point of keeping both.
-   */
-  async function loadDrafts(): Promise<void> {
-    let local: EditorDraft[] = [];
-    try {
-      local = (await listDrafts()).filter((draft) => draft.id !== AUTOSAVE_ID);
-    } catch (error) {
-      console.error('Failed to read editor drafts:', error);
-    }
-
-    try {
-      const remote = await listProjects();
-      const known = new Set(local.map((draft) => draft.serverId).filter(Boolean));
-
-      const remoteOnly = remote
-        .filter((project) => !known.has(project.id))
-        .map(
-          (project): EditorDraft => ({
-            id: `server-${project.id}`,
-            name: project.name,
-            updatedAt: project.updatedAt,
-            clips: project.timeline.clips ?? [],
-            audio: project.timeline.audio ?? [],
-            serverId: project.id,
-          }),
-        );
-
-      local = [...local, ...remoteOnly].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    } catch (error) {
-      console.error('Failed to read saved projects from the library:', error);
-    }
-
-    drafts.value = local;
+  function timelineNow(): ProjectTimeline {
+    return { clips: toDraftClips(clips.value), audio: toDraftAudio(audio.value) };
   }
 
   /**
-   * What to offer on open: the most recently touched timeline, whether that is
-   * the rolling autosave or a named draft someone was working on.
+   * Move whatever the old local store still holds into the library, once.
+   *
+   * The order is deliberate and is the answer to "what happens on a second
+   * launch": hand everything over, mark it done the moment the library has
+   * confirmed it, and only then delete the local copies. A crash before the
+   * mark means the next launch hands the same records over again, and the
+   * library's own rules recognise the rows it made from the mirrored ones;
+   * a crash after it leaves inert records in a store nothing reads again.
+   * Marking it done *before* the library has confirmed anything is the one
+   * ordering that could lose a draft, so it is the one not used.
+   *
+   * A failure to read the store or to reach the library leaves the marker
+   * unset, so the next time the editor opens it tries again.
+   */
+  async function carryOverLocalDrafts(): Promise<void> {
+    if (hasMigratedLocalDrafts()) return;
+
+    let records: StoredDraftRecord[] = [];
+    try {
+      records = await readStoredDrafts();
+    } catch (error) {
+      console.error('Could not read the old editor draft store:', error);
+      return;
+    }
+
+    const entries = toImportEntries(records);
+    if (entries.length === 0) {
+      markLocalDraftsMigrated();
+      return;
+    }
+
+    try {
+      const summary = await importEditorDrafts(entries);
+      markLocalDraftsMigrated();
+
+      for (const localId of localIdsToDrop(summary.results)) {
+        try {
+          await deleteStoredDraft(localId);
+        } catch (error) {
+          // The draft is in the library either way; this is tidying.
+          console.error('Could not remove a migrated draft from the old store:', error);
+        }
+      }
+
+      const moved = summary.created + summary.updated;
+      if (moved > 0) migrated.value = moved;
+    } catch (error) {
+      console.error('Could not carry the old editor drafts into the library:', error);
+    }
+  }
+
+  function localDraftsCarriedOver(): Promise<void> {
+    return (carryOver ??= carryOverLocalDrafts());
+  }
+
+  /** Every named draft, which is every non-archived row. */
+  async function loadDrafts(): Promise<void> {
+    loading = (async () => {
+      await localDraftsCarriedOver();
+      try {
+        drafts.value = (await listProjects()).map(toEditorDraft);
+      } catch (error) {
+        console.error('Failed to read saved drafts from the library:', error);
+      }
+    })();
+
+    return loading;
+  }
+
+  /**
+   * What to offer on open.
+   *
+   * Awaits the draft list rather than relying on the caller to have loaded it
+   * first: the banner names the draft the scratch record belongs to, so it
+   * cannot decide without the rows.
    */
   async function loadResumable(): Promise<void> {
+    await (loading ?? loadDrafts());
+
     try {
-      const stored = await listDrafts();
-      resumable.value =
-        stored.find((draft) => draft.clips.length > 0 || draft.audio.length > 0) ?? null;
+      resumable.value = pickResumable(await readAutosave(), drafts.value);
     } catch (error) {
       console.error('Failed to read the editor autosave:', error);
     }
@@ -138,144 +214,129 @@ export function useEditorDrafts(
   async function persist(): Promise<void> {
     const target = activeDraft.value;
     const updatedAt = new Date().toISOString();
+    const timeline = timelineNow();
 
-    const draftClips = toDraftClips(clips.value);
-    const draftAudio = toDraftAudio(audio.value);
-
+    /*
+     * The scratch record first, and whether or not a draft is open.
+     *
+     * It is the net under the write below: it is local, so it cannot fail for
+     * the reason a library write can, and it carries the id of the draft it
+     * belongs to so the banner can offer that draft back by name. 1.x wrote
+     * *either* the scratch record or the named one, which meant a named draft
+     * whose library write failed had nothing holding it at all.
+     */
     try {
-      await putDraft({
-        id: target?.id ?? AUTOSAVE_ID,
-        name: target?.name ?? 'Autosave',
+      await writeAutosave({
+        id: AUTOSAVE_ID,
+        name: 'Autosave',
         updatedAt,
-        clips: draftClips,
-        audio: draftAudio,
-        serverId: target?.serverId,
+        projectId: target?.id ?? null,
+        ...timeline,
       });
     } catch (error) {
-      console.error('Failed to autosave the timeline:', error);
+      console.error('Failed to keep the local scratch timeline:', error);
+    }
+
+    if (!target) return;
+
+    try {
+      await updateProject(target.id, { timeline });
+    } catch (error) {
+      console.error('Could not update this draft in the library:', error);
       return;
     }
 
-    // A named draft that lives in the library is kept up to date there too, on
-    // the same debounce. The rolling autosave stays local. It is a scratch
-    // record, not something worth a round trip every beat.
-    if (target?.serverId) {
-      try {
-        await updateProject(target.serverId, {
-          timeline: { clips: draftClips, audio: draftAudio },
-        });
-      } catch (error) {
-        console.error('Could not update this project in the library:', error);
-      }
-    }
-
-    // Keep the listed timestamp honest without re-reading the store every beat.
-    if (!target) return;
+    // Keep the listed row honest without re-reading the library every beat.
     drafts.value = drafts.value.map((draft) =>
-      draft.id === target.id ? { ...draft, updatedAt } : draft
+      draft.id === target.id ? { ...draft, ...timeline, updatedAt } : draft,
     );
   }
 
-  function setActiveDraft(draft: EditorDraft | null): void {
-    activeDraft.value =
-      draft && draft.id !== AUTOSAVE_ID
-        ? { id: draft.id, name: draft.name, serverId: draft.serverId }
-        : null;
+  function setActiveDraft(draft: { id: number; name: string } | null): void {
+    activeDraft.value = draft ? { id: draft.id, name: draft.name } : null;
   }
 
-  /** Stop tracking a draft; further edits go back to the rolling autosave. */
+  /** Stop tracking a draft; further edits go to the scratch record only. */
   function detachDraft(): void {
     activeDraft.value = null;
   }
 
+  /**
+   * Keep the current timeline as a named draft.
+   *
+   * This throws if the library will not take it, where 1.x logged and left a
+   * local-only copy behind: a save that says it worked and only half did is
+   * how the two stores came apart. Nothing is lost when it throws, because the
+   * scratch record still holds the timeline; what is lost is the name.
+   */
   async function saveNamed(name: string): Promise<void> {
     saving.value = true;
 
-    const draft: EditorDraft = {
-      id: uuidv4(),
-      name: name.trim() || 'Untitled draft',
-      updatedAt: new Date().toISOString(),
-      clips: toDraftClips(clips.value),
-      audio: toDraftAudio(audio.value),
-    };
-
     try {
-      // Push to the library first so the id can be stored with the local copy;
-      // a failure there still leaves a perfectly good local draft.
-      try {
-        const project = await createProject({
-          name: draft.name,
-          timeline: { clips: draft.clips, audio: draft.audio },
-        });
-        draft.serverId = project.id;
-      } catch (error) {
-        console.error('Could not save this draft to the library:', error);
-      }
+      const project = await createProject({
+        name: name.trim() || 'Untitled draft',
+        timeline: timelineNow(),
+      });
 
-      await putDraft(draft);
-      // Editing continues in the draft just saved, not in the autosave.
-      setActiveDraft(draft);
+      // Editing continues in the draft just saved, not in the scratch record.
+      setActiveDraft(project);
       await loadDrafts();
     } finally {
       saving.value = false;
     }
   }
 
-  /** Store a draft that came from a file as a new draft of its own. */
+  /**
+   * Keep a draft that came from a file as a draft of its own.
+   *
+   * 1.x wrote this one locally and never pushed it, so an imported draft was
+   * the one kind that could not survive a cleared profile. It is a row like
+   * any other now. The spread that used to be here was for IndexedDB, whose
+   * `structuredClone` refuses a Vue proxy; JSON on the wire does not care.
+   */
   async function importDraft(payload: {
     name: string;
-    clips: EditorDraftClip[];
-    audio: EditorDraftAudio[];
+    clips: DraftClip[];
+    audio: DraftAudio[];
   }): Promise<EditorDraft> {
-    const draft: EditorDraft = {
-      id: uuidv4(),
+    const project = await createProject({
       name: payload.name.trim() || 'Imported draft',
-      updatedAt: new Date().toISOString(),
-      // The payload came back out of a reactive ref, so its entries are Vue
-      // proxies, and structuredClone, which IndexedDB writes through, refuses
-      // to clone a Proxy. Every field is a primitive, so a spread is enough to
-      // hand over plain objects.
-      clips: payload.clips.map((clip) => ({ ...clip })),
-      audio: payload.audio.map((item) => ({ ...item })),
-    };
+      timeline: { clips: payload.clips, audio: payload.audio },
+    });
 
-    await putDraft(draft);
     await loadDrafts();
-    return draft;
+    return toEditorDraft(project);
   }
 
-  async function removeDraft(id: string): Promise<void> {
-    // Deleting has to reach both copies, or a draft removed here would reappear
-    // from the library on the next load.
-    const draft = drafts.value.find((d) => d.id === id);
-
-    await deleteDraft(id);
-
-    if (draft?.serverId) {
-      try {
-        await deleteProject(draft.serverId);
-      } catch (error) {
-        console.error('Could not remove this project from the library:', error);
-      }
-    }
+  /**
+   * Delete a draft. One store, so one delete.
+   *
+   * The scratch record is deliberately left alone even when it belongs to this
+   * draft: it holds the timeline that is on screen right now, and deleting the
+   * draft is not a reason to throw that away. `pickResumable` offers a scratch
+   * record whose draft has gone as an unnamed timeline, which is what it is.
+   */
+  async function removeDraft(id: number): Promise<void> {
+    await deleteProject(id);
 
     if (activeDraft.value?.id === id) activeDraft.value = null;
-    if (resumable.value?.id === id) resumable.value = null;
+    if (resumable.value?.projectId === id) resumable.value = null;
+
     await loadDrafts();
   }
 
   /**
-   * Put the resume banner away. The rolling autosave is the banner's own record
-   * so it gets deleted; a named draft is the user's and only gets dismissed.
+   * Put the resume banner away.
+   *
+   * The scratch record is the banner's own, so it goes. A named draft it was
+   * offering is the person's and stays in the list: the banner was pointing at
+   * that draft, not holding it.
    */
   async function dismissResumable(): Promise<void> {
-    const draft = resumable.value;
     resumable.value = null;
 
-    if (draft?.id !== AUTOSAVE_ID) return;
-
     try {
-      await deleteDraft(AUTOSAVE_ID);
+      await clearAutosave();
     } catch (error) {
       console.error('Failed to clear the editor autosave:', error);
     }
@@ -300,6 +361,7 @@ export function useEditorDrafts(
     activeDraft,
     resumable,
     saving,
+    migrated,
     isEmpty,
     loadDrafts,
     loadResumable,

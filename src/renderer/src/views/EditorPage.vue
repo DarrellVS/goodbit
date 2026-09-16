@@ -38,7 +38,8 @@ import ClipLibrary from '../components/Editor/ClipLibrary.vue';
 import MusicLibrary from '../components/Editor/MusicLibrary.vue';
 import ExportDialog from '../components/Editor/ExportDialog.vue';
 import DraftsDialog from '../components/Editor/DraftsDialog.vue';
-import type { EditorDraft } from '../services/editorDraftsDb';
+import type { EditorDraft, ResumableDraft } from '../types/editor';
+import { draftAsResumable } from '../utils/draftResume';
 import type { DraftFilePayload } from '../utils/draftFile';
 import AppLoading from '../components/App/AppLoading.vue';
 
@@ -189,6 +190,7 @@ const {
   activeDraft,
   resumable,
   saving: savingDraft,
+  migrated: migratedDrafts,
   isEmpty: timelineIsEmpty,
   loadDrafts,
   loadResumable,
@@ -297,7 +299,7 @@ async function handleExportConfirm(name: string, options: ExportOptions): Promis
  * anything that has since been deleted from disk simply drops out, with a count
  * rather than a silent gap.
  */
-async function restoreDraft(draft: EditorDraft): Promise<void> {
+async function restoreDraft(draft: ResumableDraft): Promise<void> {
   restoring.value = true;
 
   try {
@@ -354,7 +356,15 @@ async function restoreDraft(draft: EditorDraft): Promise<void> {
     loadAudio(audioEntries);
     // Opening a draft is a fresh start, not a step to undo back through.
     clearHistory();
-    setActiveDraft(draft);
+    /*
+     * Reattach to the named draft this came from, if it came from one.
+     *
+     * A resumed scratch timeline has no draft to reattach to, and one whose
+     * draft has since been deleted must not pretend otherwise: autosaving into
+     * a row that is not there would fail on every beat.
+     */
+    if (draft.projectId === null) detachDraft();
+    else setActiveDraft({ id: draft.projectId, name: draft.name });
 
     selectedClipId.value = null;
     selectedAudioId.value = null;
@@ -399,7 +409,7 @@ async function handleImportDraft(payload: DraftFilePayload): Promise<void> {
 
 function handleDeleteDraft(draft: EditorDraft): void {
   toastStore.confirm(
-    `"${draft.name}" is removed from this browser.`,
+    `"${draft.name}" is removed from your library.`,
     async () => {
       try {
         await removeDraft(draft.id);
@@ -680,6 +690,18 @@ onMounted(async () => {
   void loadDrafts();
   await loadResumable();
 
+  // The one-shot move of 1.x's local drafts into the library runs behind the
+  // two calls above. Said out loud only when it actually moved something: a
+  // draft's own date is carried over, so somebody who never hears about it
+  // sees a list that reads exactly as it did before.
+  if (migratedDrafts.value) {
+    const moved = migratedDrafts.value;
+    toastStore.info(
+      `${moved} draft${moved === 1 ? '' : 's'} moved into your library, so a backup now carries ${moved === 1 ? 'it' : 'them'}.`,
+      'Drafts moved',
+    );
+  }
+
   await library.fetchClips(false);
   await loadClipsFromQuery();
 });
@@ -830,7 +852,7 @@ watch(
           <Icon icon="material-symbols:history" class="text-xl text-orange-500 flex-shrink-0" />
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-foreground">
-              {{ resumable.name === 'Autosave' ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
+              {{ resumable.projectId === null ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
             </div>
             <div class="text-xs text-muted-600">
               {{ resumable.clips.length }} clip{{ resumable.clips.length === 1 ? '' : 's' }}
@@ -993,7 +1015,7 @@ watch(
       :saving="savingDraft"
       @save="handleSaveDraft"
       @import="handleImportDraft"
-      @open-draft="restoreDraft"
+      @open-draft="restoreDraft(draftAsResumable($event))"
       @delete-draft="handleDeleteDraft"
     />
   </div>
