@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
+import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { pluralize } from '../../utils/pluralize';
+import { useCollectionDetail } from '../../composables/useCollectionDetail';
 import type { Collection } from '../../types/collection';
 
 /**
@@ -32,19 +33,40 @@ interface Emits {
   (e: 'drop', event: DragEvent): void;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+/*
+ * Opens the layer rather than navigating.
+ *
+ * This was a `RouterLink` to `/collections/:id`, which is now a redirect that
+ * opens the same layer, so going through the router would work and would take
+ * the library down and put it back up on the way. `active-class` went with it,
+ * and the open state is read from the layer instead.
+ */
+const { openCollectionId, open } = useCollectionDetail();
+const isOpen = computed(() => openCollectionId.value === props.collection.id);
 </script>
 
 <template>
-  <RouterLink
-    :to="`/collections/${collection.id}`"
+  <!--
+    A div that behaves as a button, not a `<button>`.
+    The card carries Rename and Delete buttons of its own, and a button inside
+    a button is invalid and swallows the inner clicks.
+  -->
+  <div
+    role="button"
+    tabindex="0"
     data-collection-card
-    class="group flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-3 transition-colors"
+    class="group flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
     :class="isDragOver
       ? 'border-orange-500 bg-orange-500/10'
-      : 'border-border hover:border-muted-300 hover:bg-muted-50'"
-    active-class="border-orange-500/40"
+      : isOpen
+        ? 'border-orange-500/40 hover:bg-muted-50'
+        : 'border-border hover:border-muted-300 hover:bg-muted-50'"
+    @click="open(collection.id)"
+    @keydown.enter.prevent="open(collection.id)"
+    @keydown.space.prevent="open(collection.id)"
     @dragover.prevent="emit('dragover', $event)"
     @dragenter="emit('dragenter', $event)"
     @dragleave="emit('dragleave', $event)"
@@ -87,18 +109,18 @@ const emit = defineEmits<Emits>();
           v-if="!isEditing"
           class="rounded-sm p-1 transition-colors hover:bg-orange-500/20"
           title="Rename"
-          @click.prevent="emit('start-edit')"
+          @click.prevent.stop="emit('start-edit')"
         >
           <Icon icon="material-symbols:edit" class="text-sm text-muted-500" />
         </button>
         <button
           class="rounded-sm p-1 transition-colors hover:bg-red-500/20"
           title="Delete"
-          @click.prevent="emit('delete')"
+          @click.prevent.stop="emit('delete')"
         >
           <Icon icon="material-symbols:delete" class="text-sm text-muted-500" />
         </button>
       </div>
     </div>
-  </RouterLink>
+  </div>
 </template>

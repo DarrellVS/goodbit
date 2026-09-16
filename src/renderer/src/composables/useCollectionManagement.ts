@@ -1,8 +1,8 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
 import { useCollectionsStore } from '../stores/collections';
 import { useToastStore } from '../stores/toast';
 import { useDragAndDrop, type DragData } from './useDragAndDrop';
+import { useCollectionDetail } from './useCollectionDetail';
 
 /**
  * Making, renaming, deleting and dropping clips on a collection.
@@ -14,8 +14,7 @@ import { useDragAndDrop, type DragData } from './useDragAndDrop';
  * codebase is how they drift.
  */
 export function useCollectionManagement() {
-  const router = useRouter();
-  const route = useRoute();
+  const { closeIfOpen } = useCollectionDetail();
   const collectionsStore = useCollectionsStore();
   const toastStore = useToastStore();
   const { onDragOver, onDrop } = useDragAndDrop();
@@ -74,14 +73,19 @@ export function useCollectionManagement() {
       `This will permanently delete "${name}".`,
       async () => {
         try {
-          const isViewingCollection = route.name === 'collection' && Number(route.params.id) === id;
-          
           await collectionsStore.deleteCollection(id);
           toastStore.success('Collection deleted');
-          
-          if (isViewingCollection) {
-            await router.push('/');
-          }
+
+          /*
+           * Close the layer only if it is showing the one that just went.
+           *
+           * This used to compare the route and push '/', which is no longer
+           * either true or necessary: a collection is a layer over the
+           * library, so there is nowhere to navigate back to, and deleting a
+           * different collection from the row must not shut the one you have
+           * open.
+           */
+          closeIfOpen(id);
         } catch (error) {
           console.error('Failed to delete collection:', error);
           toastStore.error('Failed to delete collection');

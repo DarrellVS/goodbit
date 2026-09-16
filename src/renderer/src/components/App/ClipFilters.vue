@@ -42,6 +42,16 @@ interface Props {
    * nothing there. A dropdown that does nothing is worse than no dropdown.
    */
   sortable?: boolean;
+  /**
+   * Sitting inside a header that already has its own hairline and padding.
+   *
+   * The collection layer puts this row in its header rather than above the
+   * grid, so the row must not bring a second bottom border or its own top
+   * padding with it. Whole class strings either way rather than a built up
+   * one, because a Tailwind class assembled at runtime is a class Tailwind
+   * never saw and never generated.
+   */
+  flush?: boolean;
 }
 
 interface Emits {
@@ -50,8 +60,18 @@ interface Emits {
   (e: 'exit-selection'): void;
 }
 
-withDefaults(defineProps<Props>(), { isSelectionMode: false, sortable: true });
+const props = withDefaults(defineProps<Props>(), {
+  isSelectionMode: false,
+  sortable: true,
+  flush: false,
+});
 const emit = defineEmits<Emits>();
+
+const rowClass = computed(() =>
+  props.flush
+    ? 'flex flex-wrap items-center gap-x-4 gap-y-2 px-6'
+    : 'flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-6 pt-6',
+);
 
 const allFilters: FilterOption[] = [
   { value: 'videos', label: 'Videos', icon: 'material-symbols:play-circle' },
@@ -95,7 +115,7 @@ function onTagsChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
     The hairline is the row's, and the tabs sit on it: `-mb-px` puts the active
     tab's own 2 px underline over the top of it rather than a pixel below.
   -->
-  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-6 pt-6">
+  <div :class="rowClass">
     <nav class="flex items-center gap-6" aria-label="Filter clips">
       <button
         v-for="filter in filters"

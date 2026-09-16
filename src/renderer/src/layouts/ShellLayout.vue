@@ -30,6 +30,7 @@
       of them you were looking at.
     -->
     <ClipDetailModal />
+    <CollectionDetailModal />
 
     <CommandPalette v-model:open="showCommandPalette" />
 
@@ -45,6 +46,8 @@
 import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import { RouterView, useRouter } from 'vue-router';
 import ClipDetailModal from '../components/ClipDetail/ClipDetailModal.vue';
+import CollectionDetailModal from '../components/Collection/CollectionDetailModal.vue';
+import { useCollectionDetail } from '../composables/useCollectionDetail';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
@@ -67,9 +70,17 @@ const selectedGame = ref('');
 const searchText = ref('');
 const router = useRouter();
 
+const { openCollectionId } = useCollectionDetail();
+
+/*
+ * The games list filters the clips, so it is live wherever clips are listed.
+ * A collection is one of those places and used to be recognised by its route
+ * name; it is a layer now, so the layer is what to ask.
+ */
 const disableGamesFilter = computed(() => {
+  if (openCollectionId.value !== null) return false;
   const routeName = router.currentRoute.value.name;
-  return !(routeName === 'clips' || routeName === 'today' || routeName === 'collection');
+  return !(routeName === 'clips' || routeName === 'today');
 });
 
 function selectGame(g: string): void {

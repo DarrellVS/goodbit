@@ -1,8 +1,9 @@
 import { computed, type Ref } from 'vue';
 import { useClipDetail } from './useClipDetail';
+import { useCollectionDetail } from './useCollectionDetail';
 import { useConfiguration } from './useConfiguration';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
-import { scrollToTop, scrollDown, scrollUp } from '../utils/scroll';
+import { scrollDown, scrollUp } from '../utils/scroll';
 
 interface UseClipListKeyboardShortcutsOptions {
   toggleViewMode: () => void;
@@ -12,6 +13,25 @@ interface UseClipListKeyboardShortcutsOptions {
   canGoPrevious?: Ref<boolean> | (() => boolean);
   isLoading?: Ref<boolean> | (() => boolean);
   isSelectionMode?: Ref<boolean> | (() => boolean);
+  /**
+   * This list is itself in a layer over the library.
+   *
+   * The collection layer shows a second clip list while the library's one is
+   * still mounted underneath, so without this both would answer the arrow
+   * keys and both would turn a page. The rule is not symmetric: a list in a
+   * layer keeps the keys while a collection is open, because it *is* the open
+   * collection, and a list on the page underneath gives them up.
+   */
+  inLayer?: boolean;
+  /**
+   * What the scroll keys should scroll.
+   *
+   * The page's own list scrolls `main`, which is what the scroll helpers
+   * default to. A list inside a layer scrolls the layer's own container, and
+   * scrolling `main` from in there moves a list nobody can see, which is the
+   * same bug as the arrow keys had.
+   */
+  scrollTarget?: Ref<HTMLElement | null>;
 }
 
 export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcutsOptions): void {
@@ -47,8 +67,10 @@ export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcu
     return options.isSelectionMode?.value ?? false;
   });
 
+  const { openCollectionId } = useCollectionDetail();
+
   /*
-   * A list behind an open clip is not the list somebody is using.
+   * A list behind an open layer is not the list somebody is using.
    *
    * The clip panel opens *over* the library, and the library stays mounted
    * behind it with `ArrowLeft` and `ArrowRight` still bound to paging. So
@@ -58,21 +80,26 @@ export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcu
    * had to take them in the capture phase to get them.
    *
    * Guarding here rather than there fixes it for every view of an open clip
-   * and for both pages that show a list, rather than for the one screen that
-   * happened to collide.
+   * and for every list, rather than for the one screen that happened to
+   * collide. The collection layer is the second such list and needed nothing
+   * new except a direction: a clip covers every list, including the one
+   * inside the collection layer, while a collection covers only the lists on
+   * the page underneath it. `inLayer` says which side of that a caller is on.
    *
-   * `openClipId` is module-level state, so this reads the same value the
-   * modal does. The keys go back to the list the moment it closes.
+   * Both ids are module level state, so this reads the same values the layers
+   * do, and the keys go back the moment one closes.
    */
-  const clipIsOpen = computed(() => openClipId.value !== null);
+  const coveredUp = computed(
+    () => openClipId.value !== null || (!options.inLayer && openCollectionId.value !== null),
+  );
   const listHasTheKeys = computed(
-    () => !clipIsOpen.value && !isSelectionMode.value && !isLoading.value,
+    () => !coveredUp.value && !isSelectionMode.value && !isLoading.value,
   );
 
   useKeyboardShortcuts({
     actions: {
       'toggle-view-mode': () => {
-        if (!clipIsOpen.value) options.toggleViewMode();
+        if (!coveredUp.value) options.toggleViewMode();
       },
       'page-next': (event: KeyboardEvent) => {
         if (listHasTheKeys.value && canGoNext.value) {
@@ -87,10 +114,10 @@ export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcu
         }
       },
       'scroll-down': () => {
-        if (!clipIsOpen.value) scrollDown();
+        if (!coveredUp.value) scrollDown(options.scrollTarget?.value);
       },
       'scroll-up': () => {
-        if (!clipIsOpen.value) scrollUp();
+        if (!coveredUp.value) scrollUp(options.scrollTarget?.value);
       },
     },
   });

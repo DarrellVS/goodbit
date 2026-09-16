@@ -22,7 +22,7 @@ interface UseSelectAllShortcutOptions {
  * selected every clip the *library* was holding: on a collection that put a
  * selection toolbar over clips that were not the ones on screen. Mounting and
  * unmounting with the page that owns the list is the fix, and it is what let
- * `CollectionPage` have the shortcut at all.
+ * the collection layer have the shortcut at all.
  */
 export function useSelectAllShortcut(options: UseSelectAllShortcutOptions): void {
   function handle(event: KeyboardEvent): void {

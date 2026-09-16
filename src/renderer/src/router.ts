@@ -1,10 +1,10 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
 import { useClipDetail } from './composables/useClipDetail';
+import { useCollectionDetail } from './composables/useCollectionDetail';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';
-import CollectionPage from './views/CollectionPage.vue';
 import SettingsPage from './views/SettingsPage.vue';
 import EditorPage from './views/EditorPage.vue';
 import ShellLayout from './layouts/ShellLayout.vue';
@@ -82,15 +82,25 @@ export const router = createRouter({
             subtitle: 'Customize your experience',
           }
         },
-        { 
-          path: 'collections/:id', 
-          name: 'collection', 
-          component: CollectionPage, 
-          props: true,
-          meta: { 
-            title: 'Collection',
-            subtitle: 'View collection clips'
-          }
+        /*
+         * A collection is a layer over the library now, for the same reasons a
+         * clip is: it is a closer look at part of a list you are still
+         * browsing, and as a page it drew three stacked headers before showing
+         * a single clip.
+         *
+         * The route stays, because the command palette and any saved link use
+         * it, but it renders nothing of its own: it opens the layer and steps
+         * back to the library, so the collection appears over the grid exactly
+         * as it would have from a card.
+         */
+        {
+          path: 'collections/:id',
+          name: 'collection',
+          redirect: (to) => {
+            const id = Number(to.params.id);
+            if (Number.isFinite(id) && id > 0) useCollectionDetail().open(id);
+            return { name: 'clips' };
+          },
         },
         /*
          * A clip's details are a layer over the library now, not a page.

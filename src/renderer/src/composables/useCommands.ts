@@ -5,6 +5,7 @@ import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';
 import { useCollectionsStore } from '../stores/collections';
 import { useConfiguration } from './useConfiguration';
+import { useCollectionDetail } from './useCollectionDetail';
 
 export interface Command {
   id: string;
@@ -34,6 +35,8 @@ export function useCommands(): ComputedRef<Command[]> {
   const config = useConfiguration();
 
   /** router.push resolves to a NavigationFailure union; a command returns nothing. */
+  const { open: openCollection } = useCollectionDetail();
+
   const go = (path: string) => () => {
     void router.push(path);
   };
@@ -139,7 +142,10 @@ export function useCommands(): ComputedRef<Command[]> {
         label: collection.name,
         group: 'Collection',
         icon: 'material-symbols:folder',
-        run: go(`/collections/${collection.id}`),
+        // Opens the layer rather than routing to it. The route still exists
+        // and would redirect here anyway, but going through it takes the
+        // library down and puts it straight back up.
+        run: () => openCollection(collection.id),
       });
     }
 
