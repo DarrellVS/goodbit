@@ -29,26 +29,6 @@ export type { ObsSetupRequest, ObsSetupResult };
  * worse than no dialog at all.
  */
 
-/**
- * A name that will not start a second folder for a game you already have.
- *
- * Steam stores the marketing name, trademark symbols and all, so it offers
- * `Battlefield™ 6` for a library whose folder has been `Battlefield 6`
- * since August. Writing the Steam name would leave the next clip in a new
- * folder beside the old one, and the library would show the same game twice.
- * So the symbols come off, and a folder that already exists wins outright.
- */
-export function aliasName(steamName: string, existingFolders: string[]): string {
-  const cleaned = steamName
-    .replace(/[™®©]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const flatten = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const existing = existingFolders.find((folder) => flatten(folder) === flatten(cleaned));
-  return existing ?? cleaned;
-}
-
 async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices> {
   const settings = loadSettings();
 
