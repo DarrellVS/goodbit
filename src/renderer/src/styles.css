@@ -23,6 +23,21 @@
   --danger-fg: 0 0% 100%;
   --ring: 224 76% 50%;
   --border: 214 32% 91%;
+  /*
+   * A border one step stronger than `--border`, for hover and emphasis.
+   *
+   * CLAUDE.md has listed this as part of the ladder and `tailwind.config.ts`
+   * has mapped `border-line-strong` to it, and it was **never defined**, so
+   * every use compiled to `hsl()` of nothing and the browser dropped the
+   * declaration. Two components asked for it and silently got no border change
+   * at all: the notes panel's hover edge in its read mode, and the unselected
+   * format cards in the export dialog.
+   *
+   * `--muted-300` in each palette, which is the next rung up from the one
+   * `--border` sits on, so the emphasis is a step on the existing scale rather
+   * than a new colour.
+   */
+  --line-strong: 213 27% 84%;
 }
 
 .dark {
@@ -46,6 +61,8 @@
   --danger-fg: 0 0% 100%;
   --ring: 224 76% 60%;
   --border: 217 33% 17%;
+  /* See the note in `:root`. One rung up from `--border`, in this palette. */
+  --line-strong: 215 25% 27%;
 }
 
 html, body, #app { height: 100%; }

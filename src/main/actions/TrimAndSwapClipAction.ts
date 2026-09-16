@@ -4,6 +4,8 @@ import { BaseAction } from './BaseAction.js';
 import { cancelSource } from '../services/mediaQueue.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
+import { GoodBit } from '../entity/GoodBit.js';
+import { planGoodBitsAfterTrim } from '../services/goodBitsAfterTrim.js';
 import { TrimVideoAction, type TrimMode } from './TrimVideoAction.js';
 import { publisherService } from '../services/publisherService.js';
 import { recordTrim } from '../services/highlights/labels.js';
@@ -192,6 +194,37 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     }
 
     return { ...trimmed, sizeBytes: st.size };
+  }
+
+  /** Apply `planGoodBitsAfterTrim` to the rows on this clip. */
+  private async moveGoodBits(clipId: number, startSec: number, endSec: number): Promise<void> {
+    try {
+      const repo = AppDataSource.getRepository(GoodBit);
+      const existing = await repo.find({ where: { clipId } });
+      if (existing.length === 0) return;
+
+      const plan = planGoodBitsAfterTrim(existing, startSec, endSec);
+
+      if (plan.dropped.length > 0) await repo.delete(plan.dropped);
+      for (const moved of plan.moved) {
+        await repo.update({ id: moved.id }, { startSec: moved.startSec, endSec: moved.endSec });
+      }
+
+      console.log(
+        `[trim] clip ${clipId}: ${plan.moved.length} GoodBits moved, ${plan.dropped.length} dropped`,
+      );
+    } catch (error) {
+      /*
+       * Loud, and not fatal.
+       *
+       * By this point the cut has happened and the file is already swapped.
+       * Throwing would report a failed trim for a trim that succeeded, and the
+       * caller could not tell the difference. A wrong mark is a visible
+       * annoyance; a trim that claims to have failed after rewriting the file
+       * is worse.
+       */
+      console.error(`[trim] could not move the GoodBits on clip ${clipId}:`, error);
+    }
   }
 }
 
