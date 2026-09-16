@@ -1,0 +1,40 @@
+name: Feature request
+description: Something GoodBit does not do yet, that it should.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        GoodBit is scoped narrowly on purpose (single user, one machine, no
+        account system), so the most useful requests explain the moment that
+        prompted them rather than describing a feature in the abstract.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The situation this would help with, not yet the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: >-
+        If you have a specific idea of how this should work, describe it
+        here. It is fine to leave this vague if you are not sure.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you have tried instead
+      description: >-
+        A workaround, another tool, or a setting that gets partway there. This
+        helps show how much the gap actually costs.
+    validations:
+      required: false

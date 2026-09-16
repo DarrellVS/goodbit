@@ -1,0 +1,112 @@
+name: Bug report
+description: Something in GoodBit did not work the way it should.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most GoodBit bugs turn out to depend on the machine: which GPU encoded
+        the clip, which drive the clips folder is on, whether OBS was set up
+        by GoodBit or by hand. The fields below are the ones that have
+        actually made past bugs diagnosable; skip any that do not apply.
+
+  - type: input
+    id: app-version
+    attributes:
+      label: GoodBit version
+      description: >-
+        Settings → About, or the installer / portable filename you downloaded
+        (for example GoodBit-1.10.0-portable.exe).
+      placeholder: 1.10.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: windows-version
+    attributes:
+      label: Windows version
+      options:
+        - Windows 11
+        - Windows 10
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU, and which encoder GoodBit chose
+      description: >-
+        The card (NVIDIA, Intel, AMD), and whether Settings → Recording or an
+        export shows NVENC, QSV or AMF in use. If exports or thumbnails are
+        the problem, this is usually the first thing that matters.
+      placeholder: e.g. RTX 4070, NVENC
+    validations:
+      required: false
+
+  - type: input
+    id: clips-folder
+    attributes:
+      label: Clips folder path and drive
+      description: >-
+        The folder GoodBit watches (Settings → General), and whether it is on
+        the system drive, a second internal drive, an external drive or a
+        network share.
+      placeholder: D:\Clips, internal SSD
+    validations:
+      required: false
+
+  - type: dropdown
+    id: obs-setup
+    attributes:
+      label: How was OBS set up
+      options:
+        - By GoodBit (Settings → Recording → Set up OBS)
+        - By hand, before or separately from GoodBit
+        - Not sure
+        - OBS is not involved in this bug
+    validations:
+      required: false
+
+  - type: input
+    id: recording-format
+    attributes:
+      label: Recording resolution and container
+      description: >-
+        What the clip itself is, for example 3440x1440, .mkv. Right-click the
+        file in the library and check its properties, or look at the file
+        this bug is about directly.
+      placeholder: e.g. 2560x1440, .mp4
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, and what GoodBit did instead of what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: As exact as you can make them. If it only happens once per clip, say so.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Main process log
+      description: >-
+        If you can reproduce this running GoodBit from a terminal (`npm run
+        start` from source, or launching the installed exe from a command
+        prompt), paste the relevant console output here. Leave this blank if
+        you cannot get at it; it helps but is not required.
+      render: text
+    validations:
+      required: false
