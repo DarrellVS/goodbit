@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSettingsManagement } from '../composables/useSettingsManagement';
+import { useSettingsSearch } from '../composables/useSettingsSearch';
+import {
+  DEFAULT_SECTION,
+  resolveSection,
+  SETTING_SECTIONS,
+  type SettingSectionId,
+} from '../utils/settingsSections';
+import type { SettingEntry } from '../utils/settingsCatalog';
 import SettingsSidebar from '../components/Settings/SettingsSidebar.vue';
+import SettingsSearchField from '../components/Settings/SettingsSearchField.vue';
+import SettingsSearchResults from '../components/Settings/SettingsSearchResults.vue';
 import GeneralSettings from '../components/Settings/GeneralSettings.vue';
 import AppSettings from '../components/Settings/AppSettings.vue';
 import GamesSettings from '../components/Settings/GamesSettings.vue';
@@ -14,47 +24,58 @@ import McpSettings from '../components/Settings/McpSettings.vue';
 const route = useRoute();
 const router = useRouter();
 
-const VALID_SECTIONS = ['general', 'app', 'recording', 'games', 'playback', 'connections', 'advanced'] as const;
-type SettingSection = typeof VALID_SECTIONS[number];
+const { query, searching, activeIndex, reveal, reset } = useSettingsSearch();
 
-const sections = [
-  { id: 'general', label: 'General', icon: 'material-symbols:settings', description: 'General application settings' },
-  { id: 'app', label: 'App', icon: 'material-symbols:tune', description: 'Folders, startup and publishing' },
-  {
-    id: 'recording',
-    label: 'Recording',
-    icon: 'material-symbols:fiber-manual-record',
-    description: 'OBS, the replay buffer, and a folder per game',
-  },
-  { id: 'games', label: 'Games', icon: 'material-symbols:videogame-asset', description: 'Hide games from your library' },
-  { id: 'playback', label: 'Playback', icon: 'material-symbols:play-circle', description: 'Video playback preferences' },
-  {
-    id: 'connections',
-    label: 'Connections',
-    icon: 'material-symbols:robot-2-outline',
-    description: 'Let Claude Code work on your clips',
-  },
-  { id: 'advanced', label: 'Advanced', icon: 'material-symbols:tune', description: 'Advanced configuration' },
-];
-
-const activeSection = computed<SettingSection>(() => {
-  const section = route.query.section as string;
-  return VALID_SECTIONS.includes(section as SettingSection) ? (section as SettingSection) : 'general';
-});
+const activeSection = computed<SettingSectionId>(
+  () => resolveSection(route.query.section) ?? DEFAULT_SECTION,
+);
 
 function setActiveSection(section: string): void {
-  const validSection = VALID_SECTIONS.includes(section as SettingSection) ? section : 'general';
-  router.push({ 
-    name: 'settings', 
-    query: { section: validSection }
+  void router.push({
+    name: 'settings',
+    query: { section: resolveSection(section) ?? DEFAULT_SECTION },
   });
 }
 
-watch(() => route.query.section, (section) => {
-  if (!section && route.name === 'settings') {
-    router.replace({ name: 'settings', query: { section: 'general' } });
+/**
+ * A result names a setting; getting to it is two moves.
+ *
+ * The section has to be on screen before there is a row to point at, so the
+ * navigation happens first and `reveal` waits for the row to be drawn. The
+ * query is dropped on the way, because the results panel is what the section
+ * is replacing and leaving it up would mean the result went nowhere visible.
+ */
+async function openResult(entry: SettingEntry): Promise<void> {
+  query.value = '';
+  activeIndex.value = 0;
+
+  if (entry.section !== activeSection.value) {
+    await router.push({ name: 'settings', query: { section: entry.section } });
   }
-}, { immediate: true });
+
+  reveal(entry);
+}
+
+/**
+ * `/settings` with nothing after it, or with something nobody recognises.
+ *
+ * The tray opens the first, and the second is what a stale bookmark looks like.
+ * Both land on a real section rather than an empty panel, and the URL is
+ * rewritten so there is one spelling of where you are.
+ */
+watch(
+  () => route.query.section,
+  (section) => {
+    if (route.name !== 'settings') return;
+    if (resolveSection(section) !== null) return;
+    void router.replace({ name: 'settings', query: { section: DEFAULT_SECTION } });
+  },
+  { immediate: true },
+);
+
+// A search left running is a search that greets the next visit with a results
+// list instead of the screen somebody asked for.
+onUnmounted(reset);
 
 const { resetToDefaults, exportSettings, importSettings } = useSettingsManagement();
 </script>
@@ -62,23 +83,37 @@ const { resetToDefaults, exportSettings, importSettings } = useSettingsManagemen
 <template>
   <div class="h-full min-h-0 flex overflow-hidden">
     <SettingsSidebar
-      :sections="sections"
+      :sections="SETTING_SECTIONS"
       :active-section="activeSection"
       @update:active-section="setActiveSection"
       @export="exportSettings"
       @import="importSettings"
       @reset="resetToDefaults"
-    />
+    >
+      <template #search>
+        <SettingsSearchField @select="openResult" />
+      </template>
+    </SettingsSidebar>
 
     <main class="flex-1 overflow-y-auto">
       <div class="max-w-4xl mx-auto p-8">
-        <GeneralSettings v-if="activeSection === 'general'" />
-        <AppSettings v-if="activeSection === 'app'" />
-        <RecordingSettings v-if="activeSection === 'recording'" />
-        <GamesSettings v-if="activeSection === 'games'" />
-        <PlaybackSettings v-if="activeSection === 'playback'" />
-        <McpSettings v-if="activeSection === 'connections'" />
-        <AdvancedSettings v-if="activeSection === 'advanced'" />
+        <!--
+          The results take the panel rather than sitting over it in a popover.
+          A setting on another page is the case this field exists for, so the
+          answer is allowed the whole screen, and the sidebar stays beside it so
+          that giving up on the search is one click rather than a dead end.
+        -->
+        <SettingsSearchResults v-if="searching" @select="openResult" />
+
+        <template v-else>
+          <GeneralSettings v-if="activeSection === 'general'" />
+          <AppSettings v-if="activeSection === 'app'" />
+          <RecordingSettings v-if="activeSection === 'recording'" />
+          <GamesSettings v-if="activeSection === 'games'" />
+          <PlaybackSettings v-if="activeSection === 'playback'" />
+          <McpSettings v-if="activeSection === 'connections'" />
+          <AdvancedSettings v-if="activeSection === 'advanced'" />
+        </template>
       </div>
     </main>
   </div>

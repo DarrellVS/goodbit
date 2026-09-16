@@ -6,6 +6,7 @@ import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
 import { useAppSettings } from '../../composables/useAppSettings';
 import { useObsSetup } from '../../composables/useObsSetup';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 import { useToastStore } from '../../stores/toast';
 import AppLoading from '../App/AppLoading.vue';
 
@@ -21,6 +22,8 @@ const setup = useObsSetup();
 const { status, loading, working } = setup;
 const toast = useToastStore();
 const { settings, load: loadSettings, save: saveSettings } = useAppSettings();
+/* The cards here carry their own name from `utils/settingsCatalog.ts`. */
+const { settingRing } = useSettingsSearch();
 
 const CORNERS = [
   { value: 'top-right', label: 'Top right' },
@@ -113,7 +116,10 @@ function openGuide(): void {
       <p class="text-sm text-muted-500">How OBS and GoodBit fit together</p>
     </div>
 
-    <div class="p-4 bg-card rounded-lg border border-border space-y-4">
+    <div
+      data-setting="OBS setup"
+      :class="['p-4 bg-card rounded-lg border border-border space-y-4', settingRing('OBS setup')]"
+    >
       <div class="flex items-start gap-3">
         <AppLoading v-if="!status" class="text-xl flex-shrink-0 mt-0.5 text-muted-400" />
         <Icon
@@ -266,7 +272,11 @@ function openGuide(): void {
           game is and how the machine is mixed. Fixed, it was too quiet to hear
           over anything.
         -->
-        <div v-if="settings.clipToastSound !== false" class="flex items-center justify-between gap-4 py-3">
+        <div
+          v-if="settings.clipToastSound !== false"
+          data-setting="How loud"
+          :class="['flex items-center justify-between gap-4 py-3', settingRing('How loud')]"
+        >
           <div class="min-w-0">
             <label class="font-medium text-foreground">How loud</label>
             <p class="text-sm text-muted-500 mt-1">
@@ -306,7 +316,10 @@ function openGuide(): void {
           of prose wrapped around it, which read as a paragraph that happened to
           contain a button.
         -->
-        <div class="flex items-center justify-between gap-4 py-3">
+        <div
+          data-setting="Try it"
+          :class="['flex items-center justify-between gap-4 py-3', settingRing('Try it')]"
+        >
           <div>
             <label class="font-medium text-foreground">Try it</label>
             <p class="text-sm text-muted-500 mt-1">

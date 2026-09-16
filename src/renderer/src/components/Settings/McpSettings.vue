@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import SettingToggle from './SettingToggle.vue';
 import { useToastStore } from '../../stores/toast';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 
 /**
  * Connecting Claude Code to the library.
@@ -18,6 +19,8 @@ import { useToastStore } from '../../stores/toast';
  */
 
 const toast = useToastStore();
+/* The cards here carry their own name from `utils/settingsCatalog.ts`. */
+const { settingRing } = useSettingsSearch();
 
 interface McpClient {
   id: string;
@@ -137,7 +140,7 @@ async function copyCommand(): Promise<void> {
     </div>
 
     <div class="p-4 bg-card rounded-lg border border-border space-y-4">
-      <div class="flex items-start gap-3">
+      <div data-setting="Claude" :class="['flex items-start gap-3', settingRing('Claude')]">
         <Icon icon="material-symbols:robot-2-outline" class="text-xl text-orange-500 mt-0.5" />
         <div class="min-w-0">
           <p class="font-medium text-foreground">Claude</p>

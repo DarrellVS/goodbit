@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import BaseToggle from '../Base/BaseToggle.vue';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 
 /**
  * One row of the settings screen: what the switch is, what it does, and the
@@ -26,17 +28,27 @@ interface Emits {
   (e: 'update:modelValue', value: boolean): void;
 }
 
-withDefaults(defineProps<Props>(), { disabled: false });
+const props = withDefaults(defineProps<Props>(), { disabled: false });
 const emit = defineEmits<Emits>();
+
+/*
+ * The label is also this row's name in `utils/settingsCatalog.ts`, so a search
+ * result can scroll to it and ring it without every call site passing an id
+ * that would only ever repeat the label back.
+ */
+const { settingRing } = useSettingsSearch();
+const ring = computed(() => settingRing(props.label));
 </script>
 
 <template>
   <div
-    :class="
+    :data-setting="label"
+    :class="[
       flat
         ? 'flex items-center justify-between gap-4 py-3'
-        : 'flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border'
-    "
+        : 'flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border',
+      ring,
+    ]"
   >
     <div>
       <label class="font-medium text-foreground">{{ label }}</label>

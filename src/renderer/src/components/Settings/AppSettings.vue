@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { useAppSettings } from '../../composables/useAppSettings';
 import { usePublisher } from '../../composables/usePublisher';
 import { useLibraryRescan } from '../../composables/useLibraryRescan';
+import { useSettingsSearch } from '../../composables/useSettingsSearch';
 import SettingToggle from './SettingToggle.vue';
 import { useToastStore } from '../../stores/toast';
 import { getEncoderInfo, listJobs, type EncoderInfo } from '../../services/clips';
@@ -20,6 +21,12 @@ const { settings, load, save, pickFolder, moveLibraryTo, startMove, closeObs } =
 const { refresh: refreshPublisher } = usePublisher();
 const { rescanning, rescan } = useLibraryRescan();
 const toast = useToastStore();
+
+/*
+ * The cards here are features rather than rows, so they carry their own name
+ * from `utils/settingsCatalog.ts` instead of getting one from `SettingToggle`.
+ */
+const { settingRing } = useSettingsSearch();
 
 /** The setup guide on the website, in the person's own browser. */
 const PUBLISHER_GUIDE = 'https://darrellvs.github.io/goodbit/publisher.html';
@@ -197,7 +204,7 @@ async function testPublisher(): Promise<void> {
 
     <div class="space-y-4">
       <div class="p-4 bg-card rounded-lg border border-border space-y-3">
-        <div class="flex items-start justify-between gap-4">
+        <div data-setting="Clips folder" :class="['flex items-start justify-between gap-4', settingRing('Clips folder')]">
           <div class="min-w-0">
             <label class="font-medium text-foreground">Clips folder</label>
             <p class="text-sm text-muted-500 mt-1 truncate">
@@ -241,7 +248,7 @@ async function testPublisher(): Promise<void> {
           sweep runs every six hours anyway, so it lives next to the folder it
           reads rather than over the list it almost never changes.
         -->
-        <div class="flex items-start justify-between gap-4 pt-3 border-t border-border">
+        <div data-setting="Rescan the clips folder" :class="['flex items-start justify-between gap-4 pt-3 border-t border-border', settingRing('Rescan the clips folder')]">
           <div class="min-w-0">
             <label class="font-medium text-foreground">Rescan the clips folder</label>
             <p class="text-sm text-muted-500 mt-1">
@@ -260,7 +267,7 @@ async function testPublisher(): Promise<void> {
           </button>
         </div>
 
-        <div class="flex items-start justify-between gap-4 pt-3 border-t border-border">
+        <div data-setting="Music folder" :class="['flex items-start justify-between gap-4 pt-3 border-t border-border', settingRing('Music folder')]">
           <div class="min-w-0">
             <label class="font-medium text-foreground">Music folder</label>
             <p class="text-sm text-muted-500 mt-1 truncate">
@@ -311,7 +318,7 @@ async function testPublisher(): Promise<void> {
         @update:model-value="saveCompressPublished($event)"
       />
 
-      <div class="p-4 bg-card rounded-lg border border-border space-y-3">
+      <div data-setting="Publisher" :class="['p-4 bg-card rounded-lg border border-border space-y-3', settingRing('Publisher')]">
         <div>
           <label class="font-medium text-foreground">Publisher</label>
           <p class="text-sm text-muted-500 mt-1">
@@ -389,7 +396,7 @@ async function testPublisher(): Promise<void> {
         </p>
       </div>
 
-      <div class="p-4 bg-card rounded-lg border border-border space-y-2">
+      <div data-setting="Health" :class="['p-4 bg-card rounded-lg border border-border space-y-2', settingRing('Health')]">
         <h3 class="font-medium text-foreground flex items-center gap-2">
           <Icon icon="material-symbols:favorite-outline" class="text-orange-500" />
           Health

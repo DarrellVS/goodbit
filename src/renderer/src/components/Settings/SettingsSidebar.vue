@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-
-interface SettingSection {
-  id: string;
-  label: string;
-  icon: string;
-  description: string;
-}
+import type { SettingSection } from '../../utils/settingsSections';
 
 interface Props {
-  sections: SettingSection[];
+  sections: readonly SettingSection[];
   activeSection: string;
 }
 
@@ -30,7 +24,14 @@ function selectSection(sectionId: string): void {
 
 <template>
   <aside class="w-64 flex-shrink-0 border-r border-border bg-muted-50/50 flex flex-col min-h-0">
-    <nav class="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto pt-6">
+    <!--
+      The search, above the list it makes optional. The page owns the field
+      rather than this component, so the keystroke that opens a result does not
+      have to be passed up through a sidebar that has no opinion about it.
+    -->
+    <slot name="search" />
+
+    <nav class="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto pt-3">
       <button
         v-for="section in sections"
         :key="section.id"
