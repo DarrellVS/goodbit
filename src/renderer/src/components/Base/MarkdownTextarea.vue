@@ -4,6 +4,8 @@ import { ref } from 'vue';
 interface Props {
   modelValue: string;
   placeholder?: string;
+  /** Rough height, in rows, so a panel can ask for less than a page. */
+  rows?: number;
 }
 
 interface Emits {
@@ -33,7 +35,8 @@ defineExpose({
     ref="textareaRef"
     :value="modelValue"
     :placeholder="placeholder"
-    class="w-full min-h-[300px] p-4 border-0 outline-none focus:ring-0 resize-none font-mono text-sm bg-card"
+    class="w-full p-4 border-0 outline-none focus:ring-0 resize-none font-mono text-sm bg-card"
+    :style="{ minHeight: `${(rows ?? 6) * 1.5 + 2}rem` }"
     @input="handleInput"
   />
 </template>

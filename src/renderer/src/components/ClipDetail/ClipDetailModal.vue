@@ -24,7 +24,6 @@ import ClipActionsCard from './ClipActionsCard.vue';
 import ClipFacts from './ClipFacts.vue';
 import TrimPanel from '../Trim/TrimPanel.vue';
 import ClipNotesSection from './ClipNotesSection.vue';
-import ClipNotesEditor from './ClipNotesEditor.vue';
 import ShareSheet from '../App/ShareSheet.vue';
 import AppLoading from '../App/AppLoading.vue';
 
@@ -60,7 +59,6 @@ const toastStore = useToastStore();
 const collectionsStore = useCollectionsStore();
 
 const showExactDate = ref(false);
-const showNotesDialog = ref(false);
 const showShareSheet = ref(false);
 const videoPlayerRef = ref<InstanceType<typeof ClipVideoPlayer> | null>(null);
 
@@ -88,9 +86,8 @@ watch(
     void loadClip();
     void collectionsStore.fetchCollections();
     // A clip opened after another should not inherit the last one's expanded
-    // date or half-open sheets.
+    // date or a half-open sheet.
     showExactDate.value = false;
-    showNotesDialog.value = false;
     showShareSheet.value = false;
   },
   { immediate: true },
@@ -288,9 +285,8 @@ async function onTrimmed(): Promise<void> {
                   dead space.
                 -->
                 <ClipNotesSection
-                  compact
                   :clip="clip"
-                  @edit="showNotesDialog = true"
+                  @updated="handleClipUpdated"
                   @timestamp-click="handleTimestampClick"
                 />
               </div>
@@ -340,13 +336,6 @@ async function onTrimmed(): Promise<void> {
       </Transition>
     </DialogPortal>
   </DialogRoot>
-
-  <ClipNotesEditor
-    v-model:open="showNotesDialog"
-    :clip="clip"
-    @updated="handleClipUpdated"
-    @timestamp-click="handleTimestampClick"
-  />
 
   <ShareSheet
     v-if="clip"

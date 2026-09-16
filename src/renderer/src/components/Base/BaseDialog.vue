@@ -6,6 +6,16 @@ interface Props {
   open: boolean;
   title?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  /**
+   * Opened from inside another layer, so it has to sit above it.
+   *
+   * `Teleport` moves this to the end of `body` when the component *mounts*,
+   * not when it opens, and a dialog living inside a panel that is always
+   * mounted therefore lands in the document before the panel's own portal
+   * does. At the same z-index, document order decides, and the panel wins:
+   * the notes editor opened underneath the clip it belongs to.
+   */
+  above?: boolean;
 }
 
 interface Emits {
@@ -54,7 +64,8 @@ watch(() => props.open, (isOpen) => {
     <Transition name="modal-backdrop">
       <div
         v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        :class="above ? 'z-[60]' : 'z-50'"
         @click="handleBackdropClick"
       >
         <Transition name="modal-content">

@@ -8,14 +8,26 @@ interface Emits {
 
 interface Props {
   showPreview: boolean;
+  /** The preview sits beside the text, so it is shown and hidden, not swapped into. */
+  split?: boolean;
+  /**
+   * No bar of its own: no ground, no border, no padding.
+   *
+   * For a header that already provides all three. Drawn as a strip it became a
+   * second header stacked under the real one, with a rule between them.
+   */
+  bare?: boolean;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), { split: false, bare: false });
 const emit = defineEmits<Emits>();
 </script>
 
 <template>
-  <div class="flex items-center gap-1 p-2 border-b border-border bg-muted-50/50 rounded-t-lg">
+  <div
+    class="flex items-center gap-1"
+    :class="bare ? '' : 'p-2 border-b border-border bg-muted-50/50 rounded-t-lg'"
+  >
     <button
       type="button"
       class="p-2 rounded hover:bg-muted-200 transition-colors"
@@ -81,7 +93,7 @@ const emit = defineEmits<Emits>();
       <Icon icon="material-symbols:format-quote" class="text-lg" />
     </button>
     
-    <div class="flex-1" />
+    <div v-if="!bare" class="flex-1" />
     
     <button
       type="button"
@@ -89,8 +101,15 @@ const emit = defineEmits<Emits>();
       :class="{ 'bg-orange-500/16 text-orange-600': showPreview }"
       @click="emit('toggle-preview')"
     >
-      <Icon :icon="showPreview ? 'material-symbols:edit' : 'material-symbols:visibility'" class="text-lg" />
-      <span>{{ showPreview ? 'Edit' : 'Preview' }}</span>
+      <!--
+        Beside the text rather than instead of it, so the label is not "Edit":
+        editing never stopped. It says what pressing it does.
+      -->
+      <Icon
+        :icon="showPreview ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"
+        class="text-lg"
+      />
+      <span>{{ showPreview ? (split ? 'Hide preview' : 'Edit') : 'Preview' }}</span>
     </button>
   </div>
 </template>

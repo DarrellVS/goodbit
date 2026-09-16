@@ -1,7 +1,7 @@
 {
   "name": "goodbit",
   "productName": "GoodBit",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Finds the good bit in your game clips, and keeps it.",
   "author": "Darrell van Swinderen",
   "private": true,

@@ -40,7 +40,7 @@ function attachTimestampListeners() {
 <template>
   <div
     ref="previewRef"
-    class="markdown-preview min-h-[200px] p-4 prose prose-sm max-w-none"
+    class="markdown-preview min-h-full p-4 prose prose-sm max-w-none overflow-auto"
     v-html="html"
   />
 </template>
