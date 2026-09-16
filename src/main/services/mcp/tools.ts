@@ -391,10 +391,10 @@ export function tools(): ToolDefinition[] {
           confident: result.confident,
           suggestions: events.length
             ? events
-            : (result.moments ?? []).map((moment) => ({
-                atSec: Math.round(moment.t * 10) / 10,
+            : (result.goodBits ?? []).map((candidate) => ({
+                atSec: Math.round(candidate.t * 10) / 10,
                 reason: 'the loudest moment in the clip',
-                confidence: Math.round(moment.score * 100) / 100,
+                confidence: Math.round(candidate.score * 100) / 100,
               })),
         });
       },

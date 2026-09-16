@@ -42,3 +42,6 @@ export * from './dtos/project/ProjectDTO.js';
 // Highlight suggestions
 export * from './dtos/clip/ClipSuggestionsDTO.js';
 
+// The bits of a clip worth watching, which do not change the clip
+export * from './dtos/goodbit/GoodBitDTO.js';
+

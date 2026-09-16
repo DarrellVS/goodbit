@@ -6,6 +6,7 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
 import { Game } from '../entity/Game.js';
+import { GoodBit, type GoodBitSource } from '../entity/GoodBit.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
 import { publisherService } from '../services/publisherService.js';
@@ -17,6 +18,12 @@ import { registered } from '../services/highlights/registry.js';
 import '../services/highlights/games/index.js';
 import { EnsureClipSuggestionsAction } from '../actions/EnsureClipSuggestionsAction.js';
 import { TrimVideoAction, type TrimMode } from '../actions/TrimVideoAction.js';
+import { CreateGoodBitAction } from '../actions/CreateGoodBitAction.js';
+import { UpdateGoodBitAction } from '../actions/UpdateGoodBitAction.js';
+import { DeleteGoodBitAction } from '../actions/DeleteGoodBitAction.js';
+import { ListGoodBitsAction } from '../actions/ListGoodBitsAction.js';
+import { RenderGoodBitAction } from '../actions/RenderGoodBitAction.js';
+import { GoodBitRangeError } from '../services/goodBits.js';
 import {
   cancelJob,
   completeJob,
@@ -26,6 +33,7 @@ import {
   jobSignal,
   jobView,
   listJobs,
+  setJobProgress,
 } from '../services/jobs.js';
 import { detectEncoders } from '../services/encoders.js';
 import {
@@ -41,7 +49,7 @@ import { GetClipCollectionsAction } from '../actions/GetClipCollectionsAction.js
 import { OpenFileInExplorerAction } from '../actions/OpenFileInExplorerAction.js';
 import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
 import { excludeHiddenGames } from '../utils/hiddenGames.js';
-import { ClipDTO, ClipSuggestionsDTO, UpdateClipRequestDTO } from '@shared/index.js';
+import { ClipDTO, ClipSuggestionsDTO, GoodBitDTO, UpdateClipRequestDTO } from '@shared/index.js';
 import type { ExportFormat } from '@shared/index.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -367,6 +375,159 @@ clipsRouter.get('/:id/keyframes', asyncHandler(async (req, res) => {
   res.json({ keyframes });
 }));
 
+/*
+ * The bits of a clip worth watching.
+ *
+ * Nested under the clip, because a GoodBit is not a thing on its own: it is a
+ * start and an end inside one recording, it dies with that recording, and
+ * "which clip" is never a question the caller has to be asked. So the clip id
+ * is in the path rather than in a body, and an id pair that does not match is
+ * a 404 rather than an edit to somebody else's recording.
+ *
+ * A trim replaces the file; none of this does. The recording stays whole and
+ * carries a list, which is metadata about content that is already on disk, the
+ * same footing as `displayName`.
+ */
+
+/**
+ * The two things a GoodBit request gets wrong, said in words rather than in SQL.
+ *
+ * `GoodBitRangeError` carries a status for `middlewares/errorHandler.ts`, but
+ * that handler answers `{ status, code, message }` and every hand-written
+ * refusal in this file answers `{ error }`. One shape per file beats one shape
+ * per mechanism. The other case is TypeORM's `findOneByOrFail` on an id that
+ * is not there, which is a 404 and would otherwise be a 500 with an entity
+ * name in it; `missing` is what to call the thing, since the same error covers
+ * a clip that has gone and a GoodBit that was never on it.
+ */
+function goodBitFailure(res: express.Response, error: unknown, missing: string): boolean {
+  if (error instanceof GoodBitRangeError) {
+    res.status(error.status).json({ error: error.message });
+    return true;
+  }
+  if ((error as Error)?.name === 'EntityNotFoundError') {
+    res.status(404).json({ error: missing });
+    return true;
+  }
+  return false;
+}
+
+clipsRouter.get('/:id/goodbits', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const { goodBits } = await new ListGoodBitsAction().execute({ clipId });
+  res.json({ items: goodBits.map((goodBit) => GoodBitDTO.fromEntity(goodBit)) });
+}));
+
+clipsRouter.post('/:id/goodbits', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const { startSec, endSec, name, source, reason, confidence } = (req.body ?? {}) as {
+    startSec?: number;
+    endSec?: number;
+    name?: string | null;
+    source?: GoodBitSource;
+    reason?: string | null;
+    confidence?: number | null;
+  };
+
+  if (source !== undefined && !['manual', 'hud', 'audio'].includes(source)) {
+    return res.status(400).json({ error: 'Unknown GoodBit source' });
+  }
+
+  try {
+    const { goodBit } = await new CreateGoodBitAction().execute({
+      clipId,
+      startSec: Number(startSec),
+      endSec: Number(endSec),
+      name,
+      source,
+      reason,
+      confidence,
+    });
+    res.status(201).json(GoodBitDTO.fromEntity(goodBit));
+  } catch (error) {
+    if (!goodBitFailure(res, error, 'Clip not found')) throw error;
+  }
+}));
+
+clipsRouter.patch('/:id/goodbits/:goodBitId', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const goodBitId = Number(req.params.goodBitId);
+  const { startSec, endSec, name } = (req.body ?? {}) as {
+    startSec?: number;
+    endSec?: number;
+    name?: string | null;
+  };
+
+  try {
+    const { goodBit } = await new UpdateGoodBitAction().execute({
+      clipId,
+      goodBitId,
+      // An absent edge stays where it is, so `undefined` has to survive the
+      // trip; `Number(undefined)` is NaN, which would read as a bad request.
+      startSec: startSec === undefined ? undefined : Number(startSec),
+      endSec: endSec === undefined ? undefined : Number(endSec),
+      name,
+    });
+    res.json(GoodBitDTO.fromEntity(goodBit));
+  } catch (error) {
+    if (!goodBitFailure(res, error, 'No GoodBit with that id on this clip')) throw error;
+  }
+}));
+
+clipsRouter.delete('/:id/goodbits/:goodBitId', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const goodBitId = Number(req.params.goodBitId);
+  const { deleted } = await new DeleteGoodBitAction().execute({ clipId, goodBitId });
+  if (!deleted) return res.status(404).json({ error: 'No GoodBit with that id on this clip' });
+  res.json({ ok: true });
+}));
+
+/**
+ * Write a GoodBit out as a clip of its own.
+ *
+ * A job, not an awaited call, and answered with an id the way an export is. A
+ * cut re-encodes to land on the frames asked for, which on a 3440 wide
+ * recording is tens of seconds, and the trim route gets away with awaiting only
+ * because it also streams `trim-progress` at the one clip the page is showing.
+ * This produces a new clip rather than replacing one, so it is an export in
+ * every way that matters, including that the answer worth waiting for is a
+ * `ClipDTO` and `completeJob` already carries one.
+ */
+clipsRouter.post('/:id/goodbits/:goodBitId/render', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const goodBitId = Number(req.params.goodBitId);
+  const { mode } = (req.body ?? {}) as { mode?: TrimMode };
+
+  if (mode !== undefined && !['lossless', 'exact', 'compressed'].includes(mode)) {
+    return res.status(400).json({ error: 'Unknown trim mode' });
+  }
+
+  const repo = AppDataSource.getRepository(GoodBit);
+  const goodBit = await repo.findOneBy({ id: goodBitId, clipId });
+  if (!goodBit) return res.status(404).json({ error: 'No GoodBit with that id on this clip' });
+
+  const jobId = randomUUID();
+  createJob('trim', goodBit.name ?? 'GoodBit', jobId);
+  const signal = jobSignal(jobId);
+
+  void new RenderGoodBitAction()
+    .execute({
+      clipId,
+      goodBitId,
+      mode,
+      signal,
+      onProgress: (fraction) => setJobProgress(jobId, fraction * 100, 'Rendering'),
+    })
+    .then(({ clip }) => completeJob(jobId, ClipDTO.fromEntity(clip)))
+    .catch((error: Error) => {
+      // A cancel arrives here as an ffmpeg kill; failJob tells the two apart.
+      if (!signal?.aborted) console.error('GoodBit render failed:', error);
+      failJob(jobId, error.message);
+    });
+
+  res.status(202).json({ jobId });
+}));
+
 /**
  * What one listen to this clip found, cached per file.
  *
@@ -553,6 +714,20 @@ clipsRouter.delete('/export/:exportId', asyncHandler(async (req, res) => {
 /** Everything running or recently finished, for a jobs readout. */
 clipsRouter.get('/jobs/list', asyncHandler(async (_req, res) => {
   res.json(listJobs().map(jobView));
+}));
+
+/**
+ * One job, whatever started it.
+ *
+ * `GET /clips/export/:exportId/status` reads the same map and still works, but
+ * it was named when an export was the only long thing in here. A GoodBit render
+ * polling a URL with "export" in it invites the reader to look for an export.
+ * Declared after `/jobs/list`, which would otherwise match this pattern.
+ */
+clipsRouter.get('/jobs/:jobId', asyncHandler(async (req, res) => {
+  const job = getJob(req.params.jobId);
+  if (!job) return res.status(404).json({ error: 'Unknown job' });
+  res.json(jobView(job));
 }));
 
 /** What this machine can do: shown on the Settings health panel. */

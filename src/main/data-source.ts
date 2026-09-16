@@ -7,7 +7,7 @@ import { Game } from './entity/Game.js';
 import { Project } from './entity/Project.js';
 import { TagPattern } from './entity/TagPattern.js';
 import { HighlightLabel } from './entity/HighlightLabel.js';
-import { Moment } from './entity/Moment.js';
+import { GoodBit } from './entity/GoodBit.js';
 import { migrations } from './migrations/index.js';
 import { databasePath, loadSettings } from './settings.js';
 import { backupBeforeSchemaSync, rememberSchemaVersion, type BackupResult } from './backup.js';
@@ -74,7 +74,7 @@ export async function initDatabase(): Promise<DataSource> {
   AppDataSource = new DataSource({
     type: 'sqlite',
     database: databasePath(),
-    entities: [Clip, Tag, Collection, Game, Project, TagPattern, HighlightLabel, Moment],
+    entities: [Clip, Tag, Collection, Game, Project, TagPattern, HighlightLabel, GoodBit],
     /*
      * Migrations, not `synchronize`.
      *

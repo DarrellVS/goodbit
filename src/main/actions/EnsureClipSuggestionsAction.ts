@@ -16,10 +16,11 @@ import {
 } from './AnalyzeClipAction.js';
 import { WatchClipHudAction } from './WatchClipHudAction.js';
 import { cacheDir as cacheDirFor } from '../services/cachePaths.js';
-import { decide } from '../services/highlights/decide.js';
+import { confidentEvents, decide } from '../services/highlights/decide.js';
+import { score as modelScore } from '../services/highlights/model.js';
 import { gameStats } from '../services/highlights/calibration.js';
 import { watchesScreen, type GameEvent } from '../services/highlights/registry.js';
-import type { SuggestedMoment } from '@shared/index.js';
+import type { SuggestedGoodBit } from '@shared/index.js';
 
 /**
  * Bumped whenever the measurement changes, so answers cached by an older one
@@ -49,6 +50,15 @@ export interface SuggestionResult extends AnalyzeClipOutput {
   evidence: string | null;
   /** What the game itself showed, for a game whose HUD is readable. */
   events: GameEvent[];
+  /**
+   * The readings sure enough to act on, best first. `events` filtered by
+   * `decide.ts`'s own floor, so nobody downstream has to know what it is.
+   *
+   * The whole list rather than the winner, because the expensive half has
+   * already run: a clip with three kills in it knows it has three, and until
+   * 2.1 two of them were sorted and dropped. Each one can become a GoodBit.
+   */
+  anchors: GameEvent[];
   /** True while this game's clips get their screen read as well as heard. */
   watchesScreen: boolean;
 }
@@ -83,7 +93,8 @@ export class EnsureClipSuggestionsAction extends BaseAction<
       // suggesting. The duration comes from the video stream here, because the
       // measurement that gave up never worked one out.
       const durationSec = analysis.durationSec || hud.durationSec;
-      const anchored = this.fromEvents(hud.events, durationSec, windowSec);
+      const anchors = confidentEvents(hud.events);
+      const anchored = this.fromEvents(anchors, durationSec, windowSec);
       if (anchored) {
         return {
           ...analysis,
@@ -94,6 +105,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
           bar: 0,
           basis: 'hud',
           events: hud.events,
+          anchors,
           watchesScreen: watches,
         };
       }
@@ -104,6 +116,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
         basis: 'rule',
         evidence: null,
         events: hud.events,
+        anchors,
         watchesScreen: watches,
       };
     }
@@ -119,6 +132,10 @@ export class EnsureClipSuggestionsAction extends BaseAction<
       game: clip.game,
       gameMedianPeakZ: stats?.medianPeakZ ?? null,
       events: hud.events,
+      // Handed in rather than imported by `decide.ts`, which has to stay a
+      // function of its arguments; finding a trained model means a path from
+      // `electron` and a `statSync`. See the note at the top of `decide.ts`.
+      score: modelScore,
     });
 
     // When the screen decided it, the window belongs around what the screen
@@ -134,10 +151,11 @@ export class EnsureClipSuggestionsAction extends BaseAction<
       reason: verdict.reason,
       evidence: verdict.evidence,
       window: verdict.confident ? (anchored?.window ?? analysis.window) : null,
-      moments: verdict.confident ? (anchored?.moments ?? analysis.moments) : [],
+      goodBits: verdict.confident ? (anchored?.goodBits ?? analysis.goodBits) : [],
       bar: Math.round(verdict.bar * 100) / 100,
       basis: verdict.basis,
       events: hud.events,
+      anchors: verdict.anchors,
       watchesScreen: watches,
     };
   }
@@ -153,7 +171,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
     event: GameEvent,
     durationSec: number,
     windowSec: number,
-  ): { window: { start: number; end: number }; moments: SuggestedMoment[] } | null {
+  ): { window: { start: number; end: number }; goodBits: SuggestedGoodBit[] } | null {
     if (!durationSec) return null;
     const until = Math.max(event.atSec, event.untilSec ?? event.atSec);
     const span = until - event.atSec;
@@ -163,17 +181,27 @@ export class EnsureClipSuggestionsAction extends BaseAction<
 
     return {
       window: place(length, durationSec, event.atSec, until),
-      moments: [{ t: round(event.atSec), score: round(event.confidence, 2) }],
+      goodBits: [{ t: round(event.atSec), score: round(event.confidence, 2) }],
     };
   }
 
-  /** The same, for a clip that could not be listened to at all. */
+  /**
+   * The same, for a clip that could not be listened to at all.
+   *
+   * Takes the already-ranked list rather than the raw events: the confidence
+   * floor belongs to `decide.ts` and this had its own copy of the number,
+   * which is a threshold in two places waiting to disagree.
+   */
   private fromEvents(
-    events: GameEvent[],
+    anchors: GameEvent[],
     durationSec: number,
     windowSec: number,
-  ): { window: { start: number; end: number }; moments: SuggestedMoment[]; evidence: string } | null {
-    const strongest = events.filter((e) => e.confidence >= 0.8).sort((a, b) => b.confidence - a.confidence)[0];
+  ): {
+    window: { start: number; end: number };
+    goodBits: SuggestedGoodBit[];
+    evidence: string;
+  } | null {
+    const strongest = anchors[0];
     if (!strongest) return null;
     const placed = this.placeAround(strongest, durationSec, windowSec);
     return placed ? { ...placed, evidence: strongest.reason } : null;
@@ -202,7 +230,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
           fsPromises.stat(filePath),
         ]);
         if (cStat.mtimeMs >= vStat.mtimeMs && cStat.size > 0) {
-          return JSON.parse(await fsPromises.readFile(cachePath, 'utf-8')) as AnalyzeClipOutput;
+          return fromCache(JSON.parse(await fsPromises.readFile(cachePath, 'utf-8')));
         }
       } catch {
         /* no usable cache; fall through and listen */
@@ -233,4 +261,20 @@ export class EnsureClipSuggestionsAction extends BaseAction<
       return null;
     }
   }
+}
+
+/**
+ * A cached measurement, whatever version of this app wrote it.
+ *
+ * The loudest instants in a clip were called `moments` before the vocabulary
+ * settled on GoodBits, and every analysis cached by a 1.x build has them under
+ * the old key. `ANALYSIS_VERSION` is deliberately not bumped for this: the
+ * measurement did not change, only its field name, and a bump would make every
+ * clip in every library re-listen to prove the same numbers. Reading both keys
+ * costs one `??`; the alternative is a jump-chip row that is silently empty on
+ * exactly the clips that were analysed before the update.
+ */
+function fromCache(parsed: unknown): AnalyzeClipOutput {
+  const cached = parsed as AnalyzeClipOutput & { moments?: SuggestedGoodBit[] };
+  return { ...cached, goodBits: cached.goodBits ?? cached.moments ?? [] };
 }

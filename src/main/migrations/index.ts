@@ -1,5 +1,5 @@
 import { Baseline1789563600000 } from './1789563600000-Baseline.js';
-import { Moments1789563600001 } from './1789563600001-Moments.js';
+import { GoodBits1789563600001 } from './1789563600001-GoodBits.js';
 import { ClipLastOpenedAt1789563600002 } from './1789563600002-ClipLastOpenedAt.js';
 import { ClipSearch1789563600003 } from './1789563600003-ClipSearch.js';
 
@@ -24,7 +24,7 @@ import { ClipSearch1789563600003 } from './1789563600003-ClipSearch.js';
  */
 export const migrations = [
   Baseline1789563600000,
-  Moments1789563600001,
+  GoodBits1789563600001,
   ClipLastOpenedAt1789563600002,
   ClipSearch1789563600003,
 ];
