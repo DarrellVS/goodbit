@@ -50,8 +50,21 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   ipcMain.handle('settings:pickFolder', async (_event, title: string) => {
     const window = getWindow();
+    /*
+     * `defaultPath`, because Electron 43 stopped letting the OS remember.
+     *
+     * With no `defaultPath` the dialog now opens on the user's Downloads
+     * folder every time, and the OS no longer carries the last used directory
+     * between invocations. For a folder picker whose answer is almost always
+     * "near where the clips already are", that is a worse starting point than
+     * what Windows used to do on its own.
+     *
+     * The library's own root is the best guess available: somebody repointing
+     * it is usually moving it one drive or one folder across.
+     */
     const options = {
       title: title || 'Choose a folder',
+      defaultPath: loadSettings().videosRoot || undefined,
       properties: ['openDirectory' as const, 'createDirectory' as const],
     };
 
@@ -231,6 +244,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
     const options = {
       title: kind === 'audio' ? 'Choose music' : 'Choose clips',
+      // Same reason as the folder picker above: Electron 43 defaults this to
+      // Downloads, and the answer is nearly always inside one of these roots.
+      defaultPath:
+        (kind === 'audio' ? loadSettings().audioRoot : loadSettings().videosRoot) || undefined,
       properties: ['openFile' as const, 'multiSelections' as const],
       filters,
     };

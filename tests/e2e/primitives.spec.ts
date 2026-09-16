@@ -145,16 +145,23 @@ test.describe('the headless primitives still work', () => {
      * Driven through the UI, which is the honest path: a rescan reports itself
      * through the toast store.
      *
-     * **Rescan is in Settings now**, not on the library. 3.9 took it off the
-     * main screen because the watcher already keeps the list current and a
-     * solid orange button saying "make this correct" implies it might not be.
-     * This test used to click it on the library and `test.skip()` when it was
-     * missing, which after that change meant it skipped silently and the toast
-     * primitive stopped being covered at all. A skip that nobody reads is
-     * worse than a failure.
+     * **Rescan is in Settings, under Your data.** 3.9 took it off the library
+     * because the watcher already keeps the list current and a solid orange
+     * button saying "make this correct" implies it might not be, and 3.11 then
+     * filed it with the backups, which is where somebody worried about their
+     * library goes looking.
+     *
+     * This has now been pointed at the wrong place twice. It first clicked the
+     * library's own button and called `test.skip()` when it was missing, so it
+     * skipped silently for a while and the toast primitive stopped being
+     * covered at all. Then it navigated to `?section=app`, which still
+     * resolves, because old section names are aliased, but resolves to
+     * Recording rather than to the page with Rescan on it.
+     *
+     * So: no `test.skip()` here. If Rescan moves again this fails and says so.
      */
     await ctx.page.evaluate(() => {
-      window.location.hash = '#/settings?section=app';
+      window.location.hash = '#/settings?section=data';
     });
     await ctx.page.waitForTimeout(1500);
 
