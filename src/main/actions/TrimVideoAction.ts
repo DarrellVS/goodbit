@@ -1,8 +1,6 @@
-import { execFile } from 'node:child_process';
 import path from 'node:path';
 import fsPromises from 'node:fs/promises';
 import { FFPROBE_PATH } from '../services/binaries.js';
-import { promisify } from 'node:util';
 import { BaseAction } from './BaseAction.js';
 import { CompressVideoAction } from './CompressVideoAction.js';
 import { ffmpegConfigured } from '../services/ffmpeg.js';
@@ -14,8 +12,8 @@ import {
   probeVideo,
   TONEMAP_FILTER,
 } from '../services/encoders.js';
+import { execFileAsync } from '../utils/execFileAsync.js';
 
-const execFileAsync = promisify(execFile);
 const FFPROBE = FFPROBE_PATH;
 
 /**

@@ -1,17 +1,27 @@
-# @filmpje/shared
+# @shared
 
-Shared code for the Filmpje application, including DTOs, types, and utilities that are used across the client, server, and publisher.
+Types, DTOs and constants that `src/main` and `src/renderer` both have to agree
+on. Imported as `@shared/*`, which is an alias in `electron.vite.config.ts` and
+a `paths` entry in both tsconfigs. It is **not** a package: it has no
+`package.json`, is not built on its own, and is compiled as part of whichever
+bundle imports it.
+
+It may never import from `src/main` or `src/renderer`. Both sides depend on it,
+so a dependency in the other direction would be a cycle, and the point of the
+folder is that neither process owns it.
 
 ## Structure
 
 ```
 shared/
-├── dtos/              # Data Transfer Objects
-│   └── BaseDTO.ts    # Base class for all DTOs
-├── types/            # Shared TypeScript types (future)
-├── utils/            # Shared utilities (future)
-└── index.ts          # Main entry point
+├── constants/   # values both processes must not restate
+├── dtos/        # the shapes that cross the bridge
+└── index.ts     # the barrel both sides import from
 ```
+
+Anything written out in both processes instead of living here will drift. The
+OBS types did, in three places, before they were collected into
+`dtos/obs/ObsDTO.ts`.
 
 ## Usage
 

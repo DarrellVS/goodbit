@@ -1,8 +1,5 @@
-import { execFile } from 'node:child_process';
 import { FFMPEG_PATH, FFPROBE_PATH } from './binaries.js';
-import { promisify } from 'node:util';
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from '../utils/execFileAsync.js';
 
 const FFMPEG = FFMPEG_PATH;
 const FFPROBE = FFPROBE_PATH;

@@ -1,10 +1,8 @@
-import { execFile, spawn } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn } from 'node:child_process';
 import { FFMPEG_PATH, FFPROBE_PATH } from '../../binaries.js';
 import { resolveRegion, type Rect, type Region } from './geometry.js';
 import type { Sampled } from './pixels.js';
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from '../../../utils/execFileAsync.js';
 
 /**
  * Reading a clip's HUD, a few times a second, as cheaply as this can be done.

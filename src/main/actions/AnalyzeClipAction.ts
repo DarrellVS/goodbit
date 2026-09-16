@@ -1,6 +1,4 @@
-import { execFile } from 'node:child_process';
 import { FFMPEG_PATH } from '../services/binaries.js';
-import { promisify } from 'node:util';
 import { BaseAction } from './BaseAction.js';
 import type { SuggestedGoodBit } from '@shared/index.js';
 import {
@@ -10,8 +8,8 @@ import {
   HOP,
   type HighlightFeatures,
 } from '../services/highlights/features.js';
+import { execFileAsync } from '../utils/execFileAsync.js';
 
-const execFileAsync = promisify(execFile);
 const FFMPEG = FFMPEG_PATH;
 
 /**
