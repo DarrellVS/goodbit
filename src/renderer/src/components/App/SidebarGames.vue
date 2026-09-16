@@ -98,8 +98,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
       <button
         class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
         :class="[
-          { 'bg-card/10 text-orange-500': !activeGame },
-          props.disabled ? 'cursor-not-allowed' : 'hover:bg-card/10'
+          { 'bg-orange-500/10 text-orange-500': !activeGame },
+          props.disabled ? 'cursor-not-allowed' : 'hover:bg-muted-50'
         ]"
         @click="!props.disabled && emit('select-game', '')"
       >
@@ -118,8 +118,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         :key="game.game"
         class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
         :class="[
-          { 'bg-card/10 text-orange-500': activeGame === game.game },
-          props.disabled ? 'cursor-not-allowed' : 'hover:bg-card/10'
+          { 'bg-orange-500/10 text-orange-500': activeGame === game.game },
+          props.disabled ? 'cursor-not-allowed' : 'hover:bg-muted-50'
         ]"
       >
         <button
@@ -163,8 +163,8 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             @update:open="openMenuGame = $event ? game.game : null"
           >
             <DropdownMenuTrigger
-              class="p-1 rounded-sm hover:bg-card/10 outline-hidden"
-              :class="openMenuGame === game.game ? 'block bg-card/10' : 'hidden group-hover:block'"
+              class="p-1 rounded-sm hover:bg-muted-50 outline-hidden"
+              :class="openMenuGame === game.game ? 'block bg-muted-100' : 'hidden group-hover:block'"
               :title="`More actions for ${game.displayName || game.game}`"
               @click.stop
             >
