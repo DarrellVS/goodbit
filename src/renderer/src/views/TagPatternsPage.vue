@@ -5,6 +5,7 @@ import { useTagPatterns } from '../composables/useTagPatterns';
 import { useToastStore } from '../stores/toast';
 import type { TagCategory } from '../utils/tagSuggestions';
 import AppLoading from '../components/App/AppLoading.vue';
+import TagLibraryCard from '../components/App/TagLibraryCard.vue';
 
 const { patterns, loading, addPattern, updatePattern, removePattern } = useTagPatterns();
 
@@ -147,6 +148,17 @@ async function saveNew(): Promise<void> {
 
 <template>
   <div class="p-6 space-y-6">
+    <!--
+      The tags themselves, above the rules that make them.
+      
+      This screen was only ever about patterns, and the one control for
+      removing a tag from every clip lived in the library header's popover,
+      which 3.9 replaced with a filter dropdown. A dropdown you choose from is
+      the wrong place to delete from, so it came here: the app's one screen
+      about tags.
+    -->
+    <TagLibraryCard />
+
     <div v-if="isAddingNew" class="bg-card border border-border rounded-xl p-6 shadow-sm">
       <h3 class="text-lg font-semibold mb-4">New Tag Pattern</h3>
       

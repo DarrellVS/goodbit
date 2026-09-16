@@ -94,18 +94,32 @@ test.describe('the headless primitives still work', () => {
     await expect(dialog).toBeHidden({ timeout: 10_000 });
   });
 
-  test('Popover: the tag filter in the header opens', async () => {
-    // `BasePopover.vue`, used by the header's Tags button. Both are due to
-    // change in 2.x, which is a reason to know they work now.
-    const trigger = ctx.page.getByRole('button', { name: /^Tags$/ });
-    if ((await trigger.count()) === 0) {
-      console.log('no Tags trigger on this screen, skipping');
-      test.skip();
-      return;
-    }
+  test('Popover: Manage tags on a clip card opens', async () => {
+    /*
+     * `BasePopover.vue`. This used to press the header's Tags button, which
+     * 3.9 replaced with a filter dropdown in the library's filter row, and
+     * then skipped silently when it could not find it. Two of this file's four
+     * primitives were skipping rather than passing, which is the failure mode
+     * of a `test.skip()` that nobody reads.
+     *
+     * `ClipTags.vue` is where the popover lives now: two of them on every
+     * card, one behind "Manage tags" and one behind the overflow count. The
+     * trigger only appears on hover, like the actions menu.
+     */
+    await ctx.page.evaluate(() => {
+      window.location.hash = '#/';
+    });
+    await ctx.page.waitForTimeout(1500);
 
-    await trigger.first().click();
-    const popover = ctx.page.locator('[data-reka-popper-content-wrapper], [role="dialog"], [data-state="open"]').first();
+    const card = ctx.page.locator('article.clip-card').first();
+    await card.waitFor({ timeout: 20_000 });
+    await card.hover();
+
+    const trigger = ctx.page.getByRole('button', { name: /Manage tags/i }).first();
+    await expect(trigger).toBeVisible({ timeout: 10_000 });
+    await trigger.click();
+
+    const popover = ctx.page.locator('[data-reka-popper-content-wrapper]').first();
     await expect(popover).toBeVisible({ timeout: 10_000 });
     await ctx.page.screenshot({ path: join(SHOTS, 'popover.png') });
     await ctx.page.keyboard.press('Escape');
@@ -127,15 +141,25 @@ test.describe('the headless primitives still work', () => {
     });
     console.log(`vue app found for toast probe: ${raised}`);
 
-    // Driving it through the UI instead, which is the honest path: a rescan
-    // reports itself through the toast store.
-    const rescan = ctx.page.getByRole('button', { name: /Rescan/i });
-    if ((await rescan.count()) === 0) {
-      console.log('no Rescan button, cannot raise a toast through the UI');
-      test.skip();
-      return;
-    }
+    /*
+     * Driven through the UI, which is the honest path: a rescan reports itself
+     * through the toast store.
+     *
+     * **Rescan is in Settings now**, not on the library. 3.9 took it off the
+     * main screen because the watcher already keeps the list current and a
+     * solid orange button saying "make this correct" implies it might not be.
+     * This test used to click it on the library and `test.skip()` when it was
+     * missing, which after that change meant it skipped silently and the toast
+     * primitive stopped being covered at all. A skip that nobody reads is
+     * worse than a failure.
+     */
+    await ctx.page.evaluate(() => {
+      window.location.hash = '#/settings?section=app';
+    });
+    await ctx.page.waitForTimeout(1500);
 
+    const rescan = ctx.page.getByRole('button', { name: /Rescan/i });
+    await expect(rescan.first()).toBeVisible({ timeout: 15_000 });
     await rescan.first().click();
 
     const toast = ctx.page.locator('[role="status"], [data-state="open"][data-swipe-direction], li[data-state="open"]').first();
