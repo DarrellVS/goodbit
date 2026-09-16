@@ -2,6 +2,8 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import multer from 'multer';
 import { EntityNotFoundError, In } from 'typeorm';
+import { planSearch } from '../services/clipSearch.js';
+import { searchIndexUsable } from '../services/clipSearchIndex.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
@@ -103,12 +105,36 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
 
   if (starred === 'true') qb = qb.andWhere('(clip.starred = :starred)', { starred: true });
 
-  if (q && q.length > 0) {
-    qb = qb.andWhere('(' +
-      'clip.filename LIKE :q OR ' +
-      'clip.displayName LIKE :q OR ' +
-      'tag.name LIKE :q' +
-      ')', { q: `%${q}%` });
+  /*
+   * Search goes through the index, and falls back rather than failing.
+   *
+   * This was four `LIKE '%q%'` clauses which could not use an index, matched
+   * inside words, and **never looked at notes**, which is the one place
+   * somebody wrote down what happened in a clip.
+   *
+   * `clip_search` is FTS5 over filename, displayName, notes and game. The
+   * subquery shape rather than a join, because the join would multiply rows
+   * against `clip.tags` and the paging count with it.
+   *
+   * The fallback is not defensive padding. The index is built by a migration
+   * and maintained by triggers, and if either has not run, or somebody's
+   * SQLite was built without FTS5, then the right outcome is a search that
+   * works less well rather than a library that will not load. It logs once so
+   * the cause is findable.
+   */
+  const search = planSearch(q);
+  if (search.match) {
+    if (await searchIndexUsable()) {
+      qb = qb.andWhere(
+        'clip.id IN (SELECT rowid FROM clip_search WHERE clip_search MATCH :match)',
+        { match: search.match },
+      );
+    } else {
+      qb = qb.andWhere(
+        '(clip.filename LIKE :like OR clip.displayName LIKE :like OR clip.notes LIKE :like OR tag.name LIKE :like)',
+        { like: `%${q}%` },
+      );
+    }
   }
 
   if (tags && tags.length > 0) {

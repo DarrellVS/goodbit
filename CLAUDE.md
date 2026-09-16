@@ -137,6 +137,32 @@ copy of its tags, notes, display name, stars and collections.
   The last of those is the check that matters, because a fresh install and an upgrade diverging is
   how the app works on one machine and not another.
 
+### Searching the library
+
+`clip_search`, an FTS5 index over `filename`, `displayName`, `notes` and `game`,
+**external content** so the text is not stored twice, maintained by triggers on `clip`. It replaced
+four `LIKE '%q%'` clauses that could not use an index, matched inside words, and **never looked at
+notes**, which is the one place somebody wrote down what happened in a clip.
+
+- **`services/clipSearch.ts` exists because user input cannot go into a `MATCH` expression.** FTS5's
+  syntax has operators (`AND`, `OR`, `NOT`, `NEAR`, `*`, `^`, `-`, `:`, `"`), and a bare apostrophe
+  or an unbalanced quote is a **syntax error rather than zero results**: somebody typing `don't`
+  would have got a 500 from the library screen. Input is tokenised, every term is quoted so nothing
+  typed is ever syntax, terms are joined with `AND` because two words narrow, and only the last term
+  gets a `*` so results move while somebody is still typing.
+- **The triggers retire the old row using its old values.** With external content FTS5 cannot see a
+  change, and an index that has drifted is worse than none: it returns clips that no longer match and
+  misses ones that do, silently. `tests/e2e/search.spec.ts` is the only thing that watches a row
+  change and the index follow.
+- **Tags are deliberately not indexed.** They are a join table, so keeping them in would need
+  triggers there too, and a tag is a filter rather than prose. The library's own tag dropdown is the
+  better answer to "show me the funny ones" than typing the word and hoping.
+- **It falls back rather than failing.** `searchIndexUsable()` probes once per process, because a
+  `MATCH` against a missing virtual table is a SQL error and by then the query is already built and
+  counted. A SQLite without FTS5, a database opened by a bench script before migrating, or a restore
+  in the window before its relaunch all mean a slower search rather than a library that will not
+  load.
+
 ### Server-side actions
 
 Every non-trivial operation is a class in `src/main/actions/` extending `BaseAction<TInput, TOutput>`
