@@ -15,8 +15,17 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
     try {
       let html = marked(content.value || '') as string;
       
+      /*
+       * Chips only where a press would do something.
+       *
+       * The handler is not passed on, because the enhancement no longer
+       * registers any listeners: it writes `data-seconds` and the preview
+       * reads it back off one delegated handler. What is left of the option
+       * here is whether there is anywhere for a press to go, and a chip that
+       * looks pressable and is not is worse than a plain number.
+       */
       if (options.onTimestampClick) {
-        html = enhanceMarkdownWithTimestamps(html, options.onTimestampClick);
+        html = enhanceMarkdownWithTimestamps(html);
       }
       
       return html;
