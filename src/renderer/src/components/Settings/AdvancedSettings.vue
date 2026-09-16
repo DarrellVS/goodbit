@@ -1,91 +1,57 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useConfiguration } from '../../composables/useConfiguration';
-import SettingToggle from './SettingToggle.vue';
-import KeyboardShortcutCustomization from './KeyboardShortcutCustomization.vue';
-import BackupsCard from './BackupsCard.vue';
-import SuggestionsCard from './SuggestionsCard.vue';
-import SettingAnchor from './SettingAnchor.vue';
 import { useSettingsSearch } from '../../composables/useSettingsSearch';
-
-const config = useConfiguration();
-const router = useRouter();
-
-/* This one card is written here rather than being a component of its own. */
-const { settingRing } = useSettingsSearch();
-const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts);
+import SettingToggle from './SettingToggle.vue';
+import SettingAnchor from './SettingAnchor.vue';
+import KeyboardShortcutCustomization from './KeyboardShortcutCustomization.vue';
+import HealthCard from './HealthCard.vue';
 
 /**
- * Walk through the first run again.
+ * Advanced, meaning it now.
  *
- * It is the only place that puts the whole thing in order: what GoodBit is,
- * the folder, OBS if it is missing, and the recording setup. Someone who
- * skipped a step on day one, or changed their monitor, or reads it once and
- * wants to change one answer, would otherwise have to remember which settings
- * screen each piece lives on.
+ * It used to hold the database backups, the calibration for the whole highlight
+ * analysis and re-running the setup, which is to say it held the most important
+ * screen in the app behind a word that means "you probably should not". Backups
+ * are under Your data, the calibration is under Editing beside the trim
+ * settings it learns from, and the setup is under Recording, which is what it
+ * walks you through.
  *
- * Nothing is reset by going there. Every step shows what is already set and
- * changes only what is answered.
+ * What is left is two things for people who want to look under the lid, and a
+ * note. That is allowed to be short: a section that is short because everything
+ * in it found a better home is the point, not a gap.
+ *
+ * It also used to end with a box explaining that the clips folder and the
+ * publisher were on a different screen. That box is gone. A screen that has to
+ * tell you about another screen is the maze admitting it, and the search field
+ * answers the question it was standing in for.
  */
-function runOnboarding(): void {
-  void router.push({ name: 'welcome' });
-}
+const config = useConfiguration();
+const { settingRing } = useSettingsSearch();
+
+const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts);
 </script>
 
 <template>
   <section class="space-y-6">
     <div>
-      <h2 class="text-xl font-semibold mb-1">Advanced Settings</h2>
-      <p class="text-sm text-muted-500">Advanced features and experimental options</p>
+      <h2 class="text-xl font-semibold mb-1">Advanced</h2>
+      <p class="text-sm text-muted-500">Keyboard shortcuts, and what this machine can do</p>
     </div>
 
     <div class="space-y-4">
-      <div
-        data-setting="Run the setup again"
-        :class="[
-          'p-4 bg-card rounded-lg border border-border flex items-start justify-between gap-4',
-          settingRing('Run the setup again'),
-        ]"
-      >
-        <div class="min-w-0">
-          <p class="font-medium text-foreground">Run the setup again</p>
-          <p class="text-sm text-muted-500 mt-1">
-            The first run, from the start: your clips folder, OBS if it is missing, and the
-            recording setup. Nothing is reset, and every step shows what is already set.
-          </p>
-        </div>
-        <button
-          class="px-3 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground flex-shrink-0"
-          @click="runOnboarding"
-        >
-          Start it
-        </button>
-      </div>
-
       <SettingToggle
         v-model="config.public.value.enableKeyboardShortcuts"
         label="Enable Keyboard Shortcuts"
         description="Use keyboard shortcuts for navigation and actions"
       />
 
-      <!--
-        The cards below are whole features with their own headings, so the mark
-        that lets a search result point at one goes on the outside rather than
-        into three components that have no business knowing a search exists.
-      -->
       <SettingAnchor v-if="showShortcuts" label="Keyboard Shortcut Customization">
         <KeyboardShortcutCustomization />
       </SettingAnchor>
 
-      <SettingAnchor label="Suggestions learn from your trims">
-        <SuggestionsCard />
-      </SettingAnchor>
-
-      <SettingAnchor label="Library backups">
-        <BackupsCard />
-      </SettingAnchor>
+      <HealthCard />
 
       <div
         data-setting="Where settings are kept"
@@ -99,8 +65,8 @@ function runOnboarding(): void {
           <div>
             <h3 class="font-medium text-foreground">Where settings are kept</h3>
             <p class="text-sm text-muted-600 mt-1">
-              These preferences live on this computer and stay put between sessions. Where your
-              clips are, and where GoodBit publishes to, are under App.
+              These preferences live on this computer and stay put between sessions. Export, Import
+              and Reset, at the foot of the list on the left, work on all of them at once.
             </p>
           </div>
         </div>
@@ -108,4 +74,3 @@ function runOnboarding(): void {
     </div>
   </section>
 </template>
-

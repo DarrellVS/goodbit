@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import ObsSetupDialog from './ObsSetupDialog.vue';
+import ClipsFolderCard from './ClipsFolderCard.vue';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
 import { useAppSettings } from '../../composables/useAppSettings';
@@ -11,19 +13,44 @@ import { useToastStore } from '../../stores/toast';
 import AppLoading from '../App/AppLoading.vue';
 
 /**
- * Recording: the OBS half of the app.
+ * Recording: the OBS half of the app, and where what it records lands.
  *
  * GoodBit is a companion to OBS. OBS records, this keeps what was recorded, and
  * until the two are pointed at each other the library is an empty folder with a
  * picker on it. Everything here is about that seam, and the first thing it does
  * is say plainly which part of it is wrong.
+ *
+ * The clips folder moved on to this page from a section called App, because it
+ * is the other end of the same seam: OBS writes into it and GoodBit reads it,
+ * and they are one setting rather than two that can disagree. So did the two
+ * startup switches, which exist so that GoodBit is up and indexing while
+ * somebody is playing, and running the setup again, which walks exactly this
+ * page from the beginning.
  */
 const setup = useObsSetup();
 const { status, loading, working } = setup;
 const toast = useToastStore();
+const router = useRouter();
 const { settings, load: loadSettings, save: saveSettings } = useAppSettings();
 /* The cards here carry their own name from `utils/settingsCatalog.ts`. */
 const { settingRing } = useSettingsSearch();
+
+/**
+ * Walk through the first run again.
+ *
+ * It is the only place that puts the whole thing in order: what GoodBit is,
+ * the folder, OBS if it is missing, and the recording setup. Someone who
+ * skipped a step on day one, or changed their monitor, or reads it once and
+ * wants to change one answer, would otherwise have to remember which settings
+ * screen each piece lives on. Which is why it is on this page rather than under
+ * Advanced: every step of it is a thing on this page.
+ *
+ * Nothing is reset by going there. Every step shows what is already set and
+ * changes only what is answered.
+ */
+function runOnboarding(): void {
+  void router.push({ name: 'welcome' });
+}
 
 const CORNERS = [
   { value: 'top-right', label: 'Top right' },
@@ -113,7 +140,9 @@ function openGuide(): void {
   <section class="space-y-6">
     <div>
       <h2 class="text-xl font-semibold mb-1">Recording</h2>
-      <p class="text-sm text-muted-500">How OBS and GoodBit fit together</p>
+      <p class="text-sm text-muted-500">
+        OBS, your clips folder, and what happens when you press the key
+      </p>
     </div>
 
     <div
@@ -218,7 +247,37 @@ function openGuide(): void {
       </template>
     </div>
 
+    <div
+      data-setting="Run the setup again"
+      :class="[
+        'p-4 bg-card rounded-lg border border-border flex items-start justify-between gap-4',
+        settingRing('Run the setup again'),
+      ]"
+    >
+      <div class="min-w-0">
+        <p class="font-medium text-foreground">Run the setup again</p>
+        <p class="text-sm text-muted-500 mt-1">
+          The first run, from the start: your clips folder, OBS if it is missing, and the
+          recording setup. Nothing is reset, and every step shows what is already set.
+        </p>
+      </div>
+      <button
+        class="px-3 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground flex-shrink-0"
+        @click="runOnboarding"
+      >
+        Start it
+      </button>
+    </div>
+
+    <ClipsFolderCard />
+
     <!--
+      Three switches about being up while somebody is playing, which is one
+      story: OBS running with its buffer on, GoodBit running to file what it
+      saves, and GoodBit staying up after the window is closed. The last two
+      were under App and read as housekeeping rather than as the reason the
+      replay key works at all.
+
       The whole point is that the last thirty seconds are always there, which
       is only true while OBS is running with its buffer on.
     -->
@@ -228,6 +287,20 @@ function openGuide(): void {
       description="Minimised, with the replay buffer running, so your key works after a restart without opening anything."
       :model-value="settings.startObsWithGoodbit === true"
       @update:model-value="saveSettings({ startObsWithGoodbit: $event })"
+    />
+
+    <SettingToggle
+      label="Start with Windows"
+      description="Runs in the tray and indexes clips as they are recorded"
+      :model-value="settings.startAtLogin"
+      @update:model-value="saveSettings({ startAtLogin: $event })"
+    />
+
+    <SettingToggle
+      label="Keep running when the window closes"
+      description="Off means closing the window quits, and nothing is indexed until you open it again"
+      :model-value="settings.keepRunningInTray"
+      @update:model-value="saveSettings({ keepRunningInTray: $event })"
     />
 
     <!--

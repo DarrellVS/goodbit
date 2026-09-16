@@ -13,13 +13,12 @@ import type { SettingEntry } from '../utils/settingsCatalog';
 import SettingsSidebar from '../components/Settings/SettingsSidebar.vue';
 import SettingsSearchField from '../components/Settings/SettingsSearchField.vue';
 import SettingsSearchResults from '../components/Settings/SettingsSearchResults.vue';
-import GeneralSettings from '../components/Settings/GeneralSettings.vue';
-import AppSettings from '../components/Settings/AppSettings.vue';
-import GamesSettings from '../components/Settings/GamesSettings.vue';
 import RecordingSettings from '../components/Settings/RecordingSettings.vue';
-import PlaybackSettings from '../components/Settings/PlaybackSettings.vue';
+import WatchingSettings from '../components/Settings/WatchingSettings.vue';
+import EditingSettings from '../components/Settings/EditingSettings.vue';
+import DataSettings from '../components/Settings/DataSettings.vue';
+import ConnectionsSettings from '../components/Settings/ConnectionsSettings.vue';
 import AdvancedSettings from '../components/Settings/AdvancedSettings.vue';
-import McpSettings from '../components/Settings/McpSettings.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -57,18 +56,25 @@ async function openResult(entry: SettingEntry): Promise<void> {
 }
 
 /**
- * `/settings` with nothing after it, or with something nobody recognises.
+ * `/settings` with nothing after it, with a name a section used to have, or
+ * with something nobody recognises.
  *
- * The tray opens the first, and the second is what a stale bookmark looks like.
- * Both land on a real section rather than an empty panel, and the URL is
- * rewritten so there is one spelling of where you are.
+ * The tray opens the first. The second is somebody's bookmark, a bench script
+ * or `screens.spec.ts`, all of which still ask for `general`, `app`, `games`
+ * and `playback`: `resolveSection` sends each to wherever the bulk of that page
+ * went, and the URL is then rewritten to the section actually on screen so
+ * there is one spelling of where you are. The third is a typo, and it lands on
+ * a real page rather than an empty panel.
  */
 watch(
   () => route.query.section,
   (section) => {
     if (route.name !== 'settings') return;
-    if (resolveSection(section) !== null) return;
-    void router.replace({ name: 'settings', query: { section: DEFAULT_SECTION } });
+
+    const resolved = resolveSection(section);
+    if (resolved === section) return;
+
+    void router.replace({ name: 'settings', query: { section: resolved ?? DEFAULT_SECTION } });
   },
   { immediate: true },
 );
@@ -106,12 +112,11 @@ const { resetToDefaults, exportSettings, importSettings } = useSettingsManagemen
         <SettingsSearchResults v-if="searching" @select="openResult" />
 
         <template v-else>
-          <GeneralSettings v-if="activeSection === 'general'" />
-          <AppSettings v-if="activeSection === 'app'" />
           <RecordingSettings v-if="activeSection === 'recording'" />
-          <GamesSettings v-if="activeSection === 'games'" />
-          <PlaybackSettings v-if="activeSection === 'playback'" />
-          <McpSettings v-if="activeSection === 'connections'" />
+          <WatchingSettings v-if="activeSection === 'watching'" />
+          <EditingSettings v-if="activeSection === 'editing'" />
+          <DataSettings v-if="activeSection === 'data'" />
+          <ConnectionsSettings v-if="activeSection === 'connections'" />
           <AdvancedSettings v-if="activeSection === 'advanced'" />
         </template>
       </div>

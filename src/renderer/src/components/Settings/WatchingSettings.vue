@@ -4,7 +4,18 @@ import { useConfiguration } from '../../composables/useConfiguration';
 import { useTheme, type ThemeChoice } from '../../composables/useTheme';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
+import HiddenGamesCard from './HiddenGamesCard.vue';
 
+/**
+ * How the library looks, how a clip plays, and what is in it at all.
+ *
+ * Three rooms became one. General was appearance, layout and paging with a
+ * delete confirmation dropped in; Playback was three switches about what a card
+ * does under the pointer, with a section of its own; Games was a list with no
+ * settings in it. None of the three was a category: all of them were answers to
+ * "what do I see when I open GoodBit", which is a thing somebody actually comes
+ * here to change.
+ */
 const config = useConfiguration();
 
 const { theme: themeChoice, setTheme } = useTheme();
@@ -69,8 +80,10 @@ const dateFormatOptions = [
 <template>
   <section class="space-y-6">
     <div>
-      <h2 class="text-xl font-semibold mb-1">General Settings</h2>
-      <p class="text-sm text-muted-500">General application settings and preferences</p>
+      <h2 class="text-xl font-semibold mb-1">Watching</h2>
+      <p class="text-sm text-muted-500">
+        How your library looks, how clips play, and which games you see
+      </p>
     </div>
 
     <div class="space-y-4">
@@ -102,18 +115,6 @@ const dateFormatOptions = [
         :options="dateFormatOptions"
       />
 
-      <SettingToggle
-        v-model="config.public.value.showMetadata"
-        label="Show Clip Metadata"
-        description="Display file size, resolution, and other details"
-      />
-
-      <SettingToggle
-        v-model="config.public.value.compactMode"
-        label="Compact Mode"
-        description="Reduce spacing and show more content"
-      />
-
       <!--
         No `.number` on this one any more. A modifier on a component's `v-model`
         only arrives as a `modelModifiers` prop for the component to apply, and
@@ -129,11 +130,50 @@ const dateFormatOptions = [
       />
 
       <SettingToggle
-        v-model="config.public.value.confirmBeforeDelete"
-        label="Confirm Before Delete"
-        description="Ask for confirmation when deleting clips"
+        v-model="config.public.value.showMetadata"
+        label="Show Clip Metadata"
+        description="Display file size, resolution, and other details"
+      />
+
+      <SettingToggle
+        v-model="config.public.value.compactMode"
+        label="Compact Mode"
+        description="Reduce spacing and show more content"
       />
     </div>
+
+    <!--
+      What a card does under the pointer. Three switches, which had a section of
+      their own called Playback and now sit under a rule, because they are the
+      same question as the six above: what happens when you look at the library.
+    -->
+    <div class="space-y-4 pt-2 border-t border-border">
+      <h3 class="font-medium text-foreground pt-4">While the pointer is over a clip</h3>
+
+      <SettingToggle
+        v-model="config.public.value.autoPlayOnHover"
+        label="Auto-play on Hover"
+        description="Automatically play clips when hovering over them"
+      />
+
+      <SettingToggle
+        v-model="config.public.value.hoverScrub"
+        label="Scrub on Hover"
+        description="Move the pointer across the bottom third of a clip to seek through it"
+      />
+
+      <SettingToggle
+        v-model="config.public.value.muteVideosByDefault"
+        label="Mute Videos by Default"
+        description="Start videos muted (can be unmuted manually)"
+      />
+    </div>
+
+    <!--
+      Hiding a game is not a setting about games, it is a setting about what the
+      library shows, which is why it is the last thing on this page rather than
+      a section of its own holding no settings at all.
+    -->
+    <HiddenGamesCard />
   </section>
 </template>
-

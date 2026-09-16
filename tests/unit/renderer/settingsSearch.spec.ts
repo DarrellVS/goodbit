@@ -114,8 +114,8 @@ describe('searchSettings', () => {
 
   it('works against a catalogue passed in, so the ranking is testable in isolation', () => {
     const catalog = [
-      { label: 'Second', description: 'holds the word marker', section: 'general' as const },
-      { label: 'Marker', description: 'nothing', section: 'general' as const },
+      { label: 'Second', description: 'holds the word marker', section: 'watching' as const },
+      { label: 'Marker', description: 'nothing', section: 'watching' as const },
     ];
     expect(searchSettings('marker', catalog).map((entry) => entry.label)).toEqual([
       'Marker',
@@ -140,6 +140,84 @@ describe('resolveSection', () => {
 
   it('has a default that is itself a section', () => {
     expect(resolveSection(DEFAULT_SECTION)).toBe(DEFAULT_SECTION);
+  });
+});
+
+/**
+ * The half of the rename that nobody sees until it is broken.
+ *
+ * A section id is a URL, and four of them changed. `ObsNotReadyBanner`,
+ * `WelcomePage`, the tray, `scripts/obs-wizard-shots.mjs`,
+ * `scripts/screenshots.mjs` and `tests/e2e/screens.spec.ts` all navigate by
+ * one, and so does anybody who bookmarked a page or learned the address.
+ */
+describe('a link written before the sections were renamed', () => {
+  it('still lands somewhere, for every name a section used to have', () => {
+    const before = ['general', 'app', 'recording', 'games', 'playback', 'connections', 'advanced'];
+
+    for (const old of before) {
+      const landed = resolveSection(old);
+      expect(landed, `?section=${old} goes nowhere`).not.toBeNull();
+      // And it is a real section, not just a non-null string.
+      expect(SETTING_SECTIONS.some((section) => section.id === landed)).toBe(true);
+    }
+  });
+
+  it('sends each one where the bulk of that page went', () => {
+    expect(resolveSection('general')).toBe('watching');
+    expect(resolveSection('playback')).toBe('watching');
+    expect(resolveSection('games')).toBe('watching');
+    expect(resolveSection('app')).toBe('recording');
+  });
+
+  it('leaves the three names that did not change alone', () => {
+    expect(resolveSection('recording')).toBe('recording');
+    expect(resolveSection('connections')).toBe('connections');
+    expect(resolveSection('advanced')).toBe('advanced');
+  });
+
+  /** The exact hashes in `tests/e2e/screens.spec.ts`, which was not edited. */
+  it('answers every settings hash the screenshot walk visits', () => {
+    for (const hash of ['general', 'games', 'playback', 'advanced']) {
+      expect(resolveSection(hash)).not.toBeNull();
+    }
+  });
+});
+
+describe('the sections themselves', () => {
+  it('gives each one an id, a label and an icon of its own', () => {
+    const ids = SETTING_SECTIONS.map((section) => section.id);
+    const labels = SETTING_SECTIONS.map((section) => section.label);
+    // App and Advanced both drew `material-symbols:tune`, which is what two
+    // sections meaning the same thing looks like from across the room.
+    const icons = SETTING_SECTIONS.map((section) => section.icon);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(new Set(icons).size).toBe(icons.length);
+  });
+
+  it('puts at least one setting in every one of them', () => {
+    for (const section of SETTING_SECTIONS) {
+      const held = SETTINGS_CATALOG.filter((entry) => entry.section === section.id);
+      expect(held.length, `${section.label} holds nothing`).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * The old names are the ones people type when the new ones do not help, so
+   * every setting that moved carries the name of the room it came from.
+   */
+  it('keeps the old section names reachable as words', () => {
+    for (const [was, now] of [
+      ['general', 'Appearance'],
+      ['playback', 'Mute Videos by Default'],
+      ['games', 'Hidden games'],
+      ['app', 'Clips folder'],
+      ['advanced', 'Library backups'],
+    ] as const) {
+      expect(searchSettings(was).map((entry) => entry.label)).toContain(now);
+    }
   });
 });
 
