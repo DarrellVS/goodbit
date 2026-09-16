@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { launchApp, seedClips, type TestApp } from './app';
@@ -32,12 +32,39 @@ test.describe('what the screen gives away', () => {
   /**
    * A real Battlefield recording with a confirmed kill near the end.
    *
-   * Not a fixture that can be generated: the point is the game's own HUD.
-   * Absent on any machine but the one this was built on, so the test that
-   * needs it skips rather than fails. The rest still runs everywhere.
+   * Not a fixture that can be generated: the point is the game's own HUD, so
+   * it has to be footage of the game. Absent on a machine with no Battlefield
+   * library, where the test that needs it skips rather than fails. The rest
+   * still runs everywhere.
+   *
+   * **Looked for in the library this machine actually has**, not only under
+   * `~/Videos`. That was the videos root on the machine this was written on,
+   * and hard-coding it meant the two tests below skipped on every other
+   * machine, including one whose library holds the exact recording they want.
+   * A skip that is really a wrong path is indistinguishable from a skip that
+   * is really missing data, and it reads as "passing" either way.
+   *
+   * The file is only ever read: it is copied into the test's own throw-away
+   * videos root, and nothing here writes to the real library.
    */
-  const REAL_CLIP = join(homedir(), 'Videos', 'Battlefield 6', 'Battlefield 6_22.08.2026_15-43-01.mp4');
-  const hasRealClip = existsSync(REAL_CLIP);
+  function configuredVideosRoot(): string | null {
+    const settings = join(process.env.APPDATA ?? '', 'GoodBit', 'settings.json');
+    if (!existsSync(settings)) return null;
+    try {
+      const parsed = JSON.parse(readFileSync(settings, 'utf-8')) as { videosRoot?: string };
+      return parsed.videosRoot ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  const CLIP_NAME = 'Battlefield 6_22.08.2026_15-43-01.mp4';
+  const REAL_CLIP =
+    [configuredVideosRoot(), join(homedir(), 'Videos')]
+      .filter((root): root is string => !!root)
+      .map((root) => join(root, 'Battlefield 6', CLIP_NAME))
+      .find((candidate) => existsSync(candidate)) ?? '';
+  const hasRealClip = REAL_CLIP !== '';
 
   test.beforeAll(async () => {
     ctx = await launchApp();
