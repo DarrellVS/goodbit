@@ -73,11 +73,14 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
+#
+# Every shape, not only the bare one and the `.local` ones. The file that
+# burned this project's Cloudflare token was `publisher/.env.development`,
+# which the list below matched only as a prefix of `.env.development.local`,
+# so it was committed and the history was pushed.
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+!.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

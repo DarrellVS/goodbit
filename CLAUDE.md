@@ -27,7 +27,7 @@ One electron-vite project, three builds.
 | `src/preload` | The typed bridge, `window.goodbit`. The only way the renderer reaches main |
 | `src/renderer` | Vue 3 + Pinia + vue-router + Tailwind |
 | `src/shared` | DTOs and constants both processes agree on, imported as `@shared/*` |
-| `publisher/` | Optional, unchanged: Express + multer in Docker, serves `/media/*` and an embed page |
+| `publisher/` | Optional: Express + multer in Docker, serves `/media/*` and an embed page. **No ffmpeg**: the poster frame arrives with the clip |
 | `tests/e2e` | Playwright against the built app |
 
 ## Commands
@@ -551,8 +551,10 @@ by the next scan, and a trim re-probes.
 ## Known gaps
 
 - No linter. Typecheck, the unit suite and the e2e suite are the automated gates.
-- `publisher/` still reads its config from a `.env`; it was deliberately left alone. Setting it up
-  is documented at `site/publisher.html`, which is a wizard rather than a page, a quick start
-  and a seven-step route that writes the reader's own domain and paths into every command.
+- `publisher/` reads its config from a `.env` with no schema validation. There is a documented
+  `.env.example` and a loud boot check now, so a missing `PUBLISH_TOKEN` announces itself at start
+  rather than as a 503 during somebody's upload, but nothing validates the rest. Setting it up is
+  documented at `site/publisher.html`, which is a wizard rather than a page, a quick start and a
+  seven-step route that writes the reader's own domain and paths into every command.
 - The app is no longer Windows-only in principle (`shell.trashItem`, `shell.showItemInFolder`), but
   nothing has been built or tested anywhere else.
