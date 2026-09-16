@@ -31,6 +31,24 @@ jobs:
       - name: Build
         run: npm run build
 
+      # One release for the artefacts to attach to, made before anything
+      # uploads.
+      #
+      # electron-builder uploads artefacts concurrently and each upload creates
+      # the release if it cannot find one, so on 2.0.0 two of them raced and
+      # both won: one release got the installers and `latest.yml`, a second got
+      # nothing but the `.blockmap`. Creating it here means there is always one
+      # to find.
+      #
+      # `|| true` because a re-run of the same tag will find it already there,
+      # and that is not a failure.
+      - name: Make the release
+        shell: bash
+        run: gh release create "$TAG" --draft --title "GoodBit ${TAG#v}" --notes "Built from $TAG." || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+
       - name: Package and publish
         run: npx electron-builder --win --publish always
         env:

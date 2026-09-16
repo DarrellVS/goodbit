@@ -52,6 +52,12 @@ node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
 ```
 
+**Cutting a release is written down**, in `RELEASING.md`, and the order matters:
+the gate runs on a real machine before the tag because the e2e suite cannot run
+on the runner, `main` has to be merged before tagging because three workflows
+only fire there, and a tag that finishes green is still a draft until somebody
+publishes it.
+
 Keep `npm run typecheck` green, `build` runs it first and fails otherwise.
 
 **Check the exit status, never the log text.** vite colours its own failures, so
