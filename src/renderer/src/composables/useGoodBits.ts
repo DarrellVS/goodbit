@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue';
+import { computed, reactive, ref, type Ref } from 'vue';
 import { useToastStore } from '../stores/toast';
 import { useClipsStore } from '../stores/clips';
 import {
@@ -15,23 +15,76 @@ import type { GoodBit, NewGoodBit } from '../types/goodbit';
 /**
  * One clip's GoodBits, and everything that can be done to them.
  *
- * Both surfaces that show GoodBits use this: the trimmer, where a range is
- * marked, and the details panel, where the list is. They are never on screen at
- * the same time (the panel is keyed on the view, so one replaces the other and
- * remounts), so each gets its own instance and each reads the rows fresh. That
- * is deliberate rather than an oversight: a shared store would have to be
- * invalidated by whichever panel wrote last, and the remount already does it.
+ * Three surfaces show a clip's GoodBits now: the trimmer, where a range is
+ * marked, the details list, and the player's own progress bar, which draws them
+ * as highlights over the timeline.
+ *
+ * **One list per clip, shared between them.** It used to be one instance each,
+ * on the reasoning that the trimmer and the list are never on screen together
+ * because the panel is keyed on the view and remounts. That was true and is no
+ * longer the whole picture: the player and the list *are* on screen together,
+ * so two instances would mean two fetches of the same rows and, worse, a
+ * highlight on the bar that does not move when a GoodBit is renamed or deleted
+ * six inches below it. The shared list is what keeps them telling the same
+ * story.
  *
  * **Deleting a GoodBit does not touch the recording**, and the confirmation says
  * so. That is the difference between this and a trim and it is the whole point
  * of the feature, so it is said at the one moment somebody might be worried
  * about it.
  */
+/**
+ * The rows, kept per clip so every reader of one clip sees one list.
+ *
+ * Keyed by id rather than held as a single "current clip" list, because the
+ * library underneath a clip panel can be showing a different clip's card and a
+ * single slot would have them overwrite each other. One small array per clip
+ * that has been looked at, which for a library of a few hundred is nothing.
+ */
+const rowsByClip = reactive<Record<number, GoodBit[]>>({});
+
+/**
+ * Which clips have actually been read, as opposed to merely asked about.
+ *
+ * A library card falls back to the ranges its own row carried until the clip
+ * has been opened, and an empty list has to be distinguishable from "nobody
+ * has looked yet" for that to work: a clip whose panel has never been opened
+ * would otherwise appear to have no GoodBits and its bands would vanish.
+ */
+const loadedClips = reactive<Record<number, boolean>>({});
+
+function listFor(id: number): GoodBit[] {
+  const existing = rowsByClip[id];
+  if (existing) return existing;
+
+  rowsByClip[id] = [];
+  return rowsByClip[id];
+}
+
+/** The start and end of every range on a clip, or null if it has never been read. */
+export function liveGoodBitRanges(
+  clipId: number,
+): Array<{ startSec: number; endSec: number }> | null {
+  if (!loadedClips[clipId]) return null;
+  return (rowsByClip[clipId] ?? []).map(({ startSec, endSec }) => ({ startSec, endSec }));
+}
+
 export function useGoodBits(clipId: Ref<number>) {
   const toastStore = useToastStore();
   const clipsStore = useClipsStore();
 
-  const goodBits = ref<GoodBit[]>([]);
+  /*
+   * Writable, and resolved on every read, so a caller whose `clipId` changes
+   * follows the clip rather than keeping the list it started with. `load`
+   * assigns to it and the mutations push into the array it returns, which is
+   * the same array every other reader of this clip is holding.
+   */
+  const goodBits = computed<GoodBit[]>({
+    get: () => listFor(clipId.value),
+    set: (rows) => {
+      rowsByClip[clipId.value] = rows;
+    },
+  });
   const loading = ref(false);
   /** Set while a create, rename, move or delete is in flight. */
   const saving = ref(false);
@@ -52,6 +105,7 @@ export function useGoodBits(clipId: Ref<number>) {
     loading.value = true;
     try {
       goodBits.value = await listGoodBits(clipId.value);
+      loadedClips[clipId.value] = true;
     } catch (error) {
       console.error('Failed to load the GoodBits for this clip:', error);
       goodBits.value = [];

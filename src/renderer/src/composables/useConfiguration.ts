@@ -14,6 +14,15 @@ export interface PublicConfig {
   confirmBeforeDelete: boolean;
   compactMode: boolean;
   muteVideosByDefault: boolean;
+  /**
+   * How loud a clip plays, 0 to 1, remembered across clips.
+   *
+   * Every clip opened in its own `<video>`, which starts at full volume by
+   * definition, so setting it was a per-clip chore that reset itself the moment
+   * you opened the next one. It is one preference about how loud this person
+   * wants clips, not a property of a clip.
+   */
+  clipVolume: number;
   preferLocalNetwork: boolean;
   customShortcuts?: Record<string, ShortcutKey>;
 }
@@ -34,6 +43,7 @@ const publicConfig = useLocalStorage<PublicConfig>(CONFIG_KEY, {
   confirmBeforeDelete: true,
   compactMode: false,
   muteVideosByDefault: false,
+  clipVolume: 1,
   // On by default: falls back to the internet on its own when the PC is not
   // reachable, so there is nothing to strand you when away from home.
   preferLocalNetwork: true,

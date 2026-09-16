@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue';
+import { timecode } from '../utils/time';
 
 // Fraction of the video's height, measured from the bottom, that acts as the
 // scrub strip. Above it the pointer does nothing.
@@ -38,12 +39,8 @@ export function useHoverScrub(videoEl: Ref<HTMLVideoElement | null>, enabled: Re
   let wasPlaying = false;
   let metadataListener: (() => void) | null = null;
 
-  function formatTime(seconds: number): string {
-    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
+  // The same clock the player's readout uses, from one declaration.
+  const formatTime = timecode;
 
   // preload="none" means there is no duration yet. Bump the hint and load once,
   // then replay the pending seek when the metadata lands.
