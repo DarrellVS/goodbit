@@ -68,7 +68,7 @@ onMounted(load);
           v-model="search"
           type="text"
           placeholder="Search games"
-          class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+          class="w-full pl-10 pr-4 py-2.5 bg-muted-50 text-foreground placeholder:text-muted-400 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
         />
       </div>
       <span class="text-sm text-muted-500 whitespace-nowrap">

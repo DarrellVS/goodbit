@@ -259,21 +259,37 @@ function openGuide(): void {
         @update:model-value="saveSettings({ clipToastCorner: $event as never })"
       />
 
-      <div class="flex items-start gap-3">
+      <!--
+        The same row as every switch above it: label, description, control on
+        the right. It was a bare button with two sentences of prose wrapped
+        around it, which read as a paragraph that happened to have a button in
+        it rather than as a setting.
+      -->
+      <div
+        class="flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border"
+      >
+        <div>
+          <label class="font-medium text-foreground">Try it</label>
+          <p class="text-sm text-muted-500 mt-1">
+            Shows the card and plays the chime, without recording anything
+          </p>
+        </div>
         <button
-          class="px-3 py-2 rounded-lg border border-border text-sm text-muted-700 font-medium hover:bg-muted-50 transition-colors"
+          class="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-700 hover:bg-muted-50 transition-colors flex-shrink-0"
           @click="previewToast"
         >
           Show me
         </button>
-        <p class="text-xs text-muted-500 pt-2.5">
-          A corner and a chime are worth judging rather than guessing.
-          <span class="block">
-            A game in exclusive fullscreen owns the screen outright and nothing can draw over it;
-            borderless windowed, which most games default to, is fine.
-          </span>
-        </p>
       </div>
+
+      <!-- The one thing that can make this look broken, said once and quietly. -->
+      <p class="flex items-start gap-2 px-1 text-xs text-muted-500">
+        <Icon icon="material-symbols:info-outline" class="flex-shrink-0 mt-0.5 text-sm" />
+        <span>
+          Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
+          games default to, is fine.
+        </span>
+      </p>
     </template>
 
     <ObsSetupDialog
