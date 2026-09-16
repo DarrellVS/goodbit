@@ -185,8 +185,15 @@ none of it is from documentation, because OBS documents its plugin API and not i
   memory at every save point, so an edit underneath it is discarded, and a profile folder created
   while it runs stays invisible until restart.
 - **Nothing the user made is edited.** A profile and a scene collection of GoodBit's own, both named
-  `GoodBit`. The only key touched outside them is `[General] FirstRun`, which stops OBS opening its
-  own auto-configuration wizard over the profile the setup has just written.
+  `GoodBit`. One file outside them is touched, OBS's own `user.ini`, and it gets three keys:
+  `[General] FirstRun`, which stops OBS opening its auto-configuration wizard over the profile the
+  setup has just written, and `[BasicWindow] SysTrayEnabled` plus `SysTrayMinimizeToTray`, which put
+  OBS in the tray rather than the taskbar, since GoodBit starts it and nothing about it is meant to
+  be looked at again. `SysTrayWhenStarted` is deliberately not written: a program that gives no sign
+  of having launched is a different promise, and if OBS fails to start the buffer, seeing the window
+  is how anyone finds out. The list is `userConfigEdits()` so the preview and the write cannot
+  disagree, and `tests/unit/main/obsUserConfig.spec.ts` asserts that nothing else in that file
+  changes.
 - **A preview before every write**, in OBS's own vocabulary, and a manifest of what was written so
   `undoObsSetup` can put it back.
 - **The launch flags choose the profile** (`--profile GoodBit --collection GoodBit

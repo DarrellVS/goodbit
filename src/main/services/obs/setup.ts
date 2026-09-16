@@ -22,10 +22,9 @@ import { userDataDir } from '../../settings.js';
  *   made underneath it is not merged, it is discarded. A profile folder
  *   created while it runs stays invisible until a restart.
  * - **Nothing the user made is edited.** The setup creates a profile and a
- *   scene collection of its own, both named GoodBit, and the only file it
- *   ever touches outside them holds one key: `[General] FirstRun`, which stops
- *   OBS opening its own auto-configuration wizard over the profile this has
- *   just written.
+ *   scene collection of its own, both named GoodBit. One file outside them is
+ *   touched, and it gets three keys: see `userConfigEdits`. It is backed up
+ *   first and it appears in the preview like every other write.
  *
  * Everything below builds a plan first. The plan is what the dialog shows,
  * and applying it runs the same code that produced it.
@@ -110,6 +109,43 @@ export interface ObsSetupPlan {
 
 function profileDir(): string {
   return path.join(profilesDir(), GOODBIT_PROFILE);
+}
+
+/**
+ * The keys written to OBS's own user configuration, which GoodBit does not own.
+ *
+ * Everything else the setup writes lives inside the GoodBit profile and the
+ * GoodBit scene collection. These three are per-user rather than per-profile,
+ * so there is nowhere else to put them, and each one is here for a reason
+ * somebody would agree with if asked:
+ *
+ * - **`FirstRun`** stops OBS opening its own auto-configuration wizard, which
+ *   picks a resolution, a frame rate and an encoder: the settings this setup
+ *   has just chosen deliberately. Two wizards disagreeing about one profile is
+ *   worse than either.
+ * - **`SysTrayEnabled`** and **`SysTrayMinimizeToTray`** put OBS in the tray
+ *   instead of the taskbar. GoodBit starts OBS with `--startreplaybuffer` and
+ *   then nothing about it is meant to be looked at again; a window in the
+ *   taskbar for a program you never interact with is clutter, and closing it
+ *   by accident is how the replay buffer stops without anyone noticing.
+ *   `SysTrayMinimizeToTray` is the checkbox, and it does nothing without
+ *   `SysTrayEnabled`, which is why both are written rather than the one.
+ *
+ * **`SysTrayWhenStarted` is deliberately not here.** That one starts OBS
+ * already hidden, and a program that gives no sign of having launched is a
+ * different promise from one that tidies itself away. If OBS fails to start
+ * the buffer, being able to see the window is how anyone finds out.
+ *
+ * Returned as data rather than written inline so the preview and the write use
+ * the same list. A key that gets written without appearing in the preview is
+ * exactly the thing the preview exists to prevent.
+ */
+export function userConfigEdits(): IniEdit[] {
+  return [
+    { section: 'General', key: 'FirstRun', value: 'true' },
+    { section: 'BasicWindow', key: 'SysTrayEnabled', value: 'true' },
+    { section: 'BasicWindow', key: 'SysTrayMinimizeToTray', value: 'true' },
+  ];
 }
 
 /**
@@ -646,7 +682,56 @@ export function planObsSetup(
     });
   }
 
+  /*
+   * The one file outside GoodBit's own profile, said out loud.
+   *
+   * It was being written without a preview entry, which is the one rule this
+   * whole module is built around: a preview before every write. Three keys in
+   * somebody else's configuration is precisely the write they would want to
+   * have been told about, and it was the only one they were not.
+   */
+  {
+    const file = userConfigFile();
+    const current = existsSync(file) ? readFileSync(file, 'utf-8') : '';
+    const edits = userConfigEdits();
+
+    changes.push({
+      kind: existsSync(file) ? 'modify' : 'create',
+      title: 'Three OBS preferences, outside the GoodBit profile',
+      file,
+      summary: [
+        'OBS skips its own setup wizard, which would otherwise pick a resolution and an encoder over the ones chosen here',
+        'OBS sits in the system tray rather than the taskbar, since GoodBit starts it and nothing about it needs looking at again',
+        'This is the only file outside GoodBit’s own profile and scene collection that is touched, and it is backed up first',
+      ],
+      details: edits.map((edit) => ({
+        key: `[${edit.section}] ${edit.key}`,
+        value: edit.value,
+        was: readIniValue(current, edit.section, edit.key) ?? undefined,
+      })),
+    });
+  }
+
   return { changes, blockers, notes };
+}
+
+/** What an ini already says for one key, so the preview can show what changes. */
+function readIniValue(source: string, section: string, key: string): string | null {
+  let inSection = false;
+
+  for (const line of source.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      inSection = trimmed.slice(1, -1) === section;
+      continue;
+    }
+    if (!inSection) continue;
+
+    const at = trimmed.indexOf('=');
+    if (at > 0 && trimmed.slice(0, at).trim() === key) return trimmed.slice(at + 1).trim();
+  }
+
+  return null;
 }
 
 export interface ObsSetupManifest {
@@ -754,11 +839,12 @@ export function applyObsSetup(
   }
 
   /*
-   * One key in a file GoodBit does not own, and it is not about a profile.
+   * The file GoodBit does not own. Three keys, none of them about a profile.
    *
    * Everything else this writes lives inside the GoodBit profile and the
    * GoodBit scene collection. This is the exception, so it is written on its
-   * own and backed up like any other edit.
+   * own, backed up like any other edit, and listed in the preview. See
+   * `userConfigEdits` for what each key is for.
    */
   {
     const file = userConfigFile();
@@ -774,24 +860,7 @@ export function applyObsSetup(
     }
 
     const original = existsSync(file) ? readFileSync(file, 'utf-8') : '';
-    writeFileSync(
-      file,
-      applyIniEdits(original, [
-        /*
-         * Skip OBS's own auto-configuration wizard.
-         *
-         * It opens on a first run and asks whether this is for streaming or
-         * recording, then picks a resolution, a frame rate and an encoder,
-         * which are the settings this has just chosen deliberately. Two
-         * wizards disagreeing about the same profile is worse than either.
-         *
-         * `FirstRun` is the flag OBS sets once it has been through it, and it
-         * is a per-user setting rather than anything to do with a profile.
-         */
-        { section: 'General', key: 'FirstRun', value: 'true' },
-      ]),
-      'utf-8',
-    );
+    writeFileSync(file, applyIniEdits(original, userConfigEdits()), 'utf-8');
   }
 
   const manifest: ObsSetupManifest = {
