@@ -13,15 +13,13 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { homedir } from 'node:os';
 import ffmpegPath from 'ffmpeg-static';
 import ffprobeStatic from 'ffprobe-static';
+import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
 const FFMPEG = ffmpegPath;
 const FFPROBE = ffprobeStatic.path;
-const ROOT = process.env.USERPROFILE
-  ? join(process.env.USERPROFILE, 'Videos')
-  : join(homedir(), 'Videos');
+const ROOT = libraryRoot();
 const OUT = join(process.cwd(), 'tmp', 'analysis-data');
 
 const VIDEO = /\.(mp4|mov|mkv)$/i;

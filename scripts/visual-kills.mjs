@@ -13,11 +13,11 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { homedir } from 'node:os';
 import { probeClip, whiteMask, stickiness } from './visual-lab.mjs';
 import { findOverlayRuns } from './visual-scan.mjs';
+import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
-const ROOT = process.env.USERPROFILE ? join(process.env.USERPROFILE, 'Videos') : join(homedir(), 'Videos');
+const ROOT = libraryRoot();
 const VIDEO = /\.(mp4|mov|mkv)$/i;
 
 /** Where the template was cut from, so everything else can scale off it. */

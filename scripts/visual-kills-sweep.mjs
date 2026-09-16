@@ -11,11 +11,11 @@
  */
 import { readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { probeClip } from './visual-lab.mjs';
 import { BANNER, ICON, REFERENCE_HEIGHT, TEMPLATE_SIZE, loadTemplate, matchTemplate, toGrey } from './visual-kills.mjs';
+import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
-const ROOT = process.env.USERPROFILE ? join(process.env.USERPROFILE, 'Videos') : join(homedir(), 'Videos');
+const ROOT = libraryRoot();
 const VIDEO = /\.(mp4|mov|mkv)$/i;
 
 const game = process.argv[2] ?? 'Battlefield 6';

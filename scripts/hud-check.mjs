@@ -13,10 +13,10 @@
  */
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
+import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
-const ROOT = process.env.USERPROFILE ? join(process.env.USERPROFILE, 'Videos') : join(homedir(), 'Videos');
+const ROOT = libraryRoot();
 const VIDEO = /\.(mp4|mov|mkv)$/i;
 const OUT = join(process.cwd(), 'tmp', 'hud-bundle.mjs');
 
@@ -66,14 +66,26 @@ if (!module?.regions || !module.watch) {
 }
 console.log(`module: ${module.describe}`);
 
+announceRoot(ROOT);
+
 const dir = join(ROOT, game);
 if (!existsSync(dir)) {
   console.error(`no such folder: ${dir}`);
   process.exit(2);
 }
 
+/**
+ * What a trim leaves behind, which is not a recording.
+ *
+ * Same test as `ScanAndSyncClipsAction`'s. The library skips these and this
+ * bench did not, so a failed trim's leftovers were being measured as if they
+ * were clips, and a `.goodbit-trim-` file is a *copy* of one already in the
+ * sample: it counts the same footage twice.
+ */
+const WORKING_FILE = /(^\.goodbit-(trim|bak)-|\.tmp-\d+\.[a-z0-9]+$)/i;
+
 const files = readdirSync(dir)
-  .filter((f) => VIDEO.test(f))
+  .filter((f) => VIDEO.test(f) && !WORKING_FILE.test(f))
   .map((f) => join(dir, f))
   .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
   .slice(0, limit);
@@ -123,6 +135,38 @@ console.error(
   `\n${withEvents}/${rows.length} clips had an event; ` +
     `${(totalMs / 1000).toFixed(1)}s for ${totalSec.toFixed(0)}s of footage ` +
     `(${(totalMs / 1000 / totalSec).toFixed(3)}s per second)`,
+);
+
+/*
+ * How many clips hold more than one moment.
+ *
+ * `decide.ts` sorts the events by confidence and takes `[0]`, so every clip
+ * with two confident readings in it has one of them thrown away. This is the
+ * number that says whether storing them is a headline feature or a quiet
+ * addition, and it was not being counted anywhere.
+ *
+ * The bar is `decide.ts`'s own `MIN_EVENT_CONFIDENCE`, because an event below
+ * it would not have settled the question on its own either.
+ */
+const MIN_EVENT_CONFIDENCE = 0.8;
+const confident = rows.map((r) => r.events.filter((e) => e.confidence >= MIN_EVENT_CONFIDENCE));
+const multi = confident.filter((events) => events.length >= 2).length;
+const spread = new Map();
+for (const events of confident) {
+  const key = Math.min(events.length, 5);
+  spread.set(key, (spread.get(key) ?? 0) + 1);
+}
+
+console.error(
+  `${multi}/${rows.length} clips (${((multi / rows.length) * 100).toFixed(0)}%) hold two or more ` +
+    `events at confidence >= ${MIN_EVENT_CONFIDENCE}, of which decide() keeps one`,
+);
+console.error(
+  'confident events per clip: ' +
+    [...spread.keys()]
+      .sort((a, b) => a - b)
+      .map((n) => `${n === 5 ? '5+' : n}:${spread.get(n)}`)
+      .join('  '),
 );
 
 if (jsonOut) {

@@ -26,11 +26,12 @@ import {
   readdirSync,
   statSync,
 } from 'node:fs';
-import { tmpdir, homedir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ffmpegPath from 'ffmpeg-static';
 import { _electron as electron } from 'playwright';
+import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'site', 'assets', 'shots');
@@ -39,11 +40,7 @@ const FFMPEG = ffmpegPath;
 const KEEP_PNG = process.argv.includes('--keep-png');
 
 /** Where the real recordings are. Override with `--source <folder>`. */
-const sourceFlag = process.argv.indexOf('--source');
-const SOURCE_ROOT =
-  sourceFlag !== -1 && process.argv[sourceFlag + 1]
-    ? process.argv[sourceFlag + 1]
-    : join(process.env.USERPROFILE || homedir(), 'Videos');
+const SOURCE_ROOT = libraryRoot();
 
 /** How much of each recording to copy. Enough for a thumbnail, a strip and a trim. */
 const EXCERPT_SEC = 30;

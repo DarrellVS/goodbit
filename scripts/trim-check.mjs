@@ -24,13 +24,14 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { join } from 'node:path';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
+import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
 const execFileAsync = promisify(execFile);
 
-const ROOT = process.env.USERPROFILE ? join(process.env.USERPROFILE, 'Videos') : join(homedir(), 'Videos');
+const ROOT = libraryRoot();
 const VIDEO = /\.(mp4|mov|mkv)$/i;
 const OUT = join(process.cwd(), 'tmp', 'trim-bundle.mjs');
 

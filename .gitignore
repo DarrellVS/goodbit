@@ -153,3 +153,7 @@ release-check/
 # design/library-mockups/*.md are the part worth keeping.
 design/library-mockups/index.html
 design/library-mockups/shots/
+
+# vitest cache, kept beside the checkout so git worktrees sharing one
+# node_modules junction do not write to the same directory
+.vitest-cache

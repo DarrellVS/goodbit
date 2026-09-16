@@ -23,6 +23,16 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   plugins: [resolveNodeNextSpecifiers()],
+  /**
+   * Beside the checkout, not inside `node_modules`.
+   *
+   * A git worktree gets its `node_modules` as a junction to the main
+   * checkout's, so that a second copy of the tree does not cost another 1.2 GB
+   * and an install. Vite's default cache lives in there, which would make every
+   * worktree write to one directory: harmless when they take turns and an
+   * EBUSY when two agents run the suite at the same moment.
+   */
+  cacheDir: resolve(__dirname, '.vitest-cache'),
   resolve: {
     alias: {
       '@shared': resolve(__dirname, 'src/shared'),
