@@ -1,20 +1,27 @@
 import axios from '../axios';
-import type { EditorDraftAudio, EditorDraftClip } from './editorDraftsDb';
+import type {
+  DraftAudio,
+  DraftClip,
+  DraftImportEntry,
+  DraftImportSummary,
+} from '../types/editor';
 
 /**
- * Saved timelines, kept by the server.
+ * Saved timelines: the one store a named draft lives in.
  *
- * The editor's own drafts live in IndexedDB, which is per-browser: clearing
- * site data loses them and a timeline built at the desk is invisible from the
- * couch. A named draft is saved here as well, so it belongs to the library
- * rather than to one browser profile.
+ * Until 2.0 the editor kept its drafts in IndexedDB and mirrored them here, so
+ * a draft existed twice with no rule for choosing between the copies. It is a
+ * row now and only a row, because this is the copy that gets backed up, that a
+ * restore can put back, and that does not go away with the Electron profile.
+ * `services/editorDraftsDb.ts` keeps one local scratch record and says where
+ * the line is.
  *
- * The payload is the same shape the local drafts use, ids, filenames and
- * edits, never media URLs, which carry an expiring token and a LAN host.
+ * The payload is ids, filenames and edits, never media URLs: those are rebuilt
+ * on restore from whatever the clip's id resolves to today.
  */
 export interface ProjectTimeline {
-  clips: EditorDraftClip[];
-  audio: EditorDraftAudio[];
+  clips: DraftClip[];
+  audio: DraftAudio[];
 }
 
 export interface Project {
@@ -71,4 +78,19 @@ export async function updateProject(
 
 export async function deleteProject(id: number): Promise<void> {
   await axios.delete(`/api/projects/${id}`);
+}
+
+/**
+ * Hand the old local store's drafts over, once, on the first run of 2.0.
+ *
+ * One call for the whole set rather than one per draft: the library applies it
+ * in a single transaction, and the renderer deletes a local copy only once the
+ * reply says where that copy landed, so a half-applied import would leave
+ * records it believes are safe.
+ */
+export async function importEditorDrafts(
+  drafts: DraftImportEntry[],
+): Promise<DraftImportSummary> {
+  const { data } = await axios.post<DraftImportSummary>('/api/projects/import', { drafts });
+  return data;
 }

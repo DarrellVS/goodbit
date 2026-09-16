@@ -3,15 +3,14 @@ import { AppDataSource } from '../data-source.js';
 import { Project } from '../entity/Project.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ProjectDTO } from '@shared/index.js';
+import { ImportEditorDraftsAction } from '../actions/ImportEditorDraftsAction.js';
+import { MAX_TIMELINE_UNITS, readIncomingDrafts } from '../services/editorDrafts.js';
 
 export const projectsRouter = express.Router();
 
-/** Keep one timeline from growing without limit; a draft is small by nature. */
-const MAX_TIMELINE_BYTES = 2 * 1024 * 1024;
-
 function serialiseTimeline(timeline: unknown): string {
   const value = JSON.stringify(timeline ?? { clips: [], audio: [] });
-  if (value.length > MAX_TIMELINE_BYTES) throw new Error('That timeline is too large to save');
+  if (value.length > MAX_TIMELINE_UNITS) throw new Error('That timeline is too large to save');
   return value;
 }
 
@@ -23,6 +22,19 @@ projectsRouter.get('/', asyncHandler(async (req, res) => {
     order: { updatedAt: 'DESC' },
   });
   res.json(projects.map((p) => ProjectDTO.fromEntity(p)));
+}));
+
+/**
+ * The 2.0 first-run migration behind 3.2: the renderer's leftover IndexedDB
+ * drafts, handed over to become rows.
+ *
+ * Declared before `/:id` so the word cannot be read as one, and a POST rather
+ * than a PUT because the renderer is not naming the resource it wants written:
+ * what each record becomes is the action's decision, and the reply says which.
+ */
+projectsRouter.post('/import', asyncHandler(async (req, res) => {
+  const drafts = readIncomingDrafts((req.body as { drafts?: unknown })?.drafts);
+  res.json(await new ImportEditorDraftsAction().execute({ drafts }));
 }));
 
 projectsRouter.get('/:id', asyncHandler(async (req, res) => {
