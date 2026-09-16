@@ -1,7 +1,7 @@
 /**
  * A replay lands in staging. Work out whose it is and file it.
  *
- * This is the job Smart Replays did from inside OBS, moved outside it. OBS
+ * OBS cannot name a file after a game, so GoodBit does it. OBS
  * writes into `<videosRoot>/.goodbit-incoming/`, which it can do because
  * naming a folder after the clock is the one thing it *can* do, and GoodBit
  * renames the file into `<videosRoot>/<Game>/` once it knows the game.

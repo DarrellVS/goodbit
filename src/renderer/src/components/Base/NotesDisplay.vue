@@ -5,6 +5,8 @@ import { useMarkdown } from '../../composables/useMarkdown';
 
 interface Props {
   notes: string | null;
+  /** Inside a modal, where the empty state has to earn its height. */
+  compact?: boolean;
 }
 
 interface Emits {
@@ -12,7 +14,7 @@ interface Emits {
   (e: 'timestamp-click', seconds: number): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { compact: false });
 const emit = defineEmits<Emits>();
 
 const { renderedMarkdown, isEmpty, setContent } = useMarkdown({
@@ -33,20 +35,34 @@ const hasNotes = computed(() => props.notes && props.notes.trim().length > 0);
     <!-- Empty State -->
     <div
       v-if="!hasNotes"
-      class="flex flex-col items-center justify-center py-12 px-6 text-center"
+      class="flex flex-col items-center justify-center text-center"
+      :class="compact ? 'py-5 px-4' : 'py-12 px-6'"
     >
-      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mb-4">
-        <Icon icon="material-symbols:note-add" class="text-3xl text-orange-600" />
-      </div>
-      <h3 class="text-lg font-semibold text-foreground mb-2">No notes yet</h3>
-      <p class="text-sm text-muted-600 mb-6 max-w-md">
-        Add notes to remember context, mark important moments with timestamps, or annotate your clip with markdown formatting.
+      <template v-if="!compact">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mb-4">
+          <Icon icon="material-symbols:note-add" class="text-3xl text-orange-600" />
+        </div>
+        <h3 class="text-lg font-semibold text-foreground mb-2">No notes yet</h3>
+        <p class="text-sm text-muted-600 mb-6 max-w-md">
+          Add notes to remember context, mark important moments with timestamps, or annotate your clip with markdown formatting.
+        </p>
+      </template>
+
+      <!--
+        Compact says the same thing in one line. The full version is a
+        sixteen-pixel circle, a heading and a paragraph explaining what a note
+        is, which is a lot of screen to tell somebody there is nothing here.
+      -->
+      <p v-else class="text-sm text-muted-500 mb-3">
+        No notes yet. Add context, or mark a moment with a timestamp.
       </p>
+
       <button
-        class="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-card font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 flex items-center gap-2"
+        class="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-card font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 flex items-center gap-2"
+        :class="compact ? 'px-4 py-2 text-sm' : 'px-6 py-3'"
         @click="emit('edit')"
       >
-        <Icon icon="material-symbols:add" class="text-xl" />
+        <Icon icon="material-symbols:add" :class="compact ? 'text-lg' : 'text-xl'" />
         <span>Add Notes</span>
       </button>
     </div>

@@ -422,6 +422,60 @@ textarea:focus {
   }
 }
 
+/*
+ * The clip layer arriving, leaving, and being replaced by its other panel.
+ *
+ * The whole panel scales, not its contents: swapping details for the trimmer
+ * is one modal going and another coming, so animating the inside while the
+ * frame stood still read as the frame being a container the app was rummaging
+ * around in. Out then in, never at once, which `mode="out-in"` enforces.
+ *
+ * `appear` puts the opening of the layer through the same pair, so there is one
+ * animation to keep in step rather than two that have to agree.
+ */
+.clip-modal-enter-active {
+  transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clip-modal-leave-active {
+  transition: opacity 0.14s ease, transform 0.16s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.clip-modal-enter-from,
+.clip-modal-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/*
+ * Something arriving in place of a wait.
+ *
+ * The trimmer opens with a band where the frames will be and a line saying it
+ * is listening, and both were replaced the instant their data landed. Swapping
+ * a skeleton for the real thing on one frame is what "clunky" is: nothing moved
+ * badly, it just cut. A short crossfade with a hair of rise reads as the thing
+ * settling into place, which is what actually happened.
+ *
+ * Paired with `mode="out-in"` where the two states are the same shape, so the
+ * box does not resize under the fade.
+ */
+.settle-enter-active {
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settle-leave-active {
+  transition: opacity 0.12s ease;
+}
+
+.settle-enter-from {
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+.settle-leave-to {
+  opacity: 0;
+}
+
 /* Apply animations to Radix Dialog components */
 .modal-overlay-animate {
   animation: modal-overlay-show 0.25s cubic-bezier(0.16, 1, 0.3, 1);

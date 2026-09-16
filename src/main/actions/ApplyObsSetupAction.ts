@@ -4,18 +4,10 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { BaseAction } from './BaseAction.js';
 import { obsIsInstalled, obsIsRunning } from '../services/obs/paths.js';
-import { ensureOwnPython, ownPython, privatePythonDir } from '../services/obs/python.js';
 import { readObs } from '../services/obs/config.js';
 import { chooseEncoder } from '../services/obs/encoderChoice.js';
 import { audioDevices, type AudioDevice } from '../services/obs/audioDevices.js';
 import { captureDisplays, defaultCaptureDisplay, type CaptureDisplay } from '../services/obs/displays.js';
-import {
-  ClipNamingMode,
-  alias,
-  downloadSmartReplays,
-  installedSmartReplays,
-  type SmartReplaysAlias,
-} from '../services/obs/smartReplays.js';
 import { installedSteamGames, type SteamGame } from '../services/obs/steam.js';
 import {
   applyObsSetup,
@@ -45,9 +37,6 @@ export interface ObsSetupRequest {
   bindHotkey?: boolean;
   hotkey?: string;
   createScene?: boolean;
-  installScript?: boolean;
-  namingMode?: ClipNamingMode;
-  setPythonPath?: boolean;
 }
 
 /**
@@ -70,58 +59,8 @@ export function aliasName(steamName: string, existingFolders: string[]): string 
   return existing ?? cleaned;
 }
 
-/**
- * Aliases for the games on this machine, ready before the first clip.
- *
- * Pointed at the install folder rather than an executable, because the script
- * walks a running process's parent directories looking for a match. That is
- * worth knowing: it means GoodBit never has to work out which of the nine
- * executables in a game folder is the game, and the alias survives a patch
- * that renames one.
- */
-export async function knownAliases(videosRoot: string): Promise<SmartReplaysAlias[]> {
-  let games: SteamGame[] = [];
-  try {
-    games = await installedSteamGames();
-  } catch {
-    // No Steam, or a machine that will not answer. Aliases are a convenience.
-  }
-
-  const folders = videosRoot ? libraryFolders(videosRoot) : [];
-  // A name the script rejects takes the whole list down with it, so anything
-  // that cannot be made safe is dropped rather than written.
-  return games
-    .map((game) => alias(game.folder, aliasName(game.name, folders)))
-    .filter((entry): entry is SmartReplaysAlias => entry !== null);
-}
-
-/** Folders in the library, for the UI to show what it would be naming. */
-export function libraryFolders(videosRoot: string): string[] {
-  try {
-    return readdirSync(videosRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
-      .map((entry) => entry.name);
-  } catch {
-    return [];
-  }
-}
-
 async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices> {
   const settings = loadSettings();
-
-  /*
-   * Python: GoodBit's own, every time.
-   *
-   * Not whatever the machine has. That was tried, and it pointed OBS at a 3.13
-   * which OBS refuses to load, silently, with the only evidence in an OBS log
-   * file. A system Python is also somebody else's to upgrade or remove, and
-   * when they do, clips quietly stop being sorted.
-   *
-   * The install itself happens at apply time, so nothing is downloaded for
-   * somebody who is only looking at the plan.
-   */
-  const obs = readObs();
-  const installed = await ownPython();
 
   // The screen decides the canvas size and which display the scene captures,
   // so it is resolved once here rather than guessed in two places.
@@ -149,25 +88,6 @@ async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices
     bindHotkey: request.bindHotkey !== false,
     hotkey: request.hotkey ?? 'OBS_KEY_F8',
     createScene: request.createScene !== false,
-    /*
-     * Off, now that GoodBit files its own clips.
-     *
-     * Until 1.4.0 a folder per game meant running Smart Replays inside OBS,
-     * which meant downloading a third party script and a private Python
-     * interpreter to run it, because OBS cannot name a file after a game.
-     * GoodBit now watches its own staging folder, asks Windows what was in
-     * front while the clip was recording, and renames the file into place.
-     *
-     * Still honoured when a caller explicitly asks, so a machine that is
-     * already set up the old way keeps working until it is migrated.
-     */
-    installScript: request.installScript === true,
-    aliases: request.installScript === true ? await knownAliases(settings.videosRoot) : [],
-    namingMode: request.namingMode ?? ClipNamingMode.CurrentProcess,
-    setPythonPath: request.setPythonPath === true,
-    // The folder is known before the install happens, so the plan can name it.
-    pythonDirectory: installed?.directory ?? privatePythonDir(),
-    pythonInstalled: Boolean(installed?.usable),
     display,
     captureDesktop: request.captureDesktop !== false,
     encoder,
@@ -195,7 +115,6 @@ export interface ObsSetupResult {
   applied: boolean;
   /** What was written, so the UI can say it rather than guess. */
   summary: string[];
-  scriptPath: string | null;
   profile: string | null;
   collection: string | null;
 }
@@ -211,57 +130,9 @@ export class ApplyObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupRes
     if (plan.blockers.length) throw new Error(plan.blockers[0]);
 
     const summary: string[] = [];
-    let scriptBlobSha1: string | undefined;
-
-    if (choices.installScript) {
-      /*
-       * The Python first, because the script is useless without it and this is
-       * the step that can take a minute.
-       */
-      if (!choices.pythonInstalled) {
-        announce({
-          type: 'obs-setup-progress',
-          stage: 'running',
-          message: 'Installing Python for GoodBit',
-        });
-        const python = await ensureOwnPython((progress) => {
-          if (progress.stage === 'downloading') {
-            announce({
-              type: 'obs-setup-progress',
-              stage: 'downloading',
-              percent: progress.percent,
-              message: `Downloading Python ${progress.percent}%`,
-            });
-          }
-          if (progress.stage === 'installing') {
-            announce({
-              type: 'obs-setup-progress',
-              stage: 'running',
-              message: 'Installing Python for GoodBit',
-            });
-          }
-        });
-        summary.push(`Installed Python ${python.version}, GoodBit's own copy`);
-      }
-
-      const existing = installedSmartReplays();
-      if (existing?.matchesPin) {
-        scriptBlobSha1 = existing.blobSha1;
-        summary.push('Smart Replays was already installed and up to date');
-      } else {
-        announce({
-          type: 'obs-setup-progress',
-          stage: 'running',
-          message: 'Downloading Smart Replays',
-        });
-        const downloaded = await downloadSmartReplays();
-        scriptBlobSha1 = downloaded.blobSha1;
-        summary.push(`Downloaded Smart Replays, ${Math.round(downloaded.bytes / 1024)} KB, verified`);
-      }
-    }
 
     announce({ type: 'obs-setup-progress', stage: 'running', message: 'Writing the OBS settings' });
-    const manifest = applyObsSetup(choices, { version: app.getVersion(), scriptBlobSha1 });
+    const manifest = applyObsSetup(choices, { version: app.getVersion() });
     announce({ type: 'obs-setup-progress', stage: 'done', message: 'Done' });
 
     if (choices.createProfile) summary.push('Created the GoodBit profile');
@@ -285,10 +156,6 @@ export class ApplyObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupRes
           : 'Created the GoodBit scene, capturing anything fullscreen',
       );
     }
-    if (choices.setPythonPath && choices.pythonDirectory) {
-      summary.push(`Pointed OBS at Python in ${path.basename(choices.pythonDirectory)}`);
-    }
-
     /*
      * From now on, OBS comes up with GoodBit.
      *
@@ -303,7 +170,6 @@ export class ApplyObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupRes
     return {
       applied: true,
       summary,
-      scriptPath: manifest.script?.path ?? null,
       profile: manifest.profile,
       collection: manifest.collection,
     };

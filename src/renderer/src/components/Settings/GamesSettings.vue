@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { fetchGames } from '../../services/games';
 import { useGameVisibility } from '../../composables/useGameVisibility';
 import type { Game } from '../../types/game';
+import AppLoading from '../App/AppLoading.vue';
 
 const { setHidden } = useGameVisibility();
 
@@ -80,7 +81,7 @@ onMounted(load);
       v-if="loading"
       class="flex items-center gap-2 text-sm text-muted-500 p-4"
     >
-      <Icon icon="svg-spinners:180-ring-with-bg" class="text-lg" />
+      <AppLoading class="text-lg" />
       Loading games...
     </div>
 

@@ -12,12 +12,6 @@ import {
 } from '../services/obs/install.js';
 import { obsIsInstalled } from '../services/obs/paths.js';
 import { suppressFirstRunWizard } from '../services/obs/setup.js';
-import {
-  findPython,
-  installPrivatePython,
-  ownPython,
-  privatePythonDir,
-} from '../services/obs/python.js';
 
 /**
  * Getting OBS onto a machine that has never had it.
@@ -171,84 +165,3 @@ export class InstallObsAction extends BaseAction<InstallObsInput, InstallObsResu
   }
 }
 
-export interface PythonState {
-  /**
-   * What is on the machine, best first, including versions OBS cannot load.
-   *
-   * Reported so the interface can explain a situation, never depended on.
-   * GoodBit uses its own copy.
-   */
-  installs: Array<{
-    version: string;
-    directory: string;
-    usable: boolean;
-    tooNew: boolean;
-    hasTkinter: boolean;
-    private: boolean;
-  }>;
-  /** GoodBit's own is installed and runs. */
-  ready: boolean;
-  /** Where GoodBit's own lives, or would. */
-  directory: string;
-  /** The version GoodBit installs. */
-  offered: string;
-}
-
-export class CheckPythonAction extends BaseAction<void, PythonState> {
-  async execute(): Promise<PythonState> {
-    const [installs, own] = await Promise.all([findPython(), ownPython()]);
-
-    return {
-      installs: installs.map((install) => ({
-        version: install.version,
-        directory: install.directory,
-        usable: install.usable,
-        tooNew: install.tooNew,
-        hasTkinter: install.hasTkinter,
-        private: install.private,
-      })),
-      // Only GoodBit's own counts. A usable system Python is somebody else's
-      // to upgrade or remove, and when they do, clips stop being sorted with
-      // no visible cause.
-      ready: own?.usable === true,
-      directory: privatePythonDir(),
-      offered: '3.11.9',
-    };
-  }
-}
-
-/**
- * Install a Python that belongs to GoodBit.
- *
- * The alternative was telling someone to go and install a language runtime,
- * with the tcl/tk box ticked, at a version OBS happens to accept, which is
- * three things to get right before a clip lands in the right folder. This puts
- * one in `%APPDATA%/GoodBit/python`: per-user, off the PATH, not associated
- * with anything, and used for exactly one script.
- */
-export class InstallPythonAction extends BaseAction<void, { version: string; directory: string }> {
-  async execute(): Promise<{ version: string; directory: string }> {
-    const report = (
-      stage: 'downloading' | 'running' | 'done' | 'failed',
-      message: string,
-      percent?: number,
-    ): void => announce({ type: 'obs-setup-progress', stage, message, percent });
-
-    try {
-      const installed = await installPrivatePython((progress) => {
-        if (progress.stage === 'downloading') {
-          report('downloading', `Downloading Python ${progress.percent}%`, progress.percent);
-        }
-        if (progress.stage === 'verifying') report('running', 'Checking the signature');
-        if (progress.stage === 'installing') report('running', 'Installing Python for GoodBit');
-        if (progress.stage === 'done') report('done', 'Python installed');
-      });
-
-      return { version: installed.version, directory: installed.directory };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      report('failed', message);
-      throw error;
-    }
-  }
-}

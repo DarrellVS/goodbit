@@ -15,6 +15,7 @@ import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
 import { usePublisher } from '../../composables/usePublisher';
 import MoveClipDialog from './MoveClipDialog.vue';
 import type { Clip } from '../../types/clip';
+import AppLoading from './AppLoading.vue';
 
 interface Props {
   clip: Clip;
@@ -25,6 +26,14 @@ interface Props {
    * turns them off rather than naming the same action twice on one card.
    */
   showEditActions?: boolean;
+  /**
+   * `tile` is the dark pill that sits over a thumbnail, which needs its own
+   * ground to be legible against a picture. `row` is a full width row for a
+   * card of buttons, where that pill read as a stray control: it was paired
+   * with the words "Publish, move, delete" in grey beside it, so the label and
+   * the thing you press were two separate objects and neither looked clickable.
+   */
+  variant?: 'tile' | 'row';
 }
 
 interface Emits {
@@ -32,7 +41,10 @@ interface Emits {
   (e: 'deleted'): void;
 }
 
-const props = withDefaults(defineProps<Props>(), { showEditActions: true });
+const props = withDefaults(defineProps<Props>(), {
+  showEditActions: true,
+  variant: 'tile',
+});
 const emit = defineEmits<Emits>();
 const router = useRouter();
 
@@ -76,6 +88,23 @@ async function handleMoveToGame(targetGame: string) {
   <MenubarRoot>
     <MenubarMenu>
       <MenubarTrigger
+        v-if="variant === 'row'"
+        title="Publish, move or delete this clip"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left outline-none cursor-pointer"
+      >
+        <Icon
+          icon="material-symbols:more-horiz"
+          class="text-xl text-muted-500 flex-shrink-0"
+        />
+        <span class="text-sm font-medium text-foreground">Publish, move or delete</span>
+        <Icon
+          icon="material-symbols:chevron-right-rounded"
+          class="ml-auto text-lg text-muted-400 flex-shrink-0"
+        />
+      </MenubarTrigger>
+
+      <MenubarTrigger
+        v-else
         title="More actions"
         class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/30 px-2 py-2 outline-none size-8 hover:bg-black/80 transition cursor-pointer"
       >
@@ -128,11 +157,8 @@ async function handleMoveToGame(targetGame: string) {
             :class="{ 'opacity-50 pointer-events-none': isExportingAudio }"
             @click="onExportAudio"
           >
-            <Icon 
-              :icon="isExportingAudio ? 'material-symbols:progress-activity' : 'material-symbols:audio-file'" 
-              class="text-base"
-              :class="{ 'animate-spin': isExportingAudio }"
-            />
+            <AppLoading v-if="isExportingAudio" class="text-base" />
+            <Icon v-else icon="material-symbols:audio-file" class="text-base" />
             <span>{{ isExportingAudio ? 'Exporting Audio...' : 'Export Audio' }}</span>
           </MenubarItem>
 

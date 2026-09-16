@@ -35,9 +35,6 @@ export interface ObsStatus {
   replayBufferSeconds: number | null;
   audioDeviceIds: string[];
   hotkey: string | null;
-  python: { version: string; directory: string; usable: boolean } | null;
-  pythonConfigured: string | null;
-  script: { installed: boolean; matchesPin: boolean; version: string; loadedInCollection: boolean };
   setupWrittenAt: string | null;
 }
 
@@ -82,79 +79,15 @@ export interface ObsSetupRequest {
   bindHotkey?: boolean;
   hotkey?: string;
   createScene?: boolean;
-  installScript?: boolean;
-  namingMode?: number;
-  setPythonPath?: boolean;
 }
 
 export interface ObsSetupResult {
   applied: boolean;
   summary: string[];
-  scriptPath: string | null;
   profile: string | null;
   collection: string | null;
 }
 
-export interface ScriptInfo {
-  name: string;
-  version: string;
-  author: string;
-  licence: string;
-  repository: string;
-  forumPage: string;
-  url: string;
-  commit: string;
-  pythonDownload: string;
-}
-
-export interface ObsInstallPlan {
-  alreadyInstalled: boolean;
-  options: Array<{ method: 'winget' | 'download' | 'manual'; label: string; detail: string }>;
-  installer: { version: string; name: string; bytes: number } | null;
-  downloadPage: string;
-}
-
-export async function getObsStatus(): Promise<ObsStatus> {
-  const { data } = await axios.get<ObsStatus>('/obs/status');
-  return data;
-}
-
-export async function getScriptInfo(): Promise<ScriptInfo> {
-  const { data } = await axios.get<ScriptInfo>('/obs/script-info');
-  return data;
-}
-
-export async function getObsAliases(): Promise<{ count: number; names: string[] }> {
-  const { data } = await axios.get<{ count: number; names: string[] }>('/obs/aliases');
-  return data;
-}
-
-export interface PythonState {
-  installs: Array<{
-    version: string;
-    directory: string;
-    usable: boolean;
-    tooNew: boolean;
-    hasTkinter: boolean;
-    private: boolean;
-  }>;
-  /** GoodBit's own is installed and runs. */
-  ready: boolean;
-  /** Where GoodBit's own lives, or would. */
-  directory: string;
-  /** The version GoodBit installs. */
-  offered: string;
-}
-
-export async function getPythonState(): Promise<PythonState> {
-  const { data } = await axios.get<PythonState>('/obs/python');
-  return data;
-}
-
-export async function installPython(): Promise<{ version: string; directory: string }> {
-  const { data } = await axios.post<{ version: string; directory: string }>('/obs/python/install');
-  return data;
-}
 
 export interface AudioDevice {
   /** What OBS stores, verbatim. */
@@ -193,6 +126,18 @@ export async function skipObsWizard(): Promise<void> {
 
 export async function undoObsSetup(): Promise<{ removed: string[]; restored: string[] }> {
   const { data } = await axios.post<{ removed: string[]; restored: string[] }>('/obs/undo');
+  return data;
+}
+
+export interface ObsInstallPlan {
+  alreadyInstalled: boolean;
+  options: Array<{ method: 'winget' | 'download' | 'manual'; label: string; detail: string }>;
+  installer: { version: string; name: string; bytes: number } | null;
+  downloadPage: string;
+}
+
+export async function getObsStatus(): Promise<ObsStatus> {
+  const { data } = await axios.get<ObsStatus>('/obs/status');
   return data;
 }
 

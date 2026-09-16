@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { usePagination } from '../../composables/usePagination';
 import { pluralize } from '../../utils/pluralize';
+import AppLoading from './AppLoading.vue';
 
 interface Props {
   loading: boolean;
@@ -50,7 +51,7 @@ function goToNext(): void {
 
 <template>
   <div v-if="loading" class="flex justify-center py-8">
-    <Icon icon="material-symbols:progress-activity" class="w-8 h-8 text-orange-500 animate-spin" />
+    <AppLoading class="w-8 h-8 text-orange-500" />
   </div>
 
   <div v-else-if="showPagination" class="flex flex-col items-center gap-4 py-8">

@@ -1,15 +1,13 @@
 /**
  * What GoodBit would call the clip you saved right now.
  *
- * This is the bench that decides whether the whole thing is safe to ship.
+ * This is the bench that decides whether the naming is safe to ship.
  * GoodBit takes the game name from the program that was in front while the
- * clip was recording; Smart Replays took it from the process running when the
- * key was pressed. If those disagree on a real game, the library ends up
- * sorted worse than the one the user already has, which is the one outcome
- * that would make this a regression rather than a simplification.
+ * clip was recording, rather than from whatever happens to be focused at the
+ * moment the key is pressed, because by then the user has often alt-tabbed.
  *
- * So: run it beside the existing setup, changing nothing, and read what it
- * would have decided second by second.
+ * So: run it beside a real session, changing nothing, and read what it would
+ * have decided second by second.
  *
  *   node scripts/foreground-check.mjs            # ten minutes
  *   node scripts/foreground-check.mjs 60         # one minute

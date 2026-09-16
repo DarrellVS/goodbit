@@ -40,6 +40,7 @@ import ExportDialog from '../components/Editor/ExportDialog.vue';
 import DraftsDialog from '../components/Editor/DraftsDialog.vue';
 import type { EditorDraft } from '../services/editorDraftsDb';
 import type { DraftFilePayload } from '../utils/draftFile';
+import AppLoading from '../components/App/AppLoading.vue';
 
 type LibraryTab = 'clips' | 'music';
 
@@ -844,7 +845,7 @@ watch(
             :disabled="restoring"
             @click="restoreDraft(resumable)"
           >
-            <Icon v-if="restoring" icon="svg-spinners:180-ring-with-bg" class="text-sm" />
+            <AppLoading v-if="restoring" class="text-sm" />
             <span>{{ restoring ? 'Restoring…' : 'Resume' }}</span>
           </button>
           <button
@@ -883,7 +884,7 @@ watch(
                 class="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
                 <div class="bg-black/60 backdrop-blur-sm rounded-full p-3">
-                  <Icon icon="material-symbols:progress-activity" class="text-2xl text-card animate-spin" />
+                  <AppLoading class="text-2xl text-card" />
                 </div>
               </div>
             </div>

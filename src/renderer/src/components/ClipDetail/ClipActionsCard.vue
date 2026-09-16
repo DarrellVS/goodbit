@@ -7,6 +7,7 @@ import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
 import ClipStarButton from '../App/ClipStarButton.vue';
 import ClipActionsMenu from '../App/ClipActionsMenu.vue';
 import type { Clip } from '../../types/clip';
+import { prefetchFrameStrip } from '../../utils/mediaUrl';
 
 /**
  * What you can do with this clip, at the top of the sidebar where the actions
@@ -80,6 +81,7 @@ async function copyPublicUrl(): Promise<void> {
 
       <button
         class="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 transition-colors text-left"
+        @mouseenter="prefetchFrameStrip(clip.id)"
         @click="onTrim"
       >
         <Icon icon="material-symbols:content-cut" class="text-xl text-white flex-shrink-0" />
@@ -108,15 +110,13 @@ async function copyPublicUrl(): Promise<void> {
 
       <ClipStarButton variant="row" :clip="clip" @updated="emit('updated', $event)" />
 
-      <div class="pt-1 flex items-center justify-between">
-        <span class="text-xs text-muted-500">Publish, move, delete</span>
-        <ClipActionsMenu
-          :clip="clip"
-          :show-edit-actions="false"
-          @updated="emit('updated', $event)"
-          @deleted="emit('deleted')"
-        />
-      </div>
+      <ClipActionsMenu
+        variant="row"
+        :clip="clip"
+        :show-edit-actions="false"
+        @updated="emit('updated', $event)"
+        @deleted="emit('deleted')"
+      />
     </div>
   </div>
 </template>

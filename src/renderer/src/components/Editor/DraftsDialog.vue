@@ -14,6 +14,7 @@ import { formatRelativeTime } from '../../helpers/dateFormat';
 import { useToastStore } from '../../stores/toast';
 import { downloadDraft, parseDraftFile, type DraftFilePayload } from '../../utils/draftFile';
 import type { EditorDraft } from '../../services/editorDraftsDb';
+import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   open: boolean;
@@ -192,7 +193,7 @@ watch(
               :disabled="!canSave || saving"
               @click="save"
             >
-              <Icon v-if="saving" icon="svg-spinners:180-ring-with-bg" class="text-lg" />
+              <AppLoading v-if="saving" class="text-lg" />
               <Icon v-else icon="material-symbols:bookmark-add" class="text-lg" />
               Save
             </button>

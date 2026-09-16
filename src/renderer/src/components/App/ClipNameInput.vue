@@ -5,13 +5,18 @@ import type { Clip } from '../../types/clip';
 
 interface Props {
   clip: Clip;
+  /**
+   * The modal header, where this is the title of the whole thing rather than
+   * one line on a tile among forty others.
+   */
+  large?: boolean;
 }
 
 interface Emits {
   (e: 'updated', clip: Clip): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { large: false });
 const emit = defineEmits<Emits>();
 
 async function handleNameChange(event: Event): Promise<void> {
@@ -41,9 +46,10 @@ async function handleNameChange(event: Event): Promise<void> {
     -->
     <div class="relative -mx-1.5">
       <input
-        class="w-full bg-transparent border border-transparent outline-none pl-1.5 pr-6 py-0.5 font-medium text-sm truncate rounded
+        class="w-full bg-transparent border border-transparent outline-none py-0.5 truncate rounded
                group-hover/name:border-border group-hover/name:bg-card/5
                focus:border-orange-500/60 focus:bg-card/5"
+        :class="large ? 'pl-2 pr-8 text-lg font-semibold' : 'pl-1.5 pr-6 text-sm font-medium'"
         :value="clip.displayName ?? clip.filename"
         :title="`${clip.displayName ?? clip.filename}\n\nClick to rename it in GoodBit. The file on disk keeps its own name.`"
         :aria-label="`Name for ${clip.filename}, shown in GoodBit only`"
@@ -51,7 +57,8 @@ async function handleNameChange(event: Event): Promise<void> {
       />
       <Icon
         icon="material-symbols:edit-outline"
-        class="pointer-events-none absolute right-1.5 inset-y-0 my-auto h-4 w-4 text-muted-400 opacity-0 group-hover/name:opacity-100 transition-opacity"
+        class="pointer-events-none absolute inset-y-0 my-auto text-muted-400 opacity-0 group-hover/name:opacity-100 transition-opacity"
+        :class="large ? 'right-2 h-5 w-5' : 'right-1.5 h-4 w-4'"
       />
     </div>
     <div class="text-xs text-muted-400 mt-1 line-clamp-1">

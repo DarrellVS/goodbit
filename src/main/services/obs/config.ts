@@ -40,8 +40,13 @@ export interface ObsSceneCollection {
   file: string;
   name: string;
   scriptCount: number;
-  /** Smart Replays, if it is loaded here. */
-  smartReplays: ObsScriptEntry | null;
+  /**
+   * The first script this collection loads, if it loads any.
+   *
+   * Naming a clip is GoodBit's own job, so a collection holding a script is
+   * something the setup offers to take out rather than something it manages.
+   */
+  scriptEntry: ObsScriptEntry | null;
   sourceKinds: string[];
   /**
    * The audio endpoints this collection already captures, by device id.
@@ -63,8 +68,6 @@ export interface ObsSnapshot {
   collections: ObsSceneCollection[];
   activeProfile: ObsProfile | null;
   activeCollection: ObsSceneCollection | null;
-  /** `[Python] Path64bit`, without which OBS runs no Python script at all. */
-  pythonPath: string | null;
 }
 
 /** OBS 31 moved these out of `global.ini`; read both, newest first. */
@@ -75,13 +78,14 @@ function userConfig(): ReturnType<typeof readIni> {
 }
 
 /**
- * Where `[Python] Path64bit` lives, which differs by version the same way.
+ * The per-user config file, which differs by OBS version.
  *
- * With neither file present, OBS has been installed but never opened, and the
- * version that ships today is past the 31.0 split. Writing `global.ini` there
- * would put the key in the file that version no longer reads.
+ * OBS 31 split `global.ini` into `user.ini`. With neither present, OBS has been
+ * installed but never opened, and the version shipping today is past that
+ * split, so writing `global.ini` would put a key in the file it no longer
+ * reads.
  */
-export function pythonConfigFile(): string {
+export function userConfigFile(): string {
   const userIni = path.join(obsConfigDir(), 'user.ini');
   const globalIni = path.join(obsConfigDir(), 'global.ini');
   if (existsSync(userIni)) return userIni;
@@ -163,11 +167,6 @@ export function readProfile(folder: string): ObsProfile | null {
   };
 }
 
-/** Is this the script the setup installs, whatever it has been renamed to? */
-function looksLikeSmartReplays(scriptPath: string): boolean {
-  return /smart_?replays/i.test(path.basename(scriptPath));
-}
-
 export function readCollection(file: string): ObsSceneCollection | null {
   const full = path.join(scenesDir(), `${file}.json`);
   if (!existsSync(full)) return null;
@@ -180,13 +179,12 @@ export function readCollection(file: string): ObsSceneCollection | null {
     };
 
     const scripts = parsed.modules?.['scripts-tool'] ?? [];
-    const smart = scripts.find((entry) => entry.path && looksLikeSmartReplays(entry.path)) ?? null;
 
     return {
       file,
       name: parsed.name ?? file,
       scriptCount: scripts.length,
-      smartReplays: smart,
+      scriptEntry: scripts.find((entry) => Boolean(entry.path)) ?? null,
       sourceKinds: Array.from(
         new Set((parsed.sources ?? []).map((source) => source.id).filter(Boolean) as string[]),
       ),
@@ -233,6 +231,5 @@ export function readObs(): ObsSnapshot {
     collections,
     activeProfile: profiles.find((p) => p.folder === activeProfileFolder) ?? null,
     activeCollection: collections.find((c) => c.file === activeCollectionFile) ?? null,
-    pythonPath: iniValue(config, 'Python', 'Path64bit'),
   };
 }

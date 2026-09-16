@@ -24,6 +24,8 @@ export interface AppSettings {
   clipToast?: boolean;
   clipToastSound?: boolean;
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  /** 0 to 100. */
+  clipToastVolume?: number;
   migratedFromWebApp: boolean;
   /** Re-encode a trim to share size. Unset means off. */
   compressTrims?: boolean;

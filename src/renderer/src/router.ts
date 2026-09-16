@@ -1,13 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
+import { useClipDetail } from './composables/useClipDetail';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';
 import CollectionPage from './views/CollectionPage.vue';
 import SettingsPage from './views/SettingsPage.vue';
-import TrimPage from './views/TrimPage.vue';
 import EditorPage from './views/EditorPage.vue';
-import ClipDetailPage from './views/ClipDetailPage.vue';
 import ShellLayout from './layouts/ShellLayout.vue';
 import WelcomePage from './views/WelcomePage.vue';
 
@@ -93,19 +92,38 @@ export const router = createRouter({
             subtitle: 'View collection clips'
           }
         },
-        { 
-          path: 'clips/:id', 
-          name: 'clip-detail', 
-          component: ClipDetailPage, 
-          props: true,
-          meta: { 
-            title: 'Clip Details',
-            subtitle: 'View clip information'
-          }
+        /*
+         * A clip's details are a layer over the library now, not a page.
+         *
+         * The route stays, because links to it exist and a deep link should
+         * still work, but it no longer renders anything of its own: it opens
+         * the layer and redirects to the library, so the clip appears on top of
+         * the grid exactly as it would have if you had clicked the tile.
+         */
+        {
+          path: 'clips/:id',
+          name: 'clip-detail',
+          redirect: (to) => {
+            const id = Number(to.params.id);
+            if (Number.isFinite(id) && id > 0) useClipDetail().open(id);
+            return { name: 'clips' };
+          },
         },
       ],
     },
-    { path: '/trim/:id', name: 'trim', component: TrimPage, props: true },
+    /*
+     * Trimming is a face of the clip layer now, not a page. The route stays so
+     * a link to it still works, and opens the layer straight onto the trimmer.
+     */
+    {
+      path: '/trim/:id',
+      name: 'trim',
+      redirect: (to) => {
+        const id = Number(to.params.id);
+        if (Number.isFinite(id) && id > 0) useClipDetail().open(id, 'trim');
+        return { name: 'clips' };
+      },
+    },
     { path: '/editor', name: 'editor', component: EditorPage },
   ],
 });

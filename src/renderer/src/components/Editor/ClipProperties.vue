@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import type { TimelineClip } from '../../types/editor';
+import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   clip: TimelineClip | null;
@@ -77,7 +78,7 @@ function volumeToDecimal(percentage: number): number {
           v-if="highlightLoading"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600"
         >
-          <Icon icon="material-symbols:progress-activity" class="animate-spin text-orange-400 text-base" />
+          <AppLoading class="text-orange-400 text-base" />
           Listening to this clip…
         </div>
 

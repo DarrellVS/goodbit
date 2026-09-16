@@ -10,6 +10,7 @@ import GamesList from '../components/Stats/GamesList.vue';
 import TagsList from '../components/Stats/TagsList.vue';
 import InfoPanel from '../components/Stats/InfoPanel.vue';
 import ActivityChart from '../components/Stats/ActivityChart.vue';
+import AppLoading from '../components/App/AppLoading.vue';
 
 const router = useRouter();
 const clipsStore = useClipsStore();
@@ -103,7 +104,7 @@ onMounted(() => {
 <template>
   <div class="p-6 space-y-6">
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <Icon icon="material-symbols:progress-activity" class="w-12 h-12 text-orange-500 animate-spin" />
+      <AppLoading class="w-12 h-12 text-orange-500" />
     </div>
 
     <template v-else-if="stats">

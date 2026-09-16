@@ -34,7 +34,7 @@ defineExpose({
       :poster="posterUrl"
       controls
       preload="metadata"
-      class="w-full"
+      class="w-full max-h-[62vh] object-contain"
       controlsList="nodownload"
       disablePictureInPicture
       autoplay

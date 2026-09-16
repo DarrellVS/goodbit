@@ -6,19 +6,14 @@ import {
   ListAudioDevicesAction,
   ListCaptureDisplaysAction,
   PlanObsSetupAction,
-  knownAliases,
   type ObsSetupRequest,
 } from '../actions/ApplyObsSetupAction.js';
 import {
-  CheckPythonAction,
   InstallObsAction,
-  InstallPythonAction,
   PlanObsInstallAction,
 } from '../actions/InstallObsAction.js';
 import { LaunchObsAction } from '../actions/LaunchObsAction.js';
 import { suppressFirstRunWizard, undoObsSetup } from '../services/obs/setup.js';
-import { SMART_REPLAYS, smartReplaysUrl } from '../services/obs/smartReplays.js';
-import { PYTHON_DOWNLOAD_URL } from '../services/obs/python.js';
 import { loadSettings } from '../settings.js';
 
 /**
@@ -33,33 +28,6 @@ obsRouter.get(
   '/status',
   asyncHandler(async (_req, res) => {
     res.json(await new CheckObsSetupAction().execute());
-  }),
-);
-
-/** What the setup would install, named and attributed, before anything runs. */
-obsRouter.get('/script-info', (_req, res) => {
-  res.json({
-    name: 'Smart Replays',
-    version: SMART_REPLAYS.version,
-    author: SMART_REPLAYS.author,
-    licence: SMART_REPLAYS.licence,
-    repository: SMART_REPLAYS.repository,
-    forumPage: SMART_REPLAYS.forumPage,
-    url: smartReplaysUrl(),
-    commit: SMART_REPLAYS.commit,
-    pythonDownload: PYTHON_DOWNLOAD_URL,
-  });
-});
-
-/** The games this machine has, so the dialog can say how many it will name. */
-obsRouter.get(
-  '/aliases',
-  asyncHandler(async (_req, res) => {
-    const aliases = await knownAliases(loadSettings().videosRoot);
-    res.json({
-      count: aliases.length,
-      names: aliases.map((entry) => entry.value.split(' > ')[1]).filter(Boolean),
-    });
   }),
 );
 
@@ -121,22 +89,6 @@ obsRouter.post(
   asyncHandler(async (req, res) => {
     const { method } = (req.body ?? {}) as { method?: 'winget' | 'download' };
     res.json(await new InstallObsAction().execute({ method }));
-  }),
-);
-
-/** What Python this machine has, and whether OBS can load any of it. */
-obsRouter.get(
-  '/python',
-  asyncHandler(async (_req, res) => {
-    res.json(await new CheckPythonAction().execute());
-  }),
-);
-
-/** Install one into GoodBit's own folder, for machines with none OBS can use. */
-obsRouter.post(
-  '/python/install',
-  asyncHandler(async (_req, res) => {
-    res.json(await new InstallPythonAction().execute());
   }),
 );
 

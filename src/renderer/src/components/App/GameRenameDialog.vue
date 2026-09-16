@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import type { Game } from '../../types/game';
+import AppLoading from './AppLoading.vue';
 import {
   DialogClose,
   DialogContent,
@@ -116,11 +117,7 @@ const folderName = computed(() => props.game?.game || '');
             :disabled="loading"
             @click="handleSave"
           >
-            <Icon
-              v-if="loading"
-              icon="svg-spinners:180-ring-with-bg"
-              class="text-lg"
-            />
+            <AppLoading v-if="loading" class="text-lg" />
             <span>{{ loading ? 'Saving...' : 'Save' }}</span>
           </button>
         </div>

@@ -23,6 +23,7 @@ import {
   type ExportFormat,
 } from '@shared/constants/exportFormats';
 import type { ExportOptions } from '../../services/clips';
+import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   open: boolean;
@@ -341,7 +342,7 @@ watch(
             :disabled="!isValid || exporting"
             @click="submit"
           >
-            <Icon v-if="exporting" icon="svg-spinners:180-ring-with-bg" class="text-lg" />
+            <AppLoading v-if="exporting" class="text-lg" />
             <Icon v-else icon="material-symbols:download" class="text-lg" />
             <!-- Tabular figures, or the button jitters as the count climbs. -->
             <span class="tabular-nums">

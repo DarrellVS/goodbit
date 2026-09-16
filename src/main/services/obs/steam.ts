@@ -8,9 +8,9 @@ const run = promisify(execFile);
 /**
  * The games on this machine, so the folders are named before the first clip.
  *
- * Smart Replays names a clip's folder after the executable, which is how a
- * library ends up with a game called `project8` or `bf6`. Its answer is an
- * alias, one line per game, typed by hand. Nobody types fifteen of those.
+ * An executable name is how a library ends up with a game called `project8` or
+ * `bf6`, and correcting those by hand is one line per game. Nobody types
+ * fifteen of those.
  *
  * Steam already knows the answer: every installed game has a manifest with its
  * real name and its folder. And the script matches a **parent directory** as

@@ -8,8 +8,8 @@ import { launchApp, type TestApp } from './app';
  * Reading somebody else's OBS.
  *
  * The writing half cannot be tested here: it refuses to run while OBS is open,
- * it downloads a script and a Python, and it would be writing into whatever
- * OBS the machine running the tests happens to have. The reading half is where
+ * and it would be writing into whatever OBS the machine running the tests
+ * happens to have. The reading half is where
  * the judgements live, and every one of these was a bug first.
  *
  * `GOODBIT_OBS_DIR` points the whole subsystem at a directory of fixtures, so

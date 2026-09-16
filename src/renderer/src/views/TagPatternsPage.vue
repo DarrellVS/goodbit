@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { useTagPatterns } from '../composables/useTagPatterns';
 import { useToastStore } from '../stores/toast';
 import type { TagCategory } from '../utils/tagSuggestions';
+import AppLoading from '../components/App/AppLoading.vue';
 
 const { patterns, loading, addPattern, updatePattern, removePattern } = useTagPatterns();
 
@@ -230,7 +231,7 @@ async function saveNew(): Promise<void> {
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <Icon icon="material-symbols:progress-activity" class="w-8 h-8 text-orange-500 animate-spin" />
+      <AppLoading class="w-8 h-8 text-orange-500" />
     </div>
 
     <div v-else-if="selectedCategory === 'All'" class="space-y-6">

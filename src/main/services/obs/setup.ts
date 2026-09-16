@@ -4,13 +4,7 @@ import path from 'node:path';
 import { applyIniEdits, type IniEdit } from './ini.js';
 import { INCOMING_DIR_NAME } from '../capture/incoming.js';
 import { obsConfigDir, profilesDir, scenesDir } from './paths.js';
-import { pythonConfigFile, readObs, type ObsSnapshot } from './config.js';
-import {
-  ClipNamingMode,
-  scriptSettings,
-  smartReplaysPath,
-  type SmartReplaysAlias,
-} from './smartReplays.js';
+import { readObs, userConfigFile, type ObsSnapshot } from './config.js';
 import type { CaptureDisplay } from './displays.js';
 import type { EncoderChoice } from './encoderChoice.js';
 import type { AudioDevice } from './audioDevices.js';
@@ -29,8 +23,9 @@ import { userDataDir } from '../../settings.js';
  *   created while it runs stays invisible until a restart.
  * - **Nothing the user made is edited.** The setup creates a profile and a
  *   scene collection of its own, both named GoodBit, and the only file it
- *   ever touches outside them holds one key: the path to Python, without
- *   which OBS refuses to run any script at all.
+ *   ever touches outside them holds one key: `[General] FirstRun`, which stops
+ *   OBS opening its own auto-configuration wizard over the profile this has
+ *   just written.
  *
  * Everything below builds a plan first. The plan is what the dialog shows,
  * and applying it runs the same code that produced it.
@@ -49,14 +44,6 @@ export interface ObsSetupChoices {
   /** An `OBS_KEY_*` name. F8 unless the user picked something else. */
   hotkey: string;
   createScene: boolean;
-  installScript: boolean;
-  /** Written into the script's settings, so clips land in named folders. */
-  aliases: SmartReplaysAlias[];
-  namingMode: ClipNamingMode;
-  setPythonPath: boolean;
-  pythonDirectory: string | null;
-  /** False when the apply will have to install it first. */
-  pythonInstalled: boolean;
   /**
    * The screen this setup is for.
    *
@@ -126,12 +113,12 @@ function profileDir(): string {
 }
 
 /**
- * Does GoodBit's collection still load Smart Replays?
+ * Does GoodBit's collection still load a script?
  *
- * Read rather than assumed, because the script outlives the setting that
- * installed it: the collection is only rewritten when the scene is being
- * rebuilt, so somebody who applies the setup without that step keeps a script
- * GoodBit no longer wants.
+ * Read rather than assumed. The collection is only rewritten when the scene is
+ * being rebuilt, so somebody who applies the setup without that step keeps a
+ * script GoodBit no longer wants: naming a clip is its own job now, and two
+ * things moving the same file is a race.
  */
 export function collectionHasScript(): boolean {
   try {
@@ -150,12 +137,12 @@ export function collectionHasScript(): boolean {
  *
  * A targeted edit rather than a rebuild. The collection carries the user's
  * sources, their audio mixers and their scene layout, and none of that is ours
- * to regenerate just because one module is being removed.
+ * to regenerate because one module is being removed.
  *
- * It has to happen whether or not the scene is being rebuilt. Both sorting the
- * clip: OBS writes the replay into GoodBit's staging folder and the script,
- * still loaded, moves it out again before GoodBit has seen it. The race is
- * invisible and the script usually wins.
+ * It has to happen whether or not the scene is being rebuilt. OBS writes the
+ * replay into GoodBit's staging folder, and a script still loaded there moves
+ * it out again before GoodBit has seen it. The race is invisible and the script
+ * usually wins.
  */
 function removeScriptFromCollection(): boolean {
   const file = collectionFile();
@@ -202,8 +189,6 @@ export function profileEdits(choices: ObsSetupChoices): IniEdit[] {
      * and there is no folder. GoodBit takes it from here: it watches this
      * folder, works out which game was in front while the clip was recording,
      * and renames the file into place on the same volume.
-     *
-     * That job used to belong to a Python script running inside OBS.
      */
     {
       section: 'SimpleOutput',
@@ -338,8 +323,6 @@ interface SceneSource {
  * Desktop audio comes along because a clip with no sound is not a clip.
  */
 function buildCollection(
-  scriptPath: string | null,
-  settings: Record<string, unknown>,
   options: {
     display: CaptureDisplay | null;
     captureDesktop: boolean;
@@ -518,16 +501,6 @@ function buildCollection(
     modules: {},
   };
 
-  if (scriptPath) {
-    // The discovery that makes the whole feature cheap: a script and every one
-    // of its settings live here, in the scene collection, so installing and
-    // configuring it is one file write rather than a person clicking through
-    // a properties panel.
-    collection.modules = {
-      'scripts-tool': [{ path: scriptPath.replace(/\\/g, '/'), settings }],
-    };
-  }
-
   return JSON.stringify(collection, null, 4);
 }
 
@@ -660,110 +633,21 @@ export function planObsSetup(
    * It is a removal rather than an addition, which makes it the kind of thing
    * a user most wants to have been told about beforehand.
    */
-  if (!choices.installScript && collectionHasScript()) {
+  if (collectionHasScript()) {
     changes.push({
       kind: 'modify',
-      title: 'Remove Smart Replays from the GoodBit scene',
+      title: 'Remove the clip sorting script from the GoodBit scene',
       file: collectionFile(),
       summary: [
-        'GoodBit sorts clips into a folder per game itself now, so the script is not needed',
+        'GoodBit sorts clips into a folder per game itself, so the script is not needed',
         'Both of them sorting the same clip is a race, and the script usually wins',
-        'The script file and its Python are left on disk, only the entry that loads it goes',
+        'The script file is left on disk, only the entry that loads it goes',
       ],
       details: [{ key: 'modules["scripts-tool"]', value: 'removed' }],
     });
   }
 
-  if (choices.installScript) {
-    const scriptSummary = [
-      `Each clip goes into a folder named after the game, inside ${choices.videosRoot}`,
-      `The name comes from ${namingModeLabel(choices.namingMode)}`,
-    ];
-    if (choices.aliases.length) {
-      scriptSummary.push(
-        `${choices.aliases.length} games on this machine are already named, so the folders read properly from the first clip`,
-      );
-    }
-    scriptSummary.push('OBS cannot do this itself, so this is a script by qvvonk, downloaded unmodified');
-
-    changes.push({
-      kind: 'download',
-      title: 'A folder for every game',
-      file: smartReplaysPath(),
-      summary: scriptSummary,
-      details: [
-        { key: 'Base folder', value: choices.videosRoot },
-        { key: 'Sort into folders', value: 'yes, one per game' },
-        { key: 'Names from', value: namingModeLabel(choices.namingMode) },
-        { key: 'Known games', value: `${choices.aliases.length}` },
-      ],
-    });
-
-    if (!choices.createScene) {
-      notes.push(
-        'Smart Replays is configured inside a scene collection, so installing it without letting GoodBit make one means adding it by hand in Tools, Scripts.',
-      );
-    }
-
-    /*
-     * Python comes with the script rather than beside it.
-     *
-     * OBS runs no script at all until it has been pointed at a Python
-     * installation, so this is not a separate thing to want: it is what the
-     * previous change needs in order to do anything. It was its own switch,
-     * which meant it could be turned off while the script stayed on, and the
-     * result was a setup that looked complete and sorted nothing.
-     */
-    if (choices.pythonDirectory) {
-      const file = pythonConfigFile();
-      changes.push({
-        kind: choices.pythonInstalled ? 'modify' : 'download',
-        title: choices.pythonInstalled
-          ? 'Point OBS at GoodBit\'s Python'
-          : 'Install a Python for GoodBit, and point OBS at it',
-        file,
-        summary: [
-          choices.pythonInstalled
-            ? `GoodBit already has its own Python, at ${choices.pythonDirectory}.`
-            : `About 25 MB, from python.org, into ${choices.pythonDirectory}. Off your PATH, not associated with anything, used for this one script.`,
-          "Also skips OBS's own setup wizard, which would otherwise ask you to choose the settings this has just chosen.",
-          'Its own copy rather than one already on the machine, because OBS refuses to load anything newer than 3.12 and says so nowhere except its log.',
-          obs.pythonPath
-            ? `OBS currently points at ${obs.pythonPath}.`
-            : 'OBS has nothing set at the moment.',
-        ],
-        details: [
-          {
-            key: '[Python] Path64bit',
-            value: choices.pythonDirectory,
-            was: obs.pythonPath ?? 'not set',
-          },
-        ],
-      });
-    }
-  }
-
-  if (choices.captureDesktop && choices.display && !choices.display.monitorId) {
-    notes.push(
-      'Windows did not say which device your screen is, so the scene gets game capture only. Add a Display Capture source in OBS and pick the screen there.',
-    );
-  }
-
-  if (obs.activeProfile && obs.activeProfile.folder !== GOODBIT_PROFILE) {
-    notes.push(
-      `Your current profile, ${obs.activeProfile.name}, is not touched. GoodBit starts OBS with its own profile instead.`,
-    );
-  }
-
-
-
   return { changes, blockers, notes };
-}
-
-function namingModeLabel(mode: ClipNamingMode): string {
-  if (mode === ClipNamingMode.CurrentScene) return 'the OBS scene';
-  if (mode === ClipNamingMode.MostRecordedProcess) return 'the game you played most in the clip';
-  return 'the game in front when you press the key';
 }
 
 export interface ObsSetupManifest {
@@ -775,7 +659,6 @@ export interface ObsSetupManifest {
   created: string[];
   /** Files edited in place, with where their backup went. */
   edited: Array<{ file: string; backup: string }>;
-  script: { path: string; blobSha1: string } | null;
 }
 
 export function manifestPath(): string {
@@ -807,7 +690,7 @@ function backupsDir(): string {
  */
 export function applyObsSetup(
   choices: ObsSetupChoices,
-  context: { version: string; scriptBlobSha1?: string },
+  context: { version: string },
 ): ObsSetupManifest {
   const created: string[] = [];
   const edited: Array<{ file: string; backup: string }> = [];
@@ -840,18 +723,9 @@ export function applyObsSetup(
       created.push(file);
     }
 
-    const settings = choices.installScript
-      ? scriptSettings({
-          clipsBasePath: choices.videosRoot,
-          namingMode: choices.namingMode,
-          aliases: choices.aliases,
-          restartBufferLoop: 0,
-        })
-      : {};
-
     writeFileSync(
       file,
-      buildCollection(choices.installScript ? smartReplaysPath() : null, settings, {
+      buildCollection({
         display: choices.display,
         captureDesktop: choices.captureDesktop,
         tenBit: choices.encoder?.tenBit === true,
@@ -864,11 +738,11 @@ export function applyObsSetup(
   /*
    * The script comes out even when the scene is not being rebuilt.
    *
-   * GoodBit sorts its own clips now. Leaving Smart Replays loaded means two
-   * programs racing to move the same file out of the staging folder, and the
-   * one that wins names it differently.
+   * GoodBit sorts its own clips. Leaving a script loaded means two programs
+   * racing to move the same file out of the staging folder, and the one that
+   * wins names it differently.
    */
-  if (!choices.installScript && existsSync(collectionFile())) {
+  if (existsSync(collectionFile())) {
     const file = collectionFile();
     const before = readFileSync(file, 'utf-8');
 
@@ -876,16 +750,22 @@ export function applyObsSetup(
       const backup = path.join(backupsDir(), `${GOODBIT_COLLECTION}.json.${Date.now()}.bak`);
       writeFileSync(backup, before, 'utf-8');
       edited.push({ file, backup });
-      console.log('[obs] removed Smart Replays, GoodBit sorts the clips itself now');
+      console.log('[obs] removed the clip sorting script, GoodBit does that itself');
     }
   }
 
-  if (choices.setPythonPath && choices.pythonDirectory) {
-    const file = pythonConfigFile();
+  /*
+   * One key in a file GoodBit does not own, and it is not about a profile.
+   *
+   * Everything else this writes lives inside the GoodBit profile and the
+   * GoodBit scene collection. This is the exception, so it is written on its
+   * own and backed up like any other edit.
+   */
+  {
+    const file = userConfigFile();
     mkdirSync(path.dirname(file), { recursive: true });
     // Created when it is not there rather than skipped. An OBS that has never
-    // been opened has neither file, and doing nothing while the summary says
-    // "pointed OBS at Python" is worse than either outcome on its own.
+    // been opened has neither file.
     if (existsSync(file)) {
       const backup = path.join(backupsDir(), `${path.basename(file)}.${Date.now()}.bak`);
       copyFileSync(file, backup);
@@ -898,8 +778,6 @@ export function applyObsSetup(
     writeFileSync(
       file,
       applyIniEdits(original, [
-        // Forward slashes, which is how OBS writes this key itself.
-        { section: 'Python', key: 'Path64bit', value: choices.pythonDirectory.replace(/\\/g, '/') },
         /*
          * Skip OBS's own auto-configuration wizard.
          *
@@ -924,10 +802,6 @@ export function applyObsSetup(
     collection: choices.createScene ? GOODBIT_COLLECTION : null,
     created,
     edited,
-    script:
-      choices.installScript && context.scriptBlobSha1
-        ? { path: smartReplaysPath(), blobSha1: context.scriptBlobSha1 }
-        : null,
   };
 
   writeFileSync(manifestPath(), JSON.stringify(manifest, null, 2), 'utf-8');
@@ -988,7 +862,7 @@ export function undoObsSetup(): { removed: string[]; restored: string[] } {
  * because somebody can install OBS now and set it up tomorrow.
  */
 export function suppressFirstRunWizard(): void {
-  const file = pythonConfigFile();
+  const file = userConfigFile();
   try {
     mkdirSync(path.dirname(file), { recursive: true });
     const original = existsSync(file) ? readFileSync(file, 'utf-8') : '';

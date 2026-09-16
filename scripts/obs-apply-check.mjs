@@ -5,9 +5,6 @@
  * same way `GOODBIT_USER_DATA` redirects the app's own folder, so this drives
  * the real apply against an empty directory and then reads back what landed.
  *
- * It does download Smart Replays, on purpose: the pinned commit and its hash
- * are in the source, and a check that skips the download is a check that would
- * not notice the pin going stale.
  *
  *   node scripts/obs-apply-check.mjs
  */
@@ -29,7 +26,11 @@ const app = await electron.launch({
   env: { ...process.env, GOODBIT_USER_DATA: dataDir, GOODBIT_OBS_DIR: obsDir },
 });
 
-const page = await app.firstWindow();
+// Not `firstWindow()`. The clip toast is a second window, built during boot,
+// and it is a `data:` URL page with no app in it.
+const page =
+  app.windows().find((candidate) => !candidate.url().startsWith('data:')) ??
+  (await app.waitForEvent('window'));
 await page.waitForLoadState('domcontentloaded');
 await page.waitForTimeout(2500);
 

@@ -150,7 +150,8 @@ none of it is from documentation, because OBS documents its plugin API and not i
   memory at every save point, so an edit underneath it is discarded, and a profile folder created
   while it runs stays invisible until restart.
 - **Nothing the user made is edited.** A profile and a scene collection of GoodBit's own, both named
-  `GoodBit`. The only keys touched outside them are `[Python] Path64bit` and `[General] FirstRun`.
+  `GoodBit`. The only key touched outside them is `[General] FirstRun`, which stops OBS opening its
+  own auto-configuration wizard over the profile the setup has just written.
 - **A preview before every write**, in OBS's own vocabulary, and a manifest of what was written so
   `undoObsSetup` can put it back.
 - **The launch flags choose the profile** (`--profile GoodBit --collection GoodBit
@@ -162,8 +163,7 @@ none of it is from documentation, because OBS documents its plugin API and not i
 - **OBS cannot name a file after a game.** `os_generate_formatted_filename` takes the clock and the
   video settings, and nothing else; an unknown token silently loses its `%`. So OBS records into
   `<videosRoot>/.goodbit-incoming/` and **GoodBit files the clip itself**, from the program that was
-  in front while it was recording. See `services/capture/`. This used to be a third party OBS script
-  and a private Python interpreter to run it, and both are gone.
+  in front while it was recording. See `services/capture/`. Nothing runs inside OBS.
 - **The hotkey is the output's, not the frontend's.** `[Hotkeys] OBSBasic.SaveReplayBuffer` with a
   `bindings` array is the documented shape and binds nothing on OBS 31: what works, and what the
   hotkey list shows, is `ReplayBuffer={"ReplayBuffer.Save":[…]}`.
@@ -195,8 +195,8 @@ before any of this is trusted with it.
 
 ### Naming a clip, without anything running inside OBS
 
-`src/main/services/capture/` decides which game a clip belongs to, which is the job a third party
-script used to do from inside OBS.
+`src/main/services/capture/` decides which game a clip belongs to. OBS cannot name a file after a
+game, so this is the half that makes a library readable.
 
 - **OBS records into `<videosRoot>/.goodbit-incoming/`**, a staging folder GoodBit owns. Inside the
   videos root deliberately, so filing a clip is a same volume `fs.rename`: atomic, instant, and the
@@ -209,16 +209,16 @@ script used to do from inside OBS.
 - **The foreground is sampled at 1 Hz** by a 5 KB C# helper compiled on demand into
   `%APPDATA%/GoodBit/bin/`, the same trick `displayQuery.ts` uses. Measured at 0.11% of one core.
 - **`PROCESS_QUERY_LIMITED_INFORMATION`, never `PROCESS_VM_READ`.** A protected process denies the
-  second and allows the first, so the old script failed to name exactly the games most likely to be
-  protected, and those clips landed with no game at all.
+  second and allows the first, so asking for the pair fails to name exactly the games most likely to
+  be protected, and those clips land with no game at all.
 - **Attribution is a vote over the clip's own window**, not a reading at the moment it lands. A clip
   arrives seconds after the moment it records, by which time the user has often alt-tabbed. Games
   win the vote over non-games, so Discord in front for most of the window still names it after the
   game behind it; when nothing in the window is a game the most-seen program wins, because
   recording a browser is a thing people do on purpose.
-- **A folder that already exists wins over a better name for it.** The library holds
-  `Headliners-Win64-Shipping` because that is what the old script called it, and writing the better
-  name would leave two folders for one game.
+- **A folder that already exists wins over a better name for it.** A library holding
+  `Headliners-Win64-Shipping` keeps it, because writing the better name would leave two folders for
+  one game.
 - **A filed clip is indexed at once, not by the library watcher.** `incoming.ts` reports what it
   filed and `startup.ts` indexes that path immediately. The watcher would find it anyway, four
   seconds later, behind a second `awaitWriteFinish` on top of the four staging already spent; that

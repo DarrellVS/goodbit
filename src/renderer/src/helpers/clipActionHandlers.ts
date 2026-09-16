@@ -2,6 +2,8 @@ import type { Router } from 'vue-router';
 import { toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import type { Clip } from '../types/clip';
 import { saveScrollPosition } from '../utils/scroll';
+import { useClipDetail } from '../composables/useClipDetail';
+import { prefetchFrameStrip } from '../utils/mediaUrl';
 import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer } from '../services/clips';
 import { useToastStore } from '../stores/toast';
 import { useConfiguration } from '../composables/useConfiguration';
@@ -90,10 +92,26 @@ export function createClipActionHandlers(params: {
     await openClip(clip.id);
   }
 
+  /**
+   * Trimming is a face of the clip layer, not a page you leave for.
+   *
+   * From a tile the layer is not open yet, so this opens it straight onto the
+   * trimmer; from the layer it swaps the face it is already showing. Either
+   * way nothing navigates and the library stays where it was.
+   */
   function onTrim() {
     const clip = getClip();
-    saveScrollPosition();
-    void params.router.push(`/trim/${clip.id}`);
+    const layer = useClipDetail();
+
+    // Before the panel exists, so the decode runs behind the animation rather
+    // than in front of an empty timeline.
+    prefetchFrameStrip(clip.id);
+
+    // Already looking at this clip means the details panel is what the trimmer
+    // is replacing, and what backing out of it should return to. Coming from a
+    // tile there is nothing open yet, so the library is.
+    if (layer.openClipId.value === clip.id) layer.show('trim');
+    else layer.open(clip.id, 'trim');
   }
 
   async function onDelete() {

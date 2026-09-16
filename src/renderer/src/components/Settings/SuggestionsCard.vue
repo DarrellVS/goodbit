@@ -3,6 +3,7 @@ import BaseToggle from '../Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useToastStore } from '../../stores/toast';
+import AppLoading from '../App/AppLoading.vue';
 import {
   fitSuggestionModel,
   forgetSuggestionModel,
@@ -209,11 +210,8 @@ onMounted(refresh);
         :title="ready ? 'Fit the model to every decision so far' : 'Not enough decisions yet'"
         @click="fitNow"
       >
-        <Icon
-          :icon="working ? 'material-symbols:progress-activity' : 'material-symbols:model-training'"
-          class="text-lg"
-          :class="{ 'animate-spin': working }"
-        />
+        <AppLoading v-if="working" class="text-lg" />
+        <Icon v-else icon="material-symbols:model-training" class="text-lg" />
         {{ summary?.model ? 'Refit now' : 'Fit now' }}
       </button>
 

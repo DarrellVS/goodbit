@@ -14,6 +14,7 @@ import QRCode from 'qrcode';
 import { useToastStore } from '../../stores/toast';
 import { useLocalShare } from '../../composables/useLocalShare';
 import { usePublisher } from '../../composables/usePublisher';
+import AppLoading from './AppLoading.vue';
 
 interface Props {
   open: boolean;
@@ -144,7 +145,7 @@ async function copy(): Promise<void> {
             <img v-if="dataUrl" :src="dataUrl" alt="QR code for this clip" class="w-56 h-56 block" />
             <div v-else class="w-56 h-56 flex items-center justify-center text-sm text-muted-400">
               <span v-if="failed">Could not draw the code</span>
-              <Icon v-else icon="svg-spinners:180-ring-with-bg" class="text-2xl" />
+              <AppLoading v-else class="text-2xl" />
             </div>
           </div>
 
@@ -184,11 +185,8 @@ async function copy(): Promise<void> {
             :disabled="shareStarting"
             @click="startShare(clipId)"
           >
-            <Icon
-              :icon="shareStarting ? 'material-symbols:progress-activity' : 'material-symbols:wifi-tethering'"
-              class="text-lg"
-              :class="{ 'animate-spin': shareStarting }"
-            />
+            <AppLoading v-if="shareStarting" class="text-lg" />
+            <Icon v-else icon="material-symbols:wifi-tethering" class="text-lg" />
             {{ shareStarting ? 'Starting…' : 'Share on my network' }}
           </button>
 

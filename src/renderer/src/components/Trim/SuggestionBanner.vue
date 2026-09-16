@@ -34,6 +34,17 @@ const emit = defineEmits<Emits>();
  */
 const show = computed(() => !!props.suggestions?.confident && !!props.suggestions.window);
 
+/**
+ * Whether this row has anything in it at all.
+ *
+ * The row itself is always in the layout, and only its height changes. It used
+ * to appear while listening and then vanish when there was nothing worth
+ * saying, and since the video above is `flex-1` it snapped forty pixels taller
+ * at that moment: the picture jumped, which read as the video loading late
+ * rather than as a banner leaving.
+ */
+const occupied = computed(() => props.loading || show.value);
+
 const window = computed(() => props.suggestions?.window ?? null);
 
 function format(seconds: number): string {
@@ -84,8 +95,28 @@ function reject(): void {
 </script>
 
 <template>
+  <!--
+    A row that is always here and sometimes has nothing in it.
+
+    `grid-template-rows` from `0fr` to `1fr` is the one way to animate to and
+    from a height nobody knows in advance, which is the case here: the answer is
+    one line, two on a narrow window. The child needs `overflow-hidden` and
+    `min-h-0` or it refuses to be squeezed.
+  -->
+  <div
+    class="grid transition-[grid-template-rows] duration-300 ease-out"
+    :class="occupied ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
+  >
+    <div class="overflow-hidden min-h-0">
+      <!--
+        The answer replaces the wait rather than cutting over it. Both states are
+        one line of the same height, so `out-in` crossfades without the box
+        resizing under it.
+      -->
+      <Transition name="settle" mode="out-in">
   <div
     v-if="loading"
+    key="listening"
     class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card/60 text-sm text-muted-500"
   >
     <Icon
@@ -101,6 +132,7 @@ function reject(): void {
 
   <div
     v-else-if="show && window"
+    key="answer"
     class="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-300 bg-orange-500/6"
   >
     <!--
@@ -143,6 +175,9 @@ function reject(): void {
       >
         {{ dismissed ? 'Noted' : 'Wrong' }}
       </button>
+    </div>
+  </div>
+      </Transition>
     </div>
   </div>
 </template>

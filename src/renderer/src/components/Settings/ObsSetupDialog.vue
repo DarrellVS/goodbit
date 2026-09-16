@@ -5,6 +5,7 @@ import BaseToggle from '../Base/BaseToggle.vue';
 import { useObsSetup } from '../../composables/useObsSetup';
 import { skipObsWizard } from '../../services/obs';
 import { useToastStore } from '../../stores/toast';
+import AppLoading from '../App/AppLoading.vue';
 
 /**
  * The setup, by one of two routes.
@@ -62,8 +63,6 @@ const {
   status,
   plan,
   installPlan,
-  script,
-  aliasNames,
   steps,
   bufferSeconds,
   hotkey,
@@ -72,7 +71,6 @@ const {
   display,
   audio,
   audioIds,
-  python,
   working,
   error,
   result,
@@ -228,8 +226,6 @@ watch(
         bindHotkey: 'hotkey',
         createScene: 'scene',
         captureDesktop: 'desktop',
-        installScript: 'script',
-        setPythonPath: 'python',
       };
       for (const step of steps.value) {
         if (!step.required) step.enabled = asked.has(names[step.key] ?? '');
@@ -270,7 +266,6 @@ const sceneStep = computed(() => steps.value.find((step) => step.key === 'create
 const desktopStep = computed(() => steps.value.find((step) => step.key === 'captureDesktop') ?? null);
 const bufferStep = computed(() => steps.value.find((step) => step.key === 'enableReplayBuffer') ?? null);
 const hotkeyStep = computed(() => steps.value.find((step) => step.key === 'bindHotkey') ?? null);
-const scriptStep = computed(() => steps.value.find((step) => step.key === 'installScript') ?? null);
 
 const closingObs = ref(false);
 
@@ -406,9 +401,7 @@ const tiles = computed(() => {
     {
       icon: 'material-symbols:folder',
       label: 'Clips',
-      value: aliasNames.value.length
-        ? `A folder per game, ${aliasNames.value.length} already named`
-        : 'A folder per game',
+      value: 'A folder per game',
       badge: null,
     },
   ];
@@ -608,7 +601,7 @@ function openLink(url: string): void {
           </p>
 
           <p v-if="!status?.installed" class="text-xs text-muted-500 flex items-center gap-1.5">
-            <Icon icon="material-symbols:progress-activity" class="text-sm animate-spin" />
+            <AppLoading class="text-sm" />
             Watching for OBS to appear. This carries on by itself once it is installed.
           </p>
           <p v-else class="text-xs text-emerald-500 flex items-center gap-1.5">
@@ -857,19 +850,6 @@ function openLink(url: string): void {
               </p>
             </div>
           </div>
-
-          <div
-            v-if="aliasNames.length"
-            class="p-4 rounded-xl border border-border text-xs text-muted-500 space-y-1"
-          >
-            <p class="text-sm font-medium text-foreground">
-              {{ aliasNames.length }} games found on this machine
-            </p>
-            <p>
-              Their folders read properly from the first clip: {{ aliasNames.slice(0, 3).join(', ')
-              }}<span v-if="aliasNames.length > 3">, and {{ aliasNames.length - 3 }} more</span>.
-            </p>
-          </div>
         </template>
 
         <template v-else-if="page === 'review'">
@@ -986,7 +966,7 @@ function openLink(url: string): void {
             v-if="!plan"
             class="flex items-center gap-2 text-sm text-muted-500 py-4"
           >
-            <Icon icon="material-symbols:progress-activity" class="text-lg animate-spin" />
+            <AppLoading class="text-lg" />
             <span>Working out what would change…</span>
           </div>
 
@@ -1004,7 +984,7 @@ function openLink(url: string): void {
           -->
           <div v-if="working" class="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5 space-y-2">
             <div class="flex items-center gap-2 text-sm text-foreground">
-              <Icon icon="material-symbols:progress-activity" class="text-lg animate-spin text-orange-500" />
+              <AppLoading class="text-lg text-orange-500" />
               <span>{{ installProgress?.message ?? 'Writing the settings' }}</span>
             </div>
             <div
@@ -1017,7 +997,7 @@ function openLink(url: string): void {
               ></div>
             </div>
             <p class="text-xs text-muted-500">
-              Downloading and installing Python takes a minute the first time. It only happens once.
+              Downloading and installing OBS takes a minute the first time. It only happens once.
             </p>
           </div>
 
@@ -1059,7 +1039,7 @@ function openLink(url: string): void {
             </div>
 
             <div v-else-if="waitingForClip" class="flex items-center gap-2 text-sm text-muted-500">
-              <Icon icon="material-symbols:progress-activity" class="text-lg animate-spin" />
+              <AppLoading class="text-lg" />
               <span>Waiting for your first clip…</span>
             </div>
 

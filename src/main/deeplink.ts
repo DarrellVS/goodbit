@@ -38,7 +38,7 @@ export interface ObsSetupInvite {
   hotkey: string | null;
 }
 
-export const OBS_SETUP_STEPS = ['profile', 'buffer', 'hotkey', 'scene', 'script', 'python'] as const;
+export const OBS_SETUP_STEPS = ['profile', 'buffer', 'hotkey', 'scene', 'desktop'] as const;
 export type ObsSetupStep = (typeof OBS_SETUP_STEPS)[number];
 
 export type DeepLink = PublisherInvite | ObsSetupInvite;

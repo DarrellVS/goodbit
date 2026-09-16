@@ -7,6 +7,7 @@ import { audioUrl } from '../../utils/mediaUrl';
 import { useToastStore } from '../../stores/toast';
 import { deleteAudioTrack, importAudioTracks, pickAudioFiles, pathForFile } from '../../services/audio';
 import type { AudioTrack } from '../../types/audio';
+import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   tracks: AudioTrack[];
@@ -155,11 +156,8 @@ onBeforeUnmount(stopPreview);
         :disabled="uploading"
         @click="handleBrowse"
       >
-        <Icon
-          :icon="uploading ? 'material-symbols:progress-activity' : 'material-symbols:upload'"
-          class="text-xl text-orange-500"
-          :class="{ 'animate-spin': uploading }"
-        />
+        <AppLoading v-if="uploading" class="text-xl text-orange-500" />
+        <Icon v-else icon="material-symbols:upload" class="text-xl text-orange-500" />
         <span class="text-sm font-medium text-muted-800">
           {{ uploading ? 'Adding…' : 'Add music' }}
         </span>
@@ -173,7 +171,7 @@ onBeforeUnmount(stopPreview);
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center text-muted-500 text-xs">
-      <Icon icon="material-symbols:progress-activity" class="text-xl animate-spin text-orange-400" />
+      <AppLoading class="text-xl text-orange-400" />
     </div>
 
     <div v-else-if="tracks.length === 0" class="flex-1 flex items-center justify-center px-4">

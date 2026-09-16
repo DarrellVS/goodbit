@@ -1,18 +1,16 @@
 <template>
   <!--
-    A column that fits the window: the preview takes what is left over after
-    the timeline and the transport, rather than the timeline being pushed off
-    the bottom by a tall clip.
-  -->
-  <div class="h-full flex flex-col overflow-hidden">
-    <TrimHeader
-      :name="clipName"
-      :placeholder="clip?.filename ?? 'Name this clip'"
-      @update:name="clipName = $event"
-      @commit="saveName"
-    />
+    A column that fits the modal: the preview takes what is left over after the
+    timeline and the transport, rather than the timeline being pushed off the
+    bottom by a tall clip.
 
-    <main class="flex-1 min-h-0 w-full max-w-7xl mx-auto px-6 py-5 flex flex-col gap-4 overflow-y-auto">
+    No header of its own. This used to be a page with `TrimHeader` on top,
+    carrying the clip's name in a second editable field; inside the modal the
+    header above already has one, and two boxes for one name is how you end up
+    with two answers.
+  -->
+  <div class="h-full min-h-0 flex flex-col overflow-hidden">
+    <main class="flex-1 min-h-0 w-full px-6 py-5 flex flex-col gap-4 overflow-y-auto">
       <VideoPreview
         ref="videoPreviewRef"
         class="flex-1 min-h-[140px]"
@@ -58,8 +56,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
-import { useClipsStore } from '../stores/clips';
+import { useClipsStore } from '../../stores/clips';
 import {
   getClip,
   getClipMeta,
@@ -69,26 +66,39 @@ import {
   trimClip,
   updateClipName,
   type ClipSuggestions,
-} from '../services/clips';
-import type { Clip } from '../types/clip';
-import { useToastStore } from '../stores/toast';
-import { streamUrl, frameStripUrl } from '../utils/mediaUrl';
-import { restoreScrollPosition } from '../utils/scroll';
-import { formatBytes } from '../utils/formatters';
-import { useTrimRange } from '../composables/useTrimRange';
-import { useVideoPlayer } from '../composables/useVideoPlayer';
-import TrimHeader from '../components/Trim/TrimHeader.vue';
-import VideoPreview from '../components/Trim/VideoPreview.vue';
-import TimelineEditor from '../components/Trim/TimelineEditor.vue';
-import SuggestionBanner from '../components/Trim/SuggestionBanner.vue';
+} from '../../services/clips';
+import type { Clip } from '../../types/clip';
+import type { ClipMeta } from '../../services/clips';
+import { useToastStore } from '../../stores/toast';
+import { streamUrl, frameStripUrl } from '../../utils/mediaUrl';
+import { formatBytes } from '../../utils/formatters';
+import { useTrimRange } from '../../composables/useTrimRange';
+import { useVideoPlayer } from '../../composables/useVideoPlayer';
+import VideoPreview from './VideoPreview.vue';
+import TimelineEditor from './TimelineEditor.vue';
+import SuggestionBanner from './SuggestionBanner.vue';
 
 interface Props {
   id: string;
+  /**
+   * What the panel that opened this already knows.
+   *
+   * The details panel has loaded the clip and probed the file before the
+   * trimmer exists, and re-fetching both here is what made opening the trimmer
+   * feel unfinished: the strip painted, and then a moment later the duration
+   * arrived and the range shading appeared over it. Handing the numbers over
+   * means the range is right on the first frame and there is nothing to pop in.
+   *
+   * Optional, because `/trim/:id` can open this cold, and then the fetches
+   * below are the only way to find out.
+   */
+  clip?: Clip | null;
+  metadata?: ClipMeta | null;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ (e: 'saved'): void }>();
 
-const router = useRouter();
 const clipsStore = useClipsStore();
 
 const {
@@ -155,35 +165,15 @@ async function loadClipMetadata(): Promise<void> {
 
 const toastStore = useToastStore();
 const clip = ref<Clip | null>(null);
-const clipName = ref('');
 
 async function loadClip(): Promise<void> {
   try {
     clip.value = await getClip(Number(props.id));
-    clipName.value = clip.value.displayName ?? '';
   } catch (error) {
     console.error('Failed to load the clip:', error);
   }
 }
 
-/**
- * The name is saved when the field is left, not when the trim is saved: a name
- * is a decision on its own and should not be lost to a change of mind about
- * the cut. An empty field clears the name, and the filename shows again.
- */
-async function saveName(): Promise<void> {
-  if (!clip.value) return;
-  const next = clipName.value.trim() || null;
-  if (next === (clip.value.displayName ?? null)) return;
-
-  try {
-    clip.value = await updateClipName(clip.value.id, next);
-    clipName.value = clip.value.displayName ?? '';
-    toastStore.success(next ? `Named "${next}"` : 'Name cleared');
-  } catch (error) {
-    toastStore.error((error as Error).message || 'Could not save the name');
-  }
-}
 
 const suggestions = ref<ClipSuggestions | null>(null);
 const suggestionsLoading = ref(false);
@@ -263,8 +253,8 @@ async function handleSave(): Promise<void> {
     );
     clipsStore.resetPagination();
     await clipsStore.fetchClips(false);
-    await router.push('/');
-    restoreScrollPosition();
+    // The cut rewrote the file, so the details behind this need re-reading.
+    emit('saved');
   } catch (error) {
     console.error('Failed to trim clip:', error);
     toastStore.error((error as Error).message || 'Could not trim this clip');
@@ -274,8 +264,13 @@ async function handleSave(): Promise<void> {
 }
 
 onMounted(() => {
-  void loadClip();
-  void loadClipMetadata();
+  // Straight from the caller where possible, over the wire only when not.
+  if (props.metadata?.durationSec) initializeRange(props.metadata.durationSec);
+  else void loadClipMetadata();
+
+  if (props.clip) clip.value = props.clip;
+  else void loadClip();
+
   void loadSuggestions();
   // Nothing depends on this arriving; it only changes what the wait says.
   void getHudWatchedGames()

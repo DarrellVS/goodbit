@@ -6,6 +6,7 @@ import { useToastStore } from '../../stores/toast';
 import { getClipCollections } from '../../services/clips';
 import type { Clip } from '../../types/clip';
 import BasePopover from '../Base/BasePopover.vue';
+import AppLoading from './AppLoading.vue';
 
 interface Props {
   clip: Clip;
@@ -140,11 +141,8 @@ async function createAndAddCollection() {
               :disabled="!newCollectionName.trim() || creatingCollection"
               @click="createAndAddCollection"
             >
-              <Icon 
-                :icon="creatingCollection ? 'material-symbols:progress-activity' : 'material-symbols:add-rounded'"
-                class="text-lg"
-                :class="{ 'animate-spin': creatingCollection }"
-              />
+              <AppLoading v-if="creatingCollection" class="text-lg" />
+              <Icon v-else icon="material-symbols:add-rounded" class="text-lg" />
             </button>
           </div>
         </div>

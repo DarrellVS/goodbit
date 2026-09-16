@@ -183,13 +183,37 @@ function page(): string {
         transition: opacity 200ms ease, transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
       }
 
-      #spinner {
-        box-sizing: border-box;
-        border: 2.5px solid rgba(255, 255, 255, 0.14);
-        border-top-color: var(--orange);
-        animation: spin 720ms linear infinite;
+      /*
+        The app's own mark, with the light moving along it.
+
+        The same four frames the rest of the app now waits with, drawn by hand
+        because this page is a self contained data URL in the main process and
+        shares no bundle with the renderer. If the shape changes in
+        AppLoading.vue it has to change here too; there is no import that would
+        carry it across.
+
+        Height only, and 1.5556 is 224 over 144: the lit frame's height in the
+        mark divided by a dim one's.
+      */
+      #spinner rect {
+        /* In CSS, not a fill= attribute: a presentation attribute does not
+           resolve var(), so the frames came out black. */
+        fill: var(--orange);
+        transform-box: fill-box;
+        transform-origin: center;
+        opacity: 0.32;
+        animation: goodbit-frame 1100ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
       }
-      @keyframes spin { to { transform: rotate(360deg); } }
+      #spinner rect:nth-child(2) { animation-delay: 275ms; }
+      #spinner rect:nth-child(3) { animation-delay: 550ms; }
+      #spinner rect:nth-child(4) { animation-delay: 825ms; }
+
+      @keyframes goodbit-frame {
+        0%   { transform: scaleY(1);      opacity: 0.32; }
+        20%  { transform: scaleY(1.5556); opacity: 1; }
+        45%  { transform: scaleY(1);      opacity: 0.32; }
+        100% { transform: scaleY(1);      opacity: 0.32; }
+      }
 
       #tick {
         background: linear-gradient(140deg, #fb923c, #ea580c);
@@ -205,7 +229,8 @@ function page(): string {
 
       /* Saved: the spinner goes, the tick pops in, and the stroke draws itself
          rather than appearing all at once. */
-      #card.saved #spinner { opacity: 0; transform: scale(0.6); animation: none; }
+      #card.saved #spinner { opacity: 0; transform: scale(0.6); }
+      #card.saved #spinner rect { animation: none; }
       #card.saved #tick { opacity: 1; transform: scale(1); }
       #card.saved #tick path { animation: draw 260ms 90ms ease forwards; }
       @keyframes draw { to { stroke-dashoffset: 0; } }
@@ -258,7 +283,12 @@ function page(): string {
   <body>
     <div id="card">
       <div id="badge">
-        <div id="spinner"></div>
+        <svg id="spinner" viewBox="0 0 512 512">
+          <rect x="78" y="184" width="80" height="144" rx="18" />
+          <rect x="170" y="184" width="80" height="144" rx="18" />
+          <rect x="262" y="184" width="80" height="144" rx="18" />
+          <rect x="354" y="184" width="80" height="144" rx="18" />
+        </svg>
         <div id="tick">
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4"
                stroke-linecap="round" stroke-linejoin="round">
@@ -284,21 +314,67 @@ function page(): string {
        * gate on a sine pops at both ends; ramping the gain to near zero does
        * not.
        */
-      function chime() {
+      /*
+       * Two sounds, one phrase.
+       *
+       * The start plays C5 on its own, quietly. The finish plays C6 into E6.
+       * That is deliberately the same note an octave up and then a third above
+       * it, so the pair reads as one gesture split in two: the low note asks a
+       * question, the rising pair answers it. A second sound unrelated to the
+       * first would be two announcements rather than a beginning and an end.
+       *
+       * The start is the quieter of the two by some margin, and half as long.
+       * It fires while a game is running and nothing has happened yet, so its
+       * job is to be noticed without being answered; the one that matters is
+       * the one that says the clip is safe.
+       *
+       * Sine throughout, with an exponential tail. A raw gate on a sine pops at
+       * both ends, and the envelope is the only reason this does not click.
+       */
+      // Keyed by the state name the card is given, not by a name of their own:
+      // they were 'start' and 'saved' against states 'saving' and 'saved', so
+      // the first lookup missed and the opening note never played.
+      const VOICES = {
+        saving: [{ hz: 523.25, at: 0, peak: 0.3, tail: 0.13 }],
+        saved: [
+          { hz: 1046.5, at: 0, peak: 0.6, tail: 0.2 },
+          { hz: 1318.5, at: 0.085, peak: 0.6, tail: 0.2 },
+        ],
+      };
+
+      /*
+       * The peaks above are what full volume means; the setting scales them.
+       *
+       * Squared rather than straight, because loudness is not heard linearly: a
+       * slider at half that simply halved the gain sounded most of the way to
+       * full, so the top half of the travel did almost nothing. Squaring puts
+       * half the slider at a quarter of the amplitude, which is close enough to
+       * half as loud that the control behaves the way it looks.
+       */
+      function level(volume) {
+        const v = Math.max(0, Math.min(100, Number(volume ?? 75))) / 100;
+        return v * v;
+      }
+
+      function chime(kind, volume) {
+        const notes = VOICES[kind];
+        const scale = level(volume);
+        if (!notes || scale <= 0) return;
+
         try {
           const ctx = new AudioContext();
           const now = ctx.currentTime;
-          [[1046.5, 0], [1318.5, 0.085]].forEach(([hz, at]) => {
+          notes.forEach(({ hz, at, peak, tail }) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'sine';
             osc.frequency.value = hz;
             gain.gain.setValueAtTime(0.0001, now + at);
-            gain.gain.exponentialRampToValueAtTime(0.16, now + at + 0.012);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + at + 0.2);
+            gain.gain.exponentialRampToValueAtTime(peak * scale, now + at + 0.012);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + at + tail);
             osc.connect(gain).connect(ctx.destination);
             osc.start(now + at);
-            osc.stop(now + at + 0.22);
+            osc.stop(now + at + tail + 0.02);
           });
           setTimeout(() => void ctx.close(), 600);
         } catch {
@@ -307,7 +383,7 @@ function page(): string {
         }
       }
 
-      window.toast = (state, title, sub, withSound) => {
+      window.toast = (state, title, sub, withSound, volume) => {
         const changing = document.getElementById('title').textContent !== '';
         document.getElementById('title').textContent = title;
         document.getElementById('sub').textContent = sub;
@@ -322,7 +398,7 @@ function page(): string {
 
         card.classList.toggle('saved', state === 'saved');
         card.classList.add('in');
-        if (withSound) chime();
+        if (withSound) chime(state, volume);
       };
 
       window.dismiss = () => {
@@ -438,7 +514,7 @@ async function render(
   }
 
   await win.webContents.executeJavaScript(
-    `window.toast(${JSON.stringify(state)}, ${JSON.stringify(title)}, ${JSON.stringify(subtitle)}, ${sound});`,
+    `window.toast(${JSON.stringify(state)}, ${JSON.stringify(title)}, ${JSON.stringify(subtitle)}, ${sound}, ${Number(settings.clipToastVolume ?? 75)});`,
   );
 
   // The one number worth watching in this file. Everything above is arranged
@@ -465,13 +541,19 @@ async function render(
 /** A replay has landed in staging and is being filed. No game yet, on purpose. */
 export async function showClipSaving(): Promise<void> {
   try {
-    await render('saving', 'Saving your clip', 'Filing it into your library');
+    const settings = loadSettings();
+    await render(
+      'saving',
+      'Saving your clip',
+      'Filing it into your library',
+      settings.clipToastSound !== false,
+    );
   } catch (error) {
     console.error('[toast]', error instanceof Error ? error.message : error);
   }
 }
 
-/** The clip is indexed and openable. This is the one that chimes. */
+/** The clip is indexed and openable. The half of the phrase that resolves. */
 export async function showClipSaved(subtitle: string): Promise<void> {
   try {
     const settings = loadSettings();

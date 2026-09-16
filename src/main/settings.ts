@@ -45,9 +45,8 @@ export interface Settings {
   /**
    * A game name for an executable, when the guess was wrong.
    *
-   * Keyed by the lowercased full path. This is the one thing Smart Replays'
-   * alias list was genuinely for, and correcting a clip's game should fix
-   * every clip after it rather than only that one.
+   * Keyed by the lowercased full path, because correcting a clip's game should
+   * fix every clip after it rather than only that one.
    */
   gameOverrides?: Record<string, string>;
   /**
@@ -73,6 +72,15 @@ export interface Settings {
   clipToastSound?: boolean;
   /** Which corner of the screen the pointer is on. */
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  /**
+   * How loud the chime is, 0 to 100.
+   *
+   * It plays over a game, so the right level depends on how loud the game is
+   * and how the machine is mixed, which is not something the app can work out.
+   * 75 is the default because the first version was fixed and too quiet to hear
+   * over anything.
+   */
+  clipToastVolume?: number;
   mcpEnabled?: boolean;
   mcpPort?: number;
   mcpToken?: string;
@@ -128,6 +136,7 @@ const DEFAULTS: Settings = {
   clipToast: true,
   clipToastSound: true,
   clipToastCorner: 'top-right',
+  clipToastVolume: 75,
   migratedFromWebApp: false,
 };
 

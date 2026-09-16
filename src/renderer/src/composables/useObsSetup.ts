@@ -1,14 +1,10 @@
 import { computed, ref } from 'vue';
 import {
   applyObsSetup,
-  getObsAliases,
   getObsInstallPlan,
   getAudioDevices,
   getCaptureDisplays,
   getObsStatus,
-  getPythonState,
-  getScriptInfo,
-  installPython,
   installObs,
   launchObs,
   planObsSetup,
@@ -19,8 +15,6 @@ import {
   type AudioDevice,
   type CaptureDisplay,
   type ObsStatus,
-  type PythonState,
-  type ScriptInfo,
 } from '../services/obs';
 
 /**
@@ -47,8 +41,6 @@ export function useObsSetup() {
   const status = ref<ObsStatus | null>(null);
   const plan = ref<ObsSetupPlan | null>(null);
   const installPlan = ref<ObsInstallPlan | null>(null);
-  const script = ref<ScriptInfo | null>(null);
-  const aliasNames = ref<string[]>([]);
 
   const loading = ref(false);
   const working = ref(false);
@@ -77,8 +69,6 @@ export function useObsSetup() {
   const audio = ref<AudioDevice[]>([]);
   const audioIds = ref<string[]>(['default']);
 
-  const python = ref<PythonState | null>(null);
-  const installingPython = ref(false);
 
   const displays = ref<CaptureDisplay[]>([]);
   const displayId = ref<number | null>(null);
@@ -142,17 +132,12 @@ export function useObsSetup() {
         enabled: true,
       },
       /*
-       * There is no "sort clips into folders" step any more.
+       * There is no "sort clips into folders" step.
        *
-       * Until now that meant installing Smart Replays, a third party script,
-       * plus a private Python interpreter to run it, because OBS names a
-       * recording after the clock and cannot be taught otherwise. GoodBit now
-       * does the sorting itself: OBS records into a staging folder, GoodBit
+       * OBS names a recording after the clock and cannot be taught otherwise,
+       * so GoodBit does the sorting: OBS records into a staging folder, GoodBit
        * asks Windows which program was in front while the clip was recording,
-       * and files it under that game.
-       *
-       * So it is not a step, because there is nothing to decide and nothing to
-       * install. It just happens.
+       * and files it under that game. Nothing to decide and nothing to install.
        */
     ];
   }
@@ -167,11 +152,6 @@ export function useObsSetup() {
     for (const step of steps.value) {
       (selected as Record<string, unknown>)[step.key] = step.enabled;
     }
-    // Neither is wanted any more, and both are said explicitly rather than
-    // left undefined: a machine that was set up the old way is having them
-    // taken away, and the plan needs to know that is deliberate.
-    selected.installScript = false;
-    selected.setPythonPath = false;
     return selected;
   });
 
@@ -191,11 +171,8 @@ export function useObsSetup() {
   }
 
   async function loadDetails(): Promise<void> {
-    const [info, aliases, screens, pythons, devices] = await Promise.allSettled([
-      getScriptInfo(),
-      getObsAliases(),
+    const [screens, devices] = await Promise.allSettled([
       getCaptureDisplays(),
-      getPythonState(),
       getAudioDevices(),
     ]);
     if (devices.status === 'fulfilled') audio.value = devices.value;
@@ -217,9 +194,6 @@ export function useObsSetup() {
       const kept = already.filter((id) => present.has(id));
       if (kept.length > 0) audioIds.value = kept;
     }
-    if (info.status === 'fulfilled') script.value = info.value;
-    if (aliases.status === 'fulfilled') aliasNames.value = aliases.value.names;
-    if (pythons.status === 'fulfilled') python.value = pythons.value;
     if (screens.status === 'fulfilled') {
       displays.value = screens.value;
       if (displayId.value === null) {
@@ -290,33 +264,6 @@ export function useObsSetup() {
     }
   }
 
-  /**
-   * Install a Python of GoodBit's own.
-   *
-   * For the machine with none OBS can load, which includes a machine with a
-   * perfectly good Python that happens to be too new. Refreshing afterwards is
-   * what re-enables the sorting step.
-   */
-  async function addPython(): Promise<void> {
-    installingPython.value = true;
-    error.value = null;
-    try {
-      await installPython();
-      await refresh();
-      await loadDetails();
-      // The step was disabled for want of a Python; it can be had now.
-      const step = steps.value.find((candidate) => candidate.key === 'installScript');
-      if (step) {
-        step.requires = undefined;
-        step.enabled = true;
-      }
-    } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : String(cause);
-    } finally {
-      installingPython.value = false;
-    }
-  }
-
   async function loadInstallPlan(): Promise<void> {
     installPlan.value = await getObsInstallPlan();
   }
@@ -346,8 +293,6 @@ export function useObsSetup() {
     status,
     plan,
     installPlan,
-    script,
-    aliasNames,
     steps,
     bufferSeconds,
     hotkey,
@@ -356,9 +301,6 @@ export function useObsSetup() {
     display,
     audio,
     audioIds,
-    python,
-    installingPython,
-    addPython,
     loading,
     working,
     error,

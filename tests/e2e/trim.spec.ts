@@ -29,42 +29,60 @@ test.describe('the trim page', () => {
     await ctx?.close();
   });
 
-  test('a clip can be named right there, and the name sticks without trimming', async () => {
+  test('a clip can be named from the trimmer, and the name sticks without trimming', async () => {
     const clips = (await call('GET', '/clips', undefined, { pageSize: 5, game: 'TrimGame' })).body as {
       items: Array<{ id: number; filename: string; displayName: string | null }>;
     };
     const clip = clips.items[0];
     expect(clip.displayName).toBeNull();
 
+    /*
+     * Trimming is a panel in the clip layer rather than a page, so the name is
+     * edited in the layer's header and there is one field for it rather than
+     * one per panel. `/trim/:id` still opens the trimmer, which is what this
+     * navigation is checking as well.
+     */
     await ctx.page.evaluate((id) => {
       window.location.hash = `#/trim/${id}`;
     }, clip.id);
 
-    const field = ctx.page.getByLabel('Clip name');
+    /*
+     * Scoped to the dialog, because the library is still mounted underneath and
+     * its tile carries a field with the same label. That is the layer working:
+     * opening a clip does not tear the library down.
+     */
+    const field = ctx.page
+      .getByRole('dialog')
+      .getByLabel(`Name for ${clip.filename}, shown in GoodBit only`);
     await expect(field).toBeVisible({ timeout: 10_000 });
-    // With no name, the filename is the placeholder rather than the value,
-    // so typing does not mean editing a filename.
-    await expect(field).toHaveAttribute('placeholder', clip.filename);
-    await expect(field).toHaveValue('');
+    await expect(field).toHaveValue(clip.filename);
 
     await field.fill('The one with the tank');
     await field.press('Enter');
 
-    await expect(ctx.page.locator('li').filter({ hasText: 'Named "The one with the tank"' })).toBeVisible();
-
     // Saved on leaving the field: no trim happened, the file is untouched.
-    const after = (await call('GET', `/clips/${clip.id}`)).body as {
-      displayName: string | null;
-      filename: string;
-    };
-    expect(after.displayName).toBe('The one with the tank');
+    await expect
+      .poll(
+        async () =>
+          ((await call('GET', `/clips/${clip.id}`)).body as { displayName: string | null })
+            .displayName,
+        { timeout: 10_000 },
+      )
+      .toBe('The one with the tank');
+
+    const after = (await call('GET', `/clips/${clip.id}`)).body as { filename: string };
     expect(after.filename).toBe(clip.filename);
 
     // Clearing it puts the filename back.
     await field.fill('');
     await field.press('Enter');
-    await expect(ctx.page.locator('li').filter({ hasText: 'Name cleared' })).toBeVisible();
-    const cleared = (await call('GET', `/clips/${clip.id}`)).body as { displayName: string | null };
-    expect(cleared.displayName).toBeNull();
+    await expect
+      .poll(
+        async () =>
+          ((await call('GET', `/clips/${clip.id}`)).body as { displayName: string | null })
+            .displayName,
+        { timeout: 10_000 },
+      )
+      .toBeNull();
   });
 });

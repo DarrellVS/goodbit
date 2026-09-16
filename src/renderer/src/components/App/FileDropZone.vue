@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Icon } from '@iconify/vue';
+import AppLoading from './AppLoading.vue';
 
 interface Props {
   isDragging: boolean;
@@ -52,15 +53,11 @@ defineProps<Props>();
 
         <!-- Upload State -->
         <template v-else>
-          <div class="relative">
-            <Icon
-              icon="material-symbols:cloud-upload"
-              class="text-9xl text-orange-500 mb-6 mx-auto animate-pulse"
-            />
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-20 h-20 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
-            </div>
-          </div>
+          <!--
+            The app's own mark, rather than a cloud with a ring spinning inside
+            it. One shape saying one thing beats two animations competing.
+          -->
+          <AppLoading class="text-8xl text-orange-500 mb-6 mx-auto" label="Importing files" />
           <h2 class="text-4xl font-bold text-card mb-3">
             Importing Files...
           </h2>

@@ -6,8 +6,8 @@ import { launchApp, makeVideo, type TestApp } from './app';
 /**
  * A replay lands in staging and GoodBit files it.
  *
- * This is the half that replaced a Python interpreter and a third party
- * script, so it is the half that has to be proven. The foreground sampler
+ * Naming a clip is the half nothing else can do, so it is the half that has to
+ * be proven. The foreground sampler
  * cannot be driven from a test (there is no game to put in front), so what is
  * asserted here is everything around the guess: the clip leaves staging,
  * lands under a game folder in the library, keeps the recording's own date,

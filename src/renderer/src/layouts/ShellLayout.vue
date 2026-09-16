@@ -34,6 +34,13 @@
       </main>
     </div>
 
+    <!--
+      One instance for the whole app, so a clip can be opened from the library,
+      a collection or today's clips and land in the same layer over whichever
+      of them you were looking at.
+    -->
+    <ClipDetailModal />
+
     <CommandPalette v-model:open="showCommandPalette" />
 
     <FileDropZone
@@ -48,6 +55,7 @@
 import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import { rescanGames } from '../services/games';
 import { RouterView, useRouter } from 'vue-router';
+import ClipDetailModal from '../components/ClipDetail/ClipDetailModal.vue';
 import { useClipsStore } from '../stores/clips';
 import { useGamesStore } from '../stores/games';
 import { useTagsStore } from '../stores/tags';

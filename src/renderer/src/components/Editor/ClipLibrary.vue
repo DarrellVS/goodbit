@@ -6,6 +6,7 @@ import { useClipGrouping } from '../../composables/useClipGrouping';
 import type { Clip } from '../../types/clip';
 import type { Game } from '../../types/game';
 import type { Tag } from '../../types/tag';
+import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   clips: Clip[];
@@ -167,7 +168,7 @@ function toggleTag(name: string): void {
     </div>
 
     <div v-if="loading && clips.length === 0" class="flex-1 flex items-center justify-center">
-      <Icon icon="material-symbols:progress-activity" class="text-xl animate-spin text-orange-400" />
+      <AppLoading class="text-xl text-orange-400" />
     </div>
 
     <div v-else-if="clips.length === 0" class="flex-1 flex items-center justify-center px-4">
@@ -287,10 +288,8 @@ function toggleTag(name: string): void {
         :disabled="loading"
         @click="emit('load-more')"
       >
-        <Icon
-          :icon="loading ? 'material-symbols:progress-activity' : 'material-symbols:expand-more'"
-          :class="{ 'animate-spin': loading }"
-        />
+        <AppLoading v-if="loading" />
+        <Icon v-else icon="material-symbols:expand-more" />
         {{ loading ? 'Loading…' : 'Load more' }}
       </button>
     </div>

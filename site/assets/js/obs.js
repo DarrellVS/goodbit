@@ -27,9 +27,8 @@
     return Array.from(choices.querySelectorAll('input:checked')).map((input) => input.value);
   }
 
-  // `python` is no longer a step: the app brings its own, so the link does not
-  // carry a choice about it. An older link that still names it is harmless,
-  // since the app drops step names it does not recognise.
+  // An older link naming a step that no longer exists is harmless: the app
+  // drops step names it does not recognise.
 
   function render() {
     const steps = chosen();

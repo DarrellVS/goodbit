@@ -20,11 +20,28 @@
     </header>
     
     <div ref="strip" class="relative h-32 rounded-xl overflow-visible border border-border">
+      <!--
+        A band while the frames are being made, and a fade when they arrive.
+        The strip is not a file on disk: the first request for one decodes ten
+        frames out of the recording and tone maps them, so there is a real wait
+        behind it, and it used to end by cutting from nothing to a picture on
+        one frame. The placeholder keeps the shape the handles are already drawn
+        over, so only the contents change.
+      -->
+      <div
+        v-if="!stripReady"
+        class="absolute inset-0 rounded-xl bg-muted-50 animate-pulse"
+        aria-hidden="true"
+      ></div>
+
       <img
         :src="frameStripSource"
         alt="Video frames"
-        class="w-full h-full object-cover pointer-events-none select-none rounded-xl"
+        class="w-full h-full object-cover pointer-events-none select-none rounded-xl transition-opacity duration-300"
+        :class="stripReady ? 'opacity-100' : 'opacity-0'"
         draggable="false"
+        @load="stripReady = true"
+        @error="stripReady = true"
       />
 
       <!--
@@ -113,11 +130,8 @@
           :style="{ width: `${Math.max(2, saveProgress)}%` }"
           aria-hidden="true"
         ></span>
-        <Icon
-          :icon="isSaving ? 'material-symbols:progress-activity' : 'material-symbols:save'"
-          class="relative text-lg"
-          :class="{ 'animate-spin': isSaving }"
-        />
+        <AppLoading v-if="isSaving" class="relative text-lg" />
+        <Icon v-else icon="material-symbols:save" class="relative text-lg" />
         <!--
           Tabular figures, or the button shrinks and grows as the count goes
           from 9 to 10 to 100 and the whole label jitters under the pointer.
@@ -131,11 +145,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseRangeSlider from '../Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
 import type { TimeRange } from '../../composables/useTrimRange';
+import AppLoading from '../App/AppLoading.vue';
 
 interface Props {
   maxDuration: number;
@@ -168,6 +183,23 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const strip = ref<HTMLElement | null>(null);
+
+/*
+ * Whether the frames are on screen yet.
+ *
+ * `error` counts as ready on purpose: a strip that cannot be made should leave
+ * an empty band rather than pulse for ever, and the timeline still works
+ * without it.
+ */
+const stripReady = ref(false);
+
+// A different clip, or the same one re-cut, means waiting again.
+watch(
+  () => props.frameStripSource,
+  () => {
+    stripReady.value = false;
+  },
+);
 
 /** Where along the strip a pointer is, in seconds. */
 function timeAt(event: PointerEvent): number {

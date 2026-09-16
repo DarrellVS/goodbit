@@ -43,7 +43,6 @@ const NAME_PROHIBITED = /[/\\:"<>*?|%]/g;
  * the game does not have, and `DOOM_ The Dark Ages` looks like a bug;
  * `DOOM The Dark Ages` reads like a person wrote it.
  *
- * Moved here from `smartReplays.ts`, which this replaces.
  */
 export function safeName(name: string): string {
   return name.replace(NAME_PROHIBITED, '').replace(/\s+/g, ' ').trim();

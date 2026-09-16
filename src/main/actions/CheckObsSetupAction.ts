@@ -2,8 +2,6 @@ import path from 'node:path';
 import { BaseAction } from './BaseAction.js';
 import { readObs, type ObsProfile, type ObsSceneCollection } from '../services/obs/config.js';
 import { findObsExecutable, obsIsInstalled, obsIsRunning } from '../services/obs/paths.js';
-import { bestPython, ownPython } from '../services/obs/python.js';
-import { installedSmartReplays, SMART_REPLAYS } from '../services/obs/smartReplays.js';
 import { GOODBIT_COLLECTION, GOODBIT_PROFILE, readManifest } from '../services/obs/setup.js';
 import { loadSettings } from '../settings.js';
 import { INCOMING_DIR_NAME } from '../services/capture/incoming.js';
@@ -62,15 +60,7 @@ export interface ObsStatus {
   hotkey: string | null;
   /** What the GoodBit scene already captures, so the setup can show it ticked. */
   audioDeviceIds: string[];
-  python: { version: string; directory: string; usable: boolean } | null;
-  pythonConfigured: string | null;
-  script: { installed: boolean; matchesPin: boolean; version: string; loadedInCollection: boolean };
   setupWrittenAt: string | null;
-}
-
-/** Same drive, case insensitively, which is what the script needs to move a file. */
-function sameDrive(a: string, b: string): boolean {
-  return path.parse(a).root.toLowerCase() === path.parse(b).root.toLowerCase();
 }
 
 function samePath(a: string, b: string): boolean {
@@ -84,11 +74,9 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
     const videosRoot = settings.videosRoot;
     const findings: ObsFinding[] = [];
 
-    const [running, executable, python, own, installed] = await Promise.all([
+    const [running, executable, installed] = await Promise.all([
       obsIsRunning(),
       findObsExecutable(),
-      bestPython(),
-      ownPython(),
       obsIsInstalled(),
     ]);
 
@@ -122,8 +110,7 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
       collection.sourceKinds.some((kind) => kind !== 'scene' && kind !== 'group'),
     );
 
-    const script = installedSmartReplays();
-    const collectionScript = collection?.smartReplays ?? null;
+    const collectionScript = collection?.scriptEntry ?? null;
 
     if (installed && !profile) {
       // A blocker, not a warning. With no profile to read there is no way to
@@ -165,9 +152,9 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
        * Two paths are right, and one of them is only right for now.
        *
        * GoodBit points OBS at its own staging folder and files each clip into
-       * a game folder itself. Recording straight into the videos root is what
-       * 1.4.0 did, and it still works while Smart Replays is the one sorting,
-       * so it is not an error until that machine is migrated.
+       * a game folder itself. Recording straight into the videos root still
+       * produces clips that get indexed, so it is worth saying rather than
+       * treating as a failure.
        */
       const staging = videosRoot ? path.join(videosRoot, INCOMING_DIR_NAME) : '';
       const recordsSomewhereKnown =
@@ -203,85 +190,20 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
     }
 
     /*
-     * Not a finding any more.
+     * A scene collection left holding a script is worth saying, and only that.
      *
-     * Until 1.4.0 a folder per game needed a third party script and a private
-     * Python inside OBS, so its absence was a warning. GoodBit now names the
-     * clip itself from the program that was in front while it was recording,
-     * so an OBS with no scripts at all is the healthy state.
+     * Naming a clip is GoodBit's own job: `services/capture/` reads which
+     * program was in front while the replay was recording and files it. A
+     * leftover script doing the same thing is a race, and it usually wins, so
+     * setting up again takes it out.
      */
     if (collectionScript) {
       findings.push({
         id: 'script-present',
-        level: 'ok',
-        title: 'Smart Replays is still installed',
+        level: 'warning',
+        title: 'A script in OBS is still sorting your clips',
         detail:
-          'GoodBit sorts clips itself now, so the script and its Python are no longer needed. Setting up again removes them.',
-        fixable: true,
-      });
-    }
-
-    if (collectionScript) {
-      const base = collectionScript.settings.clips_base_path;
-      if (typeof base === 'string' && base && videosRoot) {
-        if (!samePath(base, videosRoot)) {
-          findings.push({
-            id: 'script-path-mismatch',
-            level: 'warning',
-            title: 'Smart Replays sorts clips somewhere else',
-            detail: `It writes into ${base}, GoodBit watches ${videosRoot}.`,
-            fixable: true,
-          });
-        }
-        if (profile?.recordingPath && !sameDrive(base, profile.recordingPath)) {
-          findings.push({
-            id: 'script-drive-mismatch',
-            level: 'blocker',
-            title: 'Smart Replays cannot move your clips',
-            detail: `Its folder (${base}) is on a different drive from OBS's recording folder (${profile.recordingPath}), and it moves files rather than copying them.`,
-            fixable: false,
-          });
-        }
-      }
-
-      if (collectionScript.settings.clips_save_to_folder === false) {
-        findings.push({
-          id: 'script-sorting-off',
-          level: 'warning',
-          title: 'Smart Replays is not sorting into folders',
-          detail: 'Its "sort clips into folders" option is off, so every clip lands in one folder.',
-          fixable: true,
-        });
-      }
-    }
-
-    // Only about OBS's own key. Whether GoodBit put it there or the user did
-    // makes no difference to whether a script will run.
-    if (installed && collectionScript && !obs.pythonPath) {
-      findings.push({
-        id: 'python-unset',
-        level: 'blocker',
-        title: 'OBS has no Python, so it is running no scripts',
-        detail: own?.usable
-          ? "GoodBit has its own Python ready; OBS just has not been pointed at it."
-          : 'Setting this up installs one into GoodBit\'s own folder and points OBS at it.',
-        fixable: true,
-      });
-    }
-
-    // A Python OBS cannot load looks exactly like a Python that works, until
-    // you read an OBS log. Worth saying out loud when it is what OBS is on.
-    if (obs.pythonPath && own && !obs.pythonPath.toLowerCase().includes('goodbit')) {
-      const tooNew = python?.tooNew === true;
-      findings.push({
-        id: 'python-elsewhere',
-        level: tooNew ? 'warning' : 'ok',
-        title: tooNew
-          ? 'OBS is pointed at a Python it cannot load'
-          : "OBS is pointed at a Python that is not GoodBit's",
-        detail: tooNew
-          ? `${obs.pythonPath} is too new for OBS, which loads 3.10 to 3.12 and reports it nowhere except its own log.`
-          : `${obs.pythonPath}. GoodBit's own copy is at ${own.directory}, and setting up again points OBS there.`,
+          'GoodBit files clips into a folder per game itself, and two things moving the same file is a race. Setting up again removes it.',
         fixable: true,
       });
     }
@@ -328,20 +250,6 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
           ?.audioDeviceIds ?? [],
       // GoodBit's own if it has one, otherwise the best the machine offers, so
       // the interface can say what the situation is either way.
-      python: (own ?? python)
-        ? {
-            version: (own ?? python)!.version,
-            directory: (own ?? python)!.directory,
-            usable: (own ?? python)!.usable,
-          }
-        : null,
-      pythonConfigured: obs.pythonPath,
-      script: {
-        installed: Boolean(script),
-        matchesPin: script?.matchesPin ?? false,
-        version: SMART_REPLAYS.version,
-        loadedInCollection: Boolean(collectionScript),
-      },
       setupWrittenAt: readManifest()?.writtenAt ?? null,
     };
   }

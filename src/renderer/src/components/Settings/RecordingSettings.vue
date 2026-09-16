@@ -7,6 +7,7 @@ import SettingSelect from './SettingSelect.vue';
 import { useAppSettings } from '../../composables/useAppSettings';
 import { useObsSetup } from '../../composables/useObsSetup';
 import { useToastStore } from '../../stores/toast';
+import AppLoading from '../App/AppLoading.vue';
 
 /**
  * Recording: the OBS half of the app.
@@ -90,7 +91,7 @@ async function launch(): Promise<void> {
 
 function undo(): void {
   toast.confirm(
-    'The GoodBit profile and scene collection go, and the Python path goes back to what it was. Your own profiles and scenes are untouched. Close OBS first.',
+    'The GoodBit profile and scene collection go, and the one setting GoodBit changed outside them goes back to what it was. Your own profiles and scenes are untouched. Close OBS first.',
     async () => {
       await setup.undo();
       toast.success('OBS is back to how it was');
@@ -114,18 +115,12 @@ function openGuide(): void {
 
     <div class="p-4 bg-card rounded-lg border border-border space-y-4">
       <div class="flex items-start gap-3">
+        <AppLoading v-if="!status" class="text-xl flex-shrink-0 mt-0.5 text-muted-400" />
         <Icon
-          :icon="
-            !status
-              ? 'material-symbols:progress-activity'
-              : status.ready
-                ? 'material-symbols:check-circle'
-                : 'material-symbols:error-circle-rounded'
-          "
+          v-else
+          :icon="status.ready ? 'material-symbols:check-circle' : 'material-symbols:error-circle-rounded'"
           class="text-xl flex-shrink-0 mt-0.5"
-          :class="[
-            !status ? 'text-muted-400 animate-spin' : status.ready ? 'text-emerald-500' : 'text-orange-500',
-          ]"
+          :class="status.ready ? 'text-emerald-500' : 'text-orange-500'"
         />
         <div class="min-w-0">
           <p class="font-medium text-foreground">{{ headline }}</p>
@@ -230,67 +225,112 @@ function openGuide(): void {
     />
 
     <!--
-      Pressing the replay key and getting nothing back is the most uncertain
-      moment in using this app: OBS says nothing useful, its window is behind a
-      game, and the clip takes a few seconds to reach the library. This is the
-      receipt, and it appears only once the clip is actually indexed, so it
-      cannot say "saved" about a buffer that was not running.
+      One feature, one card.
+
+      This was five bordered boxes stacked in a row, one per control, which made
+      four settings that only exist because the first one is on look like four
+      unrelated choices. The switch that turns the whole thing on keeps the top
+      of the card, everything it governs sits under a rule below it, and trying
+      it out is separated again because it changes nothing.
     -->
-    <SettingToggle
-      label="Say when a clip is saved"
-      description="A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it."
-      :model-value="settings.clipToast !== false"
-      @update:model-value="saveSettings({ clipToast: $event })"
-    />
-
-    <template v-if="settings.clipToast !== false">
-      <SettingToggle
-        label="Play a sound with it"
-        description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
-        :model-value="settings.clipToastSound !== false"
-        @update:model-value="saveSettings({ clipToastSound: $event })"
-      />
-
-      <SettingSelect
-        label="Where it appears"
-        description="On whichever screen your pointer is on, which is the one you are playing on."
-        :model-value="settings.clipToastCorner ?? 'top-right'"
-        :options="CORNERS"
-        @update:model-value="saveSettings({ clipToastCorner: $event as never })"
-      />
-
+    <div class="bg-card rounded-lg border border-border p-4">
       <!--
-        The same row as every switch above it: label, description, control on
-        the right. It was a bare button with two sentences of prose wrapped
-        around it, which read as a paragraph that happened to have a button in
-        it rather than as a setting.
+        Pressing the replay key and getting nothing back is the most uncertain
+        moment in using this app: OBS says nothing useful, its window is behind
+        a game, and the clip takes a few seconds to reach the library. This is
+        the receipt, and it appears only once the clip is actually indexed, so
+        it cannot say "saved" about a buffer that was not running.
       -->
-      <div
-        class="flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border"
-      >
-        <div>
-          <label class="font-medium text-foreground">Try it</label>
-          <p class="text-sm text-muted-500 mt-1">
-            Shows the card and plays the chime, without recording anything
-          </p>
-        </div>
-        <button
-          class="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-700 hover:bg-muted-50 transition-colors flex-shrink-0"
-          @click="previewToast"
-        >
-          Show me
-        </button>
-      </div>
+      <SettingToggle
+        flat
+        label="Say when a clip is saved"
+        description="A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it."
+        :model-value="settings.clipToast !== false"
+        @update:model-value="saveSettings({ clipToast: $event })"
+      />
 
-      <!-- The one thing that can make this look broken, said once and quietly. -->
-      <p class="flex items-start gap-2 px-1 text-xs text-muted-500">
-        <Icon icon="material-symbols:info-outline" class="flex-shrink-0 mt-0.5 text-sm" />
-        <span>
-          Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
-          games default to, is fine.
-        </span>
-      </p>
-    </template>
+      <template v-if="settings.clipToast !== false">
+        <div class="h-px bg-border my-1" role="presentation"></div>
+
+        <SettingToggle
+          flat
+          label="Play a sound with it"
+          description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
+          :model-value="settings.clipToastSound !== false"
+          @update:model-value="saveSettings({ clipToastSound: $event })"
+        />
+
+        <!--
+          Loudness is the one thing the app cannot work out for itself: the
+          chime plays over a game, so the right level depends on how loud that
+          game is and how the machine is mixed. Fixed, it was too quiet to hear
+          over anything.
+        -->
+        <div v-if="settings.clipToastSound !== false" class="flex items-center justify-between gap-4 py-3">
+          <div class="min-w-0">
+            <label class="font-medium text-foreground">How loud</label>
+            <p class="text-sm text-muted-500 mt-1">
+              Press Show me after changing it, to hear where it lands
+            </p>
+          </div>
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <input
+              :value="settings.clipToastVolume ?? 75"
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              class="w-40 accent-orange-500"
+              aria-label="Chime volume"
+              @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
+            />
+            <span class="w-10 text-right text-sm text-muted-500 tabular-nums">
+              {{ settings.clipToastVolume ?? 75 }}%
+            </span>
+          </div>
+        </div>
+
+        <SettingSelect
+          flat
+          label="Where it appears"
+          description="On whichever screen your pointer is on, which is the one you are playing on."
+          :model-value="settings.clipToastCorner ?? 'top-right'"
+          :options="CORNERS"
+          @update:model-value="saveSettings({ clipToastCorner: $event as never })"
+        />
+
+        <div class="h-px bg-border my-1" role="presentation"></div>
+
+        <!--
+          A row like the rest, because it was a bare button with two sentences
+          of prose wrapped around it, which read as a paragraph that happened to
+          contain a button.
+        -->
+        <div class="flex items-center justify-between gap-4 py-3">
+          <div>
+            <label class="font-medium text-foreground">Try it</label>
+            <p class="text-sm text-muted-500 mt-1">
+              Shows the card and plays the chime, without recording anything
+            </p>
+          </div>
+          <button
+            class="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-700 hover:bg-muted-50 transition-colors flex-shrink-0"
+            @click="previewToast"
+          >
+            Show me
+          </button>
+        </div>
+
+        <!-- The one thing that can make this look broken, said once and quietly. -->
+        <p class="flex items-start gap-2 pt-3 text-xs text-muted-500 border-t border-border">
+          <Icon icon="material-symbols:info-outline" class="flex-shrink-0 mt-0.5 text-sm" />
+          <span>
+            Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
+            games default to, is fine.
+          </span>
+        </p>
+      </template>
+    </div>
 
     <ObsSetupDialog
       v-model:open="showDialog"

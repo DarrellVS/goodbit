@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useDragAndDrop } from '../../composables/useDragAndDrop';
 import { beginOsDrag } from '../../composables/useOsDrag';
+import { useClipDetail } from '../../composables/useClipDetail';
 import { useConfiguration } from '../../composables/useConfiguration';
 import { useClipActionsHandlers } from '../../composables/useClipActionsHandlers';
 import { useHoverScrub, scrubBand } from '../../composables/useHoverScrub';
@@ -12,7 +12,6 @@ import { useCollectionsStore } from '../../stores/collections';
 import { useToastStore } from '../../stores/toast';
 import { useGamesStore } from '../../stores/games';
 import { moveClipToGame } from '../../services/clips';
-import { saveScrollPosition } from '../../utils/scroll';
 import type { Clip } from '../../types/clip';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
@@ -43,13 +42,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const router = useRouter();
 const config = useConfiguration();
 const batchStore = useBatchOperationsStore();
 const collectionsStore = useCollectionsStore();
 const toastStore = useToastStore();
 const gamesStore = useGamesStore();
 const { startDrag, endDrag } = useDragAndDrop();
+const { open: openClip } = useClipDetail();
 
 const isSelected = computed(() => batchStore.isSelected(props.clip.id));
 const showMoveDialog = ref(false);
@@ -212,8 +211,9 @@ function handleCardClick(event: MouseEvent) {
     return;
   }
 
-  saveScrollPosition();
-  router.push(`/clips/${props.clip.id}`);
+  // A layer over the library, not a page instead of it. Nothing is torn down,
+  // so there is no scroll position to save and restore.
+  openClip(props.clip.id);
 }
 </script>
 

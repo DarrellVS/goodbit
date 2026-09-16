@@ -11,6 +11,15 @@ interface Props {
   label: string;
   description: string;
   disabled?: boolean;
+  /**
+   * Inside a group that already has a card around it.
+   *
+   * A feature with four settings under it was five bordered boxes in a row, one
+   * per switch, which made four dependent choices look like four unrelated
+   * ones. Flat drops the card and the minimum height so a row can sit inside a
+   * section that provides both.
+   */
+  flat?: boolean;
 }
 
 interface Emits {
@@ -22,7 +31,13 @@ const emit = defineEmits<Emits>();
 </script>
 
 <template>
-  <div class="flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border">
+  <div
+    :class="
+      flat
+        ? 'flex items-center justify-between gap-4 py-3'
+        : 'flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border'
+    "
+  >
     <div>
       <label class="font-medium text-foreground">{{ label }}</label>
       <p class="text-sm text-muted-500 mt-1">{{ description }}</p>

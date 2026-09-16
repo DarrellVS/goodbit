@@ -57,3 +57,36 @@ export function gameArtUrl(game: string, kind: GameArt = 'header'): string {
 export function frameStripUrl(clipId: number): string {
   return `${MEDIA}/strip/${clipId}`;
 }
+
+/**
+ * Start the frame strip before anything is waiting for it.
+ *
+ * The strip is not a file sitting on disk: the first request for one makes the
+ * app decode ten frames out of the recording, tone map them and tile them,
+ * which on an HDR ultrawide is seconds rather than milliseconds. Asking for it
+ * only when the trimmer mounts means the trimmer opens onto an empty band and
+ * fills in afterwards.
+ *
+ * Intent is known earlier than that: the pointer resting on "Trim to the good
+ * bit" is a good guess, and the click is a certainty, and both happen before
+ * the panel exists. The request made here is the same URL the `<img>` will ask
+ * for, so the work is already running, or already done, by the time it does.
+ *
+ * Fire and forget. A prefetch that fails costs nothing, because the real
+ * request is still to come.
+ */
+const warmedStrips = new Set<number>();
+
+export function prefetchFrameStrip(clipId: number): void {
+  if (!clipId || warmedStrips.has(clipId)) return;
+  warmedStrips.add(clipId);
+
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = frameStripUrl(clipId);
+}
+
+/** A trim rewrites the file, so the strip it had is no longer the strip it has. */
+export function forgetFrameStrip(clipId: number): void {
+  warmedStrips.delete(clipId);
+}

@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { useToastStore } from '../../stores/toast';
 import { useFormat } from '../../composables/useFormat';
 import { formatDate } from '../../helpers/dateFormat';
+import AppLoading from '../App/AppLoading.vue';
 
 const toastStore = useToastStore();
 const { formatBytes } = useFormat();
@@ -86,11 +87,8 @@ onMounted(() => {
         :disabled="working"
         @click="backUpNow"
       >
-        <Icon
-          :icon="working ? 'material-symbols:progress-activity' : 'material-symbols:backup'"
-          class="text-lg"
-          :class="{ 'animate-spin': working }"
-        />
+        <AppLoading v-if="working" class="text-lg" />
+        <Icon v-else icon="material-symbols:backup" class="text-lg" />
         {{ working ? 'Copying…' : 'Back up now' }}
       </button>
 

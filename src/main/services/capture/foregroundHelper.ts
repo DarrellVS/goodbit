@@ -1,11 +1,10 @@
 /**
  * Asking Windows which program the user is actually looking at.
  *
- * This is the whole reason a Python interpreter and somebody else's script
- * were ever downloaded. OBS cannot name a file after a game, so Smart Replays
- * ran inside OBS, looked at the foreground process, and moved the file. All
- * that is needed to take the job back is a `GetForegroundWindow` and a process
- * path, and neither Node nor Electron can reach either.
+ * OBS cannot name a file after a game, so GoodBit names it, from whatever was
+ * in front while the replay was recording. All that takes is a
+ * `GetForegroundWindow` and a process path, and neither Node nor Electron can
+ * reach either.
  *
  * So: a small C# console program, compiled by PowerShell the first time it is
  * wanted and cached in `%APPDATA%/GoodBit/bin/`. The same trade
@@ -19,13 +18,11 @@
  * PowerShell. A resident `powershell.exe` costs about 78 MB; this costs 13 MB
  * and 0.11% of one core.
  *
- * **`PROCESS_QUERY_LIMITED_INFORMATION` is load bearing.** The script this
- * replaces opens the foreground process with
- * `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ` (`smart_replays.py:1111`), and
- * a protected process denies exactly that pair while allowing the limited one.
- * So the old code failed to name the games most likely to be protected, and
- * those clips landed with no game at all. Deleting the script fixes a bug in
- * it.
+ * **`PROCESS_QUERY_LIMITED_INFORMATION` is load bearing.** The obvious pair,
+ * `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ`, is denied outright by a
+ * protected process while the limited right is allowed. Ask for the pair and
+ * the games most likely to be protected are exactly the ones that cannot be
+ * named, and those clips land with no game at all.
  */
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
