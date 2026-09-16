@@ -40,8 +40,57 @@ class VideoService {
     return await new EnsureFrameStripAction().execute({ clip });
   }
 
+  /**
+   * One scan at a time, and one more if anything asked while it ran.
+   *
+   * Nine things start a scan: boot, the six hourly sweep, the tray item, the
+   * header button, `POST /scan`, a watcher add, a watcher unlink, a boot step
+   * and every clip GoodBit files for itself. None of them knew about each
+   * other, and two scans at once is not a waste, it is an error: both read the
+   * same folder, both find the same file with no row, and both insert it.
+   *
+   *   SQLITE_CONSTRAINT: UNIQUE constraint failed: clip.filePath
+   *
+   * `reconcile()` swallows that and logs, so the watcher path lost a clip
+   * quietly; `POST /scan` answered 500. Reachable by pressing Rescan while a
+   * replay is being filed, or by saving two replays inside one scan, which on
+   * a library of a few hundred clips is a second or so wide.
+   *
+   * Coalesced rather than queued. A caller arriving mid-scan does not want
+   * that scan's answer, because it may have started before their file existed,
+   * so one follow-up run is scheduled and every waiter gets its result. Any
+   * number of callers during a scan still means exactly one more scan, which
+   * is the same "collapse duplicate work" rule `mediaQueue.ts` applies to
+   * ffmpeg.
+   */
+  private scanInFlight: Promise<ScanResult> | null = null;
+  private scanAgain = false;
+
   async scanAndSyncClips(): Promise<ScanResult> {
-    return await new ScanAndSyncClipsAction().execute();
+    if (this.scanInFlight) {
+      this.scanAgain = true;
+      return await this.scanInFlight;
+    }
+
+    this.scanInFlight = (async () => {
+      try {
+        let result = await new ScanAndSyncClipsAction().execute();
+
+        // Drains rather than loops for ever: each pass clears the flag before
+        // running, so only work asked for after it started schedules another.
+        while (this.scanAgain) {
+          this.scanAgain = false;
+          result = await new ScanAndSyncClipsAction().execute();
+        }
+
+        return result;
+      } finally {
+        this.scanInFlight = null;
+        this.scanAgain = false;
+      }
+    })();
+
+    return await this.scanInFlight;
   }
 
   async removeClipCaches(filePath: string): Promise<void> {

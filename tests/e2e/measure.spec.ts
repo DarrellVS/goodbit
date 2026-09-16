@@ -61,13 +61,20 @@ test.describe('measurements for 2.0', () => {
   // The export of three real ultrawide recordings is minutes, not seconds.
   test.setTimeout(20 * 60 * 1000);
 
-  const call = <T = unknown>(
+  /**
+   * The internal API, unwrapped.
+   *
+   * `apiRequest` answers with the whole response, `{ status, body, headers }`,
+   * because it is dispatching an Express router in-process. Every caller wants
+   * the body.
+   */
+  const call = async <T = unknown>(
     method: string,
     path: string,
     body?: unknown,
     query?: unknown,
-  ): Promise<T> =>
-    ctx.page.evaluate(
+  ): Promise<T> => {
+    const response = (await ctx.page.evaluate(
       ([m, p, b, q]) =>
         window.goodbit!.apiRequest({
           method: m as string,
@@ -76,7 +83,13 @@ test.describe('measurements for 2.0', () => {
           query: (q ?? {}) as Record<string, unknown>,
         }),
       [method, path, body, query] as const,
-    ) as Promise<T>;
+    )) as { status: number; body: T };
+
+    if (response.status >= 400) {
+      throw new Error(`${method} ${path} answered ${response.status}: ${JSON.stringify(response.body)}`);
+    }
+    return response.body;
+  };
 
   const clipsIn = (game: string): Promise<ClipPage> =>
     call<ClipPage>('GET', '/clips', undefined, { game, pageSize: '200' });
