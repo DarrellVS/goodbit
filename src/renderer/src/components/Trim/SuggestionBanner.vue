@@ -150,13 +150,13 @@ function reject(): void {
 
     <div class="flex items-center gap-1.5 ml-auto">
       <button
-        v-for="moment in suggestions?.moments ?? []"
-        :key="moment.t"
+        v-for="goodBit in suggestions?.goodBits ?? []"
+        :key="goodBit.t"
         class="text-[11px] font-mono px-1.5 py-0.5 rounded border border-orange-300 text-orange-700 hover:bg-orange-500/16 transition-colors"
-        :title="`Jump to ${format(moment.t)}`"
-        @click="emit('seek', moment.t)"
+        :title="`Jump to ${format(goodBit.t)}`"
+        @click="emit('seek', goodBit.t)"
       >
-        {{ format(moment.t) }}
+        {{ format(goodBit.t) }}
       </button>
 
       <button

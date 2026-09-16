@@ -40,6 +40,7 @@ writeFileSync(
   [
     "export { moduleFor } from '../src/main/services/highlights/registry.js';",
     "export { readShape, sampleRegions } from '../src/main/services/highlights/vision/sample.js';",
+    "export { MIN_EVENT_CONFIDENCE } from '../src/main/services/highlights/decide.js';",
     "import '../src/main/services/highlights/games/index.js';",
     '',
   ].join('\n'),
@@ -57,7 +58,9 @@ await esbuild.build({
   logLevel: 'warning',
 });
 
-const { moduleFor, readShape, sampleRegions } = await import(pathToFileURL(OUT).href);
+const { moduleFor, readShape, sampleRegions, MIN_EVENT_CONFIDENCE } = await import(
+  pathToFileURL(OUT).href,
+);
 
 const module = moduleFor(game);
 if (!module?.regions || !module.watch) {
@@ -140,15 +143,18 @@ console.error(
 /*
  * How many clips hold more than one moment.
  *
- * `decide.ts` sorts the events by confidence and takes `[0]`, so every clip
- * with two confident readings in it has one of them thrown away. This is the
- * number that says whether storing them is a headline feature or a quiet
- * addition, and it was not being counted anywhere.
+ * When this was first measured, `decide.ts` sorted the events by confidence and
+ * took `[0]`, so every clip with two confident readings in it had one thrown
+ * away. **That is what 2.1 changed**: the verdict now carries every confident
+ * reading as `anchors`, best first, and a person can keep any of them as a
+ * GoodBit. The number below is why that was worth doing and also why it was
+ * not worth building a release around.
  *
- * The bar is `decide.ts`'s own `MIN_EVENT_CONFIDENCE`, because an event below
- * it would not have settled the question on its own either.
+ * The bar is `decide.ts`'s own `MIN_EVENT_CONFIDENCE`, imported rather than
+ * copied: this bench bundles the real `src/main` anyway, and a bench holding
+ * its own copy of a threshold is a bench that can quietly disagree with the app
+ * about what it measured.
  */
-const MIN_EVENT_CONFIDENCE = 0.8;
 const confident = rows.map((r) => r.events.filter((e) => e.confidence >= MIN_EVENT_CONFIDENCE));
 const multi = confident.filter((events) => events.length >= 2).length;
 const spread = new Map();
@@ -159,7 +165,7 @@ for (const events of confident) {
 
 console.error(
   `${multi}/${rows.length} clips (${((multi / rows.length) * 100).toFixed(0)}%) hold two or more ` +
-    `events at confidence >= ${MIN_EVENT_CONFIDENCE}, of which decide() keeps one`,
+    `events at confidence >= ${MIN_EVENT_CONFIDENCE}, all of which decide() now keeps`,
 );
 console.error(
   'confident events per clip: ' +

@@ -1,7 +1,7 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import multer from 'multer';
-import { In } from 'typeorm';
+import { EntityNotFoundError, In } from 'typeorm';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Tag } from '../entity/Tag.js';
@@ -405,7 +405,21 @@ function goodBitFailure(res: express.Response, error: unknown, missing: string):
     res.status(error.status).json({ error: error.message });
     return true;
   }
-  if ((error as Error)?.name === 'EntityNotFoundError') {
+  /*
+   * `instanceof`, not a name comparison.
+   *
+   * This was `(error as Error)?.name === 'EntityNotFoundError'`, which works
+   * against the source and fails in the app. `TypeORMError` sets
+   * `this.name = this.constructor.name`, and rollup renames the class to
+   * `EntityNotFoundError2` while bundling main, because another declaration
+   * already claims that identifier. So the string never matched, the error was
+   * rethrown, and a PATCH for a GoodBit belonging to another clip answered 500
+   * with a stack trace instead of 404 with a sentence.
+   *
+   * Only the built app shows this. Nothing in the unit suite imports the
+   * bundle, so `tests/e2e/goodbits.spec.ts` is what caught it.
+   */
+  if (error instanceof EntityNotFoundError) {
     res.status(404).json({ error: missing });
     return true;
   }

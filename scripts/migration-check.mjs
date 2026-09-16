@@ -226,7 +226,7 @@ for (const [table, count] of Object.entries(before)) {
   ok(`${table} kept all ${count} rows`, after[table] === count, `now ${after[table]}`);
 }
 
-ok('the moment table exists', 'moment' in after);
+ok('the good_bit table exists', 'good_bit' in after);
 ok('the search index exists', 'clip_search' in after);
 
 const clipColumns = await columnsOf(upgraded, 'clip');

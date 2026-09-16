@@ -213,7 +213,8 @@ export interface ClipSuggestions {
   reason: string | null;
   durationSec: number;
   window: { start: number; end: number } | null;
-  moments: Array<{ t: number; score: number }>;
+  /** Where inside the window the interesting parts are, for jump chips. */
+  goodBits: Array<{ t: number; score: number }>;
   spreadLu: number;
   peakZ: number;
   eventSec: number;
@@ -223,6 +224,15 @@ export interface ClipSuggestions {
   evidence: string | null;
   /** What the game itself showed. Empty for a game with no module. */
   events: SuggestionEvent[];
+  /**
+   * Every reading confident enough to stand on its own, best first.
+   *
+   * `events` is everything the module saw, at any confidence. These are the
+   * ones that cleared the floor, and `anchors[0]` is what the suggested window
+   * was built around. `decide()` used to keep only that one and throw the rest
+   * away, which across a real library discarded eight found moments.
+   */
+  anchors: SuggestionEvent[];
   /** True when this game's clips get their screen read as well as heard. */
   watchesScreen: boolean;
 }
