@@ -24,12 +24,31 @@ npm run dev            # electron-vite, hot reload
 
 ```bash
 npm run typecheck      # tsconfig.node.json (main + preload), tsconfig.web.json (renderer)
-npm run test:e2e       # builds, then Playwright drives the built app
+npm run test:unit      # vitest over the pure logic. Under a second
+npm run check          # both of the above. The one to run before every commit
+npm run test:e2e       # builds, then Playwright drives the built app. Minutes
 ```
 
-`npm run typecheck` is fast and has no dependencies beyond the source tree.
-Run it before every commit; `npm run build` runs it first and fails if it
-does not pass, so a red typecheck never quietly becomes a build.
+`npm run check` is the loop. It is typecheck plus the unit suite, around forty
+seconds, and there is no reason not to run it on every change.
+
+If you only touched one side, the halves run separately:
+`npm run typecheck:node` for `src/main`, `src/preload` and `src/shared`,
+`npm run typecheck:web` for `src/renderer`. `vue-tsc` is the slow one.
+
+`npm run test:unit` is vitest over **anything that takes values and returns
+values**: a measurement turned into a verdict, an anchor and a frame height
+turned into a pixel box, a run of foreground samples turned into the name a
+clip gets filed under. Under a second, so it belongs in the loop rather than at
+the end of it. Every threshold it covers was arrived at by measuring real
+recordings and none of it is re-derivable from reading the code, which is
+exactly why a `<` quietly becoming a `<=` needs to fail something.
+
+**Check the exit status, never the log text.** vite colours its own failures,
+so `error during build:` arrives wrapped in escape codes and does not match a
+grep for `^error`. A build that failed has read here as a build that passed,
+while the app went on running the previous bundle and the fix appeared not to
+work.
 
 `npm run test:e2e` builds the app and then drives the real, built Electron
 app with Playwright: it needs a desktop session, a GPU and ffmpeg, which is
@@ -49,7 +68,7 @@ mechanism rather than pointing at `%APPDATA%/GoodBit` directly.
 
 ## There is no linter
 
-Typecheck and the e2e suite are the only automated gates. That means a class
+Typecheck, the unit suite and the e2e suite are the automated gates. That means a class
 of mistakes a linter would normally catch (dead code, inconsistent naming,
 an unawaited promise that happens to still typecheck) is caught by review or
 not at all. Lean on the conventions below and on `CLAUDE.md` rather than on
@@ -70,19 +89,38 @@ handler.
 
 ## Where tests go
 
-At the moment this repository has no unit test harness, only
-`tests/e2e` (Playwright against the built app) and the `scripts/*-check.mjs`
-benches (`obs-check.mjs`, `trim-check.mjs`, `hud-check.mjs`, `steam-check.mjs`
-and others), which run the shipped code against something real (a real OBS
-install, a real recording, a real Steam cache) and print what happened for a
-human to read rather than asserting pass or fail. If you add logic that
-touches ffmpeg, the database, another program's configuration, or a window,
-it belongs in one of those two places: a Playwright spec if it needs to be
-asserted automatically, a bench script if the useful output is a human
-reading a contact sheet or a diagnostic. Do not reach for a mocking
-framework to fake any of those out; the project's position, argued at length
-in `CLAUDE.md`, is that the obvious mocked alternative was tried for several
-of these and was measurably worse.
+Three places, and the choice is made by what the test *needs*, not by what it
+covers.
+
+**`tests/unit`**, vitest, for anything that takes values and returns values.
+This is the default: if a function can be exercised without opening a file, it
+belongs here, and it will run in milliseconds for ever afterwards. A defect
+that is known and not yet fixed is recorded as `it.fails` with a comment naming
+what fixes it, so that fixing it makes the test fail, which is the
+announcement.
+
+**`tests/e2e`**, Playwright against the built app, for anything that needs the
+real thing: the database, the internal API, a window, the `goodbit://`
+protocol, two processes racing each other. Each test gets a throw-away data
+directory through `GOODBIT_USER_DATA`.
+
+**`scripts/*-check.mjs`**, the benches, for anything whose honest answer is a
+number or a picture rather than a pass. `obs-check.mjs`, `trim-check.mjs`,
+`hud-check.mjs`, `migration-check.mjs`, `steam-check.mjs` and others run the
+shipped code against something real, a real OBS install, a real recording, a
+real library, and print what happened for a person to read. Several of them
+bundle `src/main` with esbuild on the way, so the bench and the app cannot
+drift into two implementations.
+
+Do not reach for a mocking framework to fake ffmpeg, the database or another
+program's configuration out. The project's position, argued at length in
+`CLAUDE.md`, is that the obvious mocked alternative was tried for several of
+these and was measurably worse. The one stub that does exist, for `electron` in
+the unit suite, is documented as a symptom rather than a fixture.
+
+Write the test with the change. A patch that says "it compiles" about something
+behavioural is not finished, and if you could not cover part of it, say which
+part in the pull request.
 
 ## Conventions the compiler will not catch
 
