@@ -5,6 +5,7 @@ import {
   extractTimestamps,
   formatTimestamp,
   parseTimestamp,
+  timestampTargetSeconds,
 } from '../../../src/renderer/src/utils/timestampParser';
 
 /**
@@ -12,11 +13,11 @@ import {
  * one with the least behind it.
  *
  * `0:04` in a note becomes a chip that seeks the player. The parsing is pure
- * and the rewriting is not, and both are about to be rebuilt (2.6 in the 2.0
- * plan: a note gains a read mode, and a chip learns about marks). So these
- * tests exist for two reasons: to pin what is right before it moves, and to
- * state the two defects in writing, as `it.fails`, so that fixing either one
- * announces itself here rather than passing silently.
+ * and the rewriting is not, and both were rebuilt by 2.6, which gave a note a
+ * read mode and so made the chip visible for the first time. The two defects
+ * that were written down here as `it.fails`, an anchor opened inside an
+ * attribute and a `computed` that mutated the document, are fixed and their
+ * tests are plain `it`s again.
  */
 
 describe('reading a timestamp', () => {
@@ -65,12 +66,10 @@ describe('writing a timestamp', () => {
 });
 
 describe('turning a timestamp into a chip', () => {
-  const noop = (): void => {};
-
   it('wraps the timestamp and carries the seconds on the element', () => {
     // `data-seconds` is the contract with MarkdownPreview.vue, which attaches
     // the real click handler by reading it.
-    const html = enhanceMarkdownWithTimestamps('<p>shit at 0:04 is hilarious</p>', noop);
+    const html = enhanceMarkdownWithTimestamps('<p>shit at 0:04 is hilarious</p>');
 
     expect(html).toContain('class="timestamp-link"');
     expect(html).toContain('data-seconds="4"');
@@ -78,14 +77,14 @@ describe('turning a timestamp into a chip', () => {
   });
 
   it('leaves the sentence around it alone', () => {
-    const html = enhanceMarkdownWithTimestamps('<p>shit at 0:04 is hilarious</p>', noop);
+    const html = enhanceMarkdownWithTimestamps('<p>shit at 0:04 is hilarious</p>');
 
     expect(html).toContain('shit at ');
     expect(html).toContain(' is hilarious');
   });
 
   it('marks up every timestamp in a note, not just the first', () => {
-    const html = enhanceMarkdownWithTimestamps('<p>0:04 and 0:19 and 1:02:00</p>', noop);
+    const html = enhanceMarkdownWithTimestamps('<p>0:04 and 0:19 and 1:02:00</p>');
 
     expect(html.match(/timestamp-link/g)).toHaveLength(3);
     expect(html).toContain('data-seconds="3720"');
@@ -94,47 +93,100 @@ describe('turning a timestamp into a chip', () => {
   it('does nothing to a note without one', () => {
     const source = '<p>nothing timed in here</p>';
 
-    expect(enhanceMarkdownWithTimestamps(source, noop)).toBe(source);
+    expect(enhanceMarkdownWithTimestamps(source)).toBe(source);
+  });
+
+  it('makes a chip pressable from the keyboard as well', () => {
+    // No `href`, because the chip is not a link to anywhere. So it has to say
+    // what it is and take a tab stop, or a keyboard cannot reach it at all.
+    const html = enhanceMarkdownWithTimestamps('<p>0:04</p>');
+
+    expect(html).toContain('role="button"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).not.toContain('href');
   });
 
   /**
-   * Defect, recorded rather than fixed: the regex runs over the *rendered*
-   * HTML, after `marked`, so anything that looks like a timestamp inside an
-   * attribute gets an anchor opened in the middle of it. A note holding a link
-   * to a video at a time, which is the most likely way for this to happen,
-   * comes out as broken markup.
+   * Was a defect, recorded here as `it.fails` before 2.6: the regex ran over
+   * the *rendered* HTML, after `marked`, so anything that looked like a
+   * timestamp inside an attribute got an anchor opened in the middle of it. A
+   * note holding a link to a video at a time, which is the most likely way for
+   * this to happen, came out as broken markup.
    *
-   * 2.6 fixes this by matching before the markdown is parsed, or by walking
-   * text nodes after. When it does, this test starts failing and should be
-   * turned into a plain `it`.
+   * Fixed by walking text nodes instead of the string, so markup is not
+   * something the matcher has to be careful about: it cannot see it.
    */
-  it.fails('should not rewrite a timestamp inside an attribute', () => {
-    const html = enhanceMarkdownWithTimestamps(
-      '<p><a href="https://example.com/v/1:30">clip</a></p>',
-      noop,
-    );
+  it('does not rewrite a timestamp inside an attribute', () => {
+    const html = enhanceMarkdownWithTimestamps('<p><a href="https://example.com/v/1:30">clip</a></p>');
 
     expect(html).toBe('<p><a href="https://example.com/v/1:30">clip</a></p>');
   });
 
+  it('leaves a timestamp in a code span quoted rather than pressable', () => {
+    // A code span is being shown, not read, and `0:04` in one is usually part
+    // of a log line somebody pasted.
+    const html = enhanceMarkdownWithTimestamps('<p><code>at 0:04</code></p>');
+
+    expect(html).toBe('<p><code>at 0:04</code></p>');
+  });
+
+  it('can run over its own output without nesting chips', () => {
+    // A chip's label is a timestamp, so a second pass over rendered html would
+    // wrap the wrapper if anchors were not skipped. `renderedMarkdown` is a
+    // computed and nothing promises how many times it is read.
+    const once = enhanceMarkdownWithTimestamps('<p>shit at 0:04 is hilarious</p>');
+
+    expect(enhanceMarkdownWithTimestamps(once)).toBe(once);
+  });
+
   /**
-   * Defect, recorded rather than fixed: the enhancement registers DOM
-   * listeners from inside a Vue `computed`, with `setTimeout` and
-   * `Math.random()` ids. A computed is a getter and this one mutates the
-   * document, so merely rendering a preview twice schedules work twice.
+   * Was a defect, recorded here as `it.fails` before 2.6: the enhancement
+   * registered DOM listeners from inside a Vue `computed`, with `setTimeout`
+   * and `Math.random()` ids. A computed is a getter and that one mutated the
+   * document, so merely rendering a preview twice scheduled work twice.
    *
-   * The listeners are also redundant, because `MarkdownPreview.vue` attaches
-   * the real ones from `data-seconds`. 2.6 deletes the side effect, at which
-   * point this test starts failing and should be turned into a plain `it`.
+   * The listeners were also redundant, because `MarkdownPreview.vue` attaches
+   * the real one from `data-seconds`. The fix was deletion.
    */
-  it.fails('should not schedule work just for asking what the html is', () => {
+  it('does not schedule work just for asking what the html is', () => {
     const scheduled = vi.spyOn(globalThis, 'setTimeout');
     const before = scheduled.mock.calls.length;
 
-    enhanceMarkdownWithTimestamps('<p>0:04</p>', noop);
+    enhanceMarkdownWithTimestamps('<p>0:04</p>');
 
     expect(scheduled.mock.calls.length).toBe(before);
     scheduled.mockRestore();
+  });
+});
+
+describe('reading a chip that was pressed', () => {
+  function render(html: string): HTMLElement {
+    const host = document.createElement('div');
+    host.innerHTML = enhanceMarkdownWithTimestamps(html);
+    return host;
+  }
+
+  it('takes the seconds off the chip', () => {
+    const chip = render('<p>at 1:30</p>').querySelector('.timestamp-link');
+
+    expect(timestampTargetSeconds(chip)).toBe(90);
+  });
+
+  it('finds the chip a press landed inside', () => {
+    // The glyph is a `::before`, so a real click can still land on a child if
+    // a note ever renders one inside a chip. Delegation has to walk up.
+    const host = render('<p>at 1:30</p>');
+    const chip = host.querySelector('.timestamp-link') as HTMLElement;
+    chip.innerHTML = '<em>1:30</em>';
+
+    expect(timestampTargetSeconds(chip.querySelector('em'))).toBe(90);
+  });
+
+  it('says nothing about a press that was not on a chip', () => {
+    const host = render('<p>at 1:30</p>');
+
+    expect(timestampTargetSeconds(host.querySelector('p'))).toBeNull();
+    expect(timestampTargetSeconds(null)).toBeNull();
   });
 });
 

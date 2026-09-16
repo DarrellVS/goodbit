@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue';
 
 interface Emits {
   (e: 'insert', prefix: string, suffix?: string): void;
+  (e: 'insert-playhead'): void;
   (e: 'toggle-preview'): void;
 }
 
@@ -17,9 +18,16 @@ interface Props {
    * second header stacked under the real one, with a rule between them.
    */
   bare?: boolean;
+  /**
+   * There is a player to read a position from.
+   *
+   * Off where a note is written with no clip in front of it, since a button
+   * that writes 0:00 whatever is going on is worse than no button.
+   */
+  hasPlayhead?: boolean;
 }
 
-withDefaults(defineProps<Props>(), { split: false, bare: false });
+withDefaults(defineProps<Props>(), { split: false, bare: false, hasPlayhead: false });
 const emit = defineEmits<Emits>();
 </script>
 
@@ -28,6 +36,24 @@ const emit = defineEmits<Emits>();
     class="flex items-center gap-1"
     :class="bare ? '' : 'p-2 border-b border-border bg-muted-50/50 rounded-t-lg'"
   >
+    <!--
+      First on the bar, because it is the one button here that knows something
+      the keyboard does not. The moment worth writing down is the frame on
+      screen, and reading it off the scrubber and typing it back is the part
+      nobody does.
+    -->
+    <button
+      v-if="hasPlayhead"
+      type="button"
+      class="p-2 rounded hover:bg-muted-200 transition-colors text-orange-600"
+      title="Insert the time on screen now"
+      @click="emit('insert-playhead')"
+    >
+      <Icon icon="material-symbols:more-time" class="text-lg" />
+    </button>
+
+    <div v-if="hasPlayhead" class="w-px h-6 bg-muted-300 mx-1" />
+
     <button
       type="button"
       class="p-2 rounded hover:bg-muted-200 transition-colors"

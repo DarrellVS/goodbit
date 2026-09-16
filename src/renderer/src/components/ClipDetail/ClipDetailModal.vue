@@ -130,14 +130,34 @@ async function publishFromShare(compressed: boolean | undefined): Promise<void> 
   }
 }
 
+/**
+ * A chip in a note was pressed, so the player goes there.
+ *
+ * **The player moving is the feedback.** This used to raise a toast reading
+ * `Jumped to 4s`, over a picture that had visibly just jumped to 4s, and call
+ * `scrollIntoView` on a video that is inside a panel pinned to the whole
+ * window: nothing to scroll, and a smooth scroll of the note away from under
+ * the cursor if there had been.
+ */
 function handleTimestampClick(seconds: number): void {
   const videoEl = videoPlayerRef.value?.videoElement;
   if (!videoEl) return;
 
   videoEl.currentTime = seconds;
   void videoEl.play();
-  videoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  toastStore.success(`Jumped to ${seconds}s`);
+}
+
+/**
+ * Where the player is now, for the note's *insert the playhead* button.
+ *
+ * A function rather than a number, so the position is read at the press
+ * instead of being pushed through a prop several times a second while a clip
+ * plays. Named here rather than written inline in the template so the prop is
+ * the same function on every render.
+ */
+function playheadSeconds(): number | null {
+  const videoEl = videoPlayerRef.value?.videoElement;
+  return videoEl ? videoEl.currentTime : null;
 }
 
 /**
@@ -286,6 +306,7 @@ async function onTrimmed(): Promise<void> {
                 -->
                 <ClipNotesSection
                   :clip="clip"
+                  :playhead="playheadSeconds"
                   @updated="handleClipUpdated"
                   @timestamp-click="handleTimestampClick"
                 />
