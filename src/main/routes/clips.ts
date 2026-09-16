@@ -174,34 +174,44 @@ clipsRouter.get('/:id', asyncHandler(async (req, res) => {
   res.json(dto);
 }));
 
-// Batch operations (must be before /:id routes to avoid matching "batch" as an id)
+/*
+ * Batch operations. These must come before the `/:id` routes, or Express
+ * matches "batch" as an id.
+ *
+ * Each of these used to log its whole request body. That is a list of clip
+ * ids, which is noise, and for tagging it is the **tag names somebody typed**,
+ * which is their own content and does not belong in a log file that gets
+ * pasted into an issue. The count is the part anybody debugging wants, and the
+ * action reports what it actually did.
+ */
 clipsRouter.post('/batch/star', asyncHandler(async (req, res) => {
-  console.log('Batch star request:', req.body);
   const { clipIds, starred } = req.body as { clipIds: number[]; starred: boolean };
+  console.log(`[batch] ${starred ? 'star' : 'unstar'} ${clipIds?.length ?? 0} clips`);
   const action = new BatchStarAction();
   const result = await action.execute({ clipIds, starred });
   res.json(result);
 }));
 
 clipsRouter.post('/batch/publish', asyncHandler(async (req, res) => {
-  console.log('Batch publish request:', req.body);
   const { clipIds, publish } = req.body as { clipIds: number[]; publish: boolean };
+  console.log(`[batch] ${publish ? 'publish' : 'unpublish'} ${clipIds?.length ?? 0} clips`);
   const action = new BatchPublishAction();
   const result = await action.execute({ clipIds, publish });
   res.json(result);
 }));
 
 clipsRouter.post('/batch/add-tags', asyncHandler(async (req, res) => {
-  console.log('Batch add tags request:', req.body);
   const { clipIds, tags } = req.body as { clipIds: number[]; tags: string[] };
+  // The number of tags, not the tags. They are somebody's own words.
+  console.log(`[batch] add ${tags?.length ?? 0} tags to ${clipIds?.length ?? 0} clips`);
   const action = new BatchAddTagsAction();
   const result = await action.execute({ clipIds, tags });
   res.json(result);
 }));
 
 clipsRouter.post('/batch/delete', asyncHandler(async (req, res) => {
-  console.log('Batch delete request:', req.body);
   const { clipIds } = req.body as { clipIds: number[] };
+  console.log(`[batch] delete ${clipIds?.length ?? 0} clips`);
   const action = new BatchDeleteAction();
   const result = await action.execute({ clipIds });
   res.json(result);
