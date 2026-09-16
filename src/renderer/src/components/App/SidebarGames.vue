@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import GameArt from './GameArt.vue';
-import { useGamesList } from '../../composables/useGamesList';
+import { MAX_VISIBLE_GAMES, useGamesList } from '../../composables/useGamesList';
 import { useGameVisibility } from '../../composables/useGameVisibility';
 import { useGamesStore } from '../../stores/games';
 import { useToastStore } from '../../stores/toast';
@@ -212,7 +212,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         v-if="hasMoreGames"
         :show-all="showAllGames"
         :total-count="games.length"
-        :visible-count="5"
+        :visible-count="MAX_VISIBLE_GAMES"
         @toggle="!props.disabled && toggleShowAll()"
       />
     </div>
