@@ -741,14 +741,16 @@ clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res)
  * still working. The job now runs detached and the client polls for it.
  */
 clipsRouter.post('/export', asyncHandler(async (req, res) => {
-  const { clips, audio, outputName, format, framePos, normalizeLoudness } = req.body as {
-    clips: unknown[];
-    audio?: unknown[];
-    outputName?: string;
-    format?: ExportFormat;
-    framePos?: number;
-    normalizeLoudness?: boolean;
-  };
+  const { clips, audio, transitions, outputName, format, framePos, normalizeLoudness } =
+    req.body as {
+      clips: unknown[];
+      audio?: unknown[];
+      transitions?: unknown[];
+      outputName?: string;
+      format?: ExportFormat;
+      framePos?: number;
+      normalizeLoudness?: boolean;
+    };
   const exportId = typeof req.body.exportId === 'string' && req.body.exportId
     ? req.body.exportId
     : randomUUID();
@@ -760,6 +762,10 @@ clipsRouter.post('/export', asyncHandler(async (req, res) => {
     .execute({
       clips: clips as never,
       audio: audio as never,
+      // Unchecked, like everything else off a JSON body. `buildRenderPlan`
+      // is the thing that decides what a transition is allowed to be, and it
+      // drops what it cannot use rather than failing the render.
+      transitions: transitions as never,
       outputName,
       exportId,
       format,
