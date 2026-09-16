@@ -42,6 +42,7 @@ npm run test:e2e       # builds, then Playwright drives the real app. Minutes, n
 npm run build:win      # check:pre-release (check + e2e) then electron-builder
 node scripts/backup-db.mjs   # verified snapshot of the library database
 node scripts/migration-check.mjs  # run the shipped migrations against a copy of a real library
+node scripts/restore-check.mjs    # prove a backup can be put back, and that a bad one is refused
 node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
 node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
 node scripts/obs-apply-check.mjs  # apply the setup against a throw-away OBS directory
@@ -120,7 +121,16 @@ copy of its tags, notes, display name, stars and collections.
 - **The list is imported, never globbed.** Main is bundled into one file, so a glob finds no folder
   and returns an empty array, and an empty array with `synchronize: false` is a database that is
   never created and never updated and reports nothing.
-- **The verified backup still runs first**, in `initDatabase`, before the migrations do.
+- **The verified backup still runs first**, in `initDatabase`, before the migrations do. And one
+  can now be put back: `restoreBackup` verifies the chosen copy, copies and verifies the current
+  library first so the restore is itself undoable, refuses any path outside `backupsDir()`, removes
+  the stale `-wal` and `-shm` so SQLite cannot replay the old database's pages into the new one, and
+  clears `schemaVersion` so the next boot takes a copy before migrating a file it may never have
+  seen. The caller restarts the app, because the connection pool, the watcher and every cache key
+  are derived from rows that just changed. `scripts/restore-check.mjs` covers it.
+- **Backup filenames are made unique, not just stamped.** `stamp()` is second-resolution because a
+  person reads it in a list, and `VACUUM INTO` refuses to write a file that exists, so two copies
+  inside one second were one copy and one error.
 - `node scripts/migration-check.mjs` bundles the real `initDatabase` with esbuild and runs it
   against a copy of a real library: row counts before and after, the search index backfilled, a
   second boot applying nothing, and a fresh database landing on the same schema as an upgraded one.

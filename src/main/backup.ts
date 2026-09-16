@@ -1,25 +1,27 @@
 import { app } from 'electron';
-import { existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import sqlite3 from 'sqlite3';
-import { backupsDir, loadSettings, saveSettings } from './settings.js';
+import { backupsDir, databasePath, loadSettings, saveSettings } from './settings.js';
 
 /**
  * A verified copy of the library, taken before the schema is allowed to move.
  *
- * The app runs TypeORM with `synchronize: true` and no migrations: on every
- * boot it compares the entities to the tables and changes the tables to match.
- * That is fine while the entities only gain columns, and on SQLite it is not
- * fine at all when a column changes type or goes away. The resolution is a
- * table rebuild, and a rebuild that goes wrong takes the library with it.
+ * This existed because the app ran `synchronize: true`, which compared the
+ * entities to the tables on every boot and changed the tables to match, and
+ * resolved some changes on SQLite by rebuilding a table. A rebuild that goes
+ * wrong takes the library with it, and a clip row is the only copy of its tags,
+ * notes, display name, stars and collections.
  *
- * Migrations are the real answer and are not what 1.0 ships. What it ships
- * instead is this: SQLite is asked for a snapshot and the snapshot is *read
- * back* before any version that could carry a schema change is allowed near
- * the file. A backup nobody has opened is a guess, not a backup.
+ * There are migrations now, so the schema moves deliberately and reversibly.
+ * The copy stays, and still runs before they do: a migration is code, code has
+ * bugs, and this is the cheapest insurance in the app. One `VACUUM INTO`, only
+ * when the version changed since the last successful boot.
  *
- * Cheap by construction, one `VACUUM INTO`, only when the app version changed
- * since the last successful boot.
+ * The part that makes it a backup rather than a gesture is that the snapshot is
+ * **read back** before the app is allowed near the file. A copy nobody has
+ * opened is a guess. And, since `restoreBackup` below, one of these can
+ * actually be put back from inside the app.
  */
 
 /** How many copies to keep. Enough to step back past a bad release. */
@@ -34,6 +36,26 @@ export interface BackupResult {
 
 function stamp(): string {
   return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+}
+
+/**
+ * A path in the backups folder that nothing is using yet.
+ *
+ * `stamp()` is resolution-of-one-second and deliberately so, because it is
+ * read by a person in a list. `VACUUM INTO` refuses to write a file that
+ * already exists, so two copies inside one second are not two copies, they are
+ * one copy and one error. Reachable three ways: two presses of "Back up now",
+ * a restore immediately after another restore, and any automated caller.
+ *
+ * Found by `scripts/restore-check.mjs`, which restores twice in a row.
+ */
+function freshBackupPath(name: string): string {
+  const base = join(backupsDir(), name);
+  let candidate = `${base}.db`;
+
+  for (let n = 2; existsSync(candidate); n++) candidate = `${base}-${n}.db`;
+
+  return candidate;
 }
 
 /**
@@ -130,7 +152,7 @@ export async function backupBeforeSchemaSync(databaseFile: string): Promise<Back
     return { taken: false, reason: `this version already booted against this database` };
   }
 
-  const target = join(backupsDir(), `goodbit-${version}-${stamp()}.db`);
+  const target = freshBackupPath(`goodbit-${version}-${stamp()}`);
 
   try {
     await snapshot(databaseFile, target);
@@ -169,7 +191,7 @@ export async function takeBackup(databaseFile: string): Promise<BackupResult> {
     return { taken: false, reason: 'there is no database yet' };
   }
 
-  const target = join(backupsDir(), `goodbit-manual-${stamp()}.db`);
+  const target = freshBackupPath(`goodbit-manual-${stamp()}`);
 
   try {
     await snapshot(databaseFile, target);
@@ -184,6 +206,123 @@ export async function takeBackup(databaseFile: string): Promise<BackupResult> {
     }
     return { taken: false, reason: (error as Error).message };
   }
+}
+
+export interface RestoreResult {
+  restored: boolean;
+  reason: string;
+  /** The copy taken of what was there before, so this is itself undoable. */
+  previousPath?: string;
+  clips?: number;
+}
+
+/**
+ * Put a copy back, and make the current library recoverable while doing it.
+ *
+ * Five verified copies existed and there was no way to use one, which made the
+ * backups a gesture rather than a feature: the answer to "an update ate my
+ * tags" was to find the file in Explorer and rename it by hand, with the app
+ * running and holding the database open.
+ *
+ * The order below is the whole design, and it is deliberately paranoid,
+ * because this is the one operation in the app whose failure mode is losing
+ * everything the user has ever typed.
+ *
+ * 1. **The path has to be one of ours.** It arrives from the renderer, and the
+ *    renderer is where a bug or a bad deep link would show up. Anything
+ *    outside `backupsDir()` is refused, resolved first so `..` cannot walk out
+ *    of it.
+ * 2. **The copy proves itself before anything is touched.** `PRAGMA
+ *    quick_check` and a readable `clip` count, the same test
+ *    `backupBeforeSchemaSync` applies. A backup that will not open is not a
+ *    backup, and finding that out *after* moving the live file aside is how
+ *    one bad file becomes two.
+ * 3. **What is there now is copied first, and verified too.** Restoring the
+ *    wrong copy is an easy mistake to make from a list of timestamps, so it
+ *    has to be undoable. An unverified safety copy would make "undo" a guess.
+ * 4. **Only then is the file replaced**, and the caller relaunches.
+ *
+ * The database is not closed here on purpose. The caller owns the connection
+ * and has to bring the app down anyway: TypeORM's pool, the folder watcher and
+ * every cache key are derived from rows that are about to change underneath
+ * them, and a process that keeps running after its database was swapped is a
+ * worse outcome than a restart.
+ *
+ * **A copy from an older schema is fine now.** The migrations run on the next
+ * boot and bring it forward. Before there were migrations this was the reason
+ * not to offer a restore at all: `synchronize` would have reshaped an old file
+ * on the way in, which is precisely the behaviour the backups existed to
+ * protect against.
+ */
+export async function restoreBackup(backupPath: string): Promise<RestoreResult> {
+  const dir = resolve(backupsDir());
+  const chosen = resolve(backupPath);
+
+  if (!chosen.startsWith(dir + sep) || !chosen.endsWith('.db')) {
+    return { restored: false, reason: 'that file is not one of GoodBit’s backups' };
+  }
+  if (!existsSync(chosen)) {
+    return { restored: false, reason: 'that copy is no longer on disk' };
+  }
+
+  let clips: number;
+  try {
+    clips = await verify(chosen);
+  } catch (error) {
+    return { restored: false, reason: `that copy will not open: ${(error as Error).message}` };
+  }
+
+  const live = databasePath();
+  let previousPath: string | undefined;
+
+  if (existsSync(live)) {
+    previousPath = freshBackupPath(`goodbit-before-restore-${stamp()}`);
+    try {
+      await snapshot(live, previousPath);
+      await verify(previousPath);
+    } catch (error) {
+      // Refuse rather than proceed. Without a good copy of what is there now,
+      // this stops being a restore and becomes a one-way replacement.
+      return {
+        restored: false,
+        reason: `could not safely copy the current library first: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  try {
+    copyFileSync(chosen, live);
+
+    /*
+     * The journal files have to go with it.
+     *
+     * SQLite in WAL mode keeps recent writes in `-wal` and an index of it in
+     * `-shm`. Replacing only the main file leaves a write-ahead log describing
+     * pages of the *old* database, and SQLite will replay it into the new one
+     * on open. `VACUUM INTO` always produces a self-contained file, so there is
+     * nothing to lose by removing them.
+     */
+    for (const suffix of ['-wal', '-shm']) {
+      const journal = `${live}${suffix}`;
+      if (existsSync(journal)) unlinkSync(journal);
+    }
+  } catch (error) {
+    return { restored: false, reason: (error as Error).message };
+  }
+
+  /*
+   * Forget which version last booted against this file.
+   *
+   * `backupBeforeSchemaSync` skips its copy when `schemaVersion` matches the
+   * running version, and the file underneath has just been swapped for one
+   * this version may never have seen. Clearing it means the next boot takes a
+   * verified copy before any migration runs, which is exactly the moment it is
+   * most wanted.
+   */
+  saveSettings({ schemaVersion: '' });
+
+  console.log(`[backup] restored ${chosen} (${clips} clips) over ${live}`);
+  return { restored: true, reason: 'restored', previousPath, clips };
 }
 
 export interface BackupFile {

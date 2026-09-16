@@ -74,6 +74,8 @@ interface GoodBitBridge {
     list: () => Promise<BackupFileWire[]>;
     now: () => Promise<BackupResultWire>;
     reveal: () => Promise<void>;
+    /** Puts a copy back and restarts. On success, the app exits shortly after. */
+    restore: (backupPath: string) => Promise<RestoreResultWire>;
   };
   share: {
     start: (clipId: number) => Promise<ShareStateWire>;
@@ -114,6 +116,14 @@ interface BackupFileWire {
   path: string;
   sizeBytes: number;
   takenAt: string;
+}
+
+interface RestoreResultWire {
+  restored: boolean;
+  reason: string;
+  /** Where the library that was replaced went, so this is itself undoable. */
+  previousPath?: string;
+  clips?: number;
 }
 
 interface BackupResultWire {

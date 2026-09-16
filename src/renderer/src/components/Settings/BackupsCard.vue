@@ -11,9 +11,50 @@ const { formatBytes } = useFormat();
 
 const backups = ref<BackupFileWire[]>([]);
 const working = ref(false);
+const restoring = ref<string | null>(null);
 
 async function refresh(): Promise<void> {
   backups.value = (await window.goodbit?.backups.list()) ?? [];
+}
+
+/**
+ * Put a copy back, which restarts the app.
+ *
+ * Confirmed rather than immediate, and the confirmation says the two things
+ * somebody needs to hear: their clips are not involved, and what is there now
+ * is copied first so this is reversible. A list of timestamps is easy to pick
+ * the wrong row from.
+ */
+function restore(backup: BackupFileWire): void {
+  if (working.value || restoring.value) return;
+
+  toastStore.confirm(
+    `Replace the current names, tags, notes and collections with the copy from ${formatDate(
+      new Date(backup.takenAt),
+    )}, then restart. Your clips are not touched, and what is there now is copied first.`,
+    () => void doRestore(backup),
+    'Restore this copy?',
+  );
+}
+
+async function doRestore(backup: BackupFileWire): Promise<void> {
+  restoring.value = backup.path;
+
+  try {
+    const result = await window.goodbit?.backups.restore(backup.path);
+
+    if (result?.restored) {
+      // The app is about to exit, so this is the last thing it will say.
+      toastStore.success(`Restored ${result.clips} clips. Restarting…`);
+    } else {
+      toastStore.error(result?.reason ?? 'Could not restore that copy');
+      restoring.value = null;
+    }
+  } catch (error) {
+    console.error('Failed to restore a backup:', error);
+    toastStore.error('Could not restore that copy');
+    restoring.value = null;
+  }
 }
 
 async function backUpNow(): Promise<void> {
@@ -44,10 +85,14 @@ onMounted(() => {
 
 <template>
   <!--
-    The app keeps its schema in step with the code automatically, which is
-    convenient and occasionally destructive. This is the safety net, and it is
-    worth showing rather than hiding: a backup nobody can see is a backup
-    nobody trusts.
+    The safety net, and it is worth showing rather than hiding: a backup nobody
+    can see is a backup nobody trusts, and one that cannot be put back is not a
+    backup at all. Five copies existed here for months with no way to use one.
+
+    Restoring replaces the database and restarts the app, because everything
+    running is holding state derived from rows that are about to be different.
+    What is there now is copied and verified first, so there is a way back from
+    the way back.
   -->
   <div class="p-4 bg-card border border-border rounded-lg space-y-4">
     <div class="flex items-start gap-3">
@@ -58,8 +103,9 @@ onMounted(() => {
         <h3 class="font-medium text-foreground">Library backups</h3>
         <p class="text-sm text-muted-600 mt-1">
           A copy of the library is taken and read back whenever a new version of GoodBit starts, in
-          case an update changes how things are stored. The last five are kept. Your clips
-          themselves are never touched. This is only the names, tags, notes and collections.
+          case an update changes how things are stored. The last five are kept, and any of them can
+          be put back. Your clips themselves are never touched. This is only the names, tags, notes
+          and collections.
         </p>
       </div>
     </div>
@@ -76,6 +122,23 @@ onMounted(() => {
         <span class="text-xs text-muted-500 flex-shrink-0 hidden sm:inline">
           {{ formatDate(new Date(backup.takenAt)) }}
         </span>
+
+        <!--
+          One button per copy rather than one button and a dropdown. The thing
+          being restored is the row you are looking at, and a list of
+          timestamps is easy enough to misread without adding a second step
+          that hides which one is selected.
+        -->
+        <button
+          class="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-700 hover:bg-card hover:border-orange-500/50 transition-colors flex-shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+          :disabled="!!restoring || working"
+          :title="`Replace the current library with this copy and restart`"
+          @click="restore(backup)"
+        >
+          <AppLoading v-if="restoring === backup.path" class="text-sm" />
+          <Icon v-else icon="material-symbols:history" class="text-base" />
+          {{ restoring === backup.path ? 'Restoring…' : 'Restore' }}
+        </button>
       </div>
     </div>
 

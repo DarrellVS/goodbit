@@ -77,6 +77,8 @@ const api = {
     list: () => ipcRenderer.invoke('backup:list'),
     now: () => ipcRenderer.invoke('backup:now'),
     reveal: () => ipcRenderer.invoke('backup:reveal'),
+    /** Puts a copy back and restarts into it. The app will exit if this succeeds. */
+    restore: (backupPath: string) => ipcRenderer.invoke('backup:restore', backupPath),
   },
 
   /** Serving one clip to a phone on the same network, for half an hour. */

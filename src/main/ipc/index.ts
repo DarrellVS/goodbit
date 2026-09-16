@@ -2,7 +2,7 @@ import { app, dialog, ipcMain, nativeImage, shell, BrowserWindow } from 'electro
 import { readFile } from 'node:fs/promises';
 import { basename, normalize } from 'node:path';
 import { databasePath, loadSettings, saveSettings } from '../settings.js';
-import { backupsDir, listBackups, takeBackup } from '../backup.js';
+import { backupsDir, listBackups, restoreBackup, takeBackup } from '../backup.js';
 import { refreshRoots } from '../data-source.js';
 import { onServiceEvent, reconcile, restartServices } from '../startup.js';
 import { TITLEBAR_HEIGHT } from '@shared/index.js';
@@ -325,6 +325,37 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     const newest = listBackups()[0];
     if (newest) shell.showItemInFolder(normalize(newest.path));
     else shell.openPath(backupsDir());
+  });
+
+  /**
+   * Put a copy back, then restart into it.
+   *
+   * The restart is not a convenience. Everything above this line is holding
+   * state derived from rows that are about to be different: TypeORM's
+   * connection pool, the folder watcher's idea of what is indexed, the media
+   * URLs the window has already resolved, and every cache key derived from a
+   * clip's mtime. A process that carries on after its database was swapped
+   * underneath it is a worse outcome than a restart.
+   *
+   * `restoreBackup` refuses unless the chosen copy opens cleanly and the
+   * current library has been copied and verified first, so by the time this
+   * relaunches, there is a way back from the way back.
+   */
+  ipcMain.handle('backup:restore', async (_event, backupPath: unknown) => {
+    if (typeof backupPath !== 'string' || !backupPath) {
+      return { restored: false, reason: 'no copy was chosen' };
+    }
+
+    const result = await restoreBackup(backupPath);
+    if (!result.restored) return result;
+
+    // Long enough for the renderer to get this answer and say what happened.
+    setTimeout(() => {
+      app.relaunch();
+      app.exit(0);
+    }, 400);
+
+    return result;
   });
 
   /**
