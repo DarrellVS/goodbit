@@ -57,6 +57,36 @@ export interface LaunchOptions {
   };
 }
 
+
+/**
+ * Where a test window opens, when there is somewhere better than in your face.
+ *
+ * The suite launches the app 118 times, and every one of those windows used to
+ * appear on the primary display, over whatever was already there. On a machine
+ * with a second monitor there is an obvious better answer, so the first launch
+ * of a run asks Electron what displays exist and remembers the first
+ * non-primary one. Every launch after that seeds the remembered bounds into
+ * the profile before starting, so the window opens there rather than appearing
+ * on the primary and jumping.
+ *
+ * Null means one display, which is also what CI looks like, and then nothing
+ * is seeded and the behaviour is exactly as it was. `GOODBIT_TEST_PRIMARY=1`
+ * forces that same path on a machine that does have a second screen.
+ */
+type WindowOrigin = { x: number; y: number };
+let offPrimary: WindowOrigin | null | undefined;
+
+async function rememberOffPrimaryDisplay(app: ElectronApplication): Promise<void> {
+  if (offPrimary !== undefined) return;
+
+  offPrimary = await app.evaluate(({ screen }) => {
+    const primary = screen.getPrimaryDisplay();
+    const other = screen.getAllDisplays().find((display) => display.id !== primary.id);
+    if (!other) return null;
+    return { x: other.workArea.x + 40, y: other.workArea.y + 40 };
+  });
+}
+
 export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
   const {
     configured = true,
@@ -89,7 +119,11 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
         startAtLogin: false,
         keepRunningInTray: false,
         migratedFromWebApp: false,
-        ...(options.window ? { window: options.window } : {}),
+        ...(options.window
+          ? { window: options.window }
+          : offPrimary
+            ? { window: { ...offPrimary, width: 1400, height: 900, maximized: false } }
+            : {}),
         ...settings,
       }),
     );
@@ -110,6 +144,32 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
     cwd: process.cwd(),
     env: { ...process.env, GOODBIT_USER_DATA: dataDir, ...env },
   });
+
+  /*
+   * Ask once per run, and move this first window by hand.
+   *
+   * The answer needs a running Electron, so the very first launch of a run has
+   * already opened somewhere before it can be known. That one gets moved after
+   * the fact; every launch after it is seeded before it starts and opens in
+   * the right place to begin with.
+   */
+  if (process.env.GOODBIT_TEST_PRIMARY) {
+    offPrimary = null;
+  } else {
+    const firstOfRun = offPrimary === undefined;
+    await rememberOffPrimaryDisplay(app);
+    if (firstOfRun && offPrimary && !options.window) {
+      const target = offPrimary;
+      await app.evaluate(({ BrowserWindow }, origin) => {
+        for (const win of BrowserWindow.getAllWindows()) {
+          // The toast overlay places itself on purpose and is left alone.
+          if (win.webContents.getURL().startsWith('data:')) continue;
+          const bounds = win.getBounds();
+          win.setBounds({ ...bounds, x: origin.x, y: origin.y });
+        }
+      }, target);
+    }
+  }
 
   /*
    * The main process's own log, when asked for.

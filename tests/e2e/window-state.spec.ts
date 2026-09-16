@@ -19,7 +19,7 @@ test.describe('window state', () => {
       await first.page.waitForTimeout(1500);
 
       // A size nothing would pick by accident.
-      await first.app.evaluate(({ BrowserWindow }) => {
+      await first.app.evaluate(({ BrowserWindow, screen }) => {
         // Not `[0]`. The clip toast is a second window, built during boot, and
         // it is a transparent 408 pixel overlay loaded from a `data:` URL.
         // Resizing that one and then asserting on the app's size is how this
@@ -27,7 +27,24 @@ test.describe('window state', () => {
         const w = BrowserWindow.getAllWindows().find(
           (candidate) => !candidate.webContents.getURL().startsWith('data:'),
         );
-        w?.setBounds({ x: 120, y: 90, width: 1180, height: 760 });
+        if (!w) return;
+
+        /*
+         * Moved within whichever display it opened on, never across.
+         *
+         * This used to ask for a fixed `x: 120, y: 90`, which is a position on
+         * the primary screen. `launchApp` now opens test windows on a
+         * non-primary display when the machine has one, so those coordinates
+         * dragged the window across a DPI boundary: the two screens here are
+         * scaled 1.0 and 1.25, Windows rescaled the window on the way over,
+         * and the 1180 this test asks for arrived as 944, which the app's own
+         * minimum width clamped to 940.
+         *
+         * Relative to its own display it is the same test, it no longer
+         * depends on which screen it got, and it stays off the primary.
+         */
+        const area = screen.getDisplayMatching(w.getBounds()).workArea;
+        w.setBounds({ x: area.x + 120, y: area.y + 90, width: 1180, height: 760 });
       });
 
       // Past the debounce, then closed, which is when it must be written.
