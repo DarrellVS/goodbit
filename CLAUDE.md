@@ -137,6 +137,49 @@ copy of its tags, notes, display name, stars and collections.
   The last of those is the check that matters, because a fresh install and an upgrade diverging is
   how the app works on one machine and not another.
 
+### GoodBits, and why a clip is not one moment
+
+A **GoodBit** is a named in and out range on a clip, stored as metadata, leaving the recording
+whole. A trim replaces the file, so thirty seconds with two kills fifteen seconds apart is one clip
+and you keep one of them; a GoodBit writes the other one down instead. Entity `GoodBit`, table
+`good_bit`, cascading on clip delete.
+
+Consistent with the rule at the top of this file rather than an exception to it: files on disk are
+the truth about content, the database is the truth about metadata, and a GoodBit is metadata about
+content that is already there. Same footing as `displayName`.
+
+- **Marking by hand is the primary path.** `scripts/hud-check.mjs` over 174 real recordings found
+  **7, or 4%**, holding two or more detected moments above the confidence floor, against the 15%
+  that would have made the detector the story. A person watching a clip knows it has two good bits
+  whether or not a kill banner appeared. `source` is `manual` by default for that reason.
+- **The detector still feeds it.** `decide()` used to sort events by confidence and keep `[0]`; it
+  carries every confident one as `anchors` now, best first, so a suggestion chip can be kept as a
+  GoodBit in one press. Across the real library that stops discarding eight found moments.
+- **A trim moves them.** `services/goodBitsAfterTrim.ts`: marks inside the cut shift by its start,
+  marks outside go, and a mark straddling a boundary is kept and clamped, because cutting two
+  seconds off a five second mark leaves three seconds of the thing that was marked. Getting this
+  wrong is invisible: the band still draws, over a moment where nothing happens.
+- **Rendering one writes a new clip** into the library and the source keeps its marks, which avoids
+  inventing a second kind of clip that only the publisher would understand.
+
+### Drafts, and which store owns one
+
+Two stores used to hold an unsaved timeline and they could disagree silently. IndexedDB always won,
+the `project` row was a write-behind copy read only when the local one had vanished, and
+`entity/Project.ts` and `services/editorDraftsDb.ts` each carried a comment claiming the opposite
+of the other.
+
+- **A named draft lives in `project`, and only there.** It is what gets backed up, what 1.2's
+  restore can put back, and what outlives the Electron profile.
+- **One scratch record stays in IndexedDB**, never listed as a draft. It answers "what was this
+  window doing when it closed", which is a question about the profile rather than the library, it is
+  rewritten on an 800 ms debounce, and a backup carrying it carries noise. `utils/draftResume.ts` is
+  the one place the two are reconciled.
+- **The first-run migration runs on the first editor open**, not at boot, and in this order: hand
+  everything over, set the marker once the library has confirmed, then delete the local copies.
+  Marking it done before confirmation is the one ordering that could lose a draft. A migrated draft
+  keeps its own date, for the same reason a trim keeps the recording's.
+
 ### Searching the library
 
 `clip_search`, an FTS5 index over `filename`, `displayName`, `notes` and `game`,
