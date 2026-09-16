@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
 
 /**
  * Unit tests, over the logic that does not need a screen or a GPU.
@@ -20,9 +21,18 @@ import { defineConfig } from 'vitest/config';
  * program's configuration or needs a window. Those have `scripts/*-check.mjs`
  * benches against real inputs, which is the honest way to test them, and the
  * e2e suite for the rest.
+ *
+ * One exception to the window rule, and it is narrow. A `Base/` control that
+ * every screen uses is worth checking where checking is cheap, so a spec can
+ * ask for a DOM with `// @vitest-environment happy-dom` and mount one. It buys
+ * which rows get drawn, what a search term does to them and what value comes
+ * back on a choice. It does not buy anything visual: that is still the e2e
+ * suite's, and `screens.spec.ts`'s in particular.
  */
 export default defineConfig({
-  plugins: [resolveNodeNextSpecifiers()],
+  // The Vue plugin is only here so a spec can import a `.vue` file. Nothing
+  // else in the suite touches a component.
+  plugins: [vue(), resolveNodeNextSpecifiers()],
   /**
    * Beside the checkout, not inside `node_modules`.
    *
