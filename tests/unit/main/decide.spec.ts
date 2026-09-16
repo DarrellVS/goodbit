@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  confidentEvents,
   decide,
+  MIN_EVENT_CONFIDENCE,
   MIN_PEAK_Z,
   MIN_SPREAD_LU,
   type DecideInput,
@@ -49,6 +51,9 @@ describe('the thresholds are the ones that were measured', () => {
     // not a side effect of a refactor.
     expect(MIN_PEAK_Z).toBe(1.3);
     expect(MIN_SPREAD_LU).toBe(6);
+    // Moved out of a module-private constant so that `EnsureClipSuggestionsAction`
+    // and the HUD bench stop keeping copies of it. Same number, one home.
+    expect(MIN_EVENT_CONFIDENCE).toBe(0.8);
   });
 });
 
@@ -92,6 +97,9 @@ describe('a clip with nothing to point at', () => {
       expect(result.reason).toBeTruthy();
       expect(result.evidence).toBeNull();
       expect(result.anchor).toBeNull();
+      // Nothing to point at means nothing to offer marking, so the list is
+      // empty rather than absent: a caller mapping over it needs an array.
+      expect(result.anchors).toEqual([]);
     }
   });
 });
@@ -171,19 +179,20 @@ describe('what the game put on screen', () => {
   });
 
   it('ignores a reading it is not sure about', () => {
-    // 0.8 is the floor, set well above what the near misses reached. Below it
-    // the clip falls back to loudness, which here has nothing either.
+    // The floor is set well above what the near misses reached. Below it the
+    // clip falls back to loudness, which here has nothing either.
     const result = verdict({
       features: features({ spreadLu: 1 }),
-      events: [kill({ confidence: 0.79 })],
+      events: [kill({ confidence: MIN_EVENT_CONFIDENCE - 0.01 })],
     });
 
     expect(result.confident).toBe(false);
     expect(result.basis).toBe('rule');
+    expect(result.anchors).toEqual([]);
   });
 
   it('accepts a reading sitting exactly on the confidence floor', () => {
-    expect(verdict({ events: [kill({ confidence: 0.8 })] }).basis).toBe('hud');
+    expect(verdict({ events: [kill({ confidence: MIN_EVENT_CONFIDENCE })] }).basis).toBe('hud');
   });
 
   it('is unbothered by an empty list or none at all', () => {
@@ -192,15 +201,21 @@ describe('what the game put on screen', () => {
   });
 
   /**
-   * The line 2.1 is built on.
+   * The line 2.1 is built on, now that it holds.
    *
-   * `decide()` sorts the events by confidence and takes `[0]`. A clip with
-   * three kills in it has already paid for finding all three, and two of them
-   * are dropped here. This test does not assert that they survive, because
-   * today they do not: it pins the shape of what is being thrown away, so the
-   * change that keeps them has something to compare against.
+   * This used to pin what was being thrown away: `decide()` sorted the events
+   * by confidence, took `[0]`, and the rest went on the floor, although
+   * `WatchClipHudAction` had already paid for finding them at roughly a sixth
+   * of a second per second of footage. Over the 174 clip Battlefield library
+   * that was 8 detected moments discarded.
+   *
+   * Every confident one now survives, ranked, and `anchor` is the head of that
+   * list rather than a separate decision. Both are asserted here, because the
+   * point of keeping `anchor` was that nothing downstream had to change at the
+   * same moment, and a refactor that quietly made it the *earliest* event
+   * instead of the strongest would still look right in one of the two.
    */
-  it('keeps one of several events, which is what 2.1 changes', () => {
+  it('keeps every confident event, best first, with the anchor at the head', () => {
     const result = verdict({
       events: [
         kill({ atSec: 4, confidence: 0.91 }),
@@ -209,9 +224,102 @@ describe('what the game put on screen', () => {
       ],
     });
 
-    expect(result.anchor).not.toBeNull();
-    expect(result.anchor?.atSec).toBe(17);
-    expect(Object.keys(result)).not.toContain('anchors');
+    expect(result.anchors.map((event) => event.atSec)).toEqual([17, 4, 28]);
+    expect(result.anchor).toBe(result.anchors[0]);
+  });
+
+  it('leaves the unsure ones out of the list rather than at the end of it', () => {
+    // A GoodBit made from one of these would be offered on the strength of a
+    // reading the app has already decided not to trust, and the confidence
+    // would be shown next to it as though it were evidence.
+    const result = verdict({
+      events: [
+        kill({ atSec: 9, confidence: 0.95 }),
+        kill({ atSec: 15, confidence: MIN_EVENT_CONFIDENCE - 0.01 }),
+      ],
+    });
+
+    expect(result.anchors.map((event) => event.atSec)).toEqual([9]);
+  });
+
+  it('ranks with the same function the rest of the app filters with', () => {
+    // `EnsureClipSuggestionsAction` had its own copy of the floor for the
+    // clip-with-no-audio path, so a change here would have moved what the Trim
+    // page offers on a clip that can be heard and not on one that cannot.
+    const events = [
+      kill({ atSec: 2, confidence: 0.99 }),
+      kill({ atSec: 5, confidence: 0.5 }),
+      kill({ atSec: 8, confidence: 0.85 }),
+    ];
+
+    expect(confidentEvents(events).map((event) => event.atSec)).toEqual([2, 8]);
+    expect(confidentEvents(undefined)).toEqual([]);
+  });
+});
+
+describe('a model, when one has been fitted', () => {
+  /**
+   * The half of this file that could not be reached before.
+   *
+   * `decide()` called `score()` from `model.ts`, which asks `settings.ts` for
+   * `userDataDir()`, which imports `electron`. So the model branch could only
+   * be exercised by writing a weights file into whatever directory a stubbed
+   * `app.getPath` handed back, and `tests/unit/stubs/electron.ts` exists
+   * because of it. The model is an argument now, so its verdict is testable
+   * with a one line function.
+   */
+  it('replaces the loudness rule outright when it is confident', () => {
+    // Loudness would refuse this clip on both counts. A model fitted to what
+    // somebody actually keeps is allowed to disagree; that is the point of it.
+    const result = decide({
+      features: features({ spreadLu: 1, peakZ: 0 }),
+      score: () => 0.9,
+    });
+
+    expect(result.confident).toBe(true);
+    expect(result.basis).toBe('model');
+    expect(result.reason).toBeNull();
+  });
+
+  it('refuses in its own words, and says the model did it', () => {
+    const result = decide({ features: features(), score: () => 0.49 });
+
+    expect(result.confident).toBe(false);
+    expect(result.basis).toBe('model');
+    expect(result.reason).toBe('nothing in this clip looks like the bits you usually keep');
+  });
+
+  it('accepts a probability sitting exactly on a half', () => {
+    // `>= 0.5`, so the coin lands on yes. Worth pinning: a logistic regression
+    // fitted on a few hundred examples puts plenty of clips near the middle.
+    expect(decide({ features: features(), score: () => 0.5 }).confident).toBe(true);
+  });
+
+  it('is ignored when the model has nothing to say about a clip', () => {
+    // What ships. `score` returning null is "no model was loaded", and the
+    // hand-made rule has to run rather than the clip being refused for having
+    // no opinion attached to it.
+    const result = decide({ features: features(), score: () => null });
+
+    expect(result.basis).toBe('rule');
+    expect(result.confident).toBe(true);
+  });
+
+  it('does not get asked when the screen already answered', () => {
+    // The precedence that matters most: the game confirming a kill outranks a
+    // statistical guess about loudness, so the model is never even consulted.
+    let asked = 0;
+    const result = decide({
+      features: features({ spreadLu: 1, peakZ: 0 }),
+      events: [{ kind: 'kill', atSec: 12, confidence: 0.94, reason: 'the kill feed lit up' }],
+      score: () => {
+        asked += 1;
+        return 0.01;
+      },
+    });
+
+    expect(result.basis).toBe('hud');
+    expect(asked).toBe(0);
   });
 });
 

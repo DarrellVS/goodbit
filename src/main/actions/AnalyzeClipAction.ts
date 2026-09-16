@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { FFMPEG_PATH } from '../services/binaries.js';
 import { promisify } from 'node:util';
 import { BaseAction } from './BaseAction.js';
-import type { SuggestedMoment } from '@shared/index.js';
+import type { SuggestedGoodBit } from '@shared/index.js';
 import {
   describe,
   findMoment,
@@ -86,7 +86,8 @@ export interface AnalyzeClipOutput {
   durationSec: number;
   /** The best candidate, whether or not it turns out to be worth suggesting. */
   window: { start: number; end: number } | null;
-  moments: SuggestedMoment[];
+  /** The loudest instants, kept apart so they describe different things. */
+  goodBits: SuggestedGoodBit[];
   features: HighlightFeatures | null;
   spreadLu: number;
   /** How far the loudest moment stood above the clip's own normal. */
@@ -100,7 +101,7 @@ const NOTHING = (reason: string): AnalyzeClipOutput => ({
   reason,
   durationSec: 0,
   window: null,
-  moments: [],
+  goodBits: [],
   features: null,
   spreadLu: 0,
   peakZ: 0,
@@ -149,24 +150,24 @@ export class AnalyzeClipAction extends BaseAction<AnalyzeClipInput, AnalyzeClipO
       Math.max(MIN_WINDOW_SEC, LEAD_IN + features.eventSec + TAIL_ROOM),
     );
 
-    const moments: SuggestedMoment[] = [];
+    const goodBits: SuggestedGoodBit[] = [];
     const ranked = shaped.z
       .map((z, i) => ({ s: Math.max(0, Math.min(1, z)), i }))
       .sort((a, b) => b.s - a.s);
     for (const { s, i } of ranked) {
-      if (moments.length >= 3 || s <= 0) break;
+      if (goodBits.length >= 3 || s <= 0) break;
       // Keep the three apart so they describe different moments.
-      if (moments.some((m) => Math.abs(m.t - times[i]) < 3)) continue;
-      moments.push({ t: round(times[i]), score: round(s, 2) });
+      if (goodBits.some((m) => Math.abs(m.t - times[i]) < 3)) continue;
+      goodBits.push({ t: round(times[i]), score: round(s, 2) });
     }
-    moments.sort((a, b) => a.t - b.t);
+    goodBits.sort((a, b) => a.t - b.t);
 
     return {
       analyzed: true,
       reason: null,
       durationSec: round(durationSec),
       window: place(length, durationSec, candidate.onsetIndex * HOP, candidate.peakIndex * HOP),
-      moments,
+      goodBits,
       features,
       spreadLu: round(shaped.spreadLu),
       peakZ: round(features.peakZ, 2),
