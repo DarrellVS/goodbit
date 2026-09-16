@@ -91,8 +91,28 @@ async function snapshot(source: string, target: string): Promise<void> {
  * row count that has to match the original.
  */
 async function verify(path: string): Promise<number> {
+  /*
+   * Read-write, on the copy, and that is not a slip.
+   *
+   * `PRAGMA quick_check` validates an FTS5 table's inverted index, and doing
+   * that needs somewhere to write. Opened `OPEN_READONLY` it fails with
+   *
+   *   unable to validate the inverted index for FTS5 table main.clip_search:
+   *   attempt to write a readonly database
+   *
+   * which is reported as a corrupt copy. So the moment `clip_search` arrived
+   * with the 2.0 migration, **every backup started failing its own
+   * verification**: the automatic one before a migration, the "Back up now"
+   * button, and worst of all `restoreBackup`, which verifies before it will
+   * put anything back. A search index quietly disabled the safety net.
+   *
+   * This opens the **copy**, which was made moments ago by `VACUUM INTO` and
+   * belongs to us. The source is still never opened for writing anywhere in
+   * this file. Letting SQLite write its own validation scratch into a file
+   * whose only purpose is to be checked costs nothing.
+   */
   const db = await new Promise<sqlite3.Database>((resolve, reject) => {
-    const handle = new sqlite3.Database(path, sqlite3.OPEN_READONLY, (error) =>
+    const handle = new sqlite3.Database(path, sqlite3.OPEN_READWRITE, (error) =>
       error ? reject(error) : resolve(handle),
     );
   });
