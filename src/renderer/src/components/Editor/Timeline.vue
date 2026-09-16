@@ -147,7 +147,18 @@ function handleRulerMouseUp(): void {
       @scroll="syncScroll"
     >
       <div class="relative h-full py-3 space-y-2" :style="{ width: `${timelineWidth}px`, minWidth: '100%' }">
-        <div class="relative h-16 bg-orange-500/4 rounded-lg mx-3 border border-border">
+        <!--
+          No horizontal margin, because this lane is a ruler.
+
+          It had `mx-3`, and a clip inside it is positioned absolutely from the
+          lane's own left edge using the same pixels-per-second the ruler ticks
+          use. So twelve pixels of margin put every clip twelve pixels to the
+          right of the time it is actually at, and made the lane twenty four
+          pixels narrower than the content laid out inside it, so the end of
+          the timeline ran past its own edge. The ruler and the playhead both
+          start at zero; these have to as well.
+        -->
+        <div class="relative h-16 bg-orange-500/4 rounded-lg border border-border">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -163,7 +174,15 @@ function handleRulerMouseUp(): void {
           />
         </div>
 
-        <div class="relative h-12 bg-amber-500/4 rounded-lg mx-3 border border-border">
+        <!--
+          The same ground as the clip lane above it.
+
+          This was `bg-amber-500/4` against the clips' `bg-orange-500/4`: two
+          different hues at the same 4%, which is a difference nobody chose and
+          which only became visible when Tailwind 4 started rendering off-scale
+          opacities that Tailwind 3 dropped on the floor. A lane is a lane.
+        -->
+        <div class="relative h-12 bg-orange-500/4 rounded-lg border border-border">
           <!--
             Everything past the last frame of video is dropped on export, so the
             lane says so rather than letting a long track look like it survives.
