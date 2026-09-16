@@ -35,10 +35,10 @@
         class="flex-shrink-0"
         v-model="range"
         :max-duration="duration"
-        :duration="formatTime(duration)"
-        :start-time="formatTime(range[0])"
-        :end-time="formatTime(range[1])"
-        :length="formatTime(trimmedLength)"
+        :duration="timecode(duration)"
+        :start-time="timecode(range[0])"
+        :end-time="timecode(range[1])"
+        :length="timecode(trimmedLength)"
         :start-percentage="timeToPercentage(range[0])"
         :end-percentage="timeToPercentage(range[1])"
         :frame-strip-source="frameStripSource"
@@ -46,14 +46,21 @@
         :is-saving="isSaving"
         :save-progress="saveProgress"
         :playhead-percentage="timeToPercentage(currentTime)"
-        :playhead="formatTime(currentTime)"
+        :playhead="timecode(currentTime)"
         :is-playing="isPlaying"
         :good-bits="goodBits"
         :selected-good-bit-id="selectedGoodBitId"
+        :slider-step="sliderStep"
+        :frame-rate-text="frameRateText"
+        :step-label="stepLabel"
+        :length-sub="frameSpan(trimmedLength)"
+        :handle-format="timecode"
         @save="handleSave"
         @toggle-playback="togglePlayback"
         @seek="scrubTo"
         @select-goodbit="selectGoodBit"
+        @step-handle="stepHandle"
+        @arm="(handle) => (armedHandle = handle)"
       />
 
       <!--
@@ -103,6 +110,8 @@ import { streamUrl, frameStripUrl } from '../../utils/mediaUrl';
 import { formatBytes } from '../../utils/formatters';
 import { useTrimRange } from '../../composables/useTrimRange';
 import { useVideoPlayer } from '../../composables/useVideoPlayer';
+import { useFrameStep, type ArmedHandle } from '../../composables/useFrameStep';
+import { TENTH_SEC } from '../../utils/frameRate';
 import { useGoodBits } from '../../composables/useGoodBits';
 import {
   anchorToGoodBit,
@@ -146,7 +155,6 @@ const {
   isValidRange,
   timeToPercentage,
   initializeRange,
-  formatTime,
 } = useTrimRange();
 
 const videoPreviewRef = ref<InstanceType<typeof VideoPreview> | null>(null);
@@ -192,14 +200,73 @@ const { currentTime, isPlaying, togglePlayback, seek, scrubTo } = useVideoPlayer
   locked: isSaving,
 });
 
+/*
+ * ## Frames, which this page needs a frame rate to have
+ *
+ * `ClipMeta.fps` is ffprobe's own rational, `60/1` or `60000/1001`, and until
+ * now it was read in one place, `ClipDetail/ClipFacts.vue`, as a line of text.
+ * It is the number that makes an arrow key mean something here: one frame is
+ * only a duration if you know the rate, and this library is 60 fps ultrawide
+ * capture, so a control built on an assumed 30 would be off by half a frame
+ * while looking exact.
+ *
+ * It arrives either way. The details panel has already probed the file and
+ * hands the whole `ClipMeta` over, and `/trim/:id` opening cold fetches it
+ * below. The watch is there because the two are not simultaneous: the panel
+ * sets `clip` and then awaits the probe, so this can mount for a tick with the
+ * prop still null.
+ */
+const frameRate = ref<string | null>(props.metadata?.fps ?? null);
+
+watch(
+  () => props.metadata,
+  (metadata) => {
+    if (!metadata) return;
+    frameRate.value = metadata.fps;
+    if (metadata.durationSec && !duration.value) initializeRange(metadata.durationSec);
+  },
+);
+
 async function loadClipMetadata(): Promise<void> {
   try {
     const metadata = await getClipMeta(Number(props.id));
+    frameRate.value = metadata.fps;
     initializeRange(metadata.durationSec || 0);
   } catch (error) {
     console.error('Failed to load clip metadata:', error);
   }
 }
+
+/** Which handle the arrow keys are moving, or null for the playhead. */
+const armedHandle = ref<ArmedHandle>(null);
+
+const {
+  frameRateText,
+  stepLabel,
+  fps,
+  stepHandle,
+  timecode,
+  frameSpan,
+} = useFrameStep({
+  frameRate,
+  durationSec: duration,
+  range,
+  playhead: currentTime,
+  seek: scrubTo,
+  // Nothing moves while the file is being rewritten, for the same reason the
+  // player is locked: the cut ends by renaming over this exact file.
+  enabled: computed(() => !isSaving.value),
+  armed: armedHandle,
+});
+
+/**
+ * What a drag snaps to.
+ *
+ * The same grid the arrow keys use, so the two ways of moving a handle cannot
+ * land on different places. A tenth when the rate is unknown, which is what the
+ * slider did before frames existed.
+ */
+const sliderStep = computed(() => (fps.value === null ? TENTH_SEC : 1 / fps.value));
 
 const toastStore = useToastStore();
 const clip = ref<Clip | null>(null);
@@ -428,7 +495,7 @@ async function runTrim(): Promise<void> {
     // report megabytes only, which is how a cut that quietly moved could go
     // unnoticed. It cannot move any more, so this simply states the range.
     toastStore.success(
-      `Kept ${formatTime(result.actualStartSec)} to ${formatTime(result.actualEndSec)}. ${size}`,
+      `Kept ${timecode(result.actualStartSec)} to ${timecode(result.actualEndSec)}. ${size}`,
       result.mode === 'compressed' ? 'Trimmed and compressed' : 'Trimmed',
     );
     clipsStore.resetPagination();
