@@ -8,97 +8,30 @@ import axios from '../axios';
  * wrong and what would be written.
  */
 
-export type FindingLevel = 'ok' | 'warning' | 'blocker';
-
-export interface ObsFinding {
-  id: string;
-  level: FindingLevel;
-  title: string;
-  detail: string;
-  fixable: boolean;
-}
-
-export interface ObsStatus {
-  installed: boolean;
-  running: boolean;
-  executable: string | null;
-  ready: boolean;
-  findings: ObsFinding[];
-  activeProfileName: string | null;
-  goodbitProfileExists: boolean;
-  /** Scenes with something in them, rather than OBS's empty Untitled. */
-  hasScenes: boolean;
-  /** Whether the findings describe GoodBit's own profile or the active one. */
-  judging: 'goodbit' | 'active';
-  videosRoot: string;
-  recordingPath: string | null;
-  replayBufferSeconds: number | null;
-  audioDeviceIds: string[];
-  hotkey: string | null;
-  setupWrittenAt: string | null;
-}
-
-export interface PlannedChange {
-  kind: 'create' | 'modify' | 'download';
-  title: string;
-  file: string;
-  /** What the change means, in sentences, for the dialog to lead with. */
-  summary: string[];
-  details: Array<{ key: string; value: string; was?: string }>;
-}
-
-export interface ObsSetupPlan {
-  changes: PlannedChange[];
-  blockers: string[];
-  notes: string[];
-  obsRunning: boolean;
-}
-
-export interface CaptureDisplay {
-  id: number;
-  label: string;
-  primary: boolean;
-  width: number;
-  height: number;
-  frequency: number;
-  /** Null when Windows would not say which device this screen is. */
-  monitorId: string | null;
-  hdrSupported: boolean;
-  /** HDR is on for this screen right now, which decides the colour settings. */
-  hdrEnabled: boolean;
-}
-
-export interface ObsSetupRequest {
-  createProfile?: boolean;
-  displayId?: number;
-  captureDesktop?: boolean;
-  /** OBS device ids. Absent means the system's own output, alone. */
-  audioDeviceIds?: string[];
-  enableReplayBuffer?: boolean;
-  replayBufferSeconds?: number;
-  bindHotkey?: boolean;
-  hotkey?: string;
-  createScene?: boolean;
-}
-
-export interface ObsSetupResult {
-  applied: boolean;
-  summary: string[];
-  profile: string | null;
-  collection: string | null;
-}
-
-
-export interface AudioDevice {
-  /** What OBS stores, verbatim. */
-  id: string;
-  name: string;
-  /** The hardware behind it, since three endpoints can all be called Speakers. */
-  description: string;
-  flow: 'output' | 'input';
-  /** The system default, which OBS writes as the literal `default`. */
-  isDefault: boolean;
-}
+/*
+ * The types are the shared contract, not a second copy.
+ *
+ * They were written out again here, beside the functions that read them, and
+ * three of them had already drifted from what main produces. `src/shared` is
+ * where both processes agree now, and they are re-exported from this file so
+ * every component that imports a type from the obs service is unchanged.
+ */
+export type {
+  AudioDevice,
+  CaptureDisplay,
+  ChangeKind,
+  FindingLevel,
+  ObsFinding,
+  ObsInstallOption,
+  ObsInstallPlan,
+  ObsSetupPlan,
+  ObsSetupPlanResponse,
+  ObsSetupRequest,
+  ObsSetupResult,
+  ObsStatus,
+  PlannedChange,
+} from '@shared/index';
+import type { ObsSetupPlanResponse, ObsStatus, CaptureDisplay, AudioDevice, ObsInstallPlan, ObsSetupRequest, ObsSetupResult } from '@shared/index';
 
 export async function getAudioDevices(): Promise<AudioDevice[]> {
   const { data } = await axios.get<AudioDevice[]>('/obs/audio-devices');
@@ -110,8 +43,8 @@ export async function getCaptureDisplays(): Promise<CaptureDisplay[]> {
   return data;
 }
 
-export async function planObsSetup(request: ObsSetupRequest): Promise<ObsSetupPlan> {
-  const { data } = await axios.post<ObsSetupPlan>('/obs/plan', request);
+export async function planObsSetup(request: ObsSetupRequest): Promise<ObsSetupPlanResponse> {
+  const { data } = await axios.post<ObsSetupPlanResponse>('/obs/plan', request);
   return data;
 }
 
@@ -127,13 +60,6 @@ export async function skipObsWizard(): Promise<void> {
 export async function undoObsSetup(): Promise<{ removed: string[]; restored: string[] }> {
   const { data } = await axios.post<{ removed: string[]; restored: string[] }>('/obs/undo');
   return data;
-}
-
-export interface ObsInstallPlan {
-  alreadyInstalled: boolean;
-  options: Array<{ method: 'winget' | 'download' | 'manual'; label: string; detail: string }>;
-  installer: { version: string; name: string; bytes: number } | null;
-  downloadPage: string;
 }
 
 export async function getObsStatus(): Promise<ObsStatus> {

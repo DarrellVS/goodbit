@@ -6,6 +6,10 @@ import { GOODBIT_COLLECTION, GOODBIT_PROFILE, readManifest } from '../services/o
 import { loadSettings } from '../settings.js';
 import { INCOMING_DIR_NAME } from '../services/capture/incoming.js';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { FindingLevel, ObsFinding, ObsStatus } from '@shared/index.js';
+export type { FindingLevel, ObsFinding, ObsStatus };
+
 /**
  * What is wrong with this machine's OBS, in sentences.
  *
@@ -13,55 +17,6 @@ import { INCOMING_DIR_NAME } from '../services/capture/incoming.js';
  * clips are not appearing have exactly one setting wrong and no way to know
  * which, and naming it is worth more than fixing it silently would be.
  */
-
-export type FindingLevel = 'ok' | 'warning' | 'blocker';
-
-export interface ObsFinding {
-  id: string;
-  level: FindingLevel;
-  title: string;
-  detail: string;
-  /** True when GoodBit's own setup would resolve this. */
-  fixable: boolean;
-}
-
-export interface ObsStatus {
-  installed: boolean;
-  running: boolean;
-  executable: string | null;
-  /** Ready means: a buffer, a hotkey, a matching folder and a way to sort. */
-  ready: boolean;
-  findings: ObsFinding[];
-  activeProfileName: string | null;
-  goodbitProfileExists: boolean;
-  /**
-   * Has this person built scenes worth leaving alone?
-   *
-   * Not the same as "has a scene collection". OBS creates an empty one called
-   * Untitled on its first run, and treating that as somebody's work meant the
-   * setup skipped making its own: OBS then opened the GoodBit profile with an
-   * empty scene and warned that it had no video sources, which it did not.
-   *
-   * A collection counts when something in it captures something.
-   */
-  hasScenes: boolean;
-  /**
-   * Which profile these findings are about.
-   *
-   * GoodBit never switches the active profile: it makes its own and names it
-   * on the command line when it starts OBS. So once that profile exists, it is
-   * the one worth judging, and judging the active one instead would report a
-   * buffer as off immediately after turning it on.
-   */
-  judging: 'goodbit' | 'active';
-  videosRoot: string;
-  recordingPath: string | null;
-  replayBufferSeconds: number | null;
-  hotkey: string | null;
-  /** What the GoodBit scene already captures, so the setup can show it ticked. */
-  audioDeviceIds: string[];
-  setupWrittenAt: string | null;
-}
 
 function samePath(a: string, b: string): boolean {
   return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();

@@ -4,6 +4,10 @@ import path from 'node:path';
 import os from 'node:os';
 import { promisify } from 'node:util';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { AudioDevice } from '@shared/index.js';
+export type { AudioDevice };
+
 const run = promisify(execFile);
 
 /**
@@ -22,24 +26,6 @@ const run = promisify(execFile);
  * Chromium's own device list is no use here, because `enumerateDevices` hashes
  * its ids per origin and they have nothing to do with WASAPI.
  */
-
-export interface AudioDevice {
-  /** What OBS stores, verbatim. */
-  id: string;
-  /** The endpoint's own name, which is often `Speakers` on three of them. */
-  name: string;
-  /**
-   * The hardware behind it: `Sound Blaster X3`, `Elgato Virtual Audio`.
-   *
-   * Without this the list reads as duplicates. Windows shows both lines in its
-   * own sound settings for the same reason.
-   */
-  description: string;
-  /** `output` is something playing, `input` is a microphone. */
-  flow: 'output' | 'input';
-  /** The system default, which OBS writes as the literal `default`. */
-  isDefault: boolean;
-}
 
 /**
  * Only active endpoints, and only ones with a name.

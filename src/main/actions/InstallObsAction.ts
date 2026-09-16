@@ -13,6 +13,10 @@ import {
 import { obsIsInstalled } from '../services/obs/paths.js';
 import { suppressFirstRunWizard } from '../services/obs/setup.js';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { ObsInstallPlan } from '@shared/index.js';
+export type { ObsInstallPlan };
+
 /**
  * Getting OBS onto a machine that has never had it.
  *
@@ -24,14 +28,6 @@ import { suppressFirstRunWizard } from '../services/obs/setup.js';
  * installs Microsoft's own package for OBS; the download route opens OBS's own
  * installer, which asks its own questions.
  */
-
-export interface ObsInstallPlan {
-  alreadyInstalled: boolean;
-  options: ObsInstallOption[];
-  /** What the download route would fetch, so the dialog can name it. */
-  installer: { version: string; name: string; bytes: number } | null;
-  downloadPage: string;
-}
 
 export class PlanObsInstallAction extends BaseAction<void, ObsInstallPlan> {
   async execute(): Promise<ObsInstallPlan> {

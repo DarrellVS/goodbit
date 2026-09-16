@@ -13,7 +13,7 @@ import ObsSetupScreenStep from '../../../src/renderer/src/components/Settings/Ob
 import ObsSetupSortingStep from '../../../src/renderer/src/components/Settings/ObsSetup/ObsSetupSortingStep.vue';
 import ObsSetupStepToggle from '../../../src/renderer/src/components/Settings/ObsSetup/ObsSetupStepToggle.vue';
 import type { SetupStep } from '../../../src/renderer/src/composables/useObsSetup';
-import type { ObsSetupPlan, PlannedChange } from '../../../src/renderer/src/services/obs';
+import type { ObsSetupPlanResponse, PlannedChange } from '../../../src/renderer/src/services/obs';
 
 /**
  * The wizard's pages, mounted.
@@ -95,7 +95,7 @@ function change(overrides: Partial<PlannedChange> = {}): PlannedChange {
   };
 }
 
-function plan(overrides: Partial<ObsSetupPlan> = {}): ObsSetupPlan {
+function plan(overrides: Partial<ObsSetupPlanResponse> = {}): ObsSetupPlanResponse {
   return { changes: [change()], blockers: [], notes: [], obsRunning: false, ...overrides };
 }
 

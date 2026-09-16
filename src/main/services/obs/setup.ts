@@ -11,6 +11,10 @@ import type { AudioDevice } from './audioDevices.js';
 import { recordingVideoSettings } from './displays.js';
 import { userDataDir } from '../../settings.js';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { ChangeKind, PlannedChange, ObsSetupPlan } from '@shared/index.js';
+export type { ChangeKind, PlannedChange, ObsSetupPlan };
+
 /**
  * Writing the setup, one preview at a time.
  *
@@ -76,35 +80,6 @@ export interface ObsSetupChoices {
    * screen, and game capture still takes over when a game is running.
    */
   captureDesktop: boolean;
-}
-
-export type ChangeKind = 'create' | 'modify' | 'download';
-
-export interface PlannedChange {
-  kind: ChangeKind;
-  /** What the user sees: a short, plain name for the thing being changed. */
-  title: string;
-  /** The file, absolute, so someone who knows OBS can check it. */
-  file: string;
-  /**
-   * What this change means, in sentences.
-   *
-   * The keys below are the truth and stay available, but a list of
-   * `[SimpleOutput] RecRBTime = 30` is a diff for somebody who already knows
-   * OBS. Most people pressing this button do not, and reading thirteen ini
-   * keys is not consent, it is a wall.
-   */
-  summary: string[];
-  /** Key and value pairs, in OBS's own vocabulary, for anyone who wants them. */
-  details: Array<{ key: string; value: string; was?: string }>;
-}
-
-export interface ObsSetupPlan {
-  changes: PlannedChange[];
-  /** Reasons the plan cannot be applied right now. */
-  blockers: string[];
-  /** Things worth saying before someone presses the button. */
-  notes: string[];
 }
 
 function profileDir(): string {

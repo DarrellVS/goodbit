@@ -5,6 +5,10 @@ import os from 'node:os';
 import { promisify } from 'node:util';
 import { net, shell } from 'electron';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { ObsInstallOption } from '@shared/index.js';
+export type { ObsInstallOption };
+
 const run = promisify(execFile);
 
 /**
@@ -31,13 +35,6 @@ const run = promisify(execFile);
 export const OBS_DOWNLOAD_PAGE = 'https://obsproject.com/download';
 const OBS_RELEASES_API = 'https://api.github.com/repos/obsproject/obs-studio/releases/latest';
 const WINGET_ID = 'OBSProject.OBSStudio';
-
-export interface ObsInstallOption {
-  method: 'winget' | 'download' | 'manual';
-  /** What to say on the button. */
-  label: string;
-  detail: string;
-}
 
 /** Is winget on this machine, and usable? */
 export async function hasWinget(): Promise<boolean> {

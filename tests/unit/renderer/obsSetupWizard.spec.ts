@@ -15,7 +15,7 @@ import {
 import type {
   AudioDevice,
   CaptureDisplay,
-  ObsSetupPlan,
+  ObsSetupPlanResponse,
 } from '../../../src/renderer/src/services/obs';
 
 /**
@@ -37,7 +37,7 @@ import type {
 const OBS_OPEN =
   'OBS is open. It rewrites its settings file from memory when it closes, so anything written now would be thrown away. Close it and try again.';
 
-function planWith(overrides: Partial<ObsSetupPlan> = {}): ObsSetupPlan {
+function planWith(overrides: Partial<ObsSetupPlanResponse> = {}): ObsSetupPlanResponse {
   return {
     changes: [{ kind: 'create', title: 'A profile', file: 'basic.ini', summary: ['One'], details: [] }],
     blockers: [],

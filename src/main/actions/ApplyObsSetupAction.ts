@@ -17,6 +17,10 @@ import {
 } from '../services/obs/setup.js';
 import { loadSettings, saveSettings } from '../settings.js';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { ObsSetupPlanResponse, ObsSetupRequest, ObsSetupResult } from '@shared/index.js';
+export type { ObsSetupRequest, ObsSetupResult };
+
 /**
  * Turning a set of choices into a plan, and a plan into files.
  *
@@ -24,20 +28,6 @@ import { loadSettings, saveSettings } from '../settings.js';
  * a dialog that shows one list of changes and then writes a different one is
  * worse than no dialog at all.
  */
-
-export interface ObsSetupRequest {
-  createProfile?: boolean;
-  /** Electron's display id. Defaults to the primary screen. */
-  displayId?: number;
-  /** OBS device ids. Absent means the system's own output, alone. */
-  audioDeviceIds?: string[];
-  captureDesktop?: boolean;
-  enableReplayBuffer?: boolean;
-  replayBufferSeconds?: number;
-  bindHotkey?: boolean;
-  hotkey?: string;
-  createScene?: boolean;
-}
 
 /**
  * A name that will not start a second folder for a game you already have.
@@ -95,8 +85,8 @@ async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices
   };
 }
 
-export class PlanObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupPlan & { obsRunning: boolean }> {
-  async execute(request: ObsSetupRequest): Promise<ObsSetupPlan & { obsRunning: boolean }> {
+export class PlanObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupPlanResponse> {
+  async execute(request: ObsSetupRequest): Promise<ObsSetupPlanResponse> {
     const choices = await resolveChoices(request);
     const [installed, obsRunning] = await Promise.all([obsIsInstalled(), obsIsRunning()]);
     const plan = planObsSetup(choices, undefined, installed);
@@ -109,14 +99,6 @@ export class PlanObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupPlan
 
     return { ...plan, obsRunning };
   }
-}
-
-export interface ObsSetupResult {
-  applied: boolean;
-  /** What was written, so the UI can say it rather than guess. */
-  summary: string[];
-  profile: string | null;
-  collection: string | null;
 }
 
 export class ApplyObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupResult> {

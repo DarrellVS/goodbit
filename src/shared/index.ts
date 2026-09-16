@@ -49,3 +49,6 @@ export * from './dtos/clip/ClipSuggestionsDTO.js';
 // The bits of a clip worth watching, which do not change the clip
 export * from './dtos/goodbit/GoodBitDTO.js';
 
+// What an OBS setup looks like, agreed once rather than written out in both
+// processes and allowed to drift
+export * from './dtos/obs/ObsDTO.js';

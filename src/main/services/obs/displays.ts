@@ -1,6 +1,10 @@
 import { screen } from 'electron';
 import { windowsDisplays, type WindowsDisplay } from './displayQuery.js';
 
+/* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
+import type { CaptureDisplay } from '@shared/index.js';
+export type { CaptureDisplay };
+
 /**
  * The screens, in the two vocabularies that have to agree.
  *
@@ -12,22 +16,6 @@ import { windowsDisplays, type WindowsDisplay } from './displayQuery.js';
  * both sides report identically, and falls back to order for two identical
  * screens.
  */
-
-export interface CaptureDisplay {
-  /** Electron's id, which is what the UI passes back. */
-  id: number;
-  label: string;
-  primary: boolean;
-  /** Real pixels, not the scaled ones a 125% display reports. */
-  width: number;
-  height: number;
-  frequency: number;
-  /** What a `monitor_capture` source needs, when Windows would say. */
-  monitorId: string | null;
-  hdrSupported: boolean;
-  /** HDR is on for this screen right now, which decides the colour settings. */
-  hdrEnabled: boolean;
-}
 
 export async function captureDisplays(): Promise<CaptureDisplay[]> {
   const primary = screen.getPrimaryDisplay();
