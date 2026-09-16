@@ -173,7 +173,14 @@ design/library-mockups/shots/
 # stale build or an older checkout cannot do it again.
 Editor/
 
-# The four package web app this was ported from. Kept on disk for reference,
-# never part of this repository. `server/` still holds its `.env`.
+# The four package web app this was ported from.
+#
+# Their source was removed from the repository in 3faa3a0, and the folders that
+# were left on disk afterwards, 868 MB of build output and node_modules, are
+# gone now too. Recover the source from before that commit if it is ever
+# wanted: `git show 3faa3a0^:server/src/...`.
+#
+# Ignored rather than forgotten, so checking out a commit from before the port
+# and coming back cannot quietly re-add them.
 client/
 server/
