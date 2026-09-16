@@ -9,7 +9,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 import { useTagsStore } from '../../stores/tags';
 
 interface Props {

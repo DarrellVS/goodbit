@@ -13,7 +13,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuRoot,
   DropdownMenuTrigger,
-} from 'radix-vue';
+} from 'reka-ui';
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
 import SidebarShowMore from './SidebarShowMore.vue';
 import GameRenameDialog from './GameRenameDialog.vue';

@@ -10,7 +10,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 import { formatTime } from '../../utils/timeFormat';
 import { outputSizeFor, targetKbpsFor } from '@shared/index';
 // Straight at the source rather than through the package root: `shared/dist` is

@@ -9,7 +9,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 import { formatRelativeTime } from '../../helpers/dateFormat';
 import { useToastStore } from '../../stores/toast';
 import { downloadDraft, parseDraftFile, type DraftFilePayload } from '../../utils/draftFile';

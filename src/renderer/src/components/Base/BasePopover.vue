@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { PopoverArrow, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'radix-vue'
+import { PopoverArrow, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
 const props = defineProps<{ side?: 'top' | 'right' | 'bottom' | 'left'; sideOffset?: number }>();
 </script>

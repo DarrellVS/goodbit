@@ -8,7 +8,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 import { useToastStore } from '../../stores/toast';
 import { useCollectionsStore } from '../../stores/collections';
 import { useClipLoader } from '../../composables/useClipLoader';

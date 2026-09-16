@@ -8,7 +8,7 @@ import {
   ToastRoot,
   ToastTitle,
   ToastViewport,
-} from 'radix-vue';
+} from 'reka-ui';
 import { useToastStore } from '../../stores/toast';
 import type { Toast } from '../../stores/toast';
 
@@ -51,7 +51,7 @@ function getIconName(toast: Toast): string {
       v-for="toast in toastStore.toasts"
       :key="toast.id"
       :duration="toast.sticky ? Infinity : toast.duration || 4000"
-      class="rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)]"
+      class="rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-[var(--reka-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-[var(--reka-toast-swipe-end-x)]"
       :class="getToastClass(toast)"
       @update:open="(open) => !open && toastStore.dismiss(toast.id)"
     >

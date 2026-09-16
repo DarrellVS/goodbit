@@ -10,7 +10,7 @@ import {
   MenubarRoot,
   MenubarSeparator,
   MenubarTrigger,
-} from 'radix-vue';
+} from 'reka-ui';
 import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
 import { usePublisher } from '../../composables/usePublisher';
 import MoveClipDialog from './MoveClipDialog.vue';

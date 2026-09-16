@@ -9,7 +9,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 import QRCode from 'qrcode';
 import { useToastStore } from '../../stores/toast';
 import { useLocalShare } from '../../composables/useLocalShare';

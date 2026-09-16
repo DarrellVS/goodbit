@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'radix-vue';
+import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'reka-ui';
 import { useToastStore } from '../../stores/toast';
 import type { Clip } from '../../types/clip';
 

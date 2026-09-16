@@ -11,7 +11,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 
 interface Props {
   open: boolean;

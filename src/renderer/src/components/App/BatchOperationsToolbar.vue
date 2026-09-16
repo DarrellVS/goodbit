@@ -8,7 +8,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from 'radix-vue';
+} from 'reka-ui';
 import type { Clip } from '../../types/clip';
 
 interface Props {

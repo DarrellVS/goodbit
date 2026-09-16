@@ -9,7 +9,7 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
-} from 'radix-vue';
+} from 'reka-ui';
 import { useGamesStore } from '../../stores/games';
 import type { Clip } from '../../types/clip';
 

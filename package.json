@@ -29,6 +29,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
+    "reka-ui": "^2.10.4",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
@@ -67,7 +68,6 @@
     "playwright": "^1.63.0",
     "postcss": "^8.4.47",
     "qrcode": "^1.5.4",
-    "radix-vue": "^1.9.17",
     "reflect-metadata": "^0.2.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.13",
