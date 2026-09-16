@@ -9,7 +9,7 @@ export interface GetCollectionsOutput {
 export class GetCollectionsAction extends BaseAction<void, GetCollectionsOutput> {
   async execute(): Promise<GetCollectionsOutput> {
     const repo = AppDataSource.getRepository(Collection);
-    const collections = await repo.find({ relations: ['clips'] });
+    const collections = await repo.find({ relations: { clips: true } });
     
     return {
       collections: collections.map(c => ({

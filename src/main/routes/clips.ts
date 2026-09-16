@@ -161,7 +161,7 @@ clipsRouter.get('/:id', asyncHandler(async (req, res) => {
   const repo = AppDataSource.getRepository(Clip);
   const clip = await repo.findOne({
     where: { id },
-    relations: ['tags']
+    relations: { tags: true }
   });
 
   if (!clip) {
@@ -291,7 +291,7 @@ clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
 
   const withTags = await AppDataSource.getRepository(Clip).findOne({
     where: { id: clip.id },
-    relations: ['tags']
+    relations: { tags: true }
   });
   const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
   res.json(dto);
@@ -310,7 +310,7 @@ clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const repo = AppDataSource.getRepository(Clip);
   const gameRepo = AppDataSource.getRepository(Game);
   const tagRepo = AppDataSource.getRepository(Tag);
-  const clip = await repo.findOne({ where: { id }, relations: ['tags'] }) as Clip | null;
+  const clip = await repo.findOne({ where: { id }, relations: { tags: true } }) as Clip | null;
   if (!clip) return res.status(404).json({ error: 'Not found' });
 
   const wasPublished = clip.published;
@@ -705,7 +705,7 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   const action = new PublishClipAction();
   const { clip } = await action.execute({ id, compress });
   const repo = AppDataSource.getRepository(Clip);
-  const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
+  const withTags = await repo.findOne({ where: { id: clip.id }, relations: { tags: true } });
   const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
   res.json(dto);
 }));
@@ -820,7 +820,7 @@ clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
   const action = new UnpublishClipAction();
   const { clip } = await action.execute({ id });
   const repo = AppDataSource.getRepository(Clip);
-  const withTags = await repo.findOne({ where: { id: clip.id }, relations: ['tags'] });
+  const withTags = await repo.findOne({ where: { id: clip.id }, relations: { tags: true } });
   const dto = withTags ? ClipDTO.fromEntity(withTags) : ClipDTO.fromEntity(clip);
   res.json(dto);
 }));
@@ -828,7 +828,7 @@ clipsRouter.post('/:id/unpublish', asyncHandler(async (req, res) => {
 clipsRouter.post('/:id/star', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOneOrFail({ where: { id }, relations: ['tags'] });
+  const clip = await repo.findOneOrFail({ where: { id }, relations: { tags: true } });
   clip.starred = true;
   await repo.save(clip);
   const dto = ClipDTO.fromEntity(clip);
@@ -838,7 +838,7 @@ clipsRouter.post('/:id/star', asyncHandler(async (req, res) => {
 clipsRouter.post('/:id/unstar', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const repo = AppDataSource.getRepository(Clip);
-  const clip = await repo.findOneOrFail({ where: { id }, relations: ['tags'] });
+  const clip = await repo.findOneOrFail({ where: { id }, relations: { tags: true } });
   clip.starred = false;
   await repo.save(clip);
   const dto = ClipDTO.fromEntity(clip);

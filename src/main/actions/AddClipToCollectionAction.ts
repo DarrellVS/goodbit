@@ -19,7 +19,7 @@ export class AddClipToCollectionAction extends BaseAction<AddClipToCollectionInp
     
     const collection = await collectionRepo.findOneOrFail({
       where: { id: input.collectionId },
-      relations: ['clips'],
+      relations: { clips: true },
     });
     
     const clip = await clipRepo.findOneByOrFail({ id: input.clipId });

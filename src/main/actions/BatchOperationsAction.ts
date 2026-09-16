@@ -156,7 +156,7 @@ export class BatchAddTagsAction extends BaseBatchAction<BatchAddTagsInput, Batch
       try {
         const clip = await repo.findOne({ 
           where: { id: numericId }, 
-          relations: ['tags'] 
+          relations: { tags: true } 
         });
         
         if (!clip) {

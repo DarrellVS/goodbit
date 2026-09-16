@@ -40,7 +40,7 @@ export class GetCollectionClipsAction extends BaseAction<GetCollectionClipsInput
     
     const collection = await collectionRepo.findOneOrFail({
       where: { id: input.collectionId },
-      relations: ['clips'],
+      relations: { clips: true },
     });
 
     const clipIds = collection.clips.map(c => c.id);

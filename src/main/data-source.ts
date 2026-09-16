@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
+import BetterSqlite3 from 'better-sqlite3';
 import { Clip } from './entity/Clip.js';
 import { Tag } from './entity/Tag.js';
 import { Collection } from './entity/Collection.js';
@@ -108,6 +109,24 @@ export async function initDatabase(): Promise<DataSource> {
      * which every backup depends on and which no document states.
      */
     type: 'better-sqlite3',
+    /*
+     * The driver is handed over, not looked up.
+     *
+     * TypeORM otherwise resolves it with `PlatformTools.load('better-sqlite3')`,
+     * which is a `require()`. Main is bundled to ESM, where there is no
+     * `require`, so the load throws and TypeORM reports the one thing that is
+     * not true:
+     *
+     *   DriverPackageNotInstalledError: SQLite package has not been found
+     *   installed. Please run "npm install better-sqlite3".
+     *
+     * The package is installed, and is already imported at the top of this
+     * file. It is listed in `NATIVE_OR_BINARY` so the bundler leaves the
+     * import alone, which means the module object is right here and there is
+     * nothing to look up. Passing it also removes a runtime resolution that a
+     * packaged asar is exactly the wrong place to be doing.
+     */
+    driver: BetterSqlite3,
     database: databasePath(),
     entities: [Clip, Tag, Collection, Game, Project, TagPattern, HighlightLabel, GoodBit],
     /*

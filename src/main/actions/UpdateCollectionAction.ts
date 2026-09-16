@@ -16,7 +16,7 @@ export class UpdateCollectionAction extends BaseAction<UpdateCollectionInput, Up
     const repo = AppDataSource.getRepository(Collection);
     const collection = await repo.findOneOrFail({ 
       where: { id: input.id },
-      relations: ['clips'],
+      relations: { clips: true },
     });
     collection.name = input.name;
     await repo.save(collection);

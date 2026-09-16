@@ -209,7 +209,7 @@ export function tools(): ToolDefinition[] {
       inputSchema: { clipId: z.number().describe('From search_clips') },
       async run(input) {
         const { clipId } = input as Record<string, never> & { clipId: number };
-        const clip = await clips().findOne({ where: { id: clipId }, relations: ['tags'] });
+        const clip = await clips().findOne({ where: { id: clipId }, relations: { tags: true } });
         return clip ? text(view(clip)) : text({ error: `No clip with id ${clipId}` });
       },
     },
@@ -442,7 +442,7 @@ export function tools(): ToolDefinition[] {
         }
 
         await new TrimAndSwapClipAction().execute({ clipId, startSec, endSec });
-        const after = await clips().findOne({ where: { id: clipId }, relations: ['tags'] });
+        const after = await clips().findOne({ where: { id: clipId }, relations: { tags: true } });
         return text({ trimmed: true, clip: after ? view(after) : null });
       },
     },

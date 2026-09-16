@@ -17,7 +17,7 @@ export class RemoveClipFromCollectionAction extends BaseAction<RemoveClipFromCol
     
     const collection = await repo.findOneOrFail({
       where: { id: input.collectionId },
-      relations: ['clips'],
+      relations: { clips: true },
     });
     
     collection.clips = collection.clips.filter(c => c.id !== input.clipId);

@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { In } from 'typeorm';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 
 import { Clip } from '../entity/Clip.js';
@@ -110,7 +111,9 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     progress(0, 'Getting ready');
 
     const clipRepo = AppDataSource.getRepository(Clip);
-    const dbClips = await clipRepo.findByIds(clips.map((c) => c.clipId));
+    // `findByIds` was removed in TypeORM 1.0; `In()` is the replacement it
+    // names, and it is the same query.
+    const dbClips = await clipRepo.findBy({ id: In(clips.map((c) => c.clipId)) });
     const clipMap = new Map(dbClips.map((c) => [c.id, c]));
 
     // A render is not a recording, and the folder it lands in is one level down
