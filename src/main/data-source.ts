@@ -7,6 +7,8 @@ import { Game } from './entity/Game.js';
 import { Project } from './entity/Project.js';
 import { TagPattern } from './entity/TagPattern.js';
 import { HighlightLabel } from './entity/HighlightLabel.js';
+import { Moment } from './entity/Moment.js';
+import { migrations } from './migrations/index.js';
 import { databasePath, loadSettings } from './settings.js';
 import { backupBeforeSchemaSync, rememberSchemaVersion, type BackupResult } from './backup.js';
 
@@ -63,16 +65,39 @@ export async function initDatabase(): Promise<DataSource> {
   refreshRoots();
   if (initialised) return AppDataSource;
 
-  // `synchronize: true` below is allowed to rewrite tables. Never let a
-  // version that has not booted against this file before do that without a
-  // copy that has been read back first.
+  // A migration is allowed to move the schema, so never let a version that has
+  // not booted against this file before do it without a copy that has been
+  // read back first. This was the whole safety net while `synchronize` was on;
+  // it is cheaper insurance now and it stays.
   lastBackup = await backupBeforeSchemaSync(databasePath());
 
   AppDataSource = new DataSource({
     type: 'sqlite',
     database: databasePath(),
-    entities: [Clip, Tag, Collection, Game, Project, TagPattern, HighlightLabel],
-    synchronize: true,
+    entities: [Clip, Tag, Collection, Game, Project, TagPattern, HighlightLabel, Moment],
+    /*
+     * Migrations, not `synchronize`.
+     *
+     * `synchronize: true` compared the entities to the tables on every boot and
+     * changed the tables to match. That is fine while entities only gain
+     * columns, and on SQLite it is not fine at all when one changes type or
+     * goes away: TypeORM resolves that by rebuilding the table, and a rebuild
+     * that goes wrong takes the library with it. CLAUDE.md has listed it as a
+     * 1.0 blocker since before 1.0, because a clip row is the only copy of its
+     * tags, notes, display name, stars and collections.
+     *
+     * It was also a silent decision-maker. Renaming a column was a data loss
+     * event that looked like a refactor, so the schema could not be touched
+     * with confidence, which is why several things in 2.0 were waiting on this
+     * one.
+     *
+     * `migrationsRun: true` applies them on `initialize`, before anything reads
+     * a row. The first migration is deliberately idempotent, so it is a no-op
+     * against every library `synchronize` has already built; see its own note.
+     */
+    synchronize: false,
+    migrations,
+    migrationsRun: true,
     logging: false,
   });
 

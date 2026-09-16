@@ -41,6 +41,7 @@ npm run build          # typecheck, then all three bundles into out/
 npm run test:e2e       # builds, then Playwright drives the real app. Minutes, not seconds
 npm run build:win      # check:pre-release (check + e2e) then electron-builder
 node scripts/backup-db.mjs   # verified snapshot of the library database
+node scripts/migration-check.mjs  # run the shipped migrations against a copy of a real library
 node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
 node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
 node scripts/obs-apply-check.mjs  # apply the setup against a throw-away OBS directory
@@ -98,6 +99,33 @@ backstop, since filesystem events are a hint rather than a guarantee.
   `PublisherInviteDialog.vue` shows what it is being asked to do, in full. **A link never writes a
   setting.** Anything that can open a browser can send one, and one that silently repointed the
   publisher would send every clip published afterwards to whoever sent it.
+
+### The schema, and how it is allowed to move
+
+`synchronize: false`, `migrationsRun: true`, and the chain is in `src/main/migrations/`. It used to
+be `synchronize: true`, which compared the entities to the tables on every boot and changed the
+tables to match. Fine while entities only gain columns; on SQLite, not fine at all when one changes
+type or goes away, because TypeORM resolves that by rebuilding the table and a clip row is the only
+copy of its tags, notes, display name, stars and collections.
+
+- **The first migration is idempotent**, every statement `IF NOT EXISTS`. Every library in existence
+  was built by `synchronize` and has no migration history, so the baseline has to be a no-op against
+  a schema that is already there and the full creation against an empty file. Faking a `migrations`
+  row for existing databases instead breaks on one that is *almost* current, which is exactly what a
+  half-finished `synchronize` boot leaves behind.
+- **Its SQL was read out of `sqlite_master`** on a real 278 clip library, not written by hand, so a
+  fresh install gets byte-identical DDL to an upgrade, down to TypeORM's own hashed constraint and
+  index names. Those names matter: a later migration that drops one has to name the one really
+  there.
+- **The list is imported, never globbed.** Main is bundled into one file, so a glob finds no folder
+  and returns an empty array, and an empty array with `synchronize: false` is a database that is
+  never created and never updated and reports nothing.
+- **The verified backup still runs first**, in `initDatabase`, before the migrations do.
+- `node scripts/migration-check.mjs` bundles the real `initDatabase` with esbuild and runs it
+  against a copy of a real library: row counts before and after, the search index backfilled, a
+  second boot applying nothing, and a fresh database landing on the same schema as an upgraded one.
+  The last of those is the check that matters, because a fresh install and an upgrade diverging is
+  how the app works on one machine and not another.
 
 ### Server-side actions
 
@@ -494,9 +522,6 @@ by the next scan, and a trim re-probes.
 
 ## Known gaps
 
-- **`synchronize: true` with no migrations.** Fine while the only library is one that can be rebuilt
-  from disk; **a 1.0 blocker** once strangers have tags and notes they cannot re-derive, because
-  TypeORM's SQLite auto-sync resolves some schema changes by rebuilding a table.
 - No linter. Typecheck, the unit suite and the e2e suite are the automated gates.
 - `publisher/` still reads its config from a `.env`; it was deliberately left alone. Setting it up
   is documented at `site/publisher.html`, which is a wizard rather than a page, a quick start

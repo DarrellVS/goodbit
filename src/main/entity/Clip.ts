@@ -83,6 +83,26 @@ export class Clip {
   @Column('text', { nullable: true })
   notes!: string | null;
 
+  /**
+   * When this clip was last opened, and how many times.
+   *
+   * Collected from 2.0 and read by nothing yet, on purpose. The retention
+   * screen wants to say "190 of these have never been opened", and "never
+   * opened" is the most useful signal it could have and the one the app had
+   * never recorded. A screen shipped before the column has been collecting
+   * would have only "untagged and unstarred" to go on, and would confidently
+   * recommend deleting clips that had been watched twenty times.
+   *
+   * Null rather than zero, because "never opened" and "opened at the epoch"
+   * are different claims.
+   */
+  @Index()
+  @Column({ type: 'datetime', nullable: true })
+  lastOpenedAt?: Date | null;
+
+  @Column({ type: 'integer', default: 0 })
+  openCount!: number;
+
   @ManyToMany(() => Tag, { cascade: ['insert'] })
   @JoinTable()
   tags!: Tag[];
