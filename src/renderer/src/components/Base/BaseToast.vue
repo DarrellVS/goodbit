@@ -51,7 +51,7 @@ function getIconName(toast: Toast): string {
       v-for="toast in toastStore.toasts"
       :key="toast.id"
       :duration="toast.sticky ? Infinity : toast.duration || 4000"
-      class="rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-(--reka-toast-swipe-move-x) data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-(--reka-toast-swipe-end-x)"
+      class="pointer-events-auto rounded-lg shadow-lg border-2 p-4 flex items-start gap-3 min-w-[320px] max-w-[420px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full data-[swipe=move]:translate-x-(--reka-toast-swipe-move-x) data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform data-[swipe=end]:translate-x-(--reka-toast-swipe-end-x)"
       :class="getToastClass(toast)"
       @update:open="(open) => !open && toastStore.dismiss(toast.id)"
     >
@@ -98,7 +98,24 @@ function getIconName(toast: Toast): string {
       </ToastClose>
     </ToastRoot>
 
-    <ToastViewport class="fixed bottom-0 right-0 flex flex-col p-6 gap-3 w-[420px] max-w-[100vw] z-2147483647 outline-hidden" />
+    <!--
+      `pointer-events-none` on the column, `pointer-events-auto` on each toast.
+
+      Two reasons, and the second one is the bug that prompted this. A modal
+      dialog in Reka puts `pointer-events: none` on `body` while it is open and
+      re-enables them on its own content, which is what makes the rest of the
+      page inert. The toast viewport is not inside that content, so a toast
+      raised over an open clip, trimmer or collection was drawn on top of it and
+      could not be clicked: *Forget this GoodBit* asked for a confirmation whose
+      Confirm button did nothing. Setting them back to `auto` here takes the
+      toast out of that rule, which is right, because a confirmation is exactly
+      the thing that has to be answerable while a dialog is up.
+
+      And the column itself must stay `none`, or this fixed 420px strip along
+      the bottom right would swallow clicks meant for whatever is under it even
+      with no toast on screen.
+    -->
+    <ToastViewport class="pointer-events-none fixed bottom-0 right-0 flex flex-col p-6 gap-3 w-[420px] max-w-[100vw] z-2147483647 outline-hidden" />
   </ToastProvider>
 </template>
 
