@@ -12,7 +12,9 @@ import { useCollectionsStore } from '../../stores/collections';
 import { useToastStore } from '../../stores/toast';
 import { useGamesStore } from '../../stores/games';
 import { moveClipToGame } from '../../services/clips';
+import { clipGoodBitRanges } from '../../utils/goodBits';
 import type { Clip } from '../../types/clip';
+import ClipGoodBitPips from './ClipGoodBitPips.vue';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
 import ClipPublishedBadge from './ClipPublishedBadge.vue';
@@ -52,6 +54,19 @@ const { open: openClip } = useClipDetail();
 
 const isSelected = computed(() => batchStore.isSelected(props.clip.id));
 const showMoveDialog = ref(false);
+
+/**
+ * The GoodBits on this clip, if the row it came with carries any.
+ *
+ * Today it does not: `ClipDTO` has no such field, so this is an empty array on
+ * every card and the marker layer draws nothing. It is read through one
+ * function on purpose, see `clipGoodBitRanges`, so that turning the card's
+ * markers on is a change to what the list query selects rather than a change
+ * here. Asking per card is the thing not to do: fifty requests on the first
+ * page and more on every scroll, for a library that already learned this lesson
+ * with thumbnails.
+ */
+const goodBitRanges = computed(() => clipGoodBitRanges(props.clip));
 
 const videoEl = ref<HTMLVideoElement | null>(null);
 const hoverScrubEnabled = computed(() => config.public.value.hoverScrub);
@@ -350,6 +365,20 @@ function handleCardClick(event: MouseEvent) {
           {{ formatTime(scrubTime) }}
         </div>
       </div>
+
+      <!--
+        The bits of this clip somebody marked, over the bottom of the picture.
+
+        Hidden while scrubbing, because the scrub strip draws its own band in
+        the same place and two overlapping readouts of position is neither.
+        See `ClipGoodBitPips` for what trying this on a card actually showed,
+        and `clipGoodBitRanges` for why nothing populates it yet.
+      -->
+      <ClipGoodBitPips
+        v-if="!isScrubbing"
+        :ranges="goodBitRanges"
+        :duration-sec="clip.durationSec"
+      />
     </div>
     
     <!--

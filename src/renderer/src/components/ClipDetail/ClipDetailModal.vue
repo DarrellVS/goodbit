@@ -13,9 +13,10 @@ import { useToastStore } from '../../stores/toast';
 import { useCollectionsStore } from '../../stores/collections';
 import { useClipLoader } from '../../composables/useClipLoader';
 import { useClipDetail } from '../../composables/useClipDetail';
-import { publishClip } from '../../services/clips';
+import { publishClip, recordClipOpened } from '../../services/clips';
 import { formatRelativeTime } from '../../helpers/dateFormat';
 import { forgetFrameStrip } from '../../utils/mediaUrl';
+import type { GoodBit } from '../../types/goodbit';
 import ClipNameInput from '../App/ClipNameInput.vue';
 import ClipTags from '../App/ClipTags.vue';
 import ClipCollections from '../App/ClipCollections.vue';
@@ -23,6 +24,7 @@ import ClipVideoPlayer from './ClipVideoPlayer.vue';
 import ClipActionsCard from './ClipActionsCard.vue';
 import ClipFacts from './ClipFacts.vue';
 import TrimPanel from '../Trim/TrimPanel.vue';
+import ClipGoodBitsSection from './ClipGoodBitsSection.vue';
 import ClipNotesSection from './ClipNotesSection.vue';
 import ShareSheet from '../App/ShareSheet.vue';
 import AppLoading from '../App/AppLoading.vue';
@@ -85,6 +87,25 @@ watch(
     if (id === null) return;
     void loadClip();
     void collectionsStore.fetchCollections();
+
+    /*
+     * Write down that somebody opened this clip to watch it.
+     *
+     * Fire and forget, because nothing reads `lastOpenedAt` or `openCount` yet
+     * and a failure costs the user nothing: a clip deleted in another window
+     * answers 404 and there is no reason for this panel to say anything about
+     * it. What it cannot do is wait, because the numbers cannot be backfilled.
+     * The retention screen in a later release wants to say "190 of these have
+     * never been opened", and every day it is not recorded is a day that screen
+     * can never describe.
+     *
+     * Here rather than anywhere finer grained: this watcher fires once per
+     * open, where a Range request fires several times a second.
+     */
+    void recordClipOpened(id).catch((error) => {
+      console.debug('Could not record that this clip was opened:', error);
+    });
+
     // A clip opened after another should not inherit the last one's expanded
     // date or a half-open sheet.
     showExactDate.value = false;
@@ -144,6 +165,47 @@ function handleTimestampClick(seconds: number): void {
   if (!videoEl) return;
 
   videoEl.currentTime = seconds;
+  void videoEl.play();
+}
+
+/**
+ * Play one GoodBit and stop at the end of it.
+ *
+ * A GoodBit is a range, so playing one has to end somewhere: seeking and
+ * playing would run on into the rest of the recording and the range would be
+ * the only thing about it nobody could hear. It plays once and stops rather
+ * than looping, which is what the trimmer does: there the loop is how a cut is
+ * judged, here it is somebody watching the thing they marked.
+ *
+ * The stop is a `timeupdate` listener that removes itself. That event only
+ * fires about four times a second, so the pause can land up to a quarter of a
+ * second late; a `setTimeout` on the length would be exact if playback were,
+ * and it is not (a seek takes a moment, and the range is from the container's
+ * timeline). Late by a frame or two beats stopping before the payoff.
+ */
+let stopAtEnd: (() => void) | null = null;
+
+function playGoodBit(goodBit: GoodBit): void {
+  const videoEl = videoPlayerRef.value?.videoElement;
+  if (!videoEl) return;
+
+  // A second press while the first range is still playing replaces it rather
+  // than stacking two listeners that both want to pause.
+  stopAtEnd?.();
+
+  const halt = (): void => {
+    if (videoEl.currentTime < goodBit.endSec) return;
+    videoEl.pause();
+    stopAtEnd?.();
+  };
+
+  stopAtEnd = () => {
+    videoEl.removeEventListener('timeupdate', halt);
+    stopAtEnd = null;
+  };
+
+  videoEl.addEventListener('timeupdate', halt);
+  videoEl.currentTime = goodBit.startSec;
   void videoEl.play();
 }
 
@@ -297,6 +359,14 @@ async function onTrimmed(): Promise<void> {
               -->
               <div class="min-w-0 space-y-6">
                 <ClipVideoPlayer ref="videoPlayerRef" :clip="clip" />
+
+                <!--
+                  Directly under the picture, because every row in it points at
+                  the picture and pressing one moves it. Above the notes for the
+                  same reason: a note is about the clip, a GoodBit is a part of
+                  it.
+                -->
+                <ClipGoodBitsSection :clip="clip" @play="playGoodBit" />
 
                 <!--
                   Under the picture, at the picture's width. Spanning the whole

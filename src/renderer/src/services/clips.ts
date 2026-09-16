@@ -155,6 +155,33 @@ export async function openClip(id: number): Promise<void> {
   await axios.post(`/api/clips/${id}/open`);
 }
 
+/** What the app learned by somebody opening a clip. */
+export interface ClipOpenedResult {
+  /** False when a second open inside the debounce window did not count. */
+  counted: boolean;
+  openCount: number;
+  lastOpenedAt: string | null;
+}
+
+/**
+ * Say that somebody opened this clip to watch it.
+ *
+ * **Not `openClip`**, which hands the file to whatever the OS plays videos
+ * with. This writes `lastOpenedAt` and `openCount`, two columns nothing else
+ * touches, and the caller is the details panel opening rather than a button.
+ *
+ * **Fire and forget.** Nothing reads these columns yet, so a failure costs the
+ * user nothing and is not worth a toast: a clip deleted in another window
+ * answers 404 and there is no reason for the panel to care. It cannot be
+ * backfilled, though, which is why it is recorded now: the retention screen in
+ * a later release wants to say "190 of these have never been opened", and every
+ * day this is not collected is a day that screen can never describe.
+ */
+export async function recordClipOpened(id: number): Promise<ClipOpenedResult> {
+  const { data } = await axios.post<ClipOpenedResult>(`/api/clips/${id}/opened`);
+  return data;
+}
+
 export async function getClipMeta(id: number): Promise<ClipMeta> {
   const { data } = await axios.get<ClipMeta>(`/api/clips/${id}/meta`);
   return data;

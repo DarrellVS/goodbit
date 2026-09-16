@@ -1,0 +1,290 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import { Icon } from '@iconify/vue';
+import { useClipDetail } from '../../composables/useClipDetail';
+import { useGoodBits } from '../../composables/useGoodBits';
+import { durationLabel, goodBitLabel, rangeLabel } from '../../utils/goodBits';
+import type { Clip } from '../../types/clip';
+import type { GoodBit } from '../../types/goodbit';
+
+/**
+ * The bits of this clip worth watching, listed.
+ *
+ * Sits under the player at the player's width, the way `ClipNotesSection` does
+ * and for the same reason: a row holding a name, a range, a length and four
+ * things you can do to it is not a sidebar's worth of width, and a one line
+ * empty state spanning a 21:9 window is not a design.
+ *
+ * Above the notes, because a GoodBit points at the picture directly above it,
+ * and pressing one moves that picture.
+ *
+ * ## What a row can do, and what it deliberately cannot
+ *
+ * Play, rename, render out, forget. **Not move its edges**: that is two handles
+ * over a frame strip, which is the trimmer, and a pair of number fields in a
+ * list is a worse version of a control that already exists. The button in the
+ * header goes there, and pressing a band on the strip puts the handles on it.
+ *
+ * **Forgetting one does not touch the recording**, and the confirmation says so
+ * (see `useGoodBits.remove`). That is the difference between this feature and a
+ * trim, so it is said at the moment somebody might be worried about it rather
+ * than in a heading nobody reads.
+ */
+interface Props {
+  clip: Clip;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<{ (e: 'play', goodBit: GoodBit): void }>();
+
+const { show } = useClipDetail();
+
+const {
+  goodBits,
+  loading,
+  saving,
+  renderingId,
+  renderProgress,
+  renderEta,
+  load,
+  edit,
+  remove,
+  render,
+} = useGoodBits(computed(() => props.clip.id));
+
+onMounted(() => void load());
+
+/*
+ * A different clip in the same panel reloads.
+ *
+ * The modal is mounted for the life of the app and opening a second clip while
+ * the first is showing swaps the id rather than remounting, so `onMounted`
+ * alone would leave the previous clip's GoodBits on screen.
+ */
+watch(
+  () => props.clip.id,
+  () => void load(),
+);
+
+/** Which row's name field is open. One at a time; a list of live inputs is a form. */
+const renaming = ref<number | null>(null);
+const draftName = ref('');
+
+function startRenaming(goodBit: GoodBit): void {
+  renaming.value = goodBit.id;
+  draftName.value = goodBit.name ?? '';
+}
+
+/**
+ * Save the name, once, whatever ended the edit.
+ *
+ * **The guard is load-bearing.** Three things end an edit and two of them
+ * cascade: Enter blurs the field, and Escape hides it, and in both cases the
+ * browser then fires `blur` as well. Without the check on `renaming` the same
+ * name was sent twice, and Escape sent the name it was supposed to be
+ * abandoning. Clearing `renaming` first and reading it here makes the first
+ * finisher the only one.
+ */
+async function commitName(goodBit: GoodBit): Promise<void> {
+  if (renaming.value !== goodBit.id) return;
+  renaming.value = null;
+
+  const name = draftName.value.trim() || null;
+  if (name === (goodBit.name ?? null)) return;
+  await edit(goodBit, { name });
+}
+
+/** Escape abandons it: clearing this first is what makes the blur a no-op. */
+function cancelRenaming(): void {
+  renaming.value = null;
+}
+
+/**
+ * Whether a detected GoodBit's reason is worth a second line.
+ *
+ * `source` is the field to read before showing one: a hand-marked GoodBit has
+ * no reason and, after the measurement, is the common case. Anything that
+ * assumes a reason is present is looking at null most of the time.
+ */
+function reasonOf(goodBit: GoodBit): string | null {
+  return goodBit.source === 'manual' ? null : goodBit.reason;
+}
+
+const sourceIcon: Record<string, string> = {
+  hud: 'material-symbols:screenshot-monitor',
+  audio: 'material-symbols:graphic-eq',
+  manual: 'material-symbols:bookmark-rounded',
+};
+</script>
+
+<template>
+  <div class="bg-card rounded-2xl p-5 border border-border">
+    <div class="flex items-center gap-3 mb-3">
+      <div
+        class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0"
+      >
+        <Icon icon="material-symbols:bookmarks-rounded" class="text-lg text-card" />
+      </div>
+      <h2 class="font-semibold text-foreground flex-shrink-0">GoodBits</h2>
+      <span v-if="goodBits.length > 0" class="text-sm text-muted-500 flex-shrink-0">
+        {{ goodBits.length }}
+      </span>
+
+      <!--
+        The way to mark one, and the only way to move one's edges. Two handles
+        over a frame strip is the control for a range and it lives in the
+        trimmer, so this is a door rather than a duplicate.
+      -->
+      <button
+        v-if="goodBits.length > 0"
+        class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 flex-shrink-0"
+        title="Open the trimmer to mark a range, or move one you have marked"
+        @click="show('trim')"
+      >
+        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-base" />
+        Mark or adjust
+      </button>
+    </div>
+
+    <p v-if="loading" class="text-sm text-muted-500 px-1 py-2">Reading the marks on this clip…</p>
+
+    <!--
+      Empty, in one line and a button, the way the notes card does it. There is
+      nothing else in here to press, so the whole of it is the press, and the
+      line says what a GoodBit is *by saying what it is not*: the one thing
+      worth knowing is that this is the thing that does not replace the file.
+    -->
+    <button
+      v-else-if="goodBits.length === 0"
+      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-orange-500/50 hover:bg-orange-500/4 transition-colors"
+      @click="show('trim')"
+    >
+      <p class="text-sm text-muted-500">
+        Nothing marked yet. A GoodBit names a range and leaves the recording
+        whole, unlike a trim, which replaces it.
+      </p>
+      <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600">
+        <Icon icon="material-symbols:add" class="text-lg" />
+        Mark a range
+      </span>
+    </button>
+
+    <ul v-else class="space-y-1.5">
+      <li
+        v-for="goodBit in goodBits"
+        :key="goodBit.id"
+        class="relative overflow-hidden rounded-xl border border-border bg-background/40 px-3 py-2"
+      >
+        <!--
+          The render's own progress, as the row filling.
+
+          A cut re-encodes, which on a 3440 wide recording is tens of seconds,
+          and the toast reporting it can be scrolled away from or covered. The
+          row is where the press happened, so the row shows what it started.
+        -->
+        <span
+          v-if="renderingId === goodBit.id"
+          class="absolute inset-y-0 left-0 bg-orange-500/16 transition-[width] duration-200 ease-linear"
+          :style="{ width: `${Math.max(2, renderProgress)}%` }"
+          aria-hidden="true"
+        ></span>
+
+        <div class="relative flex items-center gap-2">
+          <button
+            class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors"
+            :title="`Play ${goodBitLabel(goodBit)}`"
+            :aria-label="`Play ${goodBitLabel(goodBit)}`"
+            @click="emit('play', goodBit)"
+          >
+            <Icon icon="material-symbols:play-arrow-rounded" class="text-xl" />
+          </button>
+
+          <div class="min-w-0 flex-1">
+            <!--
+              The name, edited in place. A bare input that only shows its box on
+              hover, the way `ClipNameInput` does it, so a list of eight rows is
+              a list rather than a column of form fields.
+            -->
+            <input
+              v-if="renaming === goodBit.id"
+              v-model="draftName"
+              type="text"
+              maxlength="60"
+              class="w-full bg-card border border-orange-500/60 rounded px-1.5 py-0.5 text-sm font-medium outline-none"
+              :aria-label="`Name for the GoodBit at ${rangeLabel(goodBit.startSec, goodBit.endSec)}`"
+              @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
+              @keydown.esc="cancelRenaming"
+              @blur="commitName(goodBit)"
+            />
+            <button
+              v-else
+              class="group/name w-full text-left truncate text-sm font-medium text-foreground rounded px-1.5 py-0.5 border border-transparent hover:border-border hover:bg-card/60 transition-colors"
+              :title="`${goodBitLabel(goodBit)}\n\nClick to rename it. The recording keeps its own name.`"
+              @click="startRenaming(goodBit)"
+            >
+              {{ goodBitLabel(goodBit) }}
+            </button>
+
+            <div class="flex items-center gap-2 px-1.5 text-xs text-muted-500 min-w-0">
+              <span class="font-mono tabular-nums flex-shrink-0">
+                {{ rangeLabel(goodBit.startSec, goodBit.endSec) }}
+              </span>
+              <span class="flex-shrink-0">{{ durationLabel(goodBit.durationSec) }}</span>
+
+              <!--
+                Where it came from, and what the detector said, when a detector
+                said anything. A manual GoodBit gets no badge: it is the normal
+                case, and a badge reading "manual" on nearly every row is a
+                column of noise.
+              -->
+              <span
+                v-if="reasonOf(goodBit)"
+                class="inline-flex items-center gap-1 min-w-0 text-orange-600"
+              >
+                <Icon :icon="sourceIcon[goodBit.source]" class="text-sm flex-shrink-0" />
+                <span class="truncate">{{ reasonOf(goodBit) }}</span>
+                <span v-if="goodBit.confidence !== null" class="flex-shrink-0 text-muted-400">
+                  {{ Math.round(goodBit.confidence * 100) }}%
+                </span>
+              </span>
+
+              <span v-if="renderingId === goodBit.id" class="ml-auto flex-shrink-0 tabular-nums">
+                Rendering {{ renderProgress }}%{{ renderEta ? `, ${renderEta} left` : '' }}
+              </span>
+            </div>
+          </div>
+
+          <!--
+            Rendering writes a new clip into the library and this recording keeps
+            its GoodBits. That is the answer to "what does publishing a GoodBit
+            produce": a normal clip on disk, which every other surface already
+            understands, rather than a second kind of clip.
+          -->
+          <button
+            class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors disabled:opacity-40"
+            :disabled="renderingId !== null"
+            :title="
+              renderingId !== null
+                ? 'One GoodBit is already being written out'
+                : 'Write this out as its own clip in the library. The recording is untouched.'
+            "
+            :aria-label="`Render ${goodBitLabel(goodBit)} as its own clip`"
+            @click="render(goodBit)"
+          >
+            <Icon icon="material-symbols:movie-edit-outline-rounded" class="text-lg" />
+          </button>
+
+          <button
+            class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-500 hover:text-danger hover:bg-danger/10 transition-colors disabled:opacity-40"
+            :disabled="saving || renderingId === goodBit.id"
+            title="Forget this GoodBit. The recording is not touched."
+            :aria-label="`Forget ${goodBitLabel(goodBit)}`"
+            @click="remove(goodBit)"
+          >
+            <Icon icon="material-symbols:bookmark-remove-outline-rounded" class="text-lg" />
+          </button>
+        </div>
+      </li>
+    </ul>
+  </div>
+</template>
