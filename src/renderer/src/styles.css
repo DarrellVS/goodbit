@@ -77,6 +77,28 @@
   }
 }
 
+/*
+  A thing you can press looks like a thing you can press.
+
+  Tailwind 3's Preflight set `cursor: pointer` on buttons; Tailwind 4 dropped
+  it to match the bare browser default, which for `<button>` is `default`. So
+  the upgrade quietly took the hand cursor off every button in the app at
+  once, and it reads as the control being dead rather than as a missing style.
+
+  `[role="button"]` is in here too, and is not decoration: the collection card
+  is a div carrying that role, because it holds Rename and Delete buttons of
+  its own and a button inside a button is invalid.
+
+  `:not(:disabled)` so a disabled control keeps saying it is disabled. A
+  `[role="button"]` cannot be `:disabled`, hence `aria-disabled` beside it.
+*/
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled):not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;
