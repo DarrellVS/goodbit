@@ -4,7 +4,15 @@ import { useToastStore } from '../stores/toast';
 // Typed so that adding a setting without a default here is a compile error.
 const DEFAULT_SETTINGS: PublicConfig = {
   viewMode: 'grouped',
-  pageSize: 15,
+  /*
+   * Fifty, the same as the initial default.
+   *
+   * This said fifteen, which is the value `useConfiguration` deliberately
+   * moved away from: it put a 41 clip library on three pages, which broke
+   * select-all and made every whole-library action a per-page chore. Reset to
+   * Defaults handed that back.
+   */
+  pageSize: 50,
   autoPlayOnHover: true,
   hoverScrub: true,
   showMetadata: true,
@@ -13,6 +21,7 @@ const DEFAULT_SETTINGS: PublicConfig = {
   confirmBeforeDelete: true,
   compactMode: false,
   muteVideosByDefault: false,
+  clipVolume: 1,
   preferLocalNetwork: true,
   customShortcuts: undefined,
 };
