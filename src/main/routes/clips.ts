@@ -1,6 +1,5 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
-import multer from 'multer';
 import { EntityNotFoundError, In } from 'typeorm';
 import { RecordClipOpenedAction } from '../actions/RecordClipOpenedAction.js';
 import { planSearch } from '../services/clipSearch.js';
@@ -55,7 +54,6 @@ import { excludeHiddenGames } from '../utils/hiddenGames.js';
 import { ClipDTO, ClipSuggestionsDTO, GoodBitDTO, UpdateClipRequestDTO } from '@shared/index.js';
 import type { ExportFormat } from '@shared/index.js';
 
-const upload = multer({ storage: multer.memoryStorage() });
 
 export const clipsRouter = express.Router();
 
@@ -712,26 +710,23 @@ clipsRouter.post('/:id/publish', asyncHandler(async (req, res) => {
   res.json(dto);
 }));
 
-clipsRouter.post('/import', upload.array('files'), asyncHandler(async (req, res) => {
-  const files = req.files as Express.Multer.File[];
-
-  if (!files || files.length === 0) {
-    return res.status(400).json({ error: 'No files provided' });
-  }
-
-  const action = new ImportFilesAction();
-  const result = await action.execute({
-    files: files.map(f => ({
-      name: f.originalname,
-      size: f.size,
-      data: f.buffer,
-    })),
-  });
-
-  // Convert clips to DTOs
-  const dtos = result.clips.map(clip => ClipDTO.fromEntity(clip));
-  res.json({ ...result, clips: dtos });
-}));
+/*
+ * Importing files does not come through here, and could not.
+ *
+ * There was a `POST /import` on this router taking `multipart/form-data`
+ * through multer. It was unreachable: `ipc/apiBridge.ts` sets
+ * `content-type: application/json` on **every** request it dispatches, so a
+ * multipart parser never had a body it could read, and nothing in the renderer
+ * called the path in any case.
+ *
+ * The working route is the `clips:import` IPC handler, which reads the picked
+ * paths in main and hands `ImportFilesAction` the bytes. That is the shape the
+ * Electron migration settled on, for the reason `services/audio.ts` records:
+ * multipart form data cannot cross the contextBridge.
+ *
+ * `ImportFilesAction` is untouched and still does the work. What went was a
+ * second door to it that was painted on.
+ */
 
 /**
  * Start a render and answer immediately with its id.
