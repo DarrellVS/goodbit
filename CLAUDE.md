@@ -648,5 +648,12 @@ by the next scan, and a trim re-probes.
   rather than as a 503 during somebody's upload, but nothing validates the rest. Setting it up is
   documented at `site/publisher.html`, which is a wizard rather than a page, a quick start and a
   seven-step route that writes the reader's own domain and paths into every command.
+- **Two dependencies are deliberately not on their latest major**, and both are blocked by a peer
+  rather than by choice. `typescript` stays on 6.0.3 because 7.0 is the Go port and ships no
+  programmatic API, which `vue-tsc` loads to do its work, so `vue-tsc --noEmit` exits with
+  `ERR_PACKAGE_PATH_NOT_EXPORTED: Package subpath './lib/tsc' is not defined`; TypeScript's own
+  release says Vue projects should stay on 6.0 until the API returns in 7.1. `vite` stays on 7.3.6
+  because `electron-vite@5`, the newest there is, peers `^5 || ^6 || ^7`. Both are worth retrying
+  when those two ship, and neither should be forced.
 - The app is no longer Windows-only in principle (`shell.trashItem`, `shell.showItemInFolder`), but
   nothing has been built or tested anywhere else.
