@@ -47,7 +47,7 @@
           i === 0 ? '-top-1 rounded-t' : '-bottom-1 rounded-b',
         ]"
       >
-        {{ value.toFixed(1) }}s
+        {{ format(value) }}
       </div>
     </SliderThumb>
   </SliderRoot>
@@ -61,10 +61,20 @@ withDefaults(
     max: number;
     step?: number;
     minStepsBetweenThumbs?: number;
+    /**
+     * How a thumb writes its own value.
+     *
+     * Seconds to one place was right while the only caller picked in tenths.
+     * The trim timeline now picks in frames and prints a timecode underneath,
+     * and a handle saying `12.3s` while the readout below it says `0:12:20` is
+     * two answers to one question, on one screen.
+     */
+    format?: (value: number) => string;
   }>(),
   {
     step: 0.1,
     minStepsBetweenThumbs: 0,
+    format: (value: number) => `${value.toFixed(1)}s`,
   },
 );
 

@@ -21,12 +21,30 @@
       <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/5">
         <Icon icon="material-symbols:timer" class="text-orange-500" />
         <span class="text-muted-400">Duration:</span>
-        <!-- `duration` is already formatted, seconds and all. -->
-        <span class="font-mono font-semibold text-orange-500">{{ duration }}</span>
+        <!-- `duration` is already formatted, frames and all. -->
+        <span class="font-mono font-semibold text-orange-500 tabular-nums">{{ duration }}</span>
+        <!--
+          The frame rate, beside the first timecode on the screen, because it is
+          the legend for the last field of every one of them.
+
+          `0:12:20` and `0:12.20` are one character apart and mean different
+          things, frames against hundredths, so which one is being read has to
+          be visible rather than inferred. When nothing has reported a rate the
+          readouts fall back to hundredths and this says so, rather than the
+          page assuming 30 or 60 and drawing a control that looks exact.
+        -->
+        <span class="text-xs text-muted-400 border-l border-line-strong pl-2 ml-0.5">
+          {{ frameRateText ?? 'frame rate unknown' }}
+        </span>
       </div>
     </header>
-    
-    <div ref="strip" class="relative h-32 rounded-xl overflow-visible border border-border">
+
+    <div
+      ref="strip"
+      class="relative h-32 rounded-xl overflow-visible border border-border"
+      @focusin="onFocusIn"
+      @focusout="onFocusOut"
+    >
       <!--
         A band while the frames are being made, and a fade when they arrive.
         The strip is not a file on disk: the first request for one decodes ten
@@ -61,11 +79,29 @@
         @pointerdown="startScrub"
       />
 
+      <!--
+        The step is one frame, not a tenth.
+
+        A drag snaps to whatever `step` says, so this is what makes the handles
+        capable of the accuracy the cut already has. `min-steps-between-thumbs`
+        stays at one step, which now means one frame rather than a tenth of a
+        second: strictly closer together than before, so nothing that used to be
+        reachable stopped being.
+
+        Worth knowing if a drag ever seems to refuse the last frame between the
+        handles: reka-ui checks the gap with `(n + 1) * step - n * step >= step`
+        in floating point, which comes out false for most `n` at any step that
+        is not exactly representable. Measured at 0.1, the step this had before:
+        refused 2,614 times in 5,000. It is pre-existing, it only affects a drag
+        that is closing the handles onto each other, and the arrow keys do not
+        go through it.
+      -->
       <BaseRangeSlider
         v-model="model"
         :max="maxDuration"
-        :step="0.1"
+        :step="sliderStep"
         :min-steps-between-thumbs="1"
+        :format="handleFormat"
       />
       
       <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
@@ -118,20 +154,43 @@
         <Icon :icon="isPlaying ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-2xl" />
       </button>
 
-      <span class="font-mono text-sm text-muted-400">
+      <span class="font-mono text-sm text-muted-400 tabular-nums">
         <span class="text-foreground">{{ playhead }}</span>
         <span class="mx-1">/</span>
         <span>{{ duration }}</span>
       </span>
 
-      <span class="text-xs text-muted-400 ml-auto">Space plays the trimmed range on loop</span>
+      <!--
+        Both keys, said where the transport is, because a binding nobody is told
+        about is a binding nobody has.
+      -->
+      <span class="text-xs text-muted-400 ml-auto text-right">
+        Space plays the trimmed range on loop · {{ arrowHint }}
+      </span>
     </div>
 
     <footer class="flex items-center justify-between pt-4 border-t border-border">
       <div class="flex items-center gap-6 text-sm">
-        <TimeIndicator label="Start" :time="startTime" />
-        <TimeIndicator label="End" :time="endTime" />
-        <TimeIndicator label="Length" :time="length" variant="primary" />
+        <TimeIndicator
+          label="Start"
+          :time="startTime"
+          steppable
+          :step-name="stepLabel"
+          @step="(delta) => emit('step-handle', 'start', delta)"
+        />
+        <TimeIndicator
+          label="End"
+          :time="endTime"
+          steppable
+          :step-name="stepLabel"
+          @step="(delta) => emit('step-handle', 'end', delta)"
+        />
+        <!--
+          The length is the one number here that is a count and not a position,
+          so it gets the count of frames beside it and no nudge buttons: there
+          is nothing to move, only two handles that decide it.
+        -->
+        <TimeIndicator label="Length" :time="length" :sub="lengthSub" variant="primary" />
       </div>
       
       <!--
@@ -168,7 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseRangeSlider from '../Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
@@ -206,12 +265,30 @@ interface Props {
   goodBits?: readonly GoodBit[];
   /** Which of them the handles are sitting on, so the band can say so. */
   selectedGoodBitId?: number | null;
+  /**
+   * How far one drag increment moves, in seconds: one frame, or a tenth when
+   * nothing has reported a frame rate.
+   */
+  sliderStep?: number;
+  /** `60 fps`, or null, which reads as "frame rate unknown" beside the duration. */
+  frameRateText?: string | null;
+  /** What one press moves, in words, for the hint and the tooltips. */
+  stepLabel?: string;
+  /** The count of frames in the range, beside its length. Null without a rate. */
+  lengthSub?: string | null;
+  /** How a handle writes its own value, so it agrees with the readouts below. */
+  handleFormat?: (value: number) => string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   saveProgress: 0,
   goodBits: () => [],
   selectedGoodBitId: null,
+  sliderStep: 0.1,
+  frameRateText: null,
+  stepLabel: 'one frame',
+  lengthSub: null,
+  handleFormat: (value: number) => `${value.toFixed(1)}s`,
 });
 
 interface Emits {
@@ -220,11 +297,57 @@ interface Emits {
   (e: 'seek', time: number): void;
   /** A band was pressed: put the handles on it. */
   (e: 'select-goodbit', goodBit: GoodBit): void;
+  /** A nudge button was pressed beside one of the readouts. */
+  (e: 'step-handle', which: 'start' | 'end', delta: number): void;
+  /**
+   * Which handle has keyboard focus, or null.
+   *
+   * The arrow keys move whichever handle is focused and the playhead when
+   * neither is, and this is the only place that can tell which: the thumbs are
+   * rendered by `BaseRangeSlider` and their order in the DOM is their order in
+   * the model, so the index is a query against this strip and nothing higher up
+   * could answer it.
+   */
+  (e: 'arm', handle: 'start' | 'end' | null): void;
 }
 
 const emit = defineEmits<Emits>();
 
+/**
+ * Space, and now the arrows, said in the words this clip's frame rate allows.
+ *
+ * Only the playhead is named. The other half of the rule, that the arrows move
+ * a handle once one is grabbed, is on the nudge buttons' own tooltips beside
+ * the handle they move, which is where somebody asking the question is looking.
+ */
+const arrowHint = computed(
+  () => `arrows step the playhead ${props.stepLabel}, Shift for ten`,
+);
+
 const strip = ref<HTMLElement | null>(null);
+
+/**
+ * Arm the focused handle, so the arrow keys know what they are moving.
+ *
+ * A pointer down on a thumb focuses it (reka-ui does that itself), so dragging
+ * a handle and then nudging it with the keyboard is one continuous gesture
+ * rather than two features. Pressing anywhere else on the strip moves focus off
+ * the thumb, which fires `focusout` and hands the arrows back to the playhead.
+ */
+function onFocusIn(event: FocusEvent): void {
+  const target = event.target as HTMLElement | null;
+  if (!target || target.getAttribute('role') !== 'slider') return;
+
+  const thumbs = Array.from(strip.value?.querySelectorAll('[role="slider"]') ?? []);
+  const index = thumbs.indexOf(target);
+  if (index === -1) return;
+
+  emit('arm', index === 0 ? 'start' : 'end');
+}
+
+function onFocusOut(): void {
+  emit('arm', null);
+}
 
 /*
  * Whether the frames are on screen yet.

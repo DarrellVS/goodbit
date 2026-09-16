@@ -24,10 +24,14 @@ export function useTrimRange() {
     range.value = [0, Math.max(1, videoDuration)];
   };
   
-  const formatTime = (timeInSeconds: number, decimals: number = 1): string => {
-    return `${timeInSeconds.toFixed(decimals)}s`;
-  };
-  
+  /*
+   * There is no `formatTime` here any more.
+   *
+   * It printed `12.3s`, which was the whole of item 3.3's complaint: the cut is
+   * frame accurate and the page was writing it down to a tenth. The trim
+   * timeline formats through `utils/frameRate.ts` now, which needs the clip's
+   * frame rate and so cannot live in a composable that only knows its length.
+   */
   return {
     duration,
     range,
@@ -35,7 +39,6 @@ export function useTrimRange() {
     isValidRange,
     timeToPercentage,
     initializeRange,
-    formatTime,
   };
 }
 
