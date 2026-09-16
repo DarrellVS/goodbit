@@ -163,3 +163,17 @@ design/library-mockups/shots/
 
 # Agent worktrees, which are checkouts rather than content
 .claude/worktrees/
+
+# Music somebody added in the editor, when the app was run from source.
+#
+# `editorAudioDir()` resolves under the configured music folder, but it used to
+# be a module level `path.join(AUDIO_ROOT, 'Editor')` evaluated at import, when
+# AUDIO_ROOT is still empty, which makes it the relative path `Editor`. Two
+# uploaded mp3 files were committed that way. The bug is fixed; this is so a
+# stale build or an older checkout cannot do it again.
+Editor/
+
+# The four package web app this was ported from. Kept on disk for reference,
+# never part of this repository. `server/` still holds its `.env`.
+client/
+server/

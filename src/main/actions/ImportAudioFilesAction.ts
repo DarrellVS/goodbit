@@ -4,7 +4,7 @@ import { BaseAction } from './BaseAction.js';
 import { AudioTrackDTO } from '@shared/index.js';
 import {
   AUDIO_EXTENSIONS,
-  EDITOR_AUDIO_DIR,
+  editorAudioDir,
   ensureAudioDir,
   probeDurationSec,
   uniqueAudioFilename,
@@ -42,7 +42,7 @@ export class ImportAudioFilesAction extends BaseAction<
         }
 
         const filename = await uniqueAudioFilename(file.name);
-        const targetPath = path.join(EDITOR_AUDIO_DIR, filename);
+        const targetPath = path.join(editorAudioDir(), filename);
         await fs.writeFile(targetPath, file.data);
 
         const stat = await fs.stat(targetPath);

@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { AudioTrackDTO } from '@shared/index.js';
 import {
-  EDITOR_AUDIO_DIR,
+  editorAudioDir,
   ensureAudioDir,
   isAudioFile,
   probeDurationSec,
@@ -13,12 +13,12 @@ export class ListAudioTracksAction extends BaseAction<void, { items: AudioTrackD
   async execute(): Promise<{ items: AudioTrackDTO[] }> {
     await ensureAudioDir();
 
-    const entries = await fs.readdir(EDITOR_AUDIO_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(editorAudioDir(), { withFileTypes: true });
     const files = entries.filter((entry) => entry.isFile() && isAudioFile(entry.name));
 
     const items = await Promise.all(
       files.map(async (entry) => {
-        const filePath = path.join(EDITOR_AUDIO_DIR, entry.name);
+        const filePath = path.join(editorAudioDir(), entry.name);
         const stat = await fs.stat(filePath);
         const durationSec = await probeDurationSec(
           filePath,

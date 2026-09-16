@@ -8,7 +8,28 @@ import { ffmpegConfigured } from './ffmpeg.js';
  * no database table for it. The files are the whole model, so the filename
  * doubles as the id and every lookup is a stat.
  */
-export const EDITOR_AUDIO_DIR = path.join(AUDIO_ROOT, 'Editor');
+/**
+ * Resolved on every call, never at import.
+ *
+ * This was `const EDITOR_AUDIO_DIR = path.join(AUDIO_ROOT, 'Editor')`, which
+ * runs the moment the module is imported. `AUDIO_ROOT` is a live binding
+ * assigned by `refreshRoots()` during boot, so at import time it is still the
+ * empty string, and `path.join('', 'Editor')` is not an absolute path at all:
+ * it is the relative `Editor`.
+ *
+ * So every track anybody added went to `<working directory>/Editor`. For a
+ * packaged app that is wherever it was started from; running from source it is
+ * the repository, which is how two mp3 files somebody uploaded ended up
+ * committed.
+ *
+ * The live binding is the whole point of `AUDIO_ROOT` being a `let`, and
+ * `path.join` takes a copy of whatever it is handed. A function reads the
+ * binding when the answer is actually wanted, which is also what makes
+ * changing the music folder in Settings take effect without a restart.
+ */
+export function editorAudioDir(): string {
+  return path.join(AUDIO_ROOT, 'Editor');
+}
 
 export const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.opus', '.flac'];
 
@@ -34,7 +55,7 @@ export function isAudioFile(filename: string): boolean {
 }
 
 export async function ensureAudioDir(): Promise<void> {
-  await fs.mkdir(EDITOR_AUDIO_DIR, { recursive: true });
+  await fs.mkdir(editorAudioDir(), { recursive: true });
 }
 
 /**
@@ -48,8 +69,8 @@ export function resolveAudioPath(id: string): string | null {
   if (!filename || filename === '.' || filename === '..') return null;
   if (!isAudioFile(filename)) return null;
 
-  const resolved = path.resolve(EDITOR_AUDIO_DIR, filename);
-  if (path.relative(EDITOR_AUDIO_DIR, resolved).includes('..')) return null;
+  const resolved = path.resolve(editorAudioDir(), filename);
+  if (path.relative(editorAudioDir(), resolved).includes('..')) return null;
   return resolved;
 }
 
@@ -79,7 +100,7 @@ export async function uniqueAudioFilename(originalName: string): Promise<string>
   let filename = `${base}${extension}`;
   let counter = 1;
 
-  while (await exists(path.join(EDITOR_AUDIO_DIR, filename))) {
+  while (await exists(path.join(editorAudioDir(), filename))) {
     filename = `${base}_${counter}${extension}`;
     counter++;
   }
