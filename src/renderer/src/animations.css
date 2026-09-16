@@ -352,33 +352,35 @@ textarea:focus {
 
 /* Content slide-up + scale animation */
 /*
- * For a panel centred horizontally and pinned near the top, rather than centred
- * on both axes.
+ * For a panel pinned near the top rather than centred on both axes.
  *
- * `modal-content-show` animates `translate(-50%, -50%)`, which lifts an element
- * by half its own height. The command palette sits at 15% from the top and only
- * shifts on X, so for the length of that animation it hung too high and then
- * snapped down when the class took its own transform back.
+ * The command palette sits at 15% from the top, so it drops a little way in
+ * rather than growing from the middle, and it needs its own pair for that.
+ *
+ * Like the modal pair above, these leave the centring alone: the palette is
+ * held on X by `-translate-x-1/2`, which is the `translate` property in
+ * Tailwind 4, and a `translateX(-50%)` in here as well would move it half its
+ * own width to the left again for as long as the animation ran.
  */
 @keyframes panel-drop-show {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-10px) scale(0.985);
+    transform: translateY(-10px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: none;
   }
 }
 
 @keyframes panel-drop-hide {
   from {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: none;
   }
   to {
     opacity: 0;
-    transform: translateX(-50%) translateY(-6px) scale(0.99);
+    transform: translateY(-6px) scale(0.99);
   }
 }
 
@@ -391,25 +393,40 @@ textarea:focus {
 }
 
 
+/*
+ * These animate `transform` only. The centring is not theirs.
+ *
+ * Every dialog using them is centred with `-translate-x-1/2 -translate-y-1/2`,
+ * and Tailwind 4 compiles those to the standalone `translate` property rather
+ * than into `transform` as Tailwind 3 did. `translate` and `transform` are two
+ * properties that both apply, so a keyframe that also said
+ * `translate(-50%, -50%)` moved the dialog half its own size up and left a
+ * second time: it appeared in the top left corner, then jumped to the middle
+ * when the animation ended and the `transform` stopped applying.
+ *
+ * The 2% is the same drift as before, expressed against the resting position
+ * instead of against the middle of the screen. `transform: none` at rest, so
+ * only the `translate` property is left holding it in place.
+ */
 @keyframes modal-content-show {
   from {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.96);
+    transform: translateY(2%) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: none;
   }
 }
 
 @keyframes modal-content-hide {
   from {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: none;
   }
   to {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.98);
+    transform: translateY(2%) scale(0.98);
   }
 }
 
@@ -488,11 +505,11 @@ textarea:focus {
 @keyframes modal-content-scale {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.92);
+    transform: scale(0.92);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: none;
   }
 }
 
@@ -533,13 +550,13 @@ textarea:focus {
   }
 
   @keyframes modal-content-show {
-    from { 
+    from {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+      transform: none;
     }
-    to { 
+    to {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+      transform: none;
     }
   }
 }
