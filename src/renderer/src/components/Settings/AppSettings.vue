@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useAppSettings } from '../../composables/useAppSettings';
 import { usePublisher } from '../../composables/usePublisher';
+import { useLibraryRescan } from '../../composables/useLibraryRescan';
 import SettingToggle from './SettingToggle.vue';
 import { useToastStore } from '../../stores/toast';
 import { getEncoderInfo, listJobs, type EncoderInfo } from '../../services/clips';
@@ -17,6 +18,7 @@ import { getEncoderInfo, listJobs, type EncoderInfo } from '../../services/clips
  */
 const { settings, load, save, pickFolder, moveLibraryTo, startMove, closeObs } = useAppSettings();
 const { refresh: refreshPublisher } = usePublisher();
+const { rescanning, rescan } = useLibraryRescan();
 const toast = useToastStore();
 
 /** The setup guide on the website, in the person's own browser. */
@@ -230,6 +232,32 @@ async function testPublisher(): Promise<void> {
               Change
             </button>
           </div>
+        </div>
+
+        <!--
+          Rescan, which used to be the biggest button in the app: solid orange,
+          in the library header, beside the search field. It is the backstop and
+          not the main event, since the watcher indexes a clip as it lands and a
+          sweep runs every six hours anyway, so it lives next to the folder it
+          reads rather than over the list it almost never changes.
+        -->
+        <div class="flex items-start justify-between gap-4 pt-3 border-t border-border">
+          <div class="min-w-0">
+            <label class="font-medium text-foreground">Rescan the clips folder</label>
+            <p class="text-sm text-muted-500 mt-1">
+              GoodBit indexes a clip the moment it is recorded and sweeps the folder every few
+              hours, so this is rarely needed. It is the way back after a drive was unplugged, or
+              after clips were added by something other than GoodBit.
+            </p>
+          </div>
+          <button
+            class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm flex items-center gap-2 flex-shrink-0"
+            :disabled="rescanning"
+            @click="rescan"
+          >
+            <Icon icon="material-symbols:refresh" :class="{ 'animate-spin': rescanning }" />
+            <span>{{ rescanning ? 'Scanning' : 'Rescan' }}</span>
+          </button>
         </div>
 
         <div class="flex items-start justify-between gap-4 pt-3 border-t border-border">

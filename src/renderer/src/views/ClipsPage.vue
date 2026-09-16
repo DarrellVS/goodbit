@@ -10,8 +10,11 @@ import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
 import { useBatchOperations } from '../composables/useBatchOperations';
 import { useClipListKeyboardShortcuts } from '../composables/useClipListKeyboardShortcuts';
 import { useClipListHandlers } from '../composables/useClipListHandlers';
+import { useLibraryRescan } from '../composables/useLibraryRescan';
+import { useSelectAllShortcut } from '../composables/useSelectAllShortcut';
 import type { Clip } from '../types/clip';
-import ClipFilters, { type ViewMode } from '../components/App/ClipFilters.vue';
+import ClipFilters from '../components/App/ClipFilters.vue';
+import CollectionsRow from '../components/App/CollectionsRow.vue';
 import ObsNotReadyBanner from '../components/App/ObsNotReadyBanner.vue';
 import ClipsDisplay from '../components/App/ClipsDisplay.vue';
 import ClipsPaginationControls from '../components/App/ClipsPaginationControls.vue';
@@ -24,13 +27,7 @@ const gamesStore = useGamesStore();
 const config = useConfiguration();
 const { activeFilter } = useClipFilters();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
-
-const viewMode = computed({
-  get: () => config.public.value.viewMode,
-  set: (value: ViewMode) => {
-    config.public.value.viewMode = value;
-  },
-});
+const { rescan } = useLibraryRescan();
 
 const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
@@ -111,7 +108,15 @@ function handleEmptyAction(): void {
     clipsStore.setTags([]);
     return;
   }
-  void clipsStore.fetchClips(false);
+  /*
+   * The button says Scan the folder, so it scans the folder.
+   *
+   * It called `fetchClips` and asked the same question of the same table
+   * again, which on an empty library is the one case where the answer cannot
+   * change. Rescan is in Settings now; this is the other place it is the
+   * obvious thing to do.
+   */
+  void rescan();
 }
 const currentPage = computed(() => clipsStore.page);
 const totalPages = computed(() => clipsStore.totalPages);
@@ -161,7 +166,7 @@ const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHa
 
 useClipListKeyboardShortcuts({
   toggleViewMode: () => {
-    viewMode.value = viewMode.value === 'grid' ? 'grouped' : 'grid';
+    config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
   },
   onPageNext: () => handlePageChange(currentPage.value + 1),
   onPagePrevious: () => handlePageChange(currentPage.value - 1),
@@ -181,19 +186,11 @@ useKeyboardShortcuts({
   },
 });
 
-window.addEventListener('keydown', (event: KeyboardEvent) => {
-  if ((event.ctrlKey || event.metaKey) && event.key === 'a' && clips.value.length > 0) {
-    const activeElement = document.activeElement;
-    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-      return;
-    }
-    
-    event.preventDefault();
-    if (!isSelectionMode.value) {
-      enterSelectionMode();
-    }
-    handleSelectAll();
-  }
+useSelectAllShortcut({
+  clips,
+  isSelectionMode,
+  enterSelectionMode,
+  selectAll: handleSelectAll,
 });
 
 onMounted(() => {
@@ -203,10 +200,12 @@ onMounted(() => {
 
 <template>
   <div>
-    <ClipFilters 
+    <ClipFilters
       v-model:active-filter="activeFilter"
-      v-model:view-mode="viewMode"
       :total-count="total"
+      :is-selection-mode="isSelectionMode"
+      @enter-selection="enterSelectionMode"
+      @exit-selection="exitSelectionMode"
     />
 
     <!--
@@ -216,7 +215,19 @@ onMounted(() => {
     -->
     <ObsNotReadyBanner />
 
-    <div class="p-6 pb-16 space-y-6">
+    <!--
+      No `pb-16` any more. It was there to keep the last row of clips out from
+      under a bar that was on screen whether or not it had anything to say; the
+      bar it makes room for now only exists while there is a selection, and a
+      selection is something you just made.
+    -->
+    <div class="p-6 space-y-6">
+      <!--
+        Collections come before the clips, because a collection is a way of
+        looking at them.
+      -->
+      <CollectionsRow />
+
       <ClipsDisplay
         :clips="clips"
         :view-mode="config.public.value.viewMode"
@@ -243,17 +254,11 @@ onMounted(() => {
       />
     </div>
 
-    <!-- Floating Controls Bar -->
+    <!-- The batch toolbar, which is all the floating bar is now -->
     <FloatingControlsBar
-      :view-mode="viewMode"
-      :is-selection-mode="isSelectionMode"
       :has-selection="hasSelection"
-      :clips-count="clips.length"
       :selected-count="selectedCount"
       :selected-clips="selectedClips"
-      @update:view-mode="viewMode = $event"
-      @enter-selection="enterSelectionMode"
-      @exit-selection="exitSelectionMode"
       @deselect-all="deselectAll"
       @delete="handleBatchDelete"
       @add-to-collection="showCollectionDialog = true"

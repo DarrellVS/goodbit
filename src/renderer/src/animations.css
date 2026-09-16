@@ -93,15 +93,6 @@ button, a, [role="button"] {
   transform: scale(0);
 }
 
-/* View mode toggle animation */
-.view-toggle-button {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.view-toggle-button:active {
-  transform: scale(0.95);
-}
-
 /* Smooth list item animations */
 .list-item-enter-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

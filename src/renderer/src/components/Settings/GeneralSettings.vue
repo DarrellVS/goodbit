@@ -35,13 +35,29 @@ const pageSizeOptions = [
 ];
 
 /*
- * The same two icons `Base/BaseViewModeToggle.vue` draws, deliberately: they
- * were picked once, after every tester read the obvious pair backwards, and one
- * setting reachable from two places must not illustrate itself two ways.
+ * The icons and the words come from `Base/BaseViewModeToggle.vue`, which drew
+ * this choice as two buttons over the clips and no longer exists.
+ *
+ * Both are load-bearing. The obvious pair of icons was read backwards by every
+ * tester, because a grid icon reads as "more, smaller" and this one gives four
+ * columns under day headings while the agenda icon gives two wide ones; these
+ * are the ones that matched what each mode produces. The names and the second
+ * lines were the toggle's tooltips, which said what you get and what you lose,
+ * and "Grouped" and "Grid" said neither.
  */
 const viewModeOptions = [
-  { value: 'grouped', label: 'Grouped', icon: 'material-symbols:grid-view' },
-  { value: 'grid', label: 'Grid', icon: 'material-symbols:view-agenda' },
+  {
+    value: 'grouped',
+    label: 'By day',
+    icon: 'material-symbols:grid-view',
+    description: 'More clips per row, grouped under the day they were recorded',
+  },
+  {
+    value: 'grid',
+    label: 'Big',
+    icon: 'material-symbols:view-agenda',
+    description: 'Fewer, larger clips in one run, with no day headings',
+  },
 ];
 
 const dateFormatOptions = [
@@ -65,10 +81,17 @@ const dateFormatOptions = [
         :options="themeOptions"
       />
 
+      <!--
+        Not a default, which is what it used to call itself. There is one stored
+        value and this is it, which is why changing it here changes the library
+        immediately. It is also the only control for it now: the toggle that
+        floated over the clips is gone, and this, the `L` key and the command
+        palette are what is left, neither of the last two occupying any screen.
+      -->
       <SettingSelect
         v-model="config.public.value.viewMode"
-        label="Default View Mode"
-        description="Choose how clips are displayed by default"
+        label="How clips are laid out"
+        description="Takes effect straight away, on the library and in a collection. The L key switches it too."
         :options="viewModeOptions"
       />
 

@@ -1,25 +1,31 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Icon } from '@iconify/vue';
-import BaseViewModeToggle from '../Base/BaseViewModeToggle.vue';
 import BatchOperationsToolbar from './BatchOperationsToolbar.vue';
-import type { ViewMode } from './ClipFilters.vue';
 import type { Clip } from '../../types/clip';
 
+/**
+ * A bar that floats over the clips only while there is a selection.
+ *
+ * It used to be permanent furniture: `fixed bottom-6`, on screen the whole time
+ * you were looking at the library, holding a view toggle and a *Select*
+ * button, with `ClipsPage.vue` paying a `pb-16` so the last row of clips was
+ * not underneath it.
+ *
+ * The view toggle was the fifth copy of one stored value, and it is now in
+ * Settings, on the `L` key and in the command palette, none of which occupy
+ * screen. *Select* moved into the filter row, which already describes the list
+ * you are looking at. What is left is what a floating bar is actually for: it
+ * appears when there is a selection, it is about the clips on screen, and it
+ * goes when the selection does.
+ */
 interface Props {
-  viewMode: ViewMode;
-  isSelectionMode: boolean;
   hasSelection: boolean;
-  clipsCount: number;
   selectedCount?: number;
   selectedClips?: Clip[];
   collectionId?: number;
 }
 
 interface Emits {
-  (e: 'update:view-mode', mode: ViewMode): void;
-  (e: 'enter-selection'): void;
-  (e: 'exit-selection'): void;
   (e: 'deselect-all'): void;
   (e: 'delete'): void;
   (e: 'add-to-collection'): void;
@@ -39,44 +45,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const showNormalControls = computed(() => !props.isSelectionMode && props.clipsCount > 0);
 const showSelectionToolbar = computed(() => props.hasSelection);
-const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.hasSelection);
 </script>
 
 <template>
   <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-    <Transition
-      name="floating-bar"
-      mode="out-in"
-    >
-      <!-- Normal Controls (View Mode + Select Button) -->
-      <div
-        v-if="showNormalControls"
-        key="normal"
-        class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4"
-      >
-        <BaseViewModeToggle 
-          :model-value="viewMode" 
-          @update:model-value="emit('update:view-mode', $event)" 
-        />
-        
-        <div class="w-px h-6 bg-muted-300"></div>
-        
-        <button
-          class="px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors flex items-center gap-2 text-sm font-medium scale-on-hover"
-          @click="emit('enter-selection')"
-          title="Select clips (Ctrl+A to select all)"
-        >
-          <Icon icon="material-symbols:check-box-outline-blank" class="text-base transform-transition" />
-          <span>Select</span>
-        </button>
-      </div>
-
-      <!-- Selection Toolbar -->
+    <Transition name="floating-bar">
       <BatchOperationsToolbar
-        v-else-if="showSelectionToolbar"
-        key="selection"
+        v-if="showSelectionToolbar"
         :selected-count="selectedCount"
         :selected-clips="selectedClips"
         :collection-id="collectionId"
@@ -91,24 +67,6 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
         @add-tags="emit('add-tags')"
         @open-in-editor="emit('open-in-editor')"
       />
-
-      <!-- Selection Mode Empty State (shows cancel button) -->
-      <div
-        v-else-if="showSelectionModeEmpty"
-        key="selection-empty"
-        class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4"
-      >
-        <span class="text-sm text-muted-500">Pick clips to star, tag, publish, move or delete together</span>
-        <div class="flex-1"></div>
-        <button
-          class="px-3 py-1.5 rounded-lg hover:bg-muted-100 transition-colors flex items-center gap-2 text-sm font-medium text-muted-700 scale-on-hover"
-          @click="emit('exit-selection')"
-          title="Exit selection mode (Esc)"
-        >
-          <Icon icon="material-symbols:close" class="text-base transform-transition" />
-          <span>Cancel</span>
-        </button>
-      </div>
     </Transition>
   </div>
 </template>
@@ -135,4 +93,3 @@ const showSelectionModeEmpty = computed(() => props.isSelectionMode && !props.ha
   transform: translateY(0) scale(1);
 }
 </style>
-
