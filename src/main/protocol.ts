@@ -32,6 +32,22 @@ export function registerProtocolScheme(): void {
         bypassCSP: true,
         standard: true,
         secure: true,
+        /*
+         * `corsEnabled` is what lets script reach this scheme at all.
+         *
+         * The renderer is a `file://` page, so every `goodbit://` request it
+         * makes is cross origin. Without this privilege Chromium refuses
+         * `fetch` and `XMLHttpRequest` before the request is dispatched, while
+         * `<img>` and `<video>` keep working, because element loads are not
+         * subject to CORS. That asymmetry is why this hid for so long: every
+         * player and thumbnail in the app was fine and only the one thing that
+         * uses `fetch`, the editor's audio waveform, silently drew nothing.
+         *
+         * It pairs with the `Access-Control-Allow-Origin` header below. This
+         * privilege makes Chromium *apply* CORS to the scheme, and the header
+         * is what then passes the check; setting either alone still fails.
+         */
+        corsEnabled: true,
       },
     },
   ]);
@@ -102,6 +118,37 @@ async function resolveMedia(kind: string, id: string): Promise<string | null> {
 }
 
 /**
+ * What a custom scheme needs before `fetch` will touch it.
+ *
+ * `<video src>` and `<img src>` are not subject to CORS, which is why every
+ * player and thumbnail in the app worked without this and hid the problem.
+ * `fetch` is subject to it, and the renderer fetches exactly one thing over
+ * this scheme: the audio track `useAudioWaveform` decodes to draw a waveform
+ * from. Without these headers the browser rejects it with a bare
+ * `TypeError: Failed to fetch` *before the handler is ever called*, and
+ * `computePeaks` catches and returns null, so the waveform silently draws
+ * nothing and no error appears anywhere.
+ *
+ * `Content-Range` has to be named explicitly. A cross origin response only
+ * exposes the safelisted headers, and that list is Cache-Control,
+ * Content-Language, Content-Length, Content-Type, Expires, Last-Modified and
+ * Pragma. Anything reading the range back gets null otherwise, which is a
+ * seek that silently does not know where it landed.
+ *
+ * `*` is not a loosening. The scheme is this app's own, nothing outside the
+ * app can address it, and it serves files that are already on this machine.
+ */
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+};
+
+/** A refusal the caller can actually read, rather than a network failure. */
+function notFound(): Response {
+  return new Response('Not found', { status: 404, headers: CORS_HEADERS });
+}
+
+/**
  * Serve a file, honouring a Range header.
  *
  * Electron's `net.fetch` can serve a file URL directly, but it does not do
@@ -130,6 +177,7 @@ function serveFile(filePath: string, rangeHeader: string | null): Response {
     return new Response(Readable.toWeb(stream) as ReadableStream, {
       status: 206,
       headers: {
+        ...CORS_HEADERS,
         'Content-Type': type,
         'Content-Range': `bytes ${start}-${end}/${size}`,
         'Accept-Ranges': 'bytes',
@@ -142,6 +190,7 @@ function serveFile(filePath: string, rangeHeader: string | null): Response {
   return new Response(Readable.toWeb(stream) as ReadableStream, {
     status: 200,
     headers: {
+      ...CORS_HEADERS,
       'Content-Type': type,
       'Accept-Ranges': 'bytes',
       'Content-Length': String(size),
@@ -155,21 +204,21 @@ export function registerProtocolHandler(): void {
     try {
       const url = new URL(request.url);
       // goodbit://media/clip/12 → host "media", path "/clip/12"
-      if (url.hostname !== 'media') return new Response('Not found', { status: 404 });
+      if (url.hostname !== 'media') return notFound();
 
       // The rest is kept whole rather than taken as one segment: artwork is
       // addressed as `art/<game>/<kind>`, and a clip is still `clip/<id>`.
       const [, kind, ...rest] = url.pathname.split('/');
       const id = rest.join('/');
-      if (!kind || !id) return new Response('Not found', { status: 404 });
+      if (!kind || !id) return notFound();
 
       const filePath = await resolveMedia(kind, id);
-      if (!filePath) return new Response('Not found', { status: 404 });
+      if (!filePath) return notFound();
 
       return serveFile(filePath, request.headers.get('range'));
     } catch (error) {
       console.error('[protocol] failed:', error);
-      return new Response('Error', { status: 500 });
+      return new Response('Error', { status: 500, headers: CORS_HEADERS });
     }
   });
 }
