@@ -71,20 +71,26 @@ watch(() => props.open, (isOpen) => {
         <Transition name="modal-content">
           <div
             v-if="open"
-            class="bg-card rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+            class="bg-card rounded-lg shadow-pop border border-border w-full overflow-hidden flex flex-col max-h-[90vh]"
             :class="maxWidthClasses[maxWidth]"
             @click.stop
           >
-            <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-muted-50">
-              <h2 class="text-xl font-bold text-foreground">
+            <!--
+              The header labels the dialog. It used to announce it, at 20px
+              bold over its own tinted band, which is a screen title's weight
+              inside something that is already the only thing on screen.
+            -->
+            <div class="flex items-center justify-between gap-4 px-5 h-13 border-b border-border shrink-0">
+              <h2 class="font-display text-lg font-medium text-foreground truncate">
                 {{ title }}
               </h2>
               <button
-                class="p-2 rounded-lg hover:bg-card/50 transition-colors scale-on-hover"
+                type="button"
+                aria-label="Close"
+                class="size-9 -mr-2 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 hover:text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
                 @click="close"
               >
-                <Icon icon="material-symbols:close" class="text-2xl text-muted-600 transform-transition" />
+                <Icon icon="material-symbols:close" class="size-5 shrink-0 block" />
               </button>
             </div>
 
@@ -94,7 +100,7 @@ watch(() => props.open, (isOpen) => {
             </div>
 
             <!-- Footer -->
-            <div v-if="$slots.footer" class="px-6 py-4 border-t border-border bg-muted-50">
+            <div v-if="$slots.footer" class="px-5 py-4 border-t border-border shrink-0">
               <slot name="footer" />
             </div>
           </div>

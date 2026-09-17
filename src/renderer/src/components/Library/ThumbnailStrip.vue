@@ -20,40 +20,39 @@ const emit = defineEmits<Emits>();
     <button
       v-for="(clip, index) in clips"
       :key="`thumb-${clip.id}`"
-      class="shrink-0 w-[180px] cursor-pointer bg-transparent border-0 p-0 transition-all duration-300"
+      class="shrink-0 w-[180px] cursor-pointer bg-transparent border-0 p-0 transition-all duration-150"
       :aria-current="selectedIndex === index"
       :aria-label="`View clip ${index + 1}: ${clip.displayName || clip.filename}`"
       @click="emit('select', index)"
     >
       <div 
-        class="relative p-[3px] rounded-xl transition-all duration-300"
+        class="relative p-[3px] rounded-xl transition-all duration-150"
         :class="selectedIndex === index 
           ? 'bg-accent' 
           : 'bg-transparent hover:bg-accent/30'"
       >
-        <div class="relative rounded-[10px] overflow-hidden aspect-21/9 bg-card shadow-md transition-all duration-300 group">
+        <div class="relative rounded-[10px] overflow-hidden aspect-21/9 bg-card shadow-md transition-all duration-150 group">
           <img 
             :src="getThumbUrl(clip)" 
             :alt="clip.displayName || clip.filename"
-            class="w-full h-full object-cover transition-transform duration-300"
-            :class="{ 'group-hover:scale-105': true }"
+            class="w-full h-full object-cover"
           />
           <div 
-            class="absolute inset-0 bg-linear-to-t from-video-bed/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 pointer-events-none"
+            class="absolute inset-0 bg-linear-to-t from-video-bed/70 via-transparent to-transparent opacity-0 transition-opacity duration-150 pointer-events-none"
             :class="{ 'group-hover:opacity-100': true, 'opacity-100': selectedIndex === index }"
           />
         </div>
       </div>
       
-      <div class="mt-2 text-center transition-all duration-300">
+      <div class="mt-2 text-center transition-all duration-150">
         <div 
-          class="text-[11px] font-semibold uppercase tracking-wider mb-0.5 transition-colors duration-300 line-clamp-1"
+          class="text-[11px] font-semibold uppercase tracking-wider mb-0.5 transition-colors duration-150 line-clamp-1"
           :class="selectedIndex === index ? 'text-accent-ink' : 'text-muted-foreground group-hover:text-foreground'"
         >
           {{ clip.game }}
         </div>
         <div 
-          class="text-[13px] font-medium leading-snug line-clamp-2 min-h-[2.6em] transition-colors duration-300"
+          class="text-[13px] font-medium leading-snug line-clamp-2 min-h-[2.6em] transition-colors duration-150"
           :class="selectedIndex === index ? 'text-accent-ink font-semibold' : 'text-foreground'"
         >
           {{ clip.displayName }}

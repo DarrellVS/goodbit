@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
+import BaseButton from './BaseButton.vue';
 
 /**
  * Nothing here, and what to do about it.
@@ -31,21 +32,15 @@ const emit = defineEmits<Emits>();
 </script>
 
 <template>
-  <div class="py-24 flex flex-col items-center justify-center text-center gap-4">
-    <div class="rounded-full w-20 h-20 flex items-center justify-center bg-card/5 border border-border">
-      <Icon :icon="icon" class="text-3xl text-muted-400" />
+  <div class="py-20 flex flex-col items-center justify-center text-center gap-4">
+    <Icon :icon="icon" class="size-8 block text-muted-300" />
+    <div class="space-y-1">
+      <h2 class="font-display text-lg font-medium text-foreground">{{ title }}</h2>
+      <p class="text-sm text-muted-500 max-w-md">{{ description }}</p>
     </div>
-    <div>
-      <h2 class="text-2xl font-semibold mb-2">{{ title }}</h2>
-      <p class="text-muted-400 max-w-md">{{ description }}</p>
-    </div>
-    <button
-      v-if="actionLabel"
-      class="mt-1 px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium transition-colors"
-      @click="emit('action')"
-    >
+    <BaseButton v-if="actionLabel" variant="primary" class="mt-1" @click="emit('action')">
       {{ actionLabel }}
-    </button>
+    </BaseButton>
   </div>
 </template>
 

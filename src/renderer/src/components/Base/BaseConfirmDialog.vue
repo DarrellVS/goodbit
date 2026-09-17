@@ -83,20 +83,20 @@ function onBackdrop(event: MouseEvent): void {
             aria-modal="true"
             :aria-label="title"
             :aria-description="description"
-            class="bg-card rounded-2xl shadow-2xl w-full max-w-md p-5"
+            class="bg-card rounded-lg shadow-pop border border-border w-full max-w-md p-5"
             @click.stop
           >
-            <div class="flex gap-4">
+            <div class="flex gap-3">
               <Icon
                 :icon="icon"
-                class="text-2xl shrink-0 mt-0.5"
+                class="size-5 shrink-0 block mt-0.5"
                 :class="tone === 'danger' ? 'text-danger-ink' : 'text-accent-ink'"
               />
               <div class="min-w-0">
-                <h2 class="text-base font-semibold text-foreground">
+                <h2 class="font-display text-lg font-medium text-foreground">
                   {{ title }}
                 </h2>
-                <p class="mt-1 text-sm text-muted-600 whitespace-pre-line">
+                <p class="mt-1 text-sm text-muted-500 whitespace-pre-line">
                   {{ description }}
                 </p>
               </div>
@@ -106,15 +106,17 @@ function onBackdrop(event: MouseEvent): void {
               <button
                 ref="cancelButton"
                 type="button"
-                class="h-9 px-4 rounded-lg text-sm font-semibold text-muted-700 hover:bg-muted-100 transition-colors"
+                class="h-9 px-3.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
                 @click="emit('cancel')"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                class="h-9 px-4 rounded-lg text-sm font-semibold text-accent-fg transition-colors"
-                :class="tone === 'danger' ? 'bg-danger hover:bg-danger' : 'bg-accent hover:bg-accent-hover'"
+                class="h-9 px-3.5 rounded-md border border-transparent text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
+                :class="tone === 'danger'
+                  ? 'bg-danger text-danger-fg hover:opacity-90'
+                  : 'bg-accent text-accent-fg hover:bg-accent-hover'"
                 @click="emit('confirm')"
               >
                 {{ confirmLabel }}

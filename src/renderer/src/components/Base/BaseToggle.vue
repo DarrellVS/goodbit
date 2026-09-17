@@ -37,12 +37,21 @@ function toggle(): void {
     :aria-checked="modelValue"
     :aria-label="label"
     :disabled="disabled"
-    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    :class="modelValue ? 'bg-accent' : 'bg-muted-300'"
+    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+    :class="modelValue ? 'bg-accent' : 'bg-muted-400'"
     @click="toggle"
   >
+    <!--
+      The knob is the page colour, in both states and both palettes, so it
+      reads as a hole punched in the track rather than as a second fill that
+      has to be told apart from it. It was `bg-card`, which is near-white in
+      light mode and near-black in dark, so the same knob was a light disc on
+      one theme and a dark one on the other. The off track moved up a rung for
+      the same reason: `muted-300` is the decorative step and the knob on it
+      was 2.9:1, under the floor for a control's own edge.
+    -->
     <span
-      class="inline-block h-4 w-4 transform rounded-full bg-card transition-transform"
+      class="inline-block h-4 w-4 transform rounded-full bg-background transition-transform duration-150"
       :class="modelValue ? 'translate-x-6' : 'translate-x-1'"
     />
   </button>

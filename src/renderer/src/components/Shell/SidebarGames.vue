@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import GameArt from '@renderer/components/Game/GameArt.vue';
 import { MAX_VISIBLE_GAMES, useGamesList } from '@renderer/composables/library/useGamesList';
 import { useGameVisibility } from '@renderer/composables/library/useGameVisibility';
@@ -16,6 +16,7 @@ import {
 } from 'reka-ui';
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
 import SidebarShowMore from './SidebarShowMore.vue';
+import SidebarRow from './SidebarRow.vue';
 import GameRenameDialog from '@renderer/components/Game/GameRenameDialog.vue';
 import { Icon } from '@iconify/vue';
 
@@ -36,6 +37,16 @@ const { games, matching, visibleGames, hasMoreGames, showAllGames, search, showS
 const gamesStore = useGamesStore();
 const toastStore = useToastStore();
 const { setHidden } = useGameVisibility();
+
+/**
+ * What `All` counts.
+ *
+ * The row had no count while every row under it did, so the numbers in this
+ * list formed a column of three with a gap at the top. Summing the games is
+ * right rather than asking the library: this list is the games it is showing,
+ * and a hidden game is not in it.
+ */
+const totalClips = computed(() => games.value.reduce((sum, g) => sum + (g.clipCount ?? 0), 0));
 
 // Which row's … menu is open. The trigger only shows on hover, so it has to
 // stay visible while the menu is open or the popover loses its anchor.
@@ -84,74 +95,64 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
 </script>
 
 <template>
-  <div 
-    v-if="games.length" 
-    class="pt-4"
-  >
+  <div v-if="games.length">
     <div
       v-tooltip="{ content: 'This filter is disabled on this page', disabled: !props.disabled, placement: 'right' }"
       :class="{ 'opacity-50 cursor-not-allowed': props.disabled }"
       :style="props.disabled ? 'pointer-events: auto;' : ''"
+      class="space-y-0.5"
     >
-      <SidebarSectionHeader title="GAMES" />
-    
-      <button
-        class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
-        :class="[
-          { 'bg-accent/10 text-accent-ink': !activeGame },
-          props.disabled ? 'cursor-not-allowed' : 'hover:bg-muted-100'
-        ]"
-        @click="!props.disabled && emit('select-game', '')"
-      >
-        <div class="flex items-center gap-3">
-          <!-- The same sixteen pixel box every game row uses, so All lines up
-               with them rather than sitting two pixels to the left. -->
-          <span class="w-4 h-4 flex items-center justify-center shrink-0">
-            <span class="w-2 h-2 rounded-full bg-accent" />
-          </span>
-          <span class="font-medium">All</span>
-        </div>
-      </button>
+      <SidebarSectionHeader title="Games" />
 
-      <div
+      <!--
+        `All` is a row of this list, so it is the same component as the rest
+        of it. It used to draw its own markup, which is why its label and the
+        game labels started at the same x by luck rather than by construction,
+        and why it had no trailing column at all: the counts beside it formed
+        a column of three and `All`'s own count sat somewhere else entirely.
+      -->
+      <SidebarRow
+        label="All"
+        :active="!activeGame"
+        :count="totalClips"
+        :disabled="props.disabled"
+        @select="emit('select-game', '')"
+      >
+        <template #icon>
+          <span class="size-2 rounded-full bg-accent" />
+        </template>
+      </SidebarRow>
+
+      <SidebarRow
         v-for="game in visibleGames"
         :key="game.game"
-        class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
-        :class="[
-          { 'bg-accent/10 text-accent-ink': activeGame === game.game },
-          props.disabled ? 'cursor-not-allowed' : 'hover:bg-muted-100'
-        ]"
+        :label="game.displayName || game.game || 'Unknown'"
+        :title="game.displayName || game.game || 'Unknown'"
+        :active="activeGame === game.game"
+        :disabled="props.disabled"
+        @select="emit('select-game', game.game)"
       >
-        <button
-          class="flex items-center gap-3 min-w-0 flex-1"
-          @click="!props.disabled && emit('select-game', game.game)"
-        >
+        <template #icon>
           <!--
             The game's own icon where Steam has cached one, and the dot the
             sidebar has always used where it has not. Most libraries are a mix
-            of both, so neither can be the only case that looks right.
+            of both, so neither can be the only case that looks right. Both
+            branches sit in the row's own 16px box, so a mixed list is not
+            ragged down its left edge.
           -->
+          <GameArt :game="game.game" kind="icon" class="size-4 rounded-sm">
+            <span class="size-2 rounded-full bg-accent" />
+          </GameArt>
+        </template>
+
+        <template #trailing>
           <!--
-            Both branches occupy the same box, or the rows do not line up: an
-            icon is sixteen pixels and the dot is eight, so a mixed list looked
-            ragged down the left edge.
+            The count and the row's menu occupy one slot, so swapping them on
+            hover cannot change the row's width. The menu has to stay visible
+            while it is open or the popover loses the thing it is anchored to.
           -->
-          <span class="w-4 h-4 flex items-center justify-center shrink-0">
-            <GameArt :game="game.game" kind="icon" class="w-4 h-4 rounded-sm">
-              <span class="w-2 h-2 rounded-full bg-accent" />
-            </GameArt>
-          </span>
-          <span 
-            class="font-medium truncate" 
-            :title="game.displayName || game.game || 'Unknown'"
-          >
-            {{ game.displayName || game.game || 'Unknown' }}
-          </span>
-        </button>
-        <div class="shrink-0 flex items-center justify-end min-w-[24px]">
-          <!-- Count and the … menu occupy the same slot: hovering the row swaps one for the other. -->
           <span
-            class="text-xs text-muted-400"
+            class="font-mono text-xs tabular-nums text-muted-400"
             :class="{ 'group-hover:hidden': !props.disabled, 'hidden': openMenuGame === game.game }"
           >
             {{ game.clipCount }}
@@ -163,16 +164,16 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             @update:open="openMenuGame = $event ? game.game : null"
           >
             <DropdownMenuTrigger
-              class="p-1 rounded-sm hover:bg-muted-100 outline-hidden"
-              :class="openMenuGame === game.game ? 'block bg-muted-100' : 'hidden group-hover:block'"
+              class="size-6 inline-flex items-center justify-center rounded-sm text-muted-500 hover:text-foreground hover:bg-muted-200 outline-none focus-visible:focus-ring"
+              :class="openMenuGame === game.game ? 'flex bg-muted-200' : 'hidden group-hover:inline-flex'"
               :title="`More actions for ${game.displayName || game.game}`"
               @click.stop
             >
-              <Icon icon="material-symbols:more-horiz" class="w-4 h-4" />
+              <Icon icon="material-symbols:more-horiz" class="size-4 shrink-0 block" />
             </DropdownMenuTrigger>
             <DropdownMenuPortal>
               <DropdownMenuContent
-                class="min-w-[180px] bg-card rounded-lg p-1 shadow-lg border border-border outline-hidden z-50"
+                class="min-w-[180px] bg-card rounded-lg p-1 shadow-pop border border-border outline-hidden z-50"
                 align="end"
                 :side-offset="4"
               >
@@ -182,31 +183,31 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
                 -->
                 <DropdownMenuItem
                   v-if="game.steamAppId"
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+                  class="flex items-center gap-2 px-3 h-9 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
                   @click="playOnSteam(game)"
                 >
-                  <Icon icon="mdi:steam" class="text-base" />
+                  <Icon icon="mdi:steam" class="size-4 shrink-0 block" />
                   <span>Play on Steam</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+                  class="flex items-center gap-2 px-3 h-9 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
                   @click="openRenameDialog(game)"
                 >
-                  <Icon icon="mdi:pencil" class="text-base" />
+                  <Icon icon="mdi:pencil" class="size-4 shrink-0 block" />
                   <span>Rename</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+                  class="flex items-center gap-2 px-3 h-9 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
                   @click="hideGame(game)"
                 >
-                  <Icon icon="mdi:eye-off-outline" class="text-base" />
+                  <Icon icon="mdi:eye-off-outline" class="size-4 shrink-0 block" />
                   <span>Hide from library</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenuPortal>
           </DropdownMenuRoot>
-        </div>
-      </div>
+        </template>
+      </SidebarRow>
 
       <SidebarShowMore
         v-if="hasMoreGames"

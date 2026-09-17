@@ -161,8 +161,16 @@ test.describe('every screen, in both palettes', () => {
         await ctx.page.waitForTimeout(700);
         await ctx.page.addStyleTag({ content: FREEZE_CSS });
 
+        // Controls, and the containers the contract names beside them: a
+        // card, a list row, a group header, a chip, a tile. The card was the
+        // one the review actually caught (`13-card-hover-height-jump`), and
+        // it is an `<article>`, so a selector for buttons alone would miss
+        // the single example the rule was written for.
         const targets = await ctx.page
-          .locator('button:visible, a[href]:visible, [role="button"]:visible')
+          .locator(
+            'button:visible, a[href]:visible, [role="button"]:visible, ' +
+              'article:visible, li:visible, [role="row"]:visible, [role="option"]:visible',
+          )
           .all();
 
         for (const target of targets.slice(0, 40)) {

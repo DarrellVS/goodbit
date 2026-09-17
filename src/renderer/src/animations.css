@@ -11,53 +11,56 @@
 
 /* Smooth transitions for interactive elements */
 button, a, [role="button"] {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smooth icon transitions */
 .iconify {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-              color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Card hover animations */
 .clip-card {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
-/* Selection checkbox animation */
+/*
+ * The selection checkbox.
+ *
+ * It used to squash to 0.9 on press, on an overshooting curve. A control that
+ * changes size when you press it is the same defect as a card that grows when
+ * you point at it: the thing you are aiming at moves under the pointer.
+ */
 .checkbox-animate {
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.checkbox-animate:active {
-  transform: scale(0.9);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 /* Smooth opacity transitions */
 .opacity-transition {
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Star button animation */
+/*
+ * The star on a card, which used to swell to 1.1 under the pointer.
+ *
+ * It sits over the thumbnail at 32px square, so growing by three pixels moved
+ * its own edges out from under the pointer that was aiming at it. Its ground
+ * lightens instead, and a starred clip is the accent, which is the difference
+ * that actually carries the state.
+ */
 .star-button {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.star-button:hover {
-  transform: scale(1.1);
-}
-
-.star-button:active {
-  transform: scale(0.95);
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Tag animations */
 .tag-enter-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tag-enter-from {
@@ -76,7 +79,7 @@ button, a, [role="button"] {
 
 /* Badge animations */
 .badge-enter-active {
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .badge-enter-from {
@@ -95,7 +98,7 @@ button, a, [role="button"] {
 
 /* Smooth list item animations */
 .list-item-enter-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .list-item-enter-from {
@@ -104,7 +107,7 @@ button, a, [role="button"] {
 }
 
 .list-item-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .list-item-leave-to {
@@ -115,18 +118,18 @@ button, a, [role="button"] {
 /* Input focus animation */
 input:focus,
 textarea:focus {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smooth color transitions */
 .color-transition {
-  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Dropdown/Select animations */
 .dropdown-enter-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dropdown-enter-from {
@@ -145,7 +148,7 @@ textarea:focus {
 
 /* Tooltip animations */
 .tooltip-enter-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tooltip-enter-from {
@@ -190,17 +193,14 @@ textarea:focus {
   animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Smooth scale animation */
+/*
+ * Kept as a name, emptied of the scale.
+ *
+ * Every caller wanted "react to the pointer", and the ground and the ink say
+ * that without the box moving. See the note on `.checkbox-animate`.
+ */
 .scale-on-hover {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.scale-on-hover:hover {
-  transform: scale(1.05);
-}
-
-.scale-on-hover:active {
-  transform: scale(0.95);
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 /* Staggered list animation */
@@ -216,22 +216,22 @@ textarea:focus {
 }
 
 .stagger-item {
-  animation: fade-in-up 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+  animation: fade-in-up 0.18s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
 
 /* Smooth border transitions */
 .border-transition {
-  transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smooth shadow transitions */
 .shadow-transition {
-  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Icon rotation animation */
 .icon-rotate {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .icon-rotate:hover {
@@ -240,7 +240,7 @@ textarea:focus {
 
 /* Smooth background transitions */
 .bg-transition {
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Number counter animation */
@@ -256,22 +256,22 @@ textarea:focus {
 }
 
 .count-animate {
-  animation: count-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: count-up 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smooth height transitions */
 .height-transition {
-  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smooth width transitions */
 .width-transition {
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Clip card list animations */
 .clip-card-enter-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .clip-card-enter-from {
@@ -280,7 +280,7 @@ textarea:focus {
 }
 
 .clip-card-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .clip-card-leave-to {
@@ -289,14 +289,14 @@ textarea:focus {
 }
 
 .clip-card-move {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==================== Modal & Dialog Animations ==================== */
 
 /* Modal backdrop fade animation */
 .modal-backdrop-enter-active {
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-backdrop-enter-from {
@@ -304,7 +304,7 @@ textarea:focus {
 }
 
 .modal-backdrop-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-backdrop-leave-to {
@@ -313,7 +313,7 @@ textarea:focus {
 
 /* Modal content slide-up + fade animation */
 .modal-content-enter-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-content-enter-from {
@@ -322,7 +322,7 @@ textarea:focus {
 }
 
 .modal-content-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-content-leave-to {
@@ -442,7 +442,7 @@ textarea:focus {
  * animation to keep in step rather than two that have to agree.
  */
 .clip-modal-enter-active {
-  transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.15s ease, transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .clip-modal-leave-active {
@@ -486,19 +486,19 @@ textarea:focus {
 
 /* Apply animations to Radix Dialog components */
 .modal-overlay-animate {
-  animation: modal-overlay-show 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-overlay-show 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-overlay-animate[data-state='closed'] {
-  animation: modal-overlay-hide 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modal-overlay-hide 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-content-animate {
-  animation: modal-content-show 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-content-show 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-content-animate[data-state='closed'] {
-  animation: modal-content-hide 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modal-content-hide 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Alternative: Scale from center (for smaller modals) */
@@ -514,7 +514,7 @@ textarea:focus {
 }
 
 .modal-content-scale {
-  animation: modal-content-scale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-content-scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==================== Accessibility: Reduced Motion ==================== */

@@ -244,10 +244,11 @@ function handleCardClick(event: MouseEvent) {
   <article 
     draggable="true"
     :class="[
-      'clip-card shadow-sm group relative bg-card/5 rounded-xl overflow-hidden border transition-all hover:shadow-lg cursor-pointer',
-      isSelected 
-        ? 'border-accent border-2 ring-2 ring-2 ring-accent/30' 
-        : 'border-border hover:border-accent/50'
+      'clip-card group relative rounded-md cursor-pointer outline-none',
+      // Selection is an outline, which is painted outside the box and costs
+      // no layout. It was a border going from 1px to 2px plus a ring, so
+      // selecting a clip moved it and everything beside it by a pixel.
+      isSelected ? 'outline-2 outline-accent outline-offset-2' : '',
     ]"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
@@ -274,8 +275,7 @@ function handleCardClick(event: MouseEvent) {
       >
         <Icon 
           :icon="isSelected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'" 
-          class="text-xl transform-transition"
-          :class="{ 'scale-110': isSelected }"
+          class="size-5 shrink-0 block"
         />
       </button>
     </div>
@@ -322,7 +322,7 @@ function handleCardClick(event: MouseEvent) {
 
     <div 
       ref="previewEl"
-      class="aspect-21/9 bg-video-bed relative"
+      class="aspect-21/9 bg-video-bed relative rounded-md overflow-hidden"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
     >
@@ -402,8 +402,8 @@ function handleCardClick(event: MouseEvent) {
       ></div>
     </div>
 
-    <div :class="config.public.value.compactMode ? 'p-2' : 'p-3'">
-      <div class="flex items-start justify-between gap-2 mb-2">
+    <div :class="config.public.value.compactMode ? 'pt-2' : 'pt-3'">
+      <div class="flex items-start justify-between gap-2 mb-1">
         <ClipNameInput :clip="clip" @updated="emit('updated', $event)" />
       </div>
       

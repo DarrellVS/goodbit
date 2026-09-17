@@ -73,13 +73,28 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
 </script>
 
 <template>
-  <div>
+  <!--
+    On a card this row has a fixed height and only its opacity moves.
+
+    Both the chips and the "Manage tags" trigger used to arrive into flow on
+    hover, so pointing at a clip made its tile taller and pushed the row of
+    tiles below it down. That is `12-card-idle.png` against
+    `13-card-hover-height-jump.png`, and the design contract calls it out by
+    name: nothing in a card's box model may depend on `:hover`.
+
+    In the clip panel (`prominent`) the same component is a real section with
+    a heading above it, so there is nothing to reserve and nothing to reveal.
+  -->
+  <div
+    :class="prominent ? '' : 'h-7 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 overflow-hidden'"
+  >
     <!-- Visible Tags -->
     <TransitionGroup
       v-if="clip.tags?.length"
       name="tag"
       tag="div"
-      class="flex items-center gap-1 gap-x-2 flex-wrap mt-2"
+      class="flex items-center gap-1 gap-x-2 flex-wrap"
+      :class="prominent ? 'mt-2' : ''"
     >
       <!--
         A tag exists so you can click it later. These were plain text, so the
@@ -129,7 +144,8 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
         </button>
         <button
           v-else
-          class="w-full mt-2 text-xs text-muted-400 hover:text-accent-ink opacity-0 group-hover:opacity-100 opacity-transition text-left transform-transition"
+          type="button"
+          class="text-xs text-muted-400 hover:text-accent-ink text-left transition-colors duration-150 outline-none focus-visible:focus-ring rounded-sm"
         >
           Manage tags
         </button>
@@ -154,7 +170,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
               :title="`Category: ${getCategoryForTag(tag)}`"
               @click="applySuggestedTag(tag)"
             >
-              <Icon icon="material-symbols:add" class="text-accent-ink text-sm transform-transition group-hover:scale-110" />
+              <Icon icon="material-symbols:add" class="text-accent-ink size-4 shrink-0 block" />
               <span class="text-foreground">#{{ tag }}</span>
             </button>
           </div>

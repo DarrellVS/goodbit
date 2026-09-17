@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { RouterLink } from 'vue-router';
-import { Icon } from '@iconify/vue';
+import { useRoute } from 'vue-router';
 import SidebarGames from './SidebarGames.vue';
+import SidebarRow from './SidebarRow.vue';
 import SidebarSectionHeader from './SidebarSectionHeader.vue';
 
 interface Props {
@@ -17,31 +17,54 @@ const props = withDefaults(defineProps<Props>(), {
   disableGamesFilter: false,
 });
 const emit = defineEmits<Emits>();
+
+const route = useRoute();
+
+/**
+ * The top three and the bottom three, as data rather than as six copies of
+ * the same markup. They were six, and the two groups had drifted: the bottom
+ * three carried `w-full` and the top three did not.
+ */
+const MAIN = [
+  { to: '/', icon: 'material-symbols:video-library', label: 'Library' },
+  { to: '/today', icon: 'material-symbols:schedule', label: 'Today' },
+  { to: '/editor', icon: 'material-symbols:movie-edit', label: 'Editor' },
+];
+
+const UTILITY = [
+  { to: '/tag-patterns', icon: 'material-symbols:auto-awesome', label: 'Smart Tags' },
+  { to: '/stats', icon: 'material-symbols:bar-chart', label: 'Stats' },
+  { to: '/settings', icon: 'material-symbols:settings', label: 'Settings' },
+];
+
+/**
+ * Settings has sections, so its path carries a query and sometimes a child
+ * route. `path.startsWith` rather than an exact match, or the row stops
+ * looking active the moment you pick a section.
+ */
+function isActive(to: string): boolean {
+  if (to === '/') return route.path === '/';
+  return route.path === to || route.path.startsWith(to + '/');
+}
 </script>
 
 <template>
   <!--
-    The row you are on is an orange tint, not a lighter card.
+    Type-led, and quiet. The column is navigation for a screen whose subject is
+    somewhere else, so nothing in here is the loudest thing on the page.
 
-    Every item in here, and in the games list, used `bg-card/10` for both
-    `hover:` and the active state, which made them identical to each other and
-    very nearly identical to the sidebar. The tokens say how nearly: in dark
-    `--card` is 8% lightness and `--background` is 5%, so a tenth of the card
-    over the sidebar lands about a third of a percent above it. In light they
-    are both pure white, so the active row was white on white and simply did
-    not exist.
+    The panel is one tone step above the page (`--muted-50`), a row under the
+    pointer is one more (`--muted-100`), and the row you are on is marked by
+    weight and a hairline accent rule. That used to be a filled accent tint,
+    which is a lot of colour for "you are here", and before that it was
+    `bg-card/10` for both hover and active at once: in dark that lands about a
+    third of a percent above the sidebar, and in light both were pure white, so
+    the active row did not exist at all.
 
-    An accent tint reads on both grounds and cannot collide with the surface
-    it sits on, which is what the settings list beside this one already did.
-
-    One ladder for both navigation columns, since they sit side by side on the
-    settings screen and were two different materials: the panel is
-    `--muted-50`, a row under the pointer is `--muted-100`, and the row you are
-    on is the accent. Three real steps, each visible against the one below it
-    in both palettes, rather than fractions of a colour that is already the
-    colour behind it.
+    232px, which is the measurement the design fixes rather than a number that
+    happened to look right.
   -->
-  <aside class="w-64 bg-muted-50 border-r border-border flex flex-col h-full">
+  <aside class="w-58 bg-muted-50 border-r border-border flex flex-col h-full">
     <!--
       No name or mark here. The title bar already carries both, a hand's width
       above, and saying it twice is one of them wasted.
@@ -57,73 +80,40 @@ const emit = defineEmits<Emits>();
       above the clips now: a collection is a view of the library, the same kind
       of thing as Starred, and this column is navigation.
     -->
-    <nav class="flex-1 min-h-0 overflow-y-auto px-3 space-y-6">
-      <div class="space-y-1">
-        <SidebarSectionHeader title="MAIN MENU" />
-      
-        <RouterLink
-          to="/"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-          exact-active-class="bg-accent/10 text-accent-ink"
-        >
-          <Icon icon="material-symbols:video-library" class="text-lg" />
-          <span class="font-medium">Library</span>
-        </RouterLink>
-
-        <RouterLink
-          to="/today"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-          exact-active-class="bg-accent/10 text-accent-ink"
-        >
-          <Icon icon="material-symbols:schedule" class="text-lg" />
-          <span class="font-medium">Today</span>
-        </RouterLink>
-
-        <RouterLink
-          to="/editor"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-          exact-active-class="bg-accent/10 text-accent-ink"
-        >
-          <Icon icon="material-symbols:movie-edit" class="text-lg" />
-          <span class="font-medium">Editor</span>
-        </RouterLink>
+    <nav class="flex-1 min-h-0 overflow-y-auto px-2 space-y-6">
+      <div class="space-y-0.5">
+        <SidebarSectionHeader title="Main menu" />
+        <SidebarRow
+          v-for="item in MAIN"
+          :key="item.to"
+          :to="item.to"
+          :icon="item.icon"
+          :label="item.label"
+          :active="isActive(item.to)"
+        />
       </div>
 
-      <SidebarGames 
+      <SidebarGames
         :active-game="activeGame"
         :disabled="props.disableGamesFilter"
-        @select-game="emit('select-game', $event)" 
+        @select-game="emit('select-game', $event)"
       />
     </nav>
 
-    <div class="p-3 space-y-1 border-t border-border">
-      <RouterLink
-        to="/tag-patterns"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-        exact-active-class="bg-accent/10 text-accent-ink"
-      >
-        <Icon icon="material-symbols:auto-awesome" class="text-lg" />
-        <span class="font-medium">Smart Tags</span>
-      </RouterLink>
-
-      <RouterLink
-        to="/stats"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-        exact-active-class="bg-accent/10 text-accent-ink"
-      >
-        <Icon icon="material-symbols:bar-chart" class="text-lg" />
-        <span class="font-medium">Stats</span>
-      </RouterLink>
-
-      <RouterLink
-        to="/settings"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-        exact-active-class="bg-accent/10 text-accent-ink"
-      >
-        <Icon icon="material-symbols:settings" class="text-lg" />
-        <span class="font-medium">Settings</span>
-      </RouterLink>
-
+    <!--
+      Separated by space rather than by a rule. A divider here says the three
+      below it are a different kind of thing, and they are not: they are the
+      same navigation, further down the list of things anybody opens.
+    -->
+    <div class="p-2 pb-4 space-y-0.5">
+      <SidebarRow
+        v-for="item in UTILITY"
+        :key="item.to"
+        :to="item.to"
+        :icon="item.icon"
+        :label="item.label"
+        :active="isActive(item.to)"
+      />
     </div>
   </aside>
 </template>
