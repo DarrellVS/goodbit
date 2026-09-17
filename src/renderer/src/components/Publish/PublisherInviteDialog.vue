@@ -91,9 +91,9 @@ async function apply(): Promise<void> {
     aria-label="Set up publishing"
     @click.self="dismiss"
   >
-    <div class="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+    <div class="w-full max-w-lg rounded-lg border border-border bg-card shadow-pop overflow-hidden">
       <div class="flex items-start gap-4 p-6">
-        <div class="shrink-0 w-11 h-11 rounded-xl bg-accent flex items-center justify-center">
+        <div class="shrink-0 w-11 h-11 rounded-md bg-accent flex items-center justify-center">
           <Icon icon="material-symbols:cloud-upload" class="text-accent-fg text-2xl" />
         </div>
         <div class="min-w-0">
@@ -129,7 +129,7 @@ async function apply(): Promise<void> {
       -->
       <p
         v-if="replacing"
-        class="mx-6 mt-3 px-4 py-3 rounded-xl border border-accent/50 bg-accent/8 text-sm text-muted-700"
+        class="mx-6 mt-3 px-4 py-3 rounded-md border border-accent/50 bg-accent/8 text-sm text-muted-700"
       >
         This replaces the publisher you have set up, at
         <span class="font-mono">{{ settings.publisherBaseUrl }}</span>. Clips already published stay
@@ -142,13 +142,13 @@ async function apply(): Promise<void> {
 
       <div class="flex justify-end gap-2 p-6 pt-4">
         <button
-          class="px-4 py-2.5 rounded-xl border border-border text-foreground hover:bg-muted-50 transition-colors"
+          class="px-4 py-2.5 rounded-md border border-border text-foreground hover:bg-muted-50 transition-colors"
           @click="dismiss"
         >
           Not now
         </button>
         <button
-          class="px-4 py-2.5 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
+          class="px-4 py-2.5 rounded-md bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
           :disabled="saving"
           @click="apply"
         >

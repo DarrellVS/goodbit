@@ -33,10 +33,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="bg-card border border-border rounded-xl p-6 shadow-xs">
+  <section class="bg-card border border-border rounded-md p-6 shadow-xs">
     <div class="flex items-start gap-3 mb-4">
       <div
-        class="w-10 h-10 rounded-xl bg-accent/12 flex items-center justify-center shrink-0"
+        class="w-10 h-10 rounded-md bg-accent/12 flex items-center justify-center shrink-0"
       >
         <Icon icon="material-symbols:label" class="text-xl text-muted-500" />
       </div>

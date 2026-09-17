@@ -43,7 +43,7 @@
       <div
         :class="[
           // The thumb has no width, so the label centres on its left edge.
-          'absolute left-0 -translate-x-1/2 px-2 py-0.5 bg-accent text-accent-fg text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
+          'absolute left-0 -translate-x-1/2 px-2 py-0.5 bg-accent text-accent-fg text-xs font-mono whitespace-nowrap shadow-pop pointer-events-none',
           i === 0 ? '-top-1 rounded-t' : '-bottom-1 rounded-b',
         ]"
       >

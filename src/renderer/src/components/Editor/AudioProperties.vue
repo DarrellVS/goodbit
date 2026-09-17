@@ -49,7 +49,7 @@ function applyFadePreset(seconds: number): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+  <div class="flex flex-col h-full bg-card/60 rounded-md border border-border overflow-hidden">
     <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:tune" class="text-muted-500" />

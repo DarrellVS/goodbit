@@ -35,7 +35,7 @@ const canClose = computed(() => isObsOpenBlocker(props.blocker));
 </script>
 
 <template>
-  <div class="p-3 rounded-xl bg-danger/10 border border-danger/30 text-sm text-foreground">
+  <div class="p-3 rounded-md bg-danger/10 border border-danger/30 text-sm text-foreground">
     <p>{{ blocker }}</p>
 
     <button

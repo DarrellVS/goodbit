@@ -44,7 +44,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
     </div>
   </div>
 
-  <div class="p-4 rounded-xl border border-border space-y-3">
+  <div class="p-4 rounded-md border border-border space-y-3">
     <p class="text-sm text-foreground font-medium">Try it now</p>
     <p class="text-sm text-muted-500">
       GoodBit starts OBS with its own profile and the buffer running. Play something, press

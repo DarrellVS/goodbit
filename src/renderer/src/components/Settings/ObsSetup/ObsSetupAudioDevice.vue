@@ -24,7 +24,7 @@ const emit = defineEmits<Emits>();
 
 <template>
   <button
-    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-colors"
+    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md border text-left transition-colors"
     :class="chosen ? 'border-accent/50 bg-accent/5' : 'border-border hover:bg-muted-50'"
     @click="emit('toggle')"
   >

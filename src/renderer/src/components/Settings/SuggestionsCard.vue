@@ -118,7 +118,7 @@ onMounted(refresh);
   -->
   <div class="setting-block space-y-4">
     <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-xl bg-accent/12 flex items-center justify-center shrink-0">
+      <div class="w-10 h-10 rounded-md bg-accent/12 flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:graphic-eq" class="text-xl text-accent-ink" />
       </div>
       <div class="min-w-0 flex-1">

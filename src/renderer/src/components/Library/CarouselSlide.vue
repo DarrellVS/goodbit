@@ -41,7 +41,7 @@ function handleDelete(): void {
     class="embla__slide" 
     :class="{ 'is-active': isActive }"
   >
-    <div class="relative rounded-2xl overflow-hidden shadow-xl">
+    <div class="relative rounded-lg overflow-hidden">
       <video 
         :src="videoUrl" 
         :poster="posterUrl"

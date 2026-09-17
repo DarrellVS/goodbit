@@ -112,7 +112,7 @@ function runActive(): void {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-hidden overflow-hidden panel-drop-animate"
+        class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-[92vw] max-w-xl flex flex-col outline-hidden overflow-hidden panel-drop-animate"
       >
         <DialogTitle class="sr-only">Command palette</DialogTitle>
 

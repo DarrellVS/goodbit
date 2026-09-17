@@ -96,7 +96,7 @@ const showDetail = computed(() => props.route !== 'quick' || props.showEverythin
     installer. A button that says "Writing…" for ninety seconds reads
     as a hang, so this says which part is happening.
   -->
-  <div v-if="working" class="p-4 rounded-xl border border-accent/30 bg-accent/5 space-y-2">
+  <div v-if="working" class="p-4 rounded-md border border-accent/30 bg-accent/5 space-y-2">
     <div class="flex items-center gap-2 text-sm text-foreground">
       <BaseSpinner class="text-lg text-accent-ink" />
       <span>{{ progress?.message ?? 'Writing the settings' }}</span>

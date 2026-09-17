@@ -114,7 +114,7 @@ async function recheck(): Promise<void> {
 <template>
   <div
     v-if="visible"
-    class="mx-6 mt-4 rounded-xl border border-accent/40 bg-accent/5 p-4"
+    class="mx-6 mt-4 rounded-md border border-accent/40 bg-accent/5 p-4"
   >
     <div class="flex flex-wrap items-center gap-x-3 gap-y-3">
       <Icon

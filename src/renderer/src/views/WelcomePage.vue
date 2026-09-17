@@ -168,7 +168,7 @@ async function finish(): Promise<void> {
         </p>
 
         <button
-          class="w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-colors"
+          class="w-full flex items-center gap-3 p-4 rounded-md border text-left transition-colors"
           :class="settings.videosRoot
             ? 'border-accent bg-accent/5'
             : 'border-border bg-card hover:bg-muted-50'"
@@ -189,7 +189,7 @@ async function finish(): Promise<void> {
         </button>
 
         <button
-          class="w-full flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted-50 text-left transition-colors"
+          class="w-full flex items-center gap-3 p-4 rounded-md border border-border bg-card hover:bg-muted-50 text-left transition-colors"
           :disabled="working"
           @click="chooseMusic"
         >
@@ -266,7 +266,7 @@ async function finish(): Promise<void> {
           </p>
 
           <button
-            class="w-full py-3 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-40"
+            class="w-full py-3 rounded-md bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-40"
             :disabled="setupWorking"
             @click="showSetupDialog = true"
           >
@@ -294,7 +294,7 @@ async function finish(): Promise<void> {
           and it will be here by the time you alt-tab.
         </p>
 
-        <div class="flex items-start gap-3 p-4 rounded-xl bg-muted-50">
+        <div class="flex items-start gap-3 p-4 rounded-md bg-muted-50">
           <BaseToggle
             class="mt-0.5"
             label="Start with Windows"
@@ -313,7 +313,7 @@ async function finish(): Promise<void> {
       <div class="flex items-center gap-2">
         <button
           v-if="step > 0"
-          class="px-4 py-3 rounded-xl border border-border text-sm text-foreground"
+          class="px-4 py-3 rounded-md border border-border text-sm text-foreground"
           @click="back"
         >
           Back
@@ -321,7 +321,7 @@ async function finish(): Promise<void> {
 
         <button
           v-if="current.id !== 'finish'"
-          class="flex-1 py-3 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent transition-colors"
+          class="flex-1 py-3 rounded-md bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent transition-colors"
           :disabled="!canContinue"
           @click="next"
         >
@@ -330,7 +330,7 @@ async function finish(): Promise<void> {
 
         <button
           v-else
-          class="flex-1 py-3 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover transition-colors"
+          class="flex-1 py-3 rounded-md bg-accent text-accent-fg font-semibold hover:bg-accent-hover transition-colors"
           @click="finish"
         >
           Start using GoodBit

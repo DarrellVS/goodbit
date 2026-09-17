@@ -31,7 +31,7 @@ const emit = defineEmits<Emits>();
 </script>
 
 <template>
-  <div class="p-4 rounded-xl border border-border flex items-start justify-between gap-4">
+  <div class="p-4 rounded-md border border-border flex items-start justify-between gap-4">
     <div class="min-w-0">
       <p class="font-medium text-foreground text-sm">{{ step.label }}</p>
       <p class="text-xs text-muted-500 mt-1">

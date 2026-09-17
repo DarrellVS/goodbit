@@ -76,7 +76,7 @@ function isAdded(clip: Clip): boolean {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+  <div class="flex flex-col h-full bg-card/60 rounded-md border border-border overflow-hidden">
     <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:video-library" class="text-muted-500" />
@@ -182,7 +182,7 @@ function isAdded(clip: Clip): boolean {
         :key="`${group.date}-${group.game}`"
         class="space-y-2"
       >
-        <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-card/85 backdrop-blur-sm py-1 -mx-0.5 rounded-sm">
+        <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-card/85 py-1 -mx-0.5 rounded-sm">
           <Icon icon="material-symbols:label" class="text-muted-500 text-base shrink-0" />
           <span class="text-sm font-semibold text-foreground truncate">
             {{ getGameDisplayName(group.game) }}
@@ -249,7 +249,7 @@ function isAdded(clip: Clip): boolean {
             />
             <div class="absolute inset-0 bg-linear-to-t from-video-bed/60 via-transparent to-video-bed/20" />
 
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/40 backdrop-blur-sm">
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/40">
               <div class="bg-accent rounded-full p-3">
                 <Icon icon="material-symbols:add" class="text-2xl text-accent-fg" />
               </div>

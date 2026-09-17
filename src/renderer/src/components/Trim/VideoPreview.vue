@@ -5,7 +5,7 @@
       3440x1440 clip at full width pushed the thing this page exists for off
       the bottom of the window.
     -->
-    <div class="relative flex-1 min-h-0 bg-card/5 backdrop-blur-sm rounded-2xl border border-border overflow-hidden shadow-xl">
+    <div class="relative flex-1 min-h-0 bg-video-bed rounded-lg border border-border overflow-hidden shadow-pop">
       <!--
         No native controls: their scrubber spans the whole file and would let
         you drag outside the trim, contradicting the timeline below. The

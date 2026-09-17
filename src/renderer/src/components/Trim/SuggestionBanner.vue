@@ -165,7 +165,7 @@ function reject(): void {
   <div
     v-if="loading"
     key="listening"
-    class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card/60 text-sm text-muted-500"
+    class="flex items-center gap-2 px-4 py-2.5 rounded-md border border-border bg-card/60 text-sm text-muted-500"
   >
     <Icon
       :icon="watchesScreen ? 'material-symbols:screenshot-monitor' : 'material-symbols:graphic-eq'"
@@ -181,7 +181,7 @@ function reject(): void {
   <div
     v-else-if="show && window"
     key="answer"
-    class="px-4 py-2.5 rounded-xl border border-accent bg-accent/6 space-y-2"
+    class="px-4 py-2.5 rounded-md border border-accent bg-accent/6 space-y-2"
   >
     <div class="flex flex-wrap items-center gap-3">
     <!--

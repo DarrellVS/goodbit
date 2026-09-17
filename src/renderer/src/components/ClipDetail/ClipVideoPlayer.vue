@@ -251,7 +251,7 @@ defineExpose({
 <template>
   <div
     ref="stage"
-    class="relative rounded-2xl overflow-hidden bg-video-bed border border-border group/player"
+    class="relative rounded-lg overflow-hidden bg-video-bed border border-border group/player"
   >
     <video
       ref="videoElement"

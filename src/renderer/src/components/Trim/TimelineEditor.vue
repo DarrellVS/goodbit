@@ -32,7 +32,7 @@
 
     <div
       ref="strip"
-      class="relative h-32 rounded-xl overflow-visible border border-border"
+      class="relative h-32 rounded-md overflow-visible border border-border"
       @focusin="onFocusIn"
       @focusout="onFocusOut"
     >
@@ -46,14 +46,14 @@
       -->
       <div
         v-if="!stripReady"
-        class="absolute inset-0 rounded-xl bg-muted-50 animate-pulse"
+        class="absolute inset-0 rounded-md bg-muted-50 animate-pulse"
         aria-hidden="true"
       ></div>
 
       <img
         :src="frameStripSource"
         alt="Video frames"
-        class="w-full h-full object-cover pointer-events-none select-none rounded-xl transition-opacity duration-300"
+        class="w-full h-full object-cover pointer-events-none select-none rounded-md transition-opacity duration-300"
         :class="stripReady ? 'opacity-100' : 'opacity-0'"
         draggable="false"
         @load="stripReady = true"
@@ -65,7 +65,7 @@
         slider, so grabbing a handle still trims and everything else scrubs.
       -->
       <div
-        class="absolute inset-0 z-40 cursor-pointer rounded-xl"
+        class="absolute inset-0 z-40 cursor-pointer rounded-md"
         title="Click or drag to move the playhead"
         @pointerdown="startScrub"
       />
@@ -95,7 +95,7 @@
         :format="handleFormat"
       />
 
-      <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
+      <div class="absolute inset-0 pointer-events-none rounded-md overflow-hidden">
         <div
           class="absolute inset-y-0 left-0 bg-linear-to-r from-video-bed/60 to-video-bed/40 backdrop-blur-xs"
           :style="{ width: startPercentage + '%' }"
@@ -113,7 +113,7 @@
           class="absolute inset-y-0 w-0.5 -ml-px bg-on-video shadow-[0_0_6px_rgba(0,0,0,0.8)]"
           :style="{ left: playheadPercentage + '%' }"
         >
-          <div class="absolute -top-px left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-on-video shadow-sm" />
+          <div class="absolute -top-px left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-on-video " />
         </div>
       </div>
 
@@ -137,7 +137,7 @@
     <!-- The preview has no controls of its own, so the transport lives here. -->
     <div class="flex items-center gap-3">
       <button
-        class="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-on-video shadow-lg hover:bg-accent-hover transition-colors shrink-0"
+        class="inline-flex items-center justify-center size-9 shrink-0 rounded-full bg-accent text-accent-fg hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors shrink-0"
         :title="isPlaying ? 'Pause (Space)' : 'Play (Space)'"
         :aria-label="isPlaying ? 'Pause' : 'Play'"
         @click="$emit('toggle-playback')"

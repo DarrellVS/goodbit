@@ -65,7 +65,7 @@ onMounted(async () => {
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >
         <div class="p-6 border-b border-border">
           <DialogTitle class="text-xl font-bold text-foreground mb-1">

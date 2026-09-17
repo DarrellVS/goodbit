@@ -20,7 +20,7 @@ import { Icon } from '@iconify/vue';
     belongs to. GoodBit does it itself, with nothing to install.
   </p>
 
-  <div class="p-4 rounded-xl border border-border flex items-start gap-3">
+  <div class="p-4 rounded-md border border-border flex items-start gap-3">
     <Icon
       icon="material-symbols:check-circle"
       class="text-lg text-muted-500 shrink-0 mt-0.5"

@@ -52,7 +52,7 @@ const someStarred = computed(() =>
 
 <template>
   <div
-    class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4 min-w-[500px]"
+    class="bg-card rounded-md shadow-pop border border-border px-4 py-3 flex items-center gap-4 min-w-[500px]"
   >
     <div class="flex items-center gap-2">
       <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-bold text-sm text-accent-fg count-animate">
@@ -104,7 +104,7 @@ const someStarred = computed(() =>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuContent
-            class="min-w-[200px] bg-card rounded-lg p-1 shadow-lg border border-border outline-hidden z-50"
+            class="min-w-[200px] bg-card rounded-lg p-1 shadow-pop border border-border outline-hidden z-50"
             :side-offset="8"
           >
             <!-- Open in Advanced Editor -->

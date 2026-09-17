@@ -68,7 +68,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
   </p>
 
   <div class="grid grid-cols-2 gap-3">
-    <label class="p-4 rounded-xl border border-border block">
+    <label class="p-4 rounded-md border border-border block">
       <span class="block text-xs text-muted-500 mb-1.5">Keep the last</span>
       <div class="flex items-center gap-2">
         <input
@@ -82,7 +82,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
       </div>
     </label>
 
-    <label class="p-4 rounded-xl border border-border block">
+    <label class="p-4 rounded-md border border-border block">
       <span class="block text-xs text-muted-500 mb-1.5">Save with</span>
       <BaseComboBox v-model="key" label="Save with" class="w-full" :options="hotkeyOptions" />
     </label>

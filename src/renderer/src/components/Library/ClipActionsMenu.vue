@@ -109,7 +109,7 @@ async function handleMoveToGame(targetGame: string) {
       </MenubarTrigger>
       <MenubarPortal>
         <MenubarContent
-          class="min-w-[200px] bg-card rounded-lg p-1 shadow-lg border border-border outline-hidden z-50"
+          class="min-w-[200px] bg-card rounded-lg p-1 shadow-pop border border-border outline-hidden z-50"
           align="end"
           :side-offset="8"
         >

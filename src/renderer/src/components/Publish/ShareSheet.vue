@@ -133,7 +133,7 @@ async function copy(): Promise<void> {
       -->
       <DialogOverlay class="fixed inset-0 bg-scrim z-60 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-60 bg-card rounded-xl shadow-2xl border border-border w-full max-w-sm flex flex-col outline-hidden modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-60 bg-card rounded-md shadow-pop border border-border w-full max-w-sm flex flex-col outline-hidden modal-content-animate"
       >
         <div class="p-6 border-b border-border">
           <DialogTitle class="text-xl font-bold text-foreground mb-1">Share on your wifi</DialogTitle>
@@ -153,7 +153,7 @@ async function copy(): Promise<void> {
             light ground, so this square does not follow the palette any more
             than a video frame does.
           -->
-          <div class="p-3 bg-white rounded-xl border border-border">
+          <div class="p-3 bg-white rounded-md border border-border">
             <img v-if="dataUrl" :src="dataUrl" alt="QR code for this clip" class="w-56 h-56 block" />
             <div v-else class="w-56 h-56 flex items-center justify-center text-sm text-muted-400">
               <span v-if="failed">Could not draw the code</span>

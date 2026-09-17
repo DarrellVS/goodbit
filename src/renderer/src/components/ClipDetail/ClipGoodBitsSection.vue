@@ -154,7 +154,7 @@ const sourceIcon: Record<string, string> = {
     -->
     <button
       v-else-if="goodBits.length === 0"
-      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
+      class="w-full rounded-md border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
       @click="show('trim')"
     >
       <p class="text-sm text-muted-500">
@@ -171,7 +171,7 @@ const sourceIcon: Record<string, string> = {
       <li
         v-for="goodBit in goodBits"
         :key="goodBit.id"
-        class="relative overflow-hidden rounded-xl border border-border bg-background/40 px-3 py-2"
+        class="relative overflow-hidden rounded-md border border-border bg-background/40 px-3 py-2"
       >
         <!--
           The render's own progress, as the row filling.

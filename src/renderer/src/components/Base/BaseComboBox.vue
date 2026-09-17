@@ -292,7 +292,7 @@ const LIST_Z_INDEX = 'z-300';
         :side-offset="6"
         :class="[
           LIST_Z_INDEX,
-          'w-(--reka-combobox-trigger-width) min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg outline-hidden',
+          'w-(--reka-combobox-trigger-width) min-w-48 rounded-lg border border-border bg-card p-1 shadow-pop outline-hidden',
         ]"
       >
         <div

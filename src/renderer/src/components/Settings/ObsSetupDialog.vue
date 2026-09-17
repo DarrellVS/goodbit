@@ -162,7 +162,7 @@ function notNow(): void {
     class="fixed inset-0 z-100 flex items-center justify-center bg-scrim p-6"
     @click.self="close"
   >
-    <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-2xl border border-border shadow-2xl">
+    <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-lg border border-border shadow-pop">
       <header class="flex items-start justify-between gap-4 p-5 pb-3 shrink-0">
         <div class="min-w-0">
           <h2 class="text-lg font-semibold text-foreground">{{ pages[at]?.title ?? 'Set up OBS' }}</h2>

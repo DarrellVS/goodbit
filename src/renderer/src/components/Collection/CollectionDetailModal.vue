@@ -206,7 +206,7 @@ watch(
       <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <Transition name="clip-modal" appear>
         <DialogContent
-          class="fixed inset-8 z-50 bg-card rounded-2xl shadow-2xl border border-border flex flex-col outline-hidden overflow-hidden"
+          class="fixed inset-8 z-50 bg-card rounded-lg shadow-pop border border-border flex flex-col outline-hidden overflow-hidden"
           @open-auto-focus="(event: Event) => event.preventDefault()"
         >
           <!--

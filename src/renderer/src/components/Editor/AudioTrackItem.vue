@@ -182,7 +182,7 @@ onBeforeUnmount(stopDrag);
   <div
     class="absolute top-0 h-12 rounded-lg overflow-hidden group select-none"
     :class="[
-      selected ? 'ring-2 ring-accent shadow-lg shadow-accent/30' : 'hover:ring-2 hover:ring-accent/50',
+      selected ? 'ring-2 ring-accent' : 'hover:ring-2 hover:ring-accent/50',
       cursorClass,
       isDragging ? '' : 'transition-[left,width] duration-150 ease-out',
       item.muted ? 'opacity-60' : ''
@@ -207,7 +207,7 @@ onBeforeUnmount(stopDrag);
       />
 
       <div class="absolute top-1 left-2 right-2 flex items-center justify-between gap-2">
-        <div class="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-card/85 backdrop-blur-sm px-1.5 py-0.5 rounded-sm min-w-0">
+        <div class="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-card/85 px-1.5 py-0.5 rounded-sm min-w-0">
           <Icon
             :icon="item.muted ? 'material-symbols:music-off' : 'material-symbols:music-note'"
             class="text-xs shrink-0"
@@ -224,10 +224,10 @@ onBeforeUnmount(stopDrag);
       </div>
 
       <div class="absolute bottom-1 left-2 right-2 flex items-end justify-between">
-        <div class="text-[10px] font-mono font-medium text-foreground bg-card/85 backdrop-blur-sm px-1.5 py-0.5 rounded-sm">
+        <div class="text-[10px] font-mono font-medium text-foreground bg-card/85 px-1.5 py-0.5 rounded-sm">
           {{ formatTime(item.duration) }}
         </div>
-        <div class="text-[10px] font-mono text-muted-700 bg-card/85 backdrop-blur-sm px-1.5 py-0.5 rounded-sm">
+        <div class="text-[10px] font-mono text-muted-700 bg-card/85 px-1.5 py-0.5 rounded-sm">
           {{ volumePercent }}%
         </div>
       </div>

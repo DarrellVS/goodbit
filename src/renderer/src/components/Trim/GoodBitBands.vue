@@ -57,7 +57,7 @@ const placed = computed(() =>
 <template>
   <div
     v-if="durationSec > 0 && goodBits.length > 0"
-    class="absolute inset-0 z-40 pointer-events-none rounded-xl overflow-hidden"
+    class="absolute inset-0 z-40 pointer-events-none rounded-md overflow-hidden"
   >
     <button
       v-for="item in placed"

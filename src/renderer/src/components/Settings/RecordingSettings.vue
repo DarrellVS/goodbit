@@ -180,7 +180,7 @@ function openGuide(): void {
           <li
             v-for="finding in [...blockers, ...warnings]"
             :key="finding.id"
-            class="flex items-start gap-2.5 p-3 rounded-xl border"
+            class="flex items-start gap-2.5 p-3 rounded-md border"
             :class="
               finding.level === 'blocker'
                 ? 'border-danger/30 bg-danger/5'

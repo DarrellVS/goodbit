@@ -34,7 +34,7 @@ const emit = defineEmits<Emits>();
     this installs it from the OBS project's own release.
   </p>
 
-  <div v-if="progress" class="p-4 rounded-xl border border-border space-y-2">
+  <div v-if="progress" class="p-4 rounded-md border border-border space-y-2">
     <p class="text-sm text-muted-500">{{ progress.message }}</p>
     <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
       <div

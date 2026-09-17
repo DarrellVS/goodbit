@@ -27,7 +27,7 @@ const emit = defineEmits<Emits>();
 <template>
   <component
     :is="clickable ? 'button' : 'div'"
-    class="bg-card border border-border rounded-xl p-6 text-left"
+    class="bg-card border border-border rounded-md p-6 text-left"
     :class="{ 'hover:bg-muted-50 transition-colors cursor-pointer': clickable }"
     @click="clickable && emit('click')"
   >

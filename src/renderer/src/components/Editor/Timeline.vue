@@ -175,7 +175,7 @@ function handleRulerMouseUp(): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden select-none">
+  <div class="flex flex-col h-full bg-card/60 rounded-md border border-border overflow-hidden select-none">
     <div
       ref="rulerRef"
       class="shrink-0 h-7 bg-accent/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
@@ -323,7 +323,7 @@ function handleRulerMouseUp(): void {
         </div>
 
         <div
-          class="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none z-20 shadow-lg shadow-accent/50"
+          class="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none z-20 shadow-accent/50"
           :style="{ left: `${playheadPosition}px` }"
         >
           <!--
@@ -348,7 +348,7 @@ function handleRulerMouseUp(): void {
             without either of those depending on a spacing rule reaching an
             element it was never aimed at.
           -->
-          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-accent rounded-full shadow-lg shadow-accent/50 border-2 border-card" />
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-accent rounded-full shadow-accent/50 border-2 border-card" />
         </div>
       </div>
     </div>

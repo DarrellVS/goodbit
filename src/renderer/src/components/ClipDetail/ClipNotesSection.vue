@@ -250,7 +250,7 @@ function discard(): void {
     -->
     <div
       v-if="editing"
-      class="rounded-xl border border-border overflow-hidden bg-card"
+      class="rounded-md border border-border overflow-hidden bg-card"
       :class="showPreview ? 'grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-border' : ''"
     >
       <MarkdownTextarea
@@ -274,7 +274,7 @@ function discard(): void {
     -->
     <div
       v-else-if="hasNotes"
-      class="rounded-xl border border-border bg-card cursor-text hover:border-line-strong transition-colors"
+      class="rounded-md border border-border bg-card cursor-text hover:border-line-strong transition-colors"
       @click="editFromNote"
     >
       <MarkdownPreview
@@ -291,7 +291,7 @@ function discard(): void {
     -->
     <button
       v-else
-      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
+      class="w-full rounded-md border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
       @click="startEditing"
     >
       <p class="text-sm text-muted-500">

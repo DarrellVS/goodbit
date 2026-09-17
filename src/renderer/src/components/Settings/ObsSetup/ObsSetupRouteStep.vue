@@ -28,7 +28,7 @@ const emit = defineEmits<Emits>();
 -->
 <template>
   <button
-    class="w-full text-left p-4 rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors"
+    class="w-full text-left p-4 rounded-md border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors"
     @click="emit('choose', 'quick')"
   >
     <span class="flex items-center gap-2">
@@ -42,7 +42,7 @@ const emit = defineEmits<Emits>();
   </button>
 
   <button
-    class="w-full text-left p-4 rounded-xl border border-border hover:bg-muted-50 transition-colors"
+    class="w-full text-left p-4 rounded-md border border-border hover:bg-muted-50 transition-colors"
     @click="emit('choose', 'full')"
   >
     <span class="flex items-center gap-2">

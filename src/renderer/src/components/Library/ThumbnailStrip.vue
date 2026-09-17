@@ -26,12 +26,12 @@ const emit = defineEmits<Emits>();
       @click="emit('select', index)"
     >
       <div 
-        class="relative p-[3px] rounded-xl transition-all duration-150"
+        class="relative p-[3px] rounded-md transition-all duration-150"
         :class="selectedIndex === index 
           ? 'bg-accent' 
           : 'bg-transparent hover:bg-accent/30'"
       >
-        <div class="relative rounded-[10px] overflow-hidden aspect-21/9 bg-card shadow-md transition-all duration-150 group">
+        <div class="relative rounded-[10px] overflow-hidden aspect-21/9 bg-card  transition-all duration-150 group">
           <img 
             :src="getThumbUrl(clip)" 
             :alt="clip.displayName || clip.filename"

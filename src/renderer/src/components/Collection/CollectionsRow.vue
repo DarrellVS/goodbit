@@ -84,7 +84,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
     -->
     <button
       v-if="!collections.length && !showCreateInput"
-      class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border px-3 py-4 text-sm text-muted-500 transition-colors hover:border-muted-300 hover:text-foreground"
+      class="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-500 transition-colors hover:border-muted-300 hover:text-foreground"
       @click="actions.startCreateCollection"
     >
       <Icon icon="material-symbols:create-new-folder" class="text-base" />

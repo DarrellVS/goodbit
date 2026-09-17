@@ -952,7 +952,7 @@ watch(
         <!-- The previous session, offered back rather than restored behind your back. -->
         <div
           v-if="resumable"
-          class="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-accent/40 bg-accent/6 backdrop-blur-sm"
+          class="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-md border border-accent/40 bg-accent/6 backdrop-blur-sm"
         >
           <Icon icon="material-symbols:history" class="text-xl text-muted-500 shrink-0" />
           <div class="min-w-0 flex-1">
@@ -993,14 +993,14 @@ watch(
           </button>
         </div>
 
-        <div class="flex-1 relative bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+        <div class="flex-1 relative bg-card/60 backdrop-blur-sm rounded-md border border-border overflow-hidden">
           <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
             <!--
               Two stacked players: one is on screen while the other preloads and
               pre-seeks the next clip, so switching clips does not blank the
               frame. Black backdrop so any residual gap reads as black, not white.
             -->
-            <div class="relative max-w-full max-h-full bg-video-bed shadow-pop rounded-lg border border-border overflow-hidden">
+            <div class="relative max-w-full max-h-full bg-video-bed rounded-lg border border-border overflow-hidden">
               <video
                 ref="videoA"
                 class="max-w-full max-h-full block"

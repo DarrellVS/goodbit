@@ -58,7 +58,7 @@ const isOpen = computed(() => openCollectionId.value === props.collection.id);
     role="button"
     tabindex="0"
     data-collection-card
-    class="group flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    class="group flex min-w-0 cursor-pointer flex-col gap-2 rounded-md border bg-card p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     :class="isDragOver
       ? 'border-accent bg-accent/10'
       : isOpen

@@ -71,7 +71,7 @@ const screenOptions = computed<ComboBoxOption[]>(() =>
 </script>
 
 <template>
-  <label v-if="displays.length" class="p-4 rounded-xl border border-border block">
+  <label v-if="displays.length" class="p-4 rounded-md border border-border block">
     <span class="block text-xs text-muted-500 mb-1.5">Record this screen</span>
     <BaseComboBox
       v-model="chosen"
@@ -81,7 +81,7 @@ const screenOptions = computed<ComboBoxOption[]>(() =>
     />
   </label>
 
-  <div v-if="display" class="p-4 rounded-xl border border-border">
+  <div v-if="display" class="p-4 rounded-md border border-border">
     <div class="flex items-center gap-2 flex-wrap">
       <p class="text-foreground font-medium text-sm">
         {{ display.width }}x{{ display.height }},

@@ -175,7 +175,7 @@ async function saveNew(): Promise<void> {
     -->
     <TagLibraryCard />
 
-    <div v-if="isAddingNew" class="bg-card border border-border rounded-xl p-6 shadow-xs">
+    <div v-if="isAddingNew" class="bg-card border border-border rounded-md p-6 shadow-xs">
       <h3 class="text-lg font-semibold mb-4">New Tag Pattern</h3>
       
       <div class="space-y-4">
@@ -249,10 +249,11 @@ async function saveNew(): Promise<void> {
       />
 
       <button
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-fg font-medium shadow-lg shadow-accent/20 transition-all"
+        type="button"
+        class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-md bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
         @click="startAddNew"
       >
-        <Icon icon="material-symbols:add" class="text-lg" />
+        <Icon icon="material-symbols:add" class="size-4 shrink-0 block" />
         <span>Add Pattern</span>
       </button>
     </div>
@@ -274,7 +275,7 @@ async function saveNew(): Promise<void> {
             <div
               v-for="pattern in patternsByCategory[category]"
               :key="pattern.tag"
-              class="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+              class="bg-card border border-border rounded-lg p-4  transition-shadow"
             >
               <div v-if="editingTag === pattern.tag" class="space-y-3">
                 <input
@@ -347,7 +348,7 @@ async function saveNew(): Promise<void> {
       <div
         v-for="pattern in filteredPatterns"
         :key="pattern.tag"
-        class="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+        class="bg-card border border-border rounded-lg p-4  transition-shadow"
       >
         <div v-if="editingTag === pattern.tag" class="space-y-3">
           <input
