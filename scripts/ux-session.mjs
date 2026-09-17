@@ -24,6 +24,7 @@
  *   { "do": "press",  "key": "Escape" }
  *   { "do": "scroll", "y": 800 }
  *   { "do": "wait",   "ms": 1500 }
+ *   { "do": "goto",   "hash": "#/clips/12" }
  *   { "do": "back" }
  *
  * Every step may carry "note", which is written into the log beside it.
@@ -192,6 +193,19 @@ for (const [i, step] of steps.entries()) {
     } else if (what === 'scroll') {
       await page.mouse.wheel(0, step.y ?? 600);
       await page.waitForTimeout(step.ms ?? 600);
+    } else if (what === 'goto') {
+      /*
+       * Go straight to a screen, for when clicking cannot get there.
+       *
+       * A clip opens as a layer over the library and its card is a hover
+       * target, so a driver that can only click sometimes cannot open one at
+       * all. `#/clips/:id` and `#/trim/:id` are real routes and both open the
+       * same thing a click would.
+       */
+      await page.evaluate((hash) => {
+        window.location.hash = hash;
+      }, step.hash);
+      await page.waitForTimeout(step.ms ?? 2500);
     } else if (what === 'back') {
       await page.goBack().catch(() => {});
       await page.waitForTimeout(step.ms ?? 1000);
