@@ -66,7 +66,7 @@ const picture = computed(() => {
         the file, and "Modified" then reported the moment you pressed save.
       -->
       <button
-        class="text-xs text-muted-600 hover:text-orange-500 transition-colors text-right"
+        class="text-xs text-muted-600 hover:text-accent-ink transition-colors text-right"
         :title="showExactDate ? 'Show it the short way' : 'Show the exact date'"
         @click="emit('toggle-date')"
       >

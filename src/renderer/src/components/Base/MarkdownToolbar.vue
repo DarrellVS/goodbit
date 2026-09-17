@@ -45,7 +45,7 @@ const emit = defineEmits<Emits>();
     <button
       v-if="hasPlayhead"
       type="button"
-      class="p-2 rounded-sm hover:bg-muted-200 transition-colors text-orange-600"
+      class="p-2 rounded-sm hover:bg-muted-200 transition-colors text-accent-ink"
       title="Insert the time on screen now"
       @click="emit('insert-playhead')"
     >
@@ -124,7 +124,7 @@ const emit = defineEmits<Emits>();
     <button
       type="button"
       class="px-3 py-1.5 rounded-sm hover:bg-muted-200 transition-colors flex items-center gap-2 text-sm font-medium"
-      :class="{ 'bg-orange-500/16 text-orange-600': showPreview }"
+      :class="{ 'bg-accent/16 text-accent-ink': showPreview }"
       @click="emit('toggle-preview')"
     >
       <!--

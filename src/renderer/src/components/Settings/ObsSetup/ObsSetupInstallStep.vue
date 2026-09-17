@@ -38,7 +38,7 @@ const emit = defineEmits<Emits>();
     <p class="text-sm text-muted-500">{{ progress.message }}</p>
     <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
       <div
-        class="h-full bg-orange-500 transition-[width] duration-200"
+        class="h-full bg-accent transition-[width] duration-200"
         :style="{ width: `${progress.percent}%` }"
       ></div>
     </div>
@@ -52,7 +52,7 @@ const emit = defineEmits<Emits>();
       class="px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
       :class="
         index === 0
-          ? 'bg-orange-500 hover:bg-orange-600 text-white'
+          ? 'bg-accent hover:bg-accent-hover text-accent-fg'
           : 'border border-border hover:bg-muted-50 text-foreground'
       "
       :disabled="installing"
@@ -73,9 +73,9 @@ const emit = defineEmits<Emits>();
     <BaseSpinner class="text-sm" />
     Watching for OBS to appear. This carries on by itself once it is installed.
   </p>
-  <p v-else class="text-xs text-emerald-500 flex items-center gap-1.5">
+  <p v-else class="text-xs text-success flex items-center gap-1.5">
     <Icon icon="material-symbols:check-circle" class="text-sm" />
     OBS is here.
   </p>
-  <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
+  <p v-if="error" class="text-sm text-danger-ink">{{ error }}</p>
 </template>

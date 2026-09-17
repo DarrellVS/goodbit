@@ -72,7 +72,7 @@ async function handleNameChange(event: Event): Promise<void> {
       <input
         class="w-full bg-transparent border border-transparent outline-hidden py-0.5 truncate rounded
                group-hover/name:border-border group-hover/name:bg-card/5
-               focus:border-orange-500/60 focus:bg-card/5"
+               focus:border-accent/60 focus:bg-card/5"
         :class="large ? 'pl-2 pr-8 text-lg font-semibold' : 'pl-1.5 pr-6 text-sm font-medium'"
         :value="clip.displayName ?? clip.filename"
         :title="`${clip.displayName ?? clip.filename}\n\nClick to rename it in GoodBit. The file on disk keeps its own name.`"

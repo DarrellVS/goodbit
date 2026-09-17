@@ -114,12 +114,12 @@ async function recheck(): Promise<void> {
 <template>
   <div
     v-if="visible"
-    class="mx-6 mt-4 rounded-xl border border-orange-500/40 bg-orange-500/5 p-4"
+    class="mx-6 mt-4 rounded-xl border border-accent/40 bg-accent/5 p-4"
   >
     <div class="flex flex-wrap items-center gap-x-3 gap-y-3">
       <Icon
         icon="material-symbols:error-circle-rounded"
-        class="text-xl text-orange-500 shrink-0"
+        class="text-xl text-accent-ink shrink-0"
       />
 
       <div class="min-w-0 flex-1">
@@ -134,7 +134,7 @@ async function recheck(): Promise<void> {
       -->
       <div class="flex items-center gap-2 shrink-0">
         <button
-          class="px-3.5 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium whitespace-nowrap"
+          class="px-3.5 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium whitespace-nowrap"
           @click="showDialog = true"
         >
           Set up OBS for me

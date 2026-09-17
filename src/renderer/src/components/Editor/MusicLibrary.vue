@@ -140,9 +140,9 @@ onBeforeUnmount(stopPreview);
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border flex items-center justify-between gap-2">
+    <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:library-music" class="text-orange-500" />
+        <Icon icon="material-symbols:library-music" class="text-accent-ink" />
         Music
       </h3>
       <span class="text-xs text-muted-500">{{ tracks.length }}</span>
@@ -150,7 +150,7 @@ onBeforeUnmount(stopPreview);
 
     <div
       class="shrink-0 m-3 rounded-lg border-2 border-dashed transition-colors"
-      :class="isDragOver ? 'border-orange-500 bg-orange-500/8' : 'border-border bg-card/60'"
+      :class="isDragOver ? 'border-accent bg-accent/8' : 'border-border bg-card/60'"
       @dragover.prevent="isDragOver = true"
       @dragleave="isDragOver = false"
       @drop.prevent="handleDrop"
@@ -160,8 +160,8 @@ onBeforeUnmount(stopPreview);
         :disabled="uploading"
         @click="handleBrowse"
       >
-        <BaseSpinner v-if="uploading" class="text-xl text-orange-500" />
-        <Icon v-else icon="material-symbols:upload" class="text-xl text-orange-500" />
+        <BaseSpinner v-if="uploading" class="text-xl text-accent-ink" />
+        <Icon v-else icon="material-symbols:upload" class="text-xl text-accent-ink" />
         <span class="text-sm font-medium text-muted-800">
           {{ uploading ? 'Adding…' : 'Add music' }}
         </span>
@@ -175,13 +175,13 @@ onBeforeUnmount(stopPreview);
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center text-muted-500 text-xs">
-      <BaseSpinner class="text-xl text-orange-400" />
+      <BaseSpinner class="text-xl text-accent-ink" />
     </div>
 
     <div v-else-if="tracks.length === 0" class="flex-1 flex items-center justify-center px-4">
       <div class="text-center">
-        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
-          <Icon icon="material-symbols:music-note" class="text-2xl text-orange-400" />
+        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-accent/16 flex items-center justify-center">
+          <Icon icon="material-symbols:music-note" class="text-2xl text-accent-ink" />
         </div>
         <p class="text-sm font-medium text-muted-700">No music yet</p>
         <p class="text-xs mt-1 text-muted-500">Upload a track to lay under your clips</p>
@@ -193,7 +193,7 @@ onBeforeUnmount(stopPreview);
         v-for="track in tracks"
         :key="track.id"
         class="group rounded-lg border bg-card/80 hover:bg-card transition-all overflow-hidden"
-        :class="isAdded(track) ? 'border-orange-400/60' : 'border-border hover:border-orange-500/50'"
+        :class="isAdded(track) ? 'border-accent/60' : 'border-border hover:border-accent/50'"
       >
         <button
           class="w-full text-left px-2.5 pt-2.5 pb-1.5"
@@ -201,7 +201,7 @@ onBeforeUnmount(stopPreview);
           @click="emit('add-to-timeline', track)"
         >
           <div class="flex items-start gap-2">
-            <div class="mt-0.5 w-7 h-7 rounded-md bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0">
+            <div class="mt-0.5 w-7 h-7 rounded-md bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0">
               <Icon icon="material-symbols:add" class="text-card text-base" />
             </div>
             <div class="min-w-0 flex-1">
@@ -212,7 +212,7 @@ onBeforeUnmount(stopPreview);
                 <span>{{ formatTimeSimple(track.durationSec) }}</span>
                 <span>·</span>
                 <span>{{ formatBytes(track.sizeBytes) }}</span>
-                <span v-if="isAdded(track)" class="text-orange-600 font-sans font-medium">on timeline</span>
+                <span v-if="isAdded(track)" class="text-accent-ink font-sans font-medium">on timeline</span>
               </div>
             </div>
           </div>
@@ -220,7 +220,7 @@ onBeforeUnmount(stopPreview);
 
         <div class="flex items-center justify-end gap-1 px-2 pb-2">
           <button
-            class="p-1.5 rounded-md hover:bg-orange-500/8 text-muted-600 hover:text-orange-600 transition-colors"
+            class="p-1.5 rounded-md hover:bg-accent/8 text-muted-600 hover:text-accent-ink transition-colors"
             :title="previewId === track.id ? 'Stop preview' : 'Preview'"
             @click.stop="togglePreview(track)"
           >
@@ -230,7 +230,7 @@ onBeforeUnmount(stopPreview);
             />
           </button>
           <button
-            class="p-1.5 rounded-md hover:bg-red-500/8 text-muted-600 hover:text-red-600 transition-colors"
+            class="p-1.5 rounded-md hover:bg-danger/8 text-muted-600 hover:text-danger-ink transition-colors"
             title="Delete track"
             @click.stop="remove(track)"
           >

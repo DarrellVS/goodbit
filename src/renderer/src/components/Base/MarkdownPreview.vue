@@ -116,11 +116,11 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .markdown-preview :deep(a) {
-  @apply text-orange-500 hover:text-orange-600 underline;
+  @apply text-accent-ink hover:text-accent-ink underline;
 }
 
 .markdown-preview :deep(code) {
-  @apply bg-muted-100 px-1.5 py-0.5 rounded text-sm font-mono text-orange-600;
+  @apply bg-muted-100 px-1.5 py-0.5 rounded text-sm font-mono text-accent-ink;
 }
 
 .markdown-preview :deep(pre) {
@@ -132,7 +132,7 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 .markdown-preview :deep(blockquote) {
-  @apply border-l-4 border-orange-400 pl-4 italic my-3 text-muted-600;
+  @apply border-l-4 border-accent pl-4 italic my-3 text-muted-600;
 }
 
 .markdown-preview :deep(strong) {
@@ -148,11 +148,11 @@ function onKeydown(event: KeyboardEvent): void {
  * rather than rely on a link's own cursor and focus ring.
  */
 .markdown-preview :deep(.timestamp-link) {
-  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 font-medium no-underline hover:bg-orange-500/30 transition-colors cursor-pointer;
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent-ink font-medium no-underline hover:bg-accent/30 transition-colors cursor-pointer;
 }
 
 .markdown-preview :deep(.timestamp-link:focus-visible) {
-  @apply outline-hidden ring-2 ring-orange-500/50;
+  @apply outline-hidden ring-2 ring-accent/50;
 }
 
 .markdown-preview :deep(.timestamp-link)::before {

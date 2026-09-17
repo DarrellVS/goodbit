@@ -91,7 +91,7 @@ onMounted(() => {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >
@@ -128,7 +128,7 @@ onMounted(() => {
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search or create new game..."
-                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent"
                 @keydown.enter="selectFromSearch"
               />
             </div>
@@ -136,11 +136,11 @@ onMounted(() => {
             <!-- New Game Badge -->
             <div 
               v-if="isNewGame" 
-              class="px-3 py-2 bg-green-500/8 border border-green-200 rounded-lg flex items-center gap-2"
+              class="px-3 py-2 bg-success/8 border border-success rounded-lg flex items-center gap-2"
             >
-              <Icon icon="material-symbols:add-circle" class="text-green-600 text-lg" />
-              <span class="text-sm text-green-700">
-                Press <kbd class="px-1.5 py-0.5 bg-card border border-green-300 rounded-sm text-xs font-mono">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
+              <Icon icon="material-symbols:add-circle" class="text-success text-lg" />
+              <span class="text-sm text-success">
+                Press <kbd class="px-1.5 py-0.5 bg-card border border-success rounded-sm text-xs font-mono">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
               </span>
             </div>
             
@@ -159,7 +159,7 @@ onMounted(() => {
                 :key="game.game"
                 class="w-full px-3 py-2.5 rounded-lg transition-all text-left flex items-center justify-between group"
                 :class="{
-                  'bg-orange-500/8 text-orange-700': selectedGame === game.game,
+                  'bg-accent/8 text-accent-ink': selectedGame === game.game,
                   'hover:bg-muted-50': selectedGame !== game.game,
                 }"
                 @click="selectedGame = game.game"
@@ -168,14 +168,14 @@ onMounted(() => {
                   <div 
                     class="w-2 h-2 rounded-full shrink-0"
                     :class="{
-                      'bg-orange-500': selectedGame === game.game,
-                      'bg-gray-400': selectedGame !== game.game,
+                      'bg-accent': selectedGame === game.game,
+                      'bg-muted-300': selectedGame !== game.game,
                     }"
                   />
                   <span 
                     class="font-medium truncate"
                     :class="{
-                      'text-orange-700': selectedGame === game.game,
+                      'text-accent-ink': selectedGame === game.game,
                       'text-foreground': selectedGame !== game.game,
                     }"
                     :title="game.displayName || game.game"
@@ -186,7 +186,7 @@ onMounted(() => {
                 <span 
                   class="text-xs shrink-0 ml-2"
                   :class="{
-                    'text-orange-600': selectedGame === game.game,
+                    'text-accent-ink': selectedGame === game.game,
                     'text-muted-400': selectedGame !== game.game,
                   }"
                 >
@@ -207,7 +207,7 @@ onMounted(() => {
             </button>
           </DialogClose>
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 transition-colors font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover transition-colors font-medium text-accent-fg disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="!selectedGame"
             @click="handleMove"
           >

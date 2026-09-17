@@ -41,7 +41,7 @@ const emit = defineEmits<Emits>();
     </div>
     <button
       v-if="actionLabel"
-      class="mt-1 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+      class="mt-1 px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium transition-colors"
       @click="emit('action')"
     >
       {{ actionLabel }}

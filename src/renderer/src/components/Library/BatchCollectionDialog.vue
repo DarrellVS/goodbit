@@ -63,7 +63,7 @@ onMounted(async () => {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >
@@ -83,14 +83,14 @@ onMounted(async () => {
               v-model="newCollectionName"
               type="text"
               placeholder="Enter collection name..."
-              class="w-full px-4 py-2 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              class="w-full px-4 py-2 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent"
               @keydown.enter="handleCreateAndAdd"
               @keydown.esc="showNewCollectionInput = false"
               autofocus
             />
             <div class="flex items-center gap-2">
               <button
-                class="flex-1 px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex-1 px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!newCollectionName.trim()"
                 @click="handleCreateAndAdd"
               >
@@ -108,7 +108,7 @@ onMounted(async () => {
           <!-- New Collection Button -->
           <button
             v-else
-            class="w-full px-4 py-3 rounded-lg border-2 border-dashed border-border text-muted-600 hover:border-orange-500 hover:text-orange-600 transition-colors flex items-center justify-center gap-2 font-medium"
+            class="w-full px-4 py-3 rounded-lg border-2 border-dashed border-border text-muted-600 hover:border-accent hover:text-accent-ink transition-colors flex items-center justify-center gap-2 font-medium"
             @click="showNewCollectionInput = true"
           >
             <Icon icon="material-symbols:add" class="text-xl" />
@@ -128,7 +128,7 @@ onMounted(async () => {
                 @click="handleSelectCollection(collection.id)"
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                  <div class="w-10 h-10 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center">
                     <Icon icon="material-symbols:folder" class="text-card text-xl" />
                   </div>
                   <div class="text-left">

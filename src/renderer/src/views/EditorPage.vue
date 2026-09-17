@@ -798,14 +798,14 @@ watch(
         <div class="w-px h-6 bg-border"></div>
 
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center">
             <Icon icon="material-symbols:movie-edit" class="text-card" />
           </div>
           <div>
             <h1 class="text-lg font-bold">Editor</h1>
             <p v-if="!activeDraft" class="text-[10px] text-muted-600">Join clips, add music, export one movie</p>
             <p v-else class="text-[10px] text-muted-600 flex items-center gap-1">
-              <Icon icon="material-symbols:bookmark" class="text-orange-500 text-xs" />
+              <Icon icon="material-symbols:bookmark" class="text-accent-ink text-xs" />
               <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
               <button
                 class="text-muted-400 hover:text-muted-700 transition-colors"
@@ -821,14 +821,14 @@ watch(
 
       <div class="flex items-center gap-2">
         <button
-          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium bg-black/5 hover:bg-black/10 border border-transparent text-muted-700"
+          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium bg-muted-100 hover:bg-muted-200 border border-transparent text-muted-700"
           @click="showDraftsDialog = true"
         >
           <Icon icon="material-symbols:bookmarks-outline" />
           Drafts
           <span
             v-if="drafts.length"
-            class="px-1.5 rounded-full bg-orange-500/20 text-orange-700 text-[10px] font-semibold"
+            class="px-1.5 rounded-full bg-accent/20 text-accent-ink text-[10px] font-semibold"
           >
             {{ drafts.length }}
           </span>
@@ -836,7 +836,7 @@ watch(
 
         <button
           class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
-          :class="showLibrary ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' : 'bg-black/5 hover:bg-black/10 border border-transparent text-muted-700'"
+          :class="showLibrary ? 'bg-accent/20 text-accent-ink border border-accent/30' : 'bg-muted-100 hover:bg-muted-200 border border-transparent text-muted-700'"
           @click="toggleLibrary"
         >
           <Icon icon="material-symbols:video-library" />
@@ -845,7 +845,7 @@ watch(
 
         <button
           class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
-          :class="showProperties ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' : 'bg-black/5 hover:bg-black/10 border border-transparent text-muted-700'"
+          :class="showProperties ? 'bg-accent/20 text-accent-ink border border-accent/30' : 'bg-muted-100 hover:bg-muted-200 border border-transparent text-muted-700'"
           @click="toggleProperties"
         >
           <Icon icon="material-symbols:tune" />
@@ -859,7 +859,7 @@ watch(
         <div class="shrink-0 grid grid-cols-2 gap-1 p-1 bg-card/60 rounded-lg border border-border">
           <button
             class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
-            :class="libraryTab === 'clips' ? 'bg-orange-500 text-white' : 'text-muted-700 hover:bg-black/5'"
+            :class="libraryTab === 'clips' ? 'bg-accent text-accent-fg' : 'text-muted-700 hover:bg-muted-100'"
             @click="libraryTab = 'clips'"
           >
             <Icon icon="material-symbols:video-library" />
@@ -867,7 +867,7 @@ watch(
           </button>
           <button
             class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
-            :class="libraryTab === 'music' ? 'bg-orange-500 text-white' : 'text-muted-700 hover:bg-black/5'"
+            :class="libraryTab === 'music' ? 'bg-accent text-accent-fg' : 'text-muted-700 hover:bg-muted-100'"
             @click="libraryTab = 'music'"
           >
             <Icon icon="material-symbols:library-music" />
@@ -908,14 +908,14 @@ watch(
         <!-- The previous session, offered back rather than restored behind your back. -->
         <div
           v-if="resumable"
-          class="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/6 backdrop-blur-sm"
+          class="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-accent/40 bg-accent/6 backdrop-blur-sm"
         >
-          <Icon icon="material-symbols:history" class="text-xl text-orange-500 shrink-0" />
+          <Icon icon="material-symbols:history" class="text-xl text-accent-ink shrink-0" />
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-foreground">
               {{ resumable.projectId === null ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
             </div>
-            <div v-if="timelineClips.length > 0" class="text-xs text-orange-600 mt-0.5">
+            <div v-if="timelineClips.length > 0" class="text-xs text-accent-ink mt-0.5">
               Resuming replaces the {{ timelineClips.length }}
               clip{{ timelineClips.length === 1 ? '' : 's' }} already on your timeline.
             </div>
@@ -928,7 +928,7 @@ watch(
             </div>
           </div>
           <button
-            class="h-8 px-4 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 shrink-0"
+            class="h-8 px-4 rounded-lg bg-accent text-accent-fg text-xs font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 shrink-0"
             :disabled="restoring"
             @click="resumeFromBanner(resumable)"
           >
@@ -956,7 +956,7 @@ watch(
               pre-seeks the next clip, so switching clips does not blank the
               frame. Black backdrop so any residual gap reads as black, not white.
             -->
-            <div class="relative max-w-full max-h-full bg-black shadow-2xl rounded-lg border border-border overflow-hidden">
+            <div class="relative max-w-full max-h-full bg-video-bed shadow-pop rounded-lg border border-border overflow-hidden">
               <video
                 ref="videoA"
                 class="max-w-full max-h-full block"
@@ -976,7 +976,7 @@ watch(
                 v-if="isBuffering"
                 class="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
-                <div class="bg-black/60 backdrop-blur-sm rounded-full p-3">
+                <div class="bg-scrim backdrop-blur-sm rounded-full p-3">
                   <BaseSpinner class="text-2xl text-card" />
                 </div>
               </div>
@@ -985,8 +985,8 @@ watch(
 
           <div v-else class="absolute inset-0 flex items-center justify-center">
             <div class="text-center">
-              <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-500/16 flex items-center justify-center">
-                <Icon icon="material-symbols:movie" class="text-4xl text-orange-400" />
+              <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-accent/16 flex items-center justify-center">
+                <Icon icon="material-symbols:movie" class="text-4xl text-accent-ink" />
               </div>
               <p class="text-lg font-semibold mb-2 text-foreground">No clips in timeline</p>
               <p class="text-sm text-muted-600">Click clips from the library to get started</p>

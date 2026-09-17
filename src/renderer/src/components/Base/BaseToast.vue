@@ -24,16 +24,16 @@ const typeIcons = {
 /**
  * A toast floats over arbitrary content, so it needs a ground of its own.
  *
- * These were pale solid fills (`bg-green-50`) until the accent tints were
+ * These were pale solid fills (`bg-success/10`) until the accent tints were
  * reworked, and a tint alone is not a background, at 8% over a dark editor the
  * toast was effectively invisible. The card colour underneath is opaque in both
  * themes; the accent stays in the border, icon and text, where it still reads.
  */
 const typeColors = {
-  success: 'text-green-600 bg-card border-green-500/40',
-  error: 'text-red-600 bg-card border-red-500/40',
-  warning: 'text-orange-600 bg-card border-orange-500/40',
-  info: 'text-blue-600 bg-card border-blue-500/40',
+  success: 'text-success bg-card border-success/40',
+  error: 'text-danger-ink bg-card border-danger/40',
+  warning: 'text-accent-ink bg-card border-accent/40',
+  info: 'text-muted-700 bg-card border-line-strong',
 };
 
 function getToastClass(toast: Toast): string {
@@ -83,7 +83,7 @@ function getIconName(toast: Toast): string {
         :alt-text="toast.action.label"
       >
         <button
-          class="px-3 py-1.5 text-xs font-medium rounded-md bg-black/10 hover:bg-black/20 transition-colors"
+          class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted-100 hover:bg-muted-200 transition-colors"
           @click="toast.action.onClick"
         >
           {{ toast.action.label }}
@@ -91,7 +91,7 @@ function getIconName(toast: Toast): string {
       </ToastAction>
 
       <ToastClose
-        class="ml-auto p-1 rounded-md hover:bg-black/10 transition-colors"
+        class="ml-auto p-1 rounded-md hover:bg-muted-200 transition-colors"
         aria-label="Close"
       >
         <Icon icon="material-symbols:close" class="w-4 h-4" />

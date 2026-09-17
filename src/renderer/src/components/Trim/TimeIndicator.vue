@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-2" :class="containerClass">
-    <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+    <div class="w-2 h-2 rounded-full bg-accent shrink-0" />
     <span class="text-muted-400">{{ label }}:</span>
 
     <span class="flex items-baseline gap-1.5">
@@ -23,7 +23,7 @@
     <span v-if="steppable" class="flex items-center gap-0.5 ml-0.5">
       <button
         type="button"
-        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-orange-500 hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
+        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-accent-ink hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
         :title="`Back ${stepName} (left arrow, with this handle selected)`"
         :aria-label="`Move ${label.toLowerCase()} back ${stepName}`"
         :disabled="disabled"
@@ -33,7 +33,7 @@
       </button>
       <button
         type="button"
-        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-orange-500 hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
+        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-accent-ink hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
         :title="`Forward ${stepName} (right arrow, with this handle selected)`"
         :aria-label="`Move ${label.toLowerCase()} forward ${stepName}`"
         :disabled="disabled"
@@ -76,11 +76,11 @@ const isPrimary = computed(() => props.variant === 'primary');
 
 const containerClass = computed(() =>
   isPrimary.value
-    ? 'px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20'
+    ? 'px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20'
     : ''
 );
 
 const textClass = computed(() =>
-  isPrimary.value ? 'text-orange-500' : ''
+  isPrimary.value ? 'text-accent-ink' : ''
 );
 </script>

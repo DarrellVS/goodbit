@@ -121,7 +121,7 @@ const sourceIcon: Record<string, string> = {
   <div class="bg-card rounded-2xl p-5 border border-border">
     <div class="flex items-center gap-3 mb-3">
       <div
-        class="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0"
+        class="w-8 h-8 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0"
       >
         <Icon icon="material-symbols:bookmarks-rounded" class="text-lg text-card" />
       </div>
@@ -156,14 +156,14 @@ const sourceIcon: Record<string, string> = {
     -->
     <button
       v-else-if="goodBits.length === 0"
-      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-orange-500/50 hover:bg-orange-500/4 transition-colors"
+      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
       @click="show('trim')"
     >
       <p class="text-sm text-muted-500">
         Nothing marked yet. A GoodBit names a range and leaves the recording
         whole, unlike a trim, which replaces it.
       </p>
-      <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600">
+      <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-accent-ink">
         <Icon icon="material-symbols:add" class="text-lg" />
         Mark a range
       </span>
@@ -184,14 +184,14 @@ const sourceIcon: Record<string, string> = {
         -->
         <span
           v-if="renderingId === goodBit.id"
-          class="absolute inset-y-0 left-0 bg-orange-500/16 transition-[width] duration-200 ease-linear"
+          class="absolute inset-y-0 left-0 bg-accent/16 transition-[width] duration-200 ease-linear"
           :style="{ width: `${Math.max(2, renderProgress)}%` }"
           aria-hidden="true"
         ></span>
 
         <div class="relative flex items-center gap-2">
           <button
-            class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors"
+            class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-accent-ink hover:bg-accent/10 transition-colors"
             :title="`Play ${goodBitLabel(goodBit)}`"
             :aria-label="`Play ${goodBitLabel(goodBit)}`"
             @click="emit('play', goodBit)"
@@ -210,7 +210,7 @@ const sourceIcon: Record<string, string> = {
               v-model="draftName"
               type="text"
               maxlength="60"
-              class="w-full bg-card border border-orange-500/60 rounded-sm px-1.5 py-0.5 text-sm font-medium outline-hidden"
+              class="w-full bg-card border border-accent/60 rounded-sm px-1.5 py-0.5 text-sm font-medium outline-hidden"
               :aria-label="`Name for the GoodBit at ${rangeLabel(goodBit.startSec, goodBit.endSec)}`"
               @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
               @keydown.esc="cancelRenaming"
@@ -239,7 +239,7 @@ const sourceIcon: Record<string, string> = {
               -->
               <span
                 v-if="reasonOf(goodBit)"
-                class="inline-flex items-center gap-1 min-w-0 text-orange-600"
+                class="inline-flex items-center gap-1 min-w-0 text-accent-ink"
               >
                 <Icon :icon="sourceIcon[goodBit.source]" class="text-sm shrink-0" />
                 <span class="truncate">{{ reasonOf(goodBit) }}</span>

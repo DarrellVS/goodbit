@@ -168,7 +168,7 @@ function discard(): void {
 </script>
 
 <template>
-  <div class="bg-linear-to-br from-card to-orange-500/4 rounded-2xl p-5 border border-border">
+  <div class="bg-linear-to-br from-card to-accent/4 rounded-2xl p-5 border border-border">
     <!--
       One header, holding everything. The title, the formatting buttons and the
       preview toggle were on two rows with a border between them, which read as
@@ -176,7 +176,7 @@ function discard(): void {
     -->
     <div class="flex items-center gap-3 mb-3">
       <div
-        class="w-8 h-8 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0"
+        class="w-8 h-8 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0"
       >
         <Icon icon="material-symbols:note-rounded" class="text-lg text-card" />
       </div>
@@ -225,7 +225,7 @@ function discard(): void {
             Discard
           </button>
           <button
-            class="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+            class="px-3 py-1.5 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-1.5 shrink-0"
             :disabled="saving"
             @click="save"
           >
@@ -296,13 +296,13 @@ function discard(): void {
     -->
     <button
       v-else
-      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-orange-500/50 hover:bg-orange-500/4 transition-colors"
+      class="w-full rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
       @click="startEditing"
     >
       <p class="text-sm text-muted-500">
         No notes yet. Add context, or mark a moment with a timestamp.
       </p>
-      <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600">
+      <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-accent-ink">
         <Icon icon="material-symbols:add" class="text-lg" />
         Write a note
       </span>

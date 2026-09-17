@@ -159,7 +159,7 @@ function notNow(): void {
   <div
     v-if="open"
     data-testid="obs-setup"
-    class="fixed inset-0 z-100 flex items-center justify-center bg-black/60 p-6"
+    class="fixed inset-0 z-100 flex items-center justify-center bg-scrim p-6"
     @click.self="close"
   >
     <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-2xl border border-border shadow-2xl">
@@ -183,7 +183,7 @@ function notNow(): void {
           v-for="(entry, index) in pages"
           :key="entry.id"
           class="h-1 flex-1 rounded-full transition-colors"
-          :class="index <= at ? 'bg-orange-500' : 'bg-muted-100'"
+          :class="index <= at ? 'bg-accent' : 'bg-muted-100'"
           :title="entry.title"
         ></li>
       </ol>
@@ -298,7 +298,7 @@ function notNow(): void {
             plan's blockers are the reason. See `continueDisabled`.
           -->
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50"
+            class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium disabled:opacity-50"
             :disabled="forwardDisabled"
             @click="page === 'done' ? close() : wizard.next()"
           >

@@ -69,7 +69,7 @@ function isChosen(id: string): boolean {
     </div>
   </div>
 
-  <p v-if="!chosenIds.length" class="text-xs text-orange-600">
+  <p v-if="!chosenIds.length" class="text-xs text-accent-ink">
     Nothing selected, so your clips will be silent.
   </p>
 </template>

@@ -72,7 +72,7 @@ function onBackdrop(event: MouseEvent): void {
     <Transition name="modal-backdrop">
       <div
         v-if="open"
-        class="fixed inset-0 z-70 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        class="fixed inset-0 z-70 flex items-center justify-center bg-scrim backdrop-blur-sm p-4"
         @click="onBackdrop"
         @keydown.esc="emit('cancel')"
       >
@@ -90,7 +90,7 @@ function onBackdrop(event: MouseEvent): void {
               <Icon
                 :icon="icon"
                 class="text-2xl shrink-0 mt-0.5"
-                :class="tone === 'danger' ? 'text-red-500' : 'text-orange-500'"
+                :class="tone === 'danger' ? 'text-danger-ink' : 'text-accent-ink'"
               />
               <div class="min-w-0">
                 <h2 class="text-base font-semibold text-foreground">
@@ -113,8 +113,8 @@ function onBackdrop(event: MouseEvent): void {
               </button>
               <button
                 type="button"
-                class="h-9 px-4 rounded-lg text-sm font-semibold text-white transition-colors"
-                :class="tone === 'danger' ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'"
+                class="h-9 px-4 rounded-lg text-sm font-semibold text-accent-fg transition-colors"
+                :class="tone === 'danger' ? 'bg-danger hover:bg-danger' : 'bg-accent hover:bg-accent-hover'"
                 @click="emit('confirm')"
               >
                 {{ confirmLabel }}

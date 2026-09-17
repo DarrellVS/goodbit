@@ -151,7 +151,7 @@ async function copyCommand(): Promise<void> {
 
     <div class="p-4 bg-card rounded-lg border border-border space-y-4">
       <div data-setting="Claude" :class="['flex items-start gap-3', settingRing('Claude')]">
-        <Icon icon="material-symbols:robot-2-outline" class="text-xl text-orange-500 mt-0.5" />
+        <Icon icon="material-symbols:robot-2-outline" class="text-xl text-accent-ink mt-0.5" />
         <div class="min-w-0">
           <p class="font-medium text-foreground">Claude</p>
           <p class="text-sm text-muted-500 mt-1">
@@ -179,7 +179,7 @@ async function copyCommand(): Promise<void> {
           <div class="flex items-center gap-2 text-sm">
             <span
               class="w-2 h-2 rounded-full shrink-0"
-              :class="state.running ? 'bg-emerald-500' : 'bg-orange-500'"
+              :class="state.running ? 'bg-success' : 'bg-accent'"
             />
             <span class="text-foreground">
               {{ state.running ? 'Listening' : 'Not listening' }}
@@ -219,7 +219,7 @@ async function copyCommand(): Promise<void> {
                 class="px-2.5 py-1.5 rounded-lg border text-xs shrink-0"
                 :class="
                   client.registered
-                    ? 'border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10'
+                    ? 'border-success/40 text-success hover:bg-success/10'
                     : 'border-border text-foreground hover:bg-muted-50'
                 "
                 :disabled="working || !state.running"

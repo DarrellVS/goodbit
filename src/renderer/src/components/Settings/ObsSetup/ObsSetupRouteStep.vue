@@ -28,11 +28,11 @@ const emit = defineEmits<Emits>();
 -->
 <template>
   <button
-    class="w-full text-left p-4 rounded-xl border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 transition-colors"
+    class="w-full text-left p-4 rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors"
     @click="emit('choose', 'quick')"
   >
     <span class="flex items-center gap-2">
-      <Icon icon="material-symbols:bolt" class="text-lg text-orange-500" />
+      <Icon icon="material-symbols:bolt" class="text-lg text-accent-ink" />
       <span class="font-medium text-foreground">Quick setup</span>
     </span>
     <span class="block text-sm text-muted-500 mt-1">

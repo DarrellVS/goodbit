@@ -94,7 +94,7 @@ const screenOptions = computed<ComboBoxOption[]>(() =>
       -->
       <span
         v-if="display.hdrEnabled"
-        class="px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wide bg-orange-500/15 text-orange-500 border border-orange-500/30"
+        class="px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wide bg-accent/15 text-accent-ink border border-accent/30"
       >
         HDR
       </span>

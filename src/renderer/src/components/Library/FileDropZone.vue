@@ -21,21 +21,21 @@ defineProps<Props>();
   >
     <div
       v-if="isDragging || isUploading"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim-strong backdrop-blur-sm"
       :class="{ 'pointer-events-none': isUploading }"
     >
       <div
-        class="bg-linear-to-br from-orange-500/20 to-orange-600/20 border-4 border-dashed rounded-3xl px-16 py-20 text-center transition-all"
+        class="bg-linear-to-br from-accent/20 to-accent-hover/20 border-4 border-dashed rounded-3xl px-16 py-20 text-center transition-all"
         :class="{
-          'border-orange-500 scale-100': isDragging && !isUploading,
-          'border-orange-400/50 scale-95': isUploading,
+          'border-accent scale-100': isDragging && !isUploading,
+          'border-accent/50 scale-95': isUploading,
         }"
       >
         <!-- Drag State -->
         <template v-if="!isUploading">
           <Icon
             icon="material-symbols:upload-file"
-            class="text-9xl text-orange-500 mb-6 mx-auto animate-bounce"
+            class="text-9xl text-accent-ink mb-6 mx-auto animate-bounce"
           />
           <h2 class="text-4xl font-bold text-card mb-3">
             Drop Files Here
@@ -57,7 +57,7 @@ defineProps<Props>();
             The app's own mark, rather than a cloud with a ring spinning inside
             it. One shape saying one thing beats two animations competing.
           -->
-          <BaseSpinner class="text-8xl text-orange-500 mb-6 mx-auto" label="Importing files" />
+          <BaseSpinner class="text-8xl text-accent-ink mb-6 mx-auto" label="Importing files" />
           <h2 class="text-4xl font-bold text-card mb-3">
             Importing Files...
           </h2>
@@ -65,9 +65,9 @@ defineProps<Props>();
             Please wait while your files are being processed
           </p>
           <div v-if="uploadProgress !== undefined" class="mt-6">
-            <div class="w-96 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
+            <div class="w-96 h-3 bg-muted-200 rounded-full overflow-hidden mx-auto">
               <div
-                class="h-full bg-linear-to-r from-orange-500 to-orange-600 transition-all duration-300"
+                class="h-full bg-linear-to-r from-accent to-accent-hover transition-all duration-300"
                 :style="{ width: `${uploadProgress}%` }"
               />
             </div>

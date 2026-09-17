@@ -50,16 +50,16 @@ function applyFadePreset(seconds: number): void {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border">
+    <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:tune" class="text-orange-500" />
+        <Icon icon="material-symbols:tune" class="text-accent-ink" />
         Track Properties
       </h3>
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
     <div class="flex items-start gap-2">
-      <div class="w-9 h-9 rounded-lg bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0">
+      <div class="w-9 h-9 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:music-note" class="text-card" />
       </div>
       <div class="min-w-0">
@@ -73,7 +73,7 @@ function applyFadePreset(seconds: number): void {
     <div class="space-y-2">
       <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center justify-between">
         <span class="flex items-center gap-1">
-          <Icon icon="material-symbols:volume-up" class="text-orange-500" />
+          <Icon icon="material-symbols:volume-up" class="text-accent-ink" />
           Level
         </span>
         <span class="text-foreground font-mono text-sm">{{ volumePercent }}% · {{ volumeDb }} dB</span>
@@ -83,7 +83,7 @@ function applyFadePreset(seconds: number): void {
         min="0"
         max="100"
         :value="volumePercent"
-        class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
+        class="w-full h-2 bg-accent/16 rounded-lg appearance-none cursor-pointer slider-thumb"
         @input="setVolume(($event.target as HTMLInputElement).valueAsNumber)"
       />
       <div class="flex gap-1">
@@ -92,8 +92,8 @@ function applyFadePreset(seconds: number): void {
           :key="preset"
           class="flex-1 py-1 rounded-md text-[10px] font-medium border transition-colors"
           :class="volumePercent === preset
-            ? 'bg-orange-500 text-white border-orange-500'
-            : 'bg-card/80 text-muted-700 border-border hover:border-orange-400'"
+            ? 'bg-accent text-accent-fg border-accent'
+            : 'bg-card/80 text-muted-700 border-border hover:border-accent'"
           @click="setVolume(preset)"
         >
           {{ preset }}%
@@ -103,7 +103,7 @@ function applyFadePreset(seconds: number): void {
 
     <div class="space-y-3">
       <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-        <Icon icon="material-symbols:gradient" class="text-orange-500" />
+        <Icon icon="material-symbols:gradient" class="text-accent-ink" />
         Fades
       </div>
 
@@ -118,7 +118,7 @@ function applyFadePreset(seconds: number): void {
           :max="Math.max(0.1, maxFadeIn)"
           step="0.1"
           :value="item.fadeIn"
-          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
+          class="w-full h-2 bg-accent/16 rounded-lg appearance-none cursor-pointer slider-thumb"
           @input="setFadeIn(($event.target as HTMLInputElement).valueAsNumber)"
         />
       </div>
@@ -134,7 +134,7 @@ function applyFadePreset(seconds: number): void {
           :max="Math.max(0.1, maxFadeOut)"
           step="0.1"
           :value="item.fadeOut"
-          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
+          class="w-full h-2 bg-accent/16 rounded-lg appearance-none cursor-pointer slider-thumb"
           @input="setFadeOut(($event.target as HTMLInputElement).valueAsNumber)"
         />
       </div>
@@ -143,7 +143,7 @@ function applyFadePreset(seconds: number): void {
         <button
           v-for="preset in [0, 1, 2, 4]"
           :key="preset"
-          class="flex-1 py-1 rounded-md text-[10px] font-medium border bg-card/80 text-muted-700 border-border hover:border-orange-400 transition-colors"
+          class="flex-1 py-1 rounded-md text-[10px] font-medium border bg-card/80 text-muted-700 border-border hover:border-accent transition-colors"
           @click="applyFadePreset(preset)"
         >
           {{ preset === 0 ? 'none' : `${preset}s` }}
@@ -155,7 +155,7 @@ function applyFadePreset(seconds: number): void {
       <button
         class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border"
         :class="item.muted
-          ? 'bg-red-500/20 hover:bg-red-500/30 text-red-600 border-red-500/40'
+          ? 'bg-danger/20 hover:bg-danger/30 text-danger-ink border-danger/40'
           : 'bg-card/80 hover:bg-card text-muted-700 border-border'"
         @click="emit('update', { muted: !item.muted })"
       >
@@ -166,7 +166,7 @@ function applyFadePreset(seconds: number): void {
 
     <div class="pt-4 border-t border-border space-y-2">
       <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-        <Icon icon="material-symbols:info" class="text-orange-500" />
+        <Icon icon="material-symbols:info" class="text-accent-ink" />
         Track Info
       </div>
       <div class="space-y-1.5 text-xs bg-card/80 rounded-lg p-3 border border-border">
@@ -190,7 +190,7 @@ function applyFadePreset(seconds: number): void {
     </div>
 
       <button
-        class="w-full px-4 py-2.5 rounded-lg text-sm font-medium border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-600 transition-colors flex items-center justify-center gap-2"
+        class="w-full px-4 py-2.5 rounded-lg text-sm font-medium border border-danger/40 bg-danger/10 hover:bg-danger/20 text-danger-ink transition-colors flex items-center justify-center gap-2"
         @click="emit('remove')"
       >
         <Icon icon="material-symbols:delete-outline" class="text-lg" />
@@ -206,19 +206,17 @@ function applyFadePreset(seconds: number): void {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: hsl(var(--accent));
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
-  border: 2px solid white;
+  border: 2px solid hsl(var(--card));
 }
 
 .slider-thumb::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: hsl(var(--accent));
   cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+  border: 2px solid hsl(var(--card));
 }
 </style>

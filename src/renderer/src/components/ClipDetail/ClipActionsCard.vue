@@ -67,12 +67,12 @@ async function copyPublicUrl(): Promise<void> {
     <div class="space-y-2">
       <div
         v-if="clip.published && clip.publishedUrl"
-        class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30"
+        class="flex items-center gap-2 px-3 py-2 rounded-xl bg-success/10 border border-success/30"
       >
-        <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-emerald-500 shrink-0" />
+        <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-success shrink-0" />
         <span class="text-sm font-medium text-foreground">Published</span>
         <button
-          class="ml-auto text-xs font-medium text-emerald-500 hover:underline"
+          class="ml-auto text-xs font-medium text-success hover:underline"
           @click="copyPublicUrl"
         >
           Copy link
@@ -80,19 +80,19 @@ async function copyPublicUrl(): Promise<void> {
       </div>
 
       <button
-        class="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 transition-colors text-left"
+        class="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-accent hover:bg-accent-hover transition-colors text-left"
         @mouseenter="prefetchFrameStrip(clip.id)"
         @click="onTrim"
       >
-        <Icon icon="material-symbols:content-cut" class="text-xl text-white shrink-0" />
-        <span class="text-sm font-semibold text-white">Trim to the good bit</span>
+        <Icon icon="material-symbols:content-cut" class="text-xl text-accent-fg shrink-0" />
+        <span class="text-sm font-semibold text-accent-fg">Trim to the good bit</span>
       </button>
 
       <button
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 transition-colors text-left"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors text-left"
         @click="onAdvancedEdit"
       >
-        <Icon icon="material-symbols:video-settings" class="text-xl text-orange-500 shrink-0" />
+        <Icon icon="material-symbols:video-settings" class="text-xl text-accent-ink shrink-0" />
         <span class="text-sm font-medium text-foreground">Open in the editor</span>
       </button>
     </div>
@@ -104,7 +104,7 @@ async function copyPublicUrl(): Promise<void> {
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
         @click="emit('share')"
       >
-        <Icon icon="material-symbols:qr-code-2" class="text-xl text-orange-500 shrink-0" />
+        <Icon icon="material-symbols:qr-code-2" class="text-xl text-accent-ink shrink-0" />
         <span class="text-sm font-medium text-foreground">Share on your wifi</span>
       </button>
 

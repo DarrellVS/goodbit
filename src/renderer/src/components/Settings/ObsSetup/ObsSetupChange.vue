@@ -33,14 +33,14 @@ defineProps<Props>();
               ? 'material-symbols:download'
               : 'material-symbols:edit'
         "
-        class="text-base text-orange-500 shrink-0 mt-0.5"
+        class="text-base text-accent-ink shrink-0 mt-0.5"
       />
       <span class="text-sm font-medium text-foreground">{{ change.title }}</span>
     </div>
 
     <ul class="px-4 py-3 space-y-1.5">
       <li v-for="line in change.summary" :key="line" class="text-sm text-muted-500 flex gap-2">
-        <span class="text-orange-500/60 shrink-0">&middot;</span>
+        <span class="text-accent-ink/60 shrink-0">&middot;</span>
         <span>{{ line }}</span>
       </li>
     </ul>
@@ -57,7 +57,7 @@ defineProps<Props>();
       >
         <span class="text-foreground">{{ detail.key }}</span>
         <span>=</span>
-        <span class="text-orange-600 break-all">{{ detail.value }}</span>
+        <span class="text-accent-ink break-all">{{ detail.value }}</span>
         <span v-if="detail.was">(was {{ detail.was }})</span>
       </div>
     </details>

@@ -38,7 +38,7 @@ function toggle(): void {
     :aria-label="label"
     :disabled="disabled"
     class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    :class="modelValue ? 'bg-orange-500' : 'bg-muted-300'"
+    :class="modelValue ? 'bg-accent' : 'bg-muted-300'"
     @click="toggle"
   >
     <span

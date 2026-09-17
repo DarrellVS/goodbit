@@ -23,14 +23,14 @@ defineProps<Props>();
       :key="tile.label"
       class="p-3 rounded-xl border border-border flex items-start gap-2.5"
     >
-      <Icon :icon="tile.icon" class="text-base text-orange-500 shrink-0 mt-0.5" />
+      <Icon :icon="tile.icon" class="text-base text-accent-ink shrink-0 mt-0.5" />
       <div class="min-w-0">
         <p class="text-xs text-muted-500">{{ tile.label }}</p>
         <p class="text-sm text-foreground">
           {{ tile.value }}
           <span
             v-if="tile.badge"
-            class="ml-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wide bg-orange-500/15 text-orange-500 border border-orange-500/30"
+            class="ml-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wide bg-accent/15 text-accent-ink border border-accent/30"
           >
             {{ tile.badge }}
           </span>

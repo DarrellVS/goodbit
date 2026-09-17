@@ -58,11 +58,11 @@ const isOpen = computed(() => openCollectionId.value === props.collection.id);
     role="button"
     tabindex="0"
     data-collection-card
-    class="group flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+    class="group flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     :class="isDragOver
-      ? 'border-orange-500 bg-orange-500/10'
+      ? 'border-accent bg-accent/10'
       : isOpen
-        ? 'border-orange-500/40 hover:bg-muted-50'
+        ? 'border-accent/40 hover:bg-muted-50'
         : 'border-border hover:border-muted-300 hover:bg-muted-50'"
     @click="open(collection.id)"
     @keydown.enter.prevent="open(collection.id)"
@@ -81,7 +81,7 @@ const isOpen = computed(() => openCollectionId.value === props.collection.id);
       <input
         :data-collection-edit="collection.id"
         :value="editingName"
-        class="w-full rounded-sm border border-border bg-card px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-orange-500/50"
+        class="w-full rounded-sm border border-border bg-card px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-accent/50"
         @input="emit('update:editing-name', ($event.target as HTMLInputElement).value)"
         @keyup.enter="emit('save-edit')"
         @keyup.esc="emit('cancel-edit')"
@@ -107,14 +107,14 @@ const isOpen = computed(() => openCollectionId.value === props.collection.id);
       <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           v-if="!isEditing"
-          class="rounded-sm p-1 transition-colors hover:bg-orange-500/20"
+          class="rounded-sm p-1 transition-colors hover:bg-accent/20"
           title="Rename"
           @click.prevent.stop="emit('start-edit')"
         >
           <Icon icon="material-symbols:edit" class="text-sm text-muted-500" />
         </button>
         <button
-          class="rounded-sm p-1 transition-colors hover:bg-red-500/20"
+          class="rounded-sm p-1 transition-colors hover:bg-danger/20"
           title="Delete"
           @click.prevent.stop="emit('delete')"
         >

@@ -59,7 +59,7 @@ const displayDate = computed(() => {
     </span>
     <time 
       :datetime="recordedAt"
-      class="cursor-default transition-colors hover:text-orange-500"
+      class="cursor-default transition-colors hover:text-accent-ink"
       @mouseenter="showExactDate = true"
       @mouseleave="showExactDate = false"
     >

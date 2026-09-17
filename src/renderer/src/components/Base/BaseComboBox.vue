@@ -225,9 +225,9 @@ const LIST_Z_INDEX = 'z-300';
           COMBO_BOX_HEIGHT,
           'flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm',
           'text-left outline-hidden transition-colors',
-          'focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/40',
+          'focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          open ? 'border-orange-500' : 'hover:bg-muted-50',
+          open ? 'border-accent' : 'hover:bg-muted-50',
         ]"
       >
         <Icon
@@ -316,7 +316,7 @@ const LIST_Z_INDEX = 'z-300';
             -->
             <span class="mt-0.5 w-4 shrink-0">
               <ComboboxItemIndicator>
-                <Icon icon="material-symbols:check" class="text-base text-orange-500" />
+                <Icon icon="material-symbols:check" class="text-base text-accent-ink" />
               </ComboboxItemIndicator>
             </span>
           </ComboboxItem>

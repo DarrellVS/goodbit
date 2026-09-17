@@ -142,7 +142,7 @@ function submit(): void {
   <div class="rounded-xl border border-border bg-card/40 px-4 py-3 space-y-2">
     <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-2 shrink-0">
-        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-lg text-orange-500" />
+        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-lg text-accent-ink" />
         <span class="text-sm font-semibold text-foreground">
           {{ selected ? 'Editing a GoodBit' : 'Mark a GoodBit' }}
         </span>
@@ -160,7 +160,7 @@ function submit(): void {
         v-model="name"
         type="text"
         maxlength="60"
-        class="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:border-orange-500/60 focus:ring-2 focus:ring-ring/40 transition"
+        class="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:border-accent/60 focus:ring-2 focus:ring-ring/40 transition"
         :placeholder="selected ? goodBitLabel(selected) : 'Name it, or leave this blank'"
         :aria-label="selected ? 'Name for this GoodBit' : 'Name for the GoodBit you are about to mark'"
         @keydown.enter.prevent="submit"
@@ -169,7 +169,7 @@ function submit(): void {
       <template v-if="selected">
         <button
           type="button"
-          class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:hover:bg-orange-500"
+          class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:hover:bg-accent"
           :disabled="saving || !dirty || !valid"
           :title="dirty ? 'Save the new name and range' : 'Nothing has changed yet'"
           @click="submit"
@@ -217,7 +217,7 @@ function submit(): void {
       <button
         v-else
         type="button"
-        class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border border-orange-500/50 text-orange-600 hover:bg-orange-500/10 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+        class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border border-accent/50 text-accent-ink hover:bg-accent/10 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
         :disabled="saving || !valid || duplicate"
         :title="
           duplicate
@@ -288,7 +288,7 @@ function submit(): void {
         type="button"
         class="inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors"
         :class="goodBit.id === selected?.id
-          ? 'border-orange-500 bg-orange-500/16 text-orange-600'
+          ? 'border-accent bg-accent/16 text-accent-ink'
           : 'border-border bg-card text-muted-700 hover:border-muted-300 hover:bg-muted-50'"
         :title="`Put the handles on ${goodBitLabel(goodBit)}`"
         :aria-pressed="goodBit.id === selected?.id"

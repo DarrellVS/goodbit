@@ -122,7 +122,7 @@ function onTagsChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
         :key="filter.value"
         class="-mb-px flex items-center gap-2 border-b-2 px-1 py-3 font-medium transition-colors"
         :class="activeFilter === filter.value
-          ? 'border-orange-500 text-orange-500'
+          ? 'border-accent text-accent-ink'
           : 'border-transparent text-muted-400 hover:text-foreground'"
         :aria-current="activeFilter === filter.value ? 'page' : undefined"
         @click="emit('update:active-filter', filter.value)"

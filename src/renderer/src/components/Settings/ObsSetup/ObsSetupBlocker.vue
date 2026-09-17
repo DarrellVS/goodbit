@@ -35,12 +35,12 @@ const canClose = computed(() => isObsOpenBlocker(props.blocker));
 </script>
 
 <template>
-  <div class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm text-foreground">
+  <div class="p-3 rounded-xl bg-danger/10 border border-danger/30 text-sm text-foreground">
     <p>{{ blocker }}</p>
 
     <button
       v-if="canClose"
-      class="mt-2 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-xs font-medium disabled:opacity-60"
+      class="mt-2 px-3 py-1.5 rounded-lg bg-danger/20 hover:bg-danger/30 border border-danger/40 text-xs font-medium disabled:opacity-60"
       :disabled="closing"
       @click="emit('close-obs')"
     >

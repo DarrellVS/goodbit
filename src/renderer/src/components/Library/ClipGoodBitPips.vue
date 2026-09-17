@@ -120,7 +120,7 @@ const plural = computed(() => (props.ranges.length === 1 ? 'GoodBit' : 'GoodBits
       <span
         v-for="(pip, index) in layout.pips"
         :key="index"
-        class="absolute inset-y-0 rounded-full bg-orange-400 shadow-[0_0_0_1px_rgba(0,0,0,0.55)]"
+        class="absolute inset-y-0 rounded-full bg-accent shadow-[0_0_0_1px_rgba(0,0,0,0.55)]"
         :style="{ left: `${pip.leftPercent}%`, width: `${pip.widthPercent}%` }"
       ></span>
     </div>
@@ -131,7 +131,7 @@ const plural = computed(() => (props.ranges.length === 1 ? 'GoodBit' : 'GoodBits
     -->
     <span
       v-else
-      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-black/70 backdrop-blur-xs text-white text-[10px] font-medium"
+      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-video-bed/70 backdrop-blur-xs text-on-video text-[10px] font-medium"
     >
       {{ layout.count }} {{ plural }}
     </span>

@@ -37,7 +37,7 @@ function selectSection(sectionId: string): void {
         :key="section.id"
         class="w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-colors text-left"
         :class="activeSection === section.id 
-          ? 'bg-orange-500/10 text-orange-600' 
+          ? 'bg-accent/10 text-accent-ink' 
           : 'hover:bg-muted-100 text-muted-700'"
         @click="selectSection(section.id)"
       >
@@ -65,7 +65,7 @@ function selectSection(sectionId: string): void {
         Import Settings
       </button>
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/8 transition-colors text-sm text-red-600"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-danger/8 transition-colors text-sm text-danger-ink"
         title="Puts every setting on this screen back the way it came. Your clips, tags, stars and collections are not touched."
         @click="emit('reset')"
       >

@@ -131,7 +131,7 @@ onBeforeUnmount(stopDrag);
   <div
     class="absolute top-0 h-16 rounded-lg overflow-hidden group select-none"
     :class="[
-      selected ? 'ring-2 ring-orange-500 shadow-lg shadow-orange-500/30' : 'hover:ring-2 hover:ring-orange-400/50',
+      selected ? 'ring-2 ring-accent shadow-lg shadow-accent/30' : 'hover:ring-2 hover:ring-accent/50',
       cursorClass,
       // Follow the cursor 1:1 while dragging; glide when the timeline reflows on release.
       isDragging ? '' : 'transition-[left,width] duration-150 ease-out'
@@ -140,7 +140,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', clip.id)"
   >
-    <div class="relative w-full h-full bg-linear-to-br from-card to-orange-500/4 border border-border backdrop-blur-sm overflow-hidden">
+    <div class="relative w-full h-full bg-linear-to-br from-card to-accent/4 border border-border backdrop-blur-sm overflow-hidden">
       <!--
         The frame strip covers the whole source clip, so the block shows only
         the slice between the trim handles, scroll it by trimStart and stretch
@@ -159,7 +159,7 @@ onBeforeUnmount(stopDrag);
         class="w-full h-full object-cover opacity-30"
       />
 
-      <div class="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-black/10" />
+      <div class="absolute inset-0 bg-linear-to-t from-video-bed/40 via-transparent to-video-bed/10" />
       
       <div class="absolute top-1.5 left-2 right-2 flex items-start justify-between">
         <div class="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded-sm">
@@ -168,7 +168,7 @@ onBeforeUnmount(stopDrag);
         </div>
         
         <button
-          class="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 rounded-sm p-0.5"
+          class="opacity-0 group-hover:opacity-100 transition-opacity bg-danger hover:bg-danger rounded-sm p-0.5"
           @click.stop="emit('remove', clip.id)"
         >
           <Icon icon="material-symbols:close" class="text-card text-xs" />
@@ -181,16 +181,16 @@ onBeforeUnmount(stopDrag);
         </div>
         
         <div v-if="clip.muted" class="bg-card/80 backdrop-blur-sm px-1.5 py-0.5 rounded-sm">
-          <Icon icon="material-symbols:volume-off" class="text-red-500 text-xs" />
+          <Icon icon="material-symbols:volume-off" class="text-danger-ink text-xs" />
         </div>
       </div>
 
       <div 
-        class="trim-handle absolute left-0 top-0 bottom-0 w-1 bg-orange-500 opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
+        class="trim-handle absolute left-0 top-0 bottom-0 w-1 bg-accent opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
         @mousedown="startDrag(DragMode.TrimLeft, clip.trimStart, $event)"
       />
       <div 
-        class="trim-handle absolute right-0 top-0 bottom-0 w-1 bg-orange-500 opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
+        class="trim-handle absolute right-0 top-0 bottom-0 w-1 bg-accent opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
         @mousedown="startDrag(DragMode.TrimRight, clip.trimEnd, $event)"
       />
     </div>

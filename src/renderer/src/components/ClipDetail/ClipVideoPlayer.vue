@@ -251,14 +251,14 @@ defineExpose({
 <template>
   <div
     ref="stage"
-    class="relative rounded-2xl overflow-hidden bg-linear-to-br from-gray-900 to-black border border-border group/player"
+    class="relative rounded-2xl overflow-hidden bg-video-bed border border-border group/player"
   >
     <video
       ref="videoElement"
       :src="videoUrl"
       :poster="posterUrl"
       preload="metadata"
-      class="w-full max-h-[62vh] object-contain bg-black"
+      class="w-full max-h-[62vh] object-contain bg-video-bed"
       :class="isFullscreen ? 'max-h-screen h-screen' : ''"
       disablePictureInPicture
       autoplay
@@ -277,7 +277,7 @@ defineExpose({
       follow the theme, so a token would be the wrong colour in light mode.
     -->
     <div
-      class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 via-black/55 to-transparent px-3 pb-2 pt-8"
+      class="absolute inset-x-0 bottom-0 bg-linear-to-t from-video-bed/85 via-video-bed/55 to-transparent px-3 pb-2 pt-8"
     >
       <!--
         The bar, and the marks on it.
@@ -305,18 +305,18 @@ defineExpose({
         @keydown.left.prevent="seekTo(Math.max(0, (currentTime - 5) / (scale || 1)))"
         @keydown.right.prevent="seekTo(Math.min(1, (currentTime + 5) / (scale || 1)))"
       >
-        <div class="relative h-[5px] w-full rounded-full bg-white/25 overflow-hidden">
-          <div class="absolute inset-y-0 left-0 bg-white/20" :style="{ width: `${bufferedPercent}%` }"></div>
+        <div class="relative h-[5px] w-full rounded-full bg-on-video/25 overflow-hidden">
+          <div class="absolute inset-y-0 left-0 bg-on-video/20" :style="{ width: `${bufferedPercent}%` }"></div>
 
           <span
             v-for="band in bands"
             :key="band.id"
-            class="absolute inset-y-0 bg-orange-400/80"
+            class="absolute inset-y-0 bg-accent/80"
             :style="{ left: `${band.leftPercent}%`, width: `${band.widthPercent}%` }"
             :title="band.label"
           ></span>
 
-          <div class="absolute inset-y-0 left-0 bg-orange-500" :style="{ width: `${progressPercent}%` }"></div>
+          <div class="absolute inset-y-0 left-0 bg-accent" :style="{ width: `${progressPercent}%` }"></div>
         </div>
 
         <!--
@@ -324,24 +324,24 @@ defineExpose({
           thing the instruction says to drag, so it has to be there to be found.
         -->
         <span
-          class="pointer-events-none absolute h-3 w-3 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-transform"
+          class="pointer-events-none absolute h-3 w-3 -translate-x-1/2 rounded-full bg-on-video shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-transform"
           :class="dragging ? 'scale-125' : ''"
           :style="{ left: `${progressPercent}%` }"
         ></span>
 
         <span
           v-if="hoverPercent !== null && !dragging"
-          class="pointer-events-none absolute -top-6 -translate-x-1/2 rounded-sm bg-black/80 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-white"
+          class="pointer-events-none absolute -top-6 -translate-x-1/2 rounded-sm bg-video-bed/80 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-on-video"
           :style="{ left: hoverLabelLeft }"
         >
           {{ hoverTime }}
         </span>
       </div>
 
-      <div class="mt-1 flex items-center gap-2 text-white">
+      <div class="mt-1 flex items-center gap-2 text-on-video">
         <button
           type="button"
-          class="rounded-lg p-1.5 transition-colors hover:bg-white/15"
+          class="rounded-lg p-1.5 transition-colors hover:bg-on-video/15"
           :title="playing ? 'Pause' : 'Play'"
           :aria-label="playing ? 'Pause' : 'Play'"
           @click="togglePlay"
@@ -362,7 +362,7 @@ defineExpose({
         <div class="group/volume flex items-center">
           <button
             type="button"
-            class="rounded-lg p-1.5 transition-colors hover:bg-white/15"
+            class="rounded-lg p-1.5 transition-colors hover:bg-on-video/15"
             :title="muted ? 'Unmute' : 'Mute'"
             :aria-label="muted ? 'Unmute' : 'Mute'"
             @click="toggleMute"
@@ -382,17 +382,17 @@ defineExpose({
           />
         </div>
 
-        <span class="ml-1 font-mono text-xs tabular-nums text-white/85">
+        <span class="ml-1 font-mono text-xs tabular-nums text-on-video/85">
           {{ timecode(currentTime) }} / {{ timecode(scale) }}
         </span>
 
-        <span v-if="bands.length > 0" class="ml-auto text-[11px] text-white/70">
+        <span v-if="bands.length > 0" class="ml-auto text-[11px] text-on-video/70">
           {{ bands.length }} {{ bands.length === 1 ? 'GoodBit' : 'GoodBits' }}
         </span>
 
         <button
           type="button"
-          class="rounded-lg p-1.5 transition-colors hover:bg-white/15"
+          class="rounded-lg p-1.5 transition-colors hover:bg-on-video/15"
           :class="bands.length > 0 ? '' : 'ml-auto'"
           :title="isFullscreen ? 'Leave fullscreen' : 'Fullscreen'"
           :aria-label="isFullscreen ? 'Leave fullscreen' : 'Fullscreen'"
@@ -423,7 +423,7 @@ defineExpose({
   appearance: none;
   height: 4px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-on-video-track);
   outline: none;
 }
 
@@ -432,7 +432,7 @@ defineExpose({
   width: 12px;
   height: 12px;
   border-radius: 9999px;
-  background: #fff;
+  background: var(--color-on-video);
   cursor: pointer;
 }
 </style>

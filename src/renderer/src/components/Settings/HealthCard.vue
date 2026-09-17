@@ -45,7 +45,7 @@ const encoderLabel = computed(() => {
     :class="['p-4 bg-card rounded-lg border border-border space-y-2', settingRing('Health')]"
   >
     <h3 class="font-medium text-foreground flex items-center gap-2">
-      <Icon icon="material-symbols:favorite-outline" class="text-orange-500" />
+      <Icon icon="material-symbols:favorite-outline" class="text-accent-ink" />
       Health
     </h3>
     <dl class="text-sm space-y-1">
@@ -72,7 +72,7 @@ const encoderLabel = computed(() => {
         </dd>
       </div>
     </dl>
-    <p v-if="!encodersLoading && encoders && !encoders.hardware" class="text-xs text-amber-600">
+    <p v-if="!encodersLoading && encoders && !encoders.hardware" class="text-xs text-warning">
       No graphics-card encoder was found, so exports run on the processor and will be slower.
     </p>
   </div>

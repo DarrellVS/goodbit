@@ -100,7 +100,7 @@ export function useSettingsSearch(): SettingsSearch {
 
   function settingRing(label: string): string {
     return highlighted.value === label
-      ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-background rounded-lg'
+      ? 'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg'
       : '';
   }
 

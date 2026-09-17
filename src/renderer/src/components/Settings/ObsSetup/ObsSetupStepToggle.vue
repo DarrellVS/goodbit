@@ -38,7 +38,7 @@ const emit = defineEmits<Emits>();
         <slot>{{ step.description }}</slot>
       </p>
       <!-- Off because it would be wrong here, not because the user said so. -->
-      <p v-if="step.advisedOff" class="text-xs text-orange-600 mt-1">
+      <p v-if="step.advisedOff" class="text-xs text-accent-ink mt-1">
         {{ step.advisedOff }}
       </p>
     </div>

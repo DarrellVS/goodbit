@@ -31,7 +31,7 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
       return html;
     } catch (error) {
       console.error('Markdown parsing error:', error);
-      return '<p class="text-red-500">Error parsing markdown</p>';
+      return '<p class="text-danger-ink">Error parsing markdown</p>';
     }
   });
 

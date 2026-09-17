@@ -7,7 +7,7 @@ const props = defineProps<{ variant?: ButtonVariant }>();
 const variantClass = computed(() => {
   switch (props.variant) {
     case 'primary':
-      return 'text-primary-fg bg-linear-to-br from-primary via-violet-500 to-cyan-500';
+      return 'bg-accent text-accent-fg border-transparent hover:bg-accent-hover';
     case 'danger':
       return 'bg-danger text-danger-fg';
     case 'ghost':

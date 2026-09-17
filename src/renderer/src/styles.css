@@ -95,7 +95,9 @@
   --color-danger-ink: hsl(var(--danger-ink));
 
   --color-success: hsl(var(--success));
+  --color-success-fg: hsl(var(--success-fg));
   --color-warning: hsl(var(--warning));
+  --color-warning-fg: hsl(var(--warning-fg));
 
   --color-ring: hsl(var(--ring));
   --color-border: hsl(var(--border));
@@ -109,6 +111,21 @@
    * on the accent, and naming it keeps the allowance visible in a grep.
    */
   --color-on-video: #ffffff;
+  /* The unfilled half of a control drawn over a frame, e.g. the volume rail. */
+  --color-on-video-track: rgb(255 255 255 / 0.28);
+
+  /*
+   * The bed a video sits in, and the scrims that go over one.
+   *
+   * A letterbox is not a surface of the app: it is the absence of picture,
+   * and it reads as a hole in both palettes. A pale one in light mode would
+   * be a second, brighter frame around the frame. So this is fixed, like
+   * `on-video` is fixed, and for the same reason.
+   */
+  --color-video-bed: #0d0c0b;
+  --color-scrim: rgb(9 8 7 / 0.58);
+  --color-scrim-soft: rgb(9 8 7 / 0.34);
+  --color-scrim-strong: rgb(9 8 7 / 0.78);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -259,7 +276,9 @@
   --accent-ink: 14 60.4% 38.6%;   /* #9e4227   6.07:1 */
 
   --success: 102 41.9% 29%;       /* #3e692b   6.08:1 */
+  --success-fg: 94 33.3% 95.9%;   /* #f4f8f1   5.99:1 on success */
   --warning: 42 100% 24.3%;       /* #7c5700   6.15:1 */
+  --warning-fg: 40 100% 95.9%;    /* #fff8ea   6.17:1 on warning */
   --danger: 9 68% 38%;            /* #a3331f   6.49:1 */
   --danger-fg: 11 100% 97.8%;     /* #fff6f4   6.47:1 on danger */
   --danger-ink: 9 68% 38%;        /* #a3331f   6.49:1 */
@@ -309,7 +328,9 @@
   --accent-ink: 17 51.8% 61%;     /* #cf8568   6.47:1 */
 
   --success: 97 25.3% 52.7%;      /* #7fa568   6.72:1 */
+  --success-fg: 93 37.9% 5.7%;    /* #0e1409   6.67:1 on success */
   --warning: 40 56.3% 51.6%;      /* #c99a3e   7.34:1 */
+  --warning-fg: 38 73.3% 5.9%;    /* #1a1204   7.22:1 on warning */
   --danger: 0 59.2% 58.6%;        /* #d45757   4.76:1 */
   --danger-fg: 0 40.5% 7.3%;      /* #1a0b0b   4.83:1 on danger */
   --danger-ink: 0 58.8% 67.6%;    /* #dd7c7c   6.51:1 */

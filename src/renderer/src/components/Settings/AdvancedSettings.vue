@@ -56,12 +56,12 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
       <div
         data-setting="Where settings are kept"
         :class="[
-          'p-4 bg-blue-500/8 border border-blue-500/30 rounded-lg',
+          'p-4 bg-muted-50 border border-border rounded-lg',
           settingRing('Where settings are kept'),
         ]"
       >
         <div class="flex gap-3">
-          <Icon icon="material-symbols:info" class="text-blue-500 text-xl shrink-0" />
+          <Icon icon="material-symbols:info" class="text-muted-500 text-xl shrink-0" />
           <div>
             <h3 class="font-medium text-foreground">Where settings are kept</h3>
             <p class="text-sm text-muted-600 mt-1">

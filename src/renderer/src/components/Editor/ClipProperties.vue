@@ -52,17 +52,17 @@ function volumeToDecimal(percentage: number): number {
 
 <template>
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
-    <div class="shrink-0 px-4 py-3 bg-orange-500/4 border-b border-border">
+    <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:tune" class="text-orange-500" />
+        <Icon icon="material-symbols:tune" class="text-accent-ink" />
         Clip Properties
       </h3>
     </div>
 
     <div v-if="!clip" class="flex-1 flex items-center justify-center text-muted-500 text-sm">
       <div class="text-center">
-        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
-          <Icon icon="material-symbols:info" class="text-2xl text-orange-400" />
+        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-accent/16 flex items-center justify-center">
+          <Icon icon="material-symbols:info" class="text-2xl text-accent-ink" />
         </div>
         <p class="font-medium text-muted-700">No clip selected</p>
         <p class="text-xs mt-1 text-muted-500">Click a clip to edit</p>
@@ -76,7 +76,7 @@ function volumeToDecimal(percentage: number): number {
       -->
       <div class="space-y-2">
         <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-          <Icon icon="material-symbols:auto-awesome" class="text-orange-500" />
+          <Icon icon="material-symbols:auto-awesome" class="text-accent-ink" />
           Highlight
         </label>
 
@@ -84,7 +84,7 @@ function volumeToDecimal(percentage: number): number {
           v-if="highlightLoading"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600"
         >
-          <BaseSpinner class="text-orange-400 text-base" />
+          <BaseSpinner class="text-accent-ink text-base" />
           Listening to this clip…
         </div>
 
@@ -92,8 +92,8 @@ function volumeToDecimal(percentage: number): number {
           v-else-if="highlight"
           class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border disabled:cursor-default"
           :class="onHighlight
-            ? 'bg-orange-500/10 text-orange-700 border-orange-500/40'
-            : 'bg-card/80 hover:bg-card text-muted-700 border-border hover:border-orange-500/50'"
+            ? 'bg-accent/10 text-accent-ink border-accent/40'
+            : 'bg-card/80 hover:bg-card text-muted-700 border-border hover:border-accent/50'"
           :disabled="onHighlight"
           @click="emit('trim-to-highlight')"
         >
@@ -123,7 +123,7 @@ function volumeToDecimal(percentage: number): number {
           <span class="flex items-center gap-1">
             <Icon
               :icon="clip.muted ? 'material-symbols:volume-off' : 'material-symbols:volume-up'"
-              class="text-orange-500"
+              class="text-accent-ink"
             />
             Volume
           </span>
@@ -137,7 +137,7 @@ function volumeToDecimal(percentage: number): number {
           max="100"
           :value="getVolumePercentage(clip.volume)"
           :disabled="clip.muted"
-          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb disabled:opacity-40 disabled:cursor-not-allowed"
+          class="w-full h-2 bg-accent/16 rounded-lg appearance-none cursor-pointer slider-thumb disabled:opacity-40 disabled:cursor-not-allowed"
           @input="emit('update', { volume: volumeToDecimal(($event.target as HTMLInputElement).valueAsNumber) })"
         />
       </div>
@@ -146,7 +146,7 @@ function volumeToDecimal(percentage: number): number {
         <button
           class="w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border"
           :class="clip.muted 
-            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-600 border-red-500/40' 
+            ? 'bg-danger/20 hover:bg-danger/30 text-danger-ink border-danger/40' 
             : 'bg-card/80 hover:bg-card text-muted-700 border-border'"
           @click="emit('update', { muted: !clip.muted })"
         >
@@ -169,7 +169,7 @@ function volumeToDecimal(percentage: number): number {
         </div>
         <div class="flex items-center gap-2">
           <button
-            class="flex-1 h-8 rounded-lg bg-black/5 hover:bg-black/10 text-xs font-medium text-muted-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1"
+            class="flex-1 h-8 rounded-lg bg-muted-100 hover:bg-muted-200 text-xs font-medium text-muted-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1"
             :disabled="!position || position.index === 0"
             title="Swap with the clip before this one"
             @click="emit('reorder', 'earlier')"
@@ -178,7 +178,7 @@ function volumeToDecimal(percentage: number): number {
             Earlier
           </button>
           <button
-            class="flex-1 h-8 rounded-lg bg-black/5 hover:bg-black/10 text-xs font-medium text-muted-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1"
+            class="flex-1 h-8 rounded-lg bg-muted-100 hover:bg-muted-200 text-xs font-medium text-muted-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1"
             :disabled="!position || position.index >= position.total - 1"
             title="Swap with the clip after this one"
             @click="emit('reorder', 'later')"
@@ -188,7 +188,7 @@ function volumeToDecimal(percentage: number): number {
           </button>
         </div>
         <button
-          class="w-full h-8 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center gap-1.5"
+          class="w-full h-8 rounded-lg text-xs font-medium text-danger-ink hover:bg-danger/10 transition-colors inline-flex items-center justify-center gap-1.5"
           title="Take this clip off the timeline"
           @click="emit('remove')"
         >
@@ -199,7 +199,7 @@ function volumeToDecimal(percentage: number): number {
 
       <div class="pt-4 border-t border-border space-y-2">
         <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-          <Icon icon="material-symbols:info" class="text-orange-500" />
+          <Icon icon="material-symbols:info" class="text-accent-ink" />
           Clip Info
         </div>
         <div class="space-y-1.5 text-xs bg-card/80 rounded-lg p-3 border border-border">
@@ -231,19 +231,17 @@ function volumeToDecimal(percentage: number): number {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: hsl(var(--accent));
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
-  border: 2px solid white;
+  border: 2px solid hsl(var(--card));
 }
 
 .slider-thumb::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: hsl(var(--accent));
   cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5);
+  border: 2px solid hsl(var(--card));
 }
 </style>

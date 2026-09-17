@@ -21,7 +21,7 @@ function getBarHeight(count: number): string {
 <template>
   <div class="bg-card border border-border rounded-xl p-6">
     <div class="flex items-center gap-2 mb-6">
-      <Icon icon="material-symbols:calendar-month" class="text-xl text-orange-500" />
+      <Icon icon="material-symbols:calendar-month" class="text-xl text-accent-ink" />
       <h3 class="text-lg font-semibold">Activity</h3>
       <span class="text-sm text-muted-500 ml-auto">Last 14 days</span>
     </div>
@@ -38,7 +38,7 @@ function getBarHeight(count: number): string {
       >
         <div 
           class="w-full rounded-t-lg transition-all hover:opacity-80 cursor-default"
-          :class="day.count === 0 ? 'bg-muted-100' : 'bg-orange-500'"
+          :class="day.count === 0 ? 'bg-muted-100' : 'bg-accent'"
           :style="{ height: getBarHeight(day.count) }"
           :title="`${new Date(day.date).toLocaleDateString()}: ${day.count} clips`"
         >

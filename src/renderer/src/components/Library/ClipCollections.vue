@@ -102,15 +102,15 @@ async function createAndAddCollection() {
       <div
         v-for="collection in clipCollections"
         :key="collection.id"
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-linear-to-r from-purple-500/16 to-pink-500/16 border border-purple-200 group"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted-100 border border-border group"
       >
-        <Icon icon="material-symbols:folder-special-rounded" class="text-purple-600" />
-        <span class="text-sm font-medium text-purple-900">{{ collection.name }}</span>
+        <Icon icon="material-symbols:folder-special-rounded" class="text-muted-500" />
+        <span class="text-sm font-medium text-foreground">{{ collection.name }}</span>
         <button
-          class="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/16 rounded-sm p-0.5"
+          class="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-danger/16 rounded-sm p-0.5"
           @click="removeFromCollection(collection.id)"
         >
-          <Icon icon="material-symbols:close-small-rounded" class="text-lg text-red-600" />
+          <Icon icon="material-symbols:close-small-rounded" class="text-lg text-danger-ink" />
         </button>
       </div>
     </div>
@@ -118,7 +118,7 @@ async function createAndAddCollection() {
     <!-- Add to Collection -->
     <BasePopover side="bottom" :side-offset="8">
       <template #trigger>
-        <button class="flex items-center gap-2 text-sm text-muted-600 hover:text-orange-600 transition-colors">
+        <button class="flex items-center gap-2 text-sm text-muted-600 hover:text-accent-ink transition-colors">
           <Icon icon="material-symbols:add-circle-rounded" class="text-lg" />
           <span>{{ clipCollections.length > 0 ? 'Add to another collection' : 'Add to collection' }}</span>
         </button>
@@ -133,11 +133,11 @@ async function createAndAddCollection() {
             <input
               v-model="newCollectionName"
               placeholder="New collection..."
-              class="flex-1 px-3 py-2 text-sm border border-border rounded-lg outline-hidden focus:ring-2 focus:ring-orange-500/50"
+              class="flex-1 px-3 py-2 text-sm border border-border rounded-lg outline-hidden focus:ring-2 focus:ring-accent/50"
               @keyup.enter="createAndAddCollection"
             />
             <button
-              class="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50"
+              class="px-3 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg transition-colors disabled:opacity-50"
               :disabled="!newCollectionName.trim() || creatingCollection"
               @click="createAndAddCollection"
             >
@@ -152,10 +152,10 @@ async function createAndAddCollection() {
           <button
             v-for="collection in availableCollections"
             :key="collection.id"
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-linear-to-r hover:from-purple-500/8 hover:to-pink-500/8 transition-all text-left group"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted-50 transition-colors text-left group"
             @click="addToCollection(collection.id)"
           >
-            <Icon icon="material-symbols:folder-special-rounded" class="text-lg text-purple-600" />
+            <Icon icon="material-symbols:folder-special-rounded" class="text-lg text-muted-500" />
             <span class="text-sm font-medium flex-1">{{ collection.name }}</span>
             <span class="text-xs text-muted-500">{{ collection.clipCount }} clips</span>
           </button>

@@ -85,7 +85,9 @@ async function render(): Promise<void> {
     dataUrl.value = await QRCode.toDataURL(target, {
       width: 480,
       margin: 1,
-      color: { dark: '#111827', light: '#ffffff' },
+      // A camera looks for dark ink on a light ground, so a QR code does
+      // not follow the palette any more than a video frame does.
+      color: { dark: '#1c1a18', light: '#ffffff' },
     });
   } catch (error) {
     console.error('Failed to draw the QR code:', error);
@@ -129,7 +131,7 @@ async function copy(): Promise<void> {
         Above the clip layer, which is `z-50`. This sheet is only ever opened
         from inside it, and at the same level the layer wins on document order.
       -->
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-60 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-60 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-60 bg-card rounded-xl shadow-2xl border border-border w-full max-w-sm flex flex-col outline-hidden modal-content-animate"
       >
@@ -145,6 +147,12 @@ async function copy(): Promise<void> {
           open that, and a QR of it made phones say no app could use the code.
         -->
         <div v-if="activeUrl" class="p-6 flex flex-col items-center gap-4">
+          <!--
+            The one literal white left in the app, and it is not a style
+            choice: a QR code is read by a camera looking for dark ink on a
+            light ground, so this square does not follow the palette any more
+            than a video frame does.
+          -->
           <div class="p-3 bg-white rounded-xl border border-border">
             <img v-if="dataUrl" :src="dataUrl" alt="QR code for this clip" class="w-56 h-56 block" />
             <div v-else class="w-56 h-56 flex items-center justify-center text-sm text-muted-400">
@@ -188,7 +196,7 @@ async function copy(): Promise<void> {
         </div>
 
         <div v-else class="p-6 flex flex-col items-center gap-3 text-center">
-          <Icon icon="material-symbols:wifi-tethering" class="text-4xl text-orange-400" />
+          <Icon icon="material-symbols:wifi-tethering" class="text-4xl text-accent-ink" />
           <p class="text-sm text-muted-600">
             Hand this clip to a phone on the same wifi, without uploading it anywhere.
           </p>
@@ -197,7 +205,7 @@ async function copy(): Promise<void> {
         <div class="px-6 pb-6 space-y-2">
           <button
             v-if="!sharingThisClip"
-            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-60"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-60"
             :disabled="shareStarting"
             @click="startShare(clipId)"
           >
@@ -242,7 +250,7 @@ async function copy(): Promise<void> {
               "Done" claimed the job was finished while the clip carried on
               being served. It says what pressing it actually does.
             -->
-            <button class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors">
+            <button class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors">
               {{ isLocal && url ? 'Keep sharing and close' : 'Done' }}
             </button>
           </DialogClose>

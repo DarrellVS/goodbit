@@ -45,7 +45,7 @@ function sectionIcon(entry: SettingEntry): string {
           class="w-full text-left flex items-start gap-3 p-4 rounded-lg border transition-colors"
           :class="
             index === activeIndex
-              ? 'bg-card border-orange-500/50 ring-2 ring-orange-500/20'
+              ? 'bg-card border-accent/50 ring-2 ring-accent/20'
               : 'bg-card border-border hover:border-line-strong'
           "
           @click="emit('select', entry)"

@@ -33,7 +33,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
 
 <template>
   <div class="flex items-start gap-3">
-    <Icon icon="material-symbols:check-circle" class="text-2xl text-emerald-500 shrink-0" />
+    <Icon icon="material-symbols:check-circle" class="text-2xl text-success shrink-0" />
     <div>
       <p class="font-medium text-foreground">OBS is set up</p>
       <ul class="mt-1 space-y-0.5">
@@ -51,7 +51,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
       {{ readableKey }}, and the clip should appear here.
     </p>
 
-    <div v-if="firstClip" class="flex items-center gap-2 text-sm text-emerald-500">
+    <div v-if="firstClip" class="flex items-center gap-2 text-sm text-success">
       <Icon icon="material-symbols:celebration" class="text-lg" />
       <span>{{ firstClip.game }} landed in your library. That is the whole loop working.</span>
     </div>
@@ -63,7 +63,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
 
     <button
       v-else
-      class="px-4 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground"
+      class="px-4 py-2 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-sm font-medium text-foreground"
       @click="emit('start')"
     >
       Start OBS and wait for a clip

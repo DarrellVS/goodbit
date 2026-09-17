@@ -100,8 +100,8 @@ onMounted(() => {
   -->
   <div class="p-4 bg-card border border-border rounded-lg space-y-4">
     <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-xl bg-orange-500/12 flex items-center justify-center shrink-0">
-        <Icon icon="material-symbols:database" class="text-xl text-orange-500" />
+      <div class="w-10 h-10 rounded-xl bg-accent/12 flex items-center justify-center shrink-0">
+        <Icon icon="material-symbols:database" class="text-xl text-accent-ink" />
       </div>
       <div class="min-w-0 flex-1">
         <h3 class="font-medium text-foreground">Library backups</h3>
@@ -134,7 +134,7 @@ onMounted(() => {
           that hides which one is selected.
         -->
         <button
-          class="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-700 hover:bg-card hover:border-orange-500/50 transition-colors shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+          class="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-700 hover:bg-card hover:border-accent/50 transition-colors shrink-0 flex items-center gap-1.5 disabled:opacity-50"
           :disabled="!!restoring || working"
           :title="`Replace the current library with this copy and restart`"
           @click="restore(backup)"
@@ -150,7 +150,7 @@ onMounted(() => {
 
     <div class="flex flex-wrap gap-2">
       <button
-        class="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+        class="px-4 py-2 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-60 flex items-center gap-2"
         :disabled="working"
         @click="backUpNow"
       >

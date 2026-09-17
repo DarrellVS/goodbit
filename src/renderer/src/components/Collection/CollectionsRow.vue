@@ -68,7 +68,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
       <input
         v-model="createInputValue"
         placeholder="Name it, then press Enter"
-        class="w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:ring-2 focus:ring-orange-500/50"
+        class="w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:ring-2 focus:ring-accent/50"
         @keyup.enter="actions.createCollection"
         @keyup.esc="showCreateInput = false"
       />

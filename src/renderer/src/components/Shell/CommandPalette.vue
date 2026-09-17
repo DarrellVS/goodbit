@@ -110,7 +110,7 @@ function runActive(): void {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-[92vw] max-w-xl flex flex-col outline-hidden overflow-hidden panel-drop-animate"
       >
@@ -149,7 +149,7 @@ function runActive(): void {
             <button
               type="button"
               class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm transition-colors"
-              :class="row.index === activeIndex ? 'bg-orange-500/8 text-orange-900' : 'text-muted-700 hover:bg-muted-50'"
+              :class="row.index === activeIndex ? 'bg-accent/8 text-accent-ink' : 'text-muted-700 hover:bg-muted-50'"
               :data-active="row.index === activeIndex"
               @click="run(row.command)"
               @mousemove="pointerPicked(row.index, $event)"
@@ -157,7 +157,7 @@ function runActive(): void {
               <Icon
                 :icon="row.command.icon ?? 'material-symbols:chevron-right'"
                 class="text-lg shrink-0"
-                :class="row.index === activeIndex ? 'text-orange-500' : 'text-muted-400'"
+                :class="row.index === activeIndex ? 'text-accent-ink' : 'text-muted-400'"
               />
               <span class="truncate">{{ row.command.label }}</span>
             </button>

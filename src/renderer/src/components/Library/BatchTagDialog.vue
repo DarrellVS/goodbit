@@ -86,7 +86,7 @@ onMounted(async () => {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >
@@ -106,7 +106,7 @@ onMounted(async () => {
               v-model="inputValue"
               type="text"
               placeholder="Search or create tags..."
-              class="w-full px-4 py-2 pr-10 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              class="w-full px-4 py-2 pr-10 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent"
               @keydown="handleKeydown"
             />
             <button
@@ -128,7 +128,7 @@ onMounted(async () => {
               <button
                 v-for="tag in selectedTagsList"
                 :key="tag"
-                class="px-3 py-1.5 rounded-full bg-orange-500/16 text-orange-700 text-sm font-medium flex items-center gap-1.5 hover:bg-orange-200 transition-colors"
+                class="px-3 py-1.5 rounded-full bg-accent/16 text-accent-ink text-sm font-medium flex items-center gap-1.5 hover:bg-accent-sunk transition-colors"
                 @click="toggleTag(tag)"
               >
                 <span>{{ tag }}</span>
@@ -149,7 +149,7 @@ onMounted(async () => {
                 :class="[
                   'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                   selectedTags.has(tag)
-                    ? 'bg-orange-500/16 text-orange-700 hover:bg-orange-200'
+                    ? 'bg-accent/16 text-accent-ink hover:bg-accent-sunk'
                     : 'bg-muted-100 text-muted-700 hover:bg-muted-200'
                 ]"
                 @click="toggleTag(tag)"
@@ -173,7 +173,7 @@ onMounted(async () => {
             </button>
           </DialogClose>
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="selectedTags.size === 0"
             @click="handleApply"
           >

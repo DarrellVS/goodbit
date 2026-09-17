@@ -178,7 +178,7 @@ function handleRulerMouseUp(): void {
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden select-none">
     <div
       ref="rulerRef"
-      class="shrink-0 h-7 bg-orange-500/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
+      class="shrink-0 h-7 bg-accent/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
@@ -263,7 +263,7 @@ function handleRulerMouseUp(): void {
           has now drifted apart twice. Changing the gutter should be changing
           one number.
         -->
-        <div class="relative h-16 bg-orange-500/4 rounded-lg border border-border">
+        <div class="relative h-16 bg-accent/4 rounded-lg border border-border">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -282,12 +282,12 @@ function handleRulerMouseUp(): void {
         <!--
           The same ground as the clip lane above it.
 
-          This was `bg-amber-500/4` against the clips' `bg-orange-500/4`: two
+          This was `bg-warning/4` against the clips' `bg-accent/4`: two
           different hues at the same 4%, which is a difference nobody chose and
           which only became visible when Tailwind 4 started rendering off-scale
           opacities that Tailwind 3 dropped on the floor. A lane is a lane.
         -->
-        <div class="relative h-12 bg-orange-500/4 rounded-lg border border-border">
+        <div class="relative h-12 bg-accent/4 rounded-lg border border-border">
           <!--
             Everything past the last frame of video is dropped on export, so the
             lane says so rather than letting a long track look like it survives.
@@ -314,7 +314,7 @@ function handleRulerMouseUp(): void {
           <button
             v-if="audio.length === 0"
             type="button"
-            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-muted-400 hover:text-orange-500 transition-colors"
+            class="absolute inset-0 flex items-center justify-center gap-1.5 text-[11px] text-muted-400 hover:text-accent-ink transition-colors"
             @click="emit('open-music')"
           >
             <Icon icon="material-symbols:music-note" class="text-sm" />
@@ -323,7 +323,7 @@ function handleRulerMouseUp(): void {
         </div>
 
         <div
-          class="absolute top-0 bottom-0 w-0.5 bg-orange-500 pointer-events-none z-20 shadow-lg shadow-orange-500/50"
+          class="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none z-20 shadow-lg shadow-accent/50"
           :style="{ left: `${playheadPosition}px` }"
         >
           <!--
@@ -348,7 +348,7 @@ function handleRulerMouseUp(): void {
             without either of those depending on a spacing rule reaching an
             element it was never aimed at.
           -->
-          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50 border-2 border-card" />
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-accent rounded-full shadow-lg shadow-accent/50 border-2 border-card" />
         </div>
       </div>
     </div>
@@ -359,8 +359,8 @@ function handleRulerMouseUp(): void {
 .overrun-hatch {
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(148, 163, 184, 0.25) 0px,
-    rgba(148, 163, 184, 0.25) 4px,
+    hsl(var(--muted-300) / 0.35) 0px,
+    hsl(var(--muted-300) / 0.35) 4px,
     transparent 4px,
     transparent 8px
   );

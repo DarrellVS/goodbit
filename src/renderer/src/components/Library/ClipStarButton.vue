@@ -43,7 +43,7 @@ async function handleToggleStar(): Promise<void> {
     <Icon
       icon="material-symbols:star"
       class="text-xl shrink-0"
-      :class="clip.starred ? 'text-orange-500' : 'text-muted-400'"
+      :class="clip.starred ? 'text-accent-ink' : 'text-muted-400'"
     />
     <span class="text-sm font-medium text-foreground">
       {{ clip.starred ? 'Starred' : 'Star this clip' }}
@@ -52,7 +52,7 @@ async function handleToggleStar(): Promise<void> {
 
   <button
     v-else
-    class="absolute top-3 left-3 z-10 rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 px-2 py-2 outline-hidden size-8 hover:bg-black/80 star-button"
+    class="absolute top-3 left-3 z-10 rounded-lg inline-flex items-center justify-center bg-video-bed/60 backdrop-blur-sm border border-on-video/20 px-2 py-2 outline-hidden size-8 hover:bg-video-bed/80 star-button"
     :class="{ 'opacity-100': clip.starred, 'opacity-0 group-hover:opacity-100 opacity-transition': !clip.starred }"
     :title="clip.starred ? 'Unstar' : 'Star'"
     @click.stop="handleToggleStar"
@@ -60,7 +60,7 @@ async function handleToggleStar(): Promise<void> {
     <Icon
       icon="material-symbols:star"
       class="text-lg transform-transition"
-      :class="clip.starred ? 'text-orange-400 scale-110' : 'text-card'"
+      :class="clip.starred ? 'text-accent-ink scale-110' : 'text-card'"
     />
   </button>
 </template>

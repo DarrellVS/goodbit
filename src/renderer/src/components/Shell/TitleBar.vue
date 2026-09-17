@@ -28,10 +28,15 @@ const canGoBack = computed(() => route.name !== 'clips' && route.name !== 'welco
 
 // Windows keeps whatever colour the caption glyphs were last given, so light
 // glyphs stay light on a light page and become invisible.
+//
+// These two are the only hex values outside `styles.css` that are not over a
+// video frame, and they cannot be anything else: the colour crosses an IPC
+// boundary into the Windows title bar overlay, which has never heard of a CSS
+// variable. They are `--muted-500` in each palette, by hand.
 watch(
   isDark,
   (dark) => {
-    void window.goodbit?.window.setOverlay({ symbolColor: dark ? '#a0a4ac' : '#5c6068' });
+    void window.goodbit?.window.setOverlay({ symbolColor: dark ? '#aaa49c' : '#575047' });
   },
   { immediate: true },
 );

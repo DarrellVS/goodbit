@@ -37,15 +37,15 @@ const top = `${TITLEBAR_HEIGHT + 14}px`;
     <div
       v-if="show"
       class="update-banner fixed left-1/2 -translate-x-1/2 z-100 w-[min(620px,calc(100vw-48px))]
-             rounded-2xl border border-orange-400/40 bg-card shadow-2xl overflow-hidden"
+             rounded-2xl border border-accent/40 bg-card shadow-2xl overflow-hidden"
       :style="{ top }"
       role="status"
     >
       <div class="flex items-center gap-4 px-5 py-4">
         <div
-          class="shrink-0 w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center"
+          class="shrink-0 w-11 h-11 rounded-xl bg-accent flex items-center justify-center"
         >
-          <Icon icon="material-symbols:rocket-launch" class="text-white text-2xl" />
+          <Icon icon="material-symbols:rocket-launch" class="text-accent-fg text-2xl" />
         </div>
 
         <div class="min-w-0 flex-1">
@@ -63,8 +63,8 @@ const top = `${TITLEBAR_HEIGHT + 14}px`;
 
         <button
           v-if="ready"
-          class="shrink-0 px-4 py-2.5 rounded-xl bg-orange-500 text-white font-semibold
-                 hover:bg-orange-600 active:bg-orange-700 transition-colors"
+          class="shrink-0 px-4 py-2.5 rounded-xl bg-accent text-accent-fg font-semibold
+                 hover:bg-accent-hover active:bg-accent-hover transition-colors"
           @click="install"
         >
           Restart now
@@ -74,7 +74,7 @@ const top = `${TITLEBAR_HEIGHT + 14}px`;
       <!-- The bar doubles as the progress readout, and stays full when ready. -->
       <div class="h-1 bg-muted-200">
         <div
-          class="h-full bg-orange-500 transition-[width] duration-300 ease-out"
+          class="h-full bg-accent transition-[width] duration-300 ease-out"
           :style="{ width: `${percent}%` }"
         ></div>
       </div>

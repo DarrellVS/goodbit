@@ -51,7 +51,7 @@ function goToNext(): void {
 
 <template>
   <div v-if="loading" class="flex justify-center py-8">
-    <BaseSpinner class="w-8 h-8 text-orange-500" />
+    <BaseSpinner class="w-8 h-8 text-accent-ink" />
   </div>
 
   <div v-else-if="showPagination" class="flex flex-col items-center gap-4 py-8">
@@ -78,7 +78,7 @@ function goToNext(): void {
             :class="[
               'px-3 py-2 rounded-lg text-sm font-medium transition-colors min-w-[40px]',
               page === currentPage
-                ? 'bg-orange-500 text-white'
+                ? 'bg-accent text-accent-fg'
                 : 'border border-border bg-card hover:bg-muted-50 text-muted-700'
             ]"
             @click="goToPage(page as number)"

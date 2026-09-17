@@ -86,7 +86,7 @@ async function testPublisher(): Promise<void> {
           guide is a click away rather than something to go looking for.
         -->
         <button
-          class="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-500 transition-colors"
+          class="mt-2 inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-accent-ink transition-colors"
           @click="openGuide"
         >
           <Icon icon="material-symbols:open-in-new" class="text-base" />
@@ -100,7 +100,7 @@ async function testPublisher(): Promise<void> {
           type="text"
           placeholder="http://192.168.1.20:5555"
           aria-label="Publisher address"
-          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm outline-hidden focus:ring-2 focus:ring-orange-500"
+          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm outline-hidden focus:ring-2 focus:ring-accent"
           @keydown.enter="savePublisher"
         />
         <button
@@ -111,7 +111,7 @@ async function testPublisher(): Promise<void> {
           Test
         </button>
         <button
-          class="px-3 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600"
+          class="px-3 py-2 rounded-lg bg-accent text-accent-fg text-sm hover:bg-accent-hover"
           @click="savePublisher"
         >
           Save
@@ -131,7 +131,7 @@ async function testPublisher(): Promise<void> {
           aria-label="Publish token"
           autocomplete="off"
           spellcheck="false"
-          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono outline-hidden focus:ring-2 focus:ring-orange-500"
+          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono outline-hidden focus:ring-2 focus:ring-accent"
           @keydown.enter="savePublisher"
         />
         <button
@@ -150,8 +150,8 @@ async function testPublisher(): Promise<void> {
       </p>
 
       <p v-if="publisherState === 'checking'" class="text-xs text-muted-500">Checking…</p>
-      <p v-else-if="publisherState === 'ok'" class="text-xs text-green-600">That address answers.</p>
-      <p v-else-if="publisherState === 'unreachable'" class="text-xs text-red-600">
+      <p v-else-if="publisherState === 'ok'" class="text-xs text-success">That address answers.</p>
+      <p v-else-if="publisherState === 'unreachable'" class="text-xs text-danger-ink">
         No answer from that address.
       </p>
     </div>

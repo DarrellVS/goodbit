@@ -181,7 +181,7 @@ watch(
 <template>
   <DialogRoot :open="open" @update:open="handleOpenChange">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-lg max-h-[90vh] flex flex-col outline-hidden modal-content-animate"
       >
@@ -203,7 +203,7 @@ watch(
                 v-model="name"
                 type="text"
                 placeholder="Name your clip"
-                class="w-full px-4 py-2.5 pr-14 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all disabled:bg-muted-50 disabled:text-muted-500"
+                class="w-full px-4 py-2.5 pr-14 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all disabled:bg-muted-50 disabled:text-muted-500"
                 :disabled="exporting"
                 @keydown.enter="submit"
               />
@@ -211,7 +211,7 @@ watch(
                 .mp4
               </span>
             </div>
-            <p v-if="wasCleaned" class="text-xs text-amber-600">
+            <p v-if="wasCleaned" class="text-xs text-warning">
               Saved as “{{ cleanName }}”. Characters a filename cannot hold were dropped.
             </p>
           </div>
@@ -227,7 +227,7 @@ watch(
                 type="button"
                 class="px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-50"
                 :class="activePreset?.id === preset.id
-                  ? 'border-orange-500 bg-orange-500/8 text-orange-700'
+                  ? 'border-accent bg-accent/8 text-accent-ink'
                   : 'border-border text-muted-700 hover:bg-muted-50'"
                 :title="preset.hint"
                 :disabled="exporting"
@@ -249,7 +249,7 @@ watch(
                 type="button"
                 class="flex flex-col items-center gap-1.5 px-1 py-2 rounded-lg border transition-colors disabled:opacity-50"
                 :class="format === spec.id
-                  ? 'border-orange-500 bg-orange-500/8'
+                  ? 'border-accent bg-accent/8'
                   : 'border-border hover:bg-muted-50'"
                 :title="spec.hint"
                 :disabled="exporting"
@@ -257,7 +257,7 @@ watch(
               >
                 <span
                   class="block border-2 rounded-[2px]"
-                  :class="format === spec.id ? 'border-orange-500' : 'border-line-strong'"
+                  :class="format === spec.id ? 'border-accent' : 'border-line-strong'"
                   :style="{
                     width: spec.ratio === null ? '22px' : (spec.ratio >= 1 ? '22px' : `${22 * spec.ratio}px`),
                     height: spec.ratio === null ? '12px' : (spec.ratio >= 1 ? `${22 / spec.ratio}px` : '22px'),
@@ -284,7 +284,7 @@ watch(
                 min="0"
                 max="1"
                 step="0.01"
-                class="w-full accent-orange-500"
+                class="w-full accent-accent"
                 :disabled="exporting"
               />
               <div class="flex justify-between text-[10px] text-muted-400">
@@ -313,9 +313,9 @@ watch(
               <span>{{ message || 'Rendering…' }}</span>
               <span class="font-mono">{{ Math.round(progress) }}%</span>
             </div>
-            <div class="h-2 rounded-full bg-orange-500/16 overflow-hidden">
+            <div class="h-2 rounded-full bg-accent/16 overflow-hidden">
               <div
-                class="h-full bg-linear-to-r from-orange-500 to-orange-600 transition-[width] duration-300"
+                class="h-full bg-linear-to-r from-accent to-accent-hover transition-[width] duration-300"
                 :style="{ width: `${Math.max(2, progress)}%` }"
               />
             </div>
@@ -326,13 +326,13 @@ watch(
 
           <div class="rounded-lg bg-muted-50 border border-border p-3 space-y-1.5 text-sm text-muted-700">
             <div class="flex items-center gap-2">
-              <Icon icon="material-symbols:movie" class="text-lg text-orange-500" />
+              <Icon icon="material-symbols:movie" class="text-lg text-accent-ink" />
               {{ clipCount }} clip{{ clipCount === 1 ? '' : 's' }}
               <span class="text-muted-400">·</span>
               <span class="font-mono">{{ formatTime(duration) }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <Icon icon="material-symbols:music-note" class="text-lg text-orange-500" />
+              <Icon icon="material-symbols:music-note" class="text-lg text-accent-ink" />
               {{ trackCount === 0 ? 'No music' : `${trackCount} music track${trackCount === 1 ? '' : 's'}` }}
             </div>
             <!--
@@ -342,7 +342,7 @@ watch(
               size was the only number missing.
             -->
             <div v-if="outputLabel" class="flex items-center gap-2">
-              <Icon icon="material-symbols:aspect-ratio" class="text-lg text-orange-500" />
+              <Icon icon="material-symbols:aspect-ratio" class="text-lg text-accent-ink" />
               <span class="font-mono">{{ outputLabel }}</span>
               <span v-if="sizeLabel" class="text-muted-400">·</span>
               <span v-if="sizeLabel" class="font-mono">{{ sizeLabel }}</span>
@@ -354,7 +354,7 @@ watch(
           <!-- A render in flight can be stopped; ffmpeg is killed server-side. -->
           <button
             v-if="exporting"
-            class="px-4 py-2 rounded-lg border border-red-300 text-red-600 font-medium hover:bg-red-500/8 transition-colors"
+            class="px-4 py-2 rounded-lg border border-danger text-danger-ink font-medium hover:bg-danger/8 transition-colors"
             @click="emit('cancel-export')"
           >
             Stop
@@ -369,7 +369,7 @@ watch(
           </DialogClose>
 
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             :disabled="!isValid || exporting"
             @click="submit"
           >

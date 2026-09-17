@@ -246,8 +246,8 @@ function handleCardClick(event: MouseEvent) {
     :class="[
       'clip-card shadow-sm group relative bg-card/5 rounded-xl overflow-hidden border transition-all hover:shadow-lg cursor-pointer',
       isSelected 
-        ? 'border-orange-500 border-2 ring-2 ring-2 ring-orange-500/30' 
-        : 'border-border hover:border-orange-500/50'
+        ? 'border-accent border-2 ring-2 ring-2 ring-accent/30' 
+        : 'border-border hover:border-accent/50'
     ]"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
@@ -267,8 +267,8 @@ function handleCardClick(event: MouseEvent) {
         class="w-8 h-8 rounded-lg flex items-center justify-center checkbox-animate"
         :class="[
           isSelected 
-            ? 'bg-orange-500 text-white hover:bg-orange-600' 
-            : 'bg-black/60 backdrop-blur-sm border border-white/20 text-white hover:bg-black/80'
+            ? 'bg-accent text-on-video hover:bg-accent-hover' 
+            : 'bg-video-bed/60 backdrop-blur-sm border border-on-video/20 text-on-video hover:bg-video-bed/80'
         ]"
         @click="handleCheckboxClick"
       >
@@ -301,7 +301,7 @@ function handleCardClick(event: MouseEvent) {
       type="button"
       title="Drag this clip into another program"
       aria-label="Drag this clip into another program"
-      class="absolute top-3 left-[52px] z-10 size-8 rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/20 text-white opacity-0 group-hover:opacity-100 opacity-transition hover:bg-black/80 cursor-grab active:cursor-grabbing"
+      class="absolute top-3 left-[52px] z-10 size-8 rounded-lg inline-flex items-center justify-center bg-video-bed/60 backdrop-blur-sm border border-on-video/20 text-on-video opacity-0 group-hover:opacity-100 opacity-transition hover:bg-video-bed/80 cursor-grab active:cursor-grabbing"
       @dragstart.stop="handleDragOut"
       @click.stop
     >
@@ -322,7 +322,7 @@ function handleCardClick(event: MouseEvent) {
 
     <div 
       ref="previewEl"
-      class="aspect-21/9 bg-black relative"
+      class="aspect-21/9 bg-video-bed relative"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
     >
@@ -361,13 +361,13 @@ function handleCardClick(event: MouseEvent) {
         class="absolute inset-x-0 pointer-events-none z-10"
         :style="scrubStripStyle"
       >
-        <div class="absolute inset-0 bg-linear-to-t from-black/50 to-transparent"></div>
+        <div class="absolute inset-0 bg-linear-to-t from-video-bed/50 to-transparent"></div>
         <div
-          class="absolute top-0 bottom-0 w-0.5 bg-orange-500"
+          class="absolute top-0 bottom-0 w-0.5 bg-accent"
           :style="{ left: `${scrubProgress * 100}%` }"
         ></div>
         <div
-          class="absolute top-1 px-1.5 py-0.5 rounded-sm bg-black/80 text-white text-[10px] font-mono -translate-x-1/2 whitespace-nowrap"
+          class="absolute top-1 px-1.5 py-0.5 rounded-sm bg-video-bed/80 text-on-video text-[10px] font-mono -translate-x-1/2 whitespace-nowrap"
           :style="{ left: scrubLabelLeft }"
         >
           {{ formatTime(scrubTime) }}
@@ -397,7 +397,7 @@ function handleCardClick(event: MouseEvent) {
     -->
     <div class="h-0.5 bg-border/40 pointer-events-none overflow-hidden" aria-hidden="true">
       <div
-        class="h-full w-full bg-orange-500 origin-left will-change-transform"
+        class="h-full w-full bg-accent origin-left will-change-transform"
         :style="fillStyle"
       ></div>
     </div>

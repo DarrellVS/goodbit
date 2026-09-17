@@ -55,7 +55,7 @@ const someStarred = computed(() =>
     class="bg-card rounded-xl shadow-2xl border border-border px-4 py-3 flex items-center gap-4 min-w-[500px]"
   >
     <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm text-white count-animate">
+      <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-bold text-sm text-accent-fg count-animate">
         {{ selectedCount }}
       </div>
       <span class="font-medium text-foreground">
@@ -129,7 +129,7 @@ const someStarred = computed(() =>
             </DropdownMenuItem>
             <DropdownMenuItem
               v-if="somePublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
               @click="emit('unpublish')"
             >
               <Icon icon="material-symbols:cloud-off" class="text-base" />
@@ -150,7 +150,7 @@ const someStarred = computed(() =>
             <!-- Remove from Collection (if in collection view) -->
             <DropdownMenuItem
               v-if="collectionId"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-orange-500/8 text-orange-600 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent/8 text-accent-ink outline-hidden cursor-pointer select-none"
               @click="emit('remove-from-collection')"
             >
               <Icon icon="material-symbols:folder-delete" class="text-base" />
@@ -161,7 +161,7 @@ const someStarred = computed(() =>
 
             <!-- Delete -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
               @click="emit('delete')"
             >
               <Icon icon="material-symbols:delete" class="text-base" />

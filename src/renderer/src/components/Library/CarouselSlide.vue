@@ -62,7 +62,7 @@ function handleDelete(): void {
       </EditableRoot>
       
       <button 
-        class="text-red-500 hover:text-red-400 transition-colors"
+        class="text-danger-ink hover:text-danger-ink transition-colors"
         @click="handleDelete"
       >
         Delete

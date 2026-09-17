@@ -37,13 +37,13 @@
       -->
       <div class="absolute inset-y-0 -left-2 -right-2 cursor-ew-resize" />
       <div
-        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] bg-orange-500 rounded-xs shadow-[0_0_0_1px_rgba(0,0,0,0.35)] pointer-events-none transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-orange-400"
+        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] bg-accent rounded-xs shadow-[0_0_0_1px_rgba(0,0,0,0.35)] pointer-events-none transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-accent"
       />
 
       <div
         :class="[
           // The thumb has no width, so the label centres on its left edge.
-          'absolute left-0 -translate-x-1/2 px-2 py-0.5 bg-orange-500 text-white text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
+          'absolute left-0 -translate-x-1/2 px-2 py-0.5 bg-accent text-accent-fg text-xs font-mono whitespace-nowrap shadow-lg pointer-events-none',
           i === 0 ? '-top-1 rounded-t' : '-bottom-1 rounded-b',
         ]"
       >

@@ -82,7 +82,10 @@ function drawWaveform(): void {
   const span = Math.max(1, to - from);
   const middle = cssHeight / 2;
 
-  context.fillStyle = 'rgba(234, 88, 12, 0.55)';
+  // A canvas cannot read a Tailwind class, so the token is read off the
+  // element that owns the canvas and handed to the 2D context.
+  const accent = getComputedStyle(element).getPropertyValue('--accent').trim();
+  context.fillStyle = `hsl(${accent} / 0.55)`;
 
   for (let x = 0; x < cssWidth; x++) {
     const index = from + Math.floor((x / cssWidth) * span);
@@ -179,7 +182,7 @@ onBeforeUnmount(stopDrag);
   <div
     class="absolute top-0 h-12 rounded-lg overflow-hidden group select-none"
     :class="[
-      selected ? 'ring-2 ring-orange-500 shadow-lg shadow-orange-500/30' : 'hover:ring-2 hover:ring-orange-400/50',
+      selected ? 'ring-2 ring-accent shadow-lg shadow-accent/30' : 'hover:ring-2 hover:ring-accent/50',
       cursorClass,
       isDragging ? '' : 'transition-[left,width] duration-150 ease-out',
       item.muted ? 'opacity-60' : ''
@@ -188,7 +191,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', item.id)"
   >
-    <div class="relative w-full h-full bg-linear-to-br from-orange-500/16 to-amber-500/8 border border-orange-300">
+    <div class="relative w-full h-full bg-linear-to-br from-accent/16 to-warning/8 border border-accent">
       <canvas ref="canvas" class="absolute inset-0 w-full h-full" />
 
       <!-- Fade ramps, drawn as the wedge that the export actually applies. -->
@@ -213,7 +216,7 @@ onBeforeUnmount(stopDrag);
         </div>
 
         <button
-          class="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 rounded-sm p-0.5 shrink-0"
+          class="opacity-0 group-hover:opacity-100 transition-opacity bg-danger hover:bg-danger rounded-sm p-0.5 shrink-0"
           @click.stop="emit('remove', item.id)"
         >
           <Icon icon="material-symbols:close" class="text-card text-xs" />
@@ -230,11 +233,11 @@ onBeforeUnmount(stopDrag);
       </div>
 
       <div
-        class="trim-handle absolute left-0 top-0 bottom-0 w-1 bg-orange-500 opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
+        class="trim-handle absolute left-0 top-0 bottom-0 w-1 bg-accent opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
         @mousedown="startTrimLeft($event)"
       />
       <div
-        class="trim-handle absolute right-0 top-0 bottom-0 w-1 bg-orange-500 opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
+        class="trim-handle absolute right-0 top-0 bottom-0 w-1 bg-accent opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
         @mousedown="startTrimRight($event)"
       />
     </div>

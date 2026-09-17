@@ -7,11 +7,11 @@
   <header class="relative overflow-hidden border-b border-border shrink-0">
     <div class="relative max-w-7xl mx-auto px-6 py-4">
       <div class="flex items-center gap-4">
-        <div class="p-2.5 rounded-xl bg-linear-to-br from-orange-500 to-orange-600 shadow-lg shrink-0">
+        <div class="p-2.5 rounded-xl bg-linear-to-br from-accent to-accent-hover shadow-lg shrink-0">
           <Icon icon="material-symbols:content-cut" class="text-card text-xl" />
         </div>
         <div class="min-w-0">
-          <h1 class="text-2xl font-bold bg-linear-to-b from-orange-500 to-orange-600 bg-clip-text text-transparent">
+          <h1 class="text-2xl font-bold bg-linear-to-b from-accent to-accent-hover bg-clip-text text-transparent">
             Trim Your Clip
           </h1>
           <p class="text-xs text-muted-400">Select the perfect moment</p>
@@ -29,7 +29,7 @@
             type="text"
             :placeholder="placeholder"
             aria-label="Clip name"
-            class="w-full min-w-0 px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-400 focus:outline-hidden focus:ring-1 focus:ring-orange-500/40 focus:border-orange-500"
+            class="w-full min-w-0 px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-400 focus:outline-hidden focus:ring-1 focus:ring-accent/40 focus:border-accent"
             @input="emit('update:name', ($event.target as HTMLInputElement).value)"
             @change="emit('commit')"
             @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"

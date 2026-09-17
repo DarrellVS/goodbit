@@ -66,8 +66,8 @@ const placed = computed(() =>
       class="absolute pointer-events-auto rounded-xs transition-colors"
       :class="
         item.goodBit.id === selectedId
-          ? 'bg-orange-500 ring-1 ring-white/70'
-          : 'bg-orange-500/55 hover:bg-orange-500/80'
+          ? 'bg-accent ring-1 ring-on-video/70'
+          : 'bg-accent/55 hover:bg-accent/80'
       "
       :style="{
         left: `${item.leftPercent}%`,

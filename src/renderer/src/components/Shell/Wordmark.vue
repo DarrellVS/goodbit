@@ -30,8 +30,8 @@ withDefaults(defineProps<Props>(), { size: 20, bare: false });
     aria-label="GoodBit"
     class="shrink-0"
   >
-    <rect v-if="!bare" width="512" height="512" rx="96" fill="#f97316" />
-    <g :fill="bare ? 'currentColor' : '#ffffff'" :opacity="bare ? 0.38 : 0.34">
+    <rect v-if="!bare" width="512" height="512" rx="96" fill="hsl(var(--accent))" />
+    <g :fill="bare ? 'currentColor' : 'hsl(var(--accent-fg))'" :opacity="bare ? 0.38 : 0.34">
       <rect x="56" y="184" width="80" height="144" rx="18" />
       <rect x="148" y="184" width="80" height="144" rx="18" />
       <rect x="376" y="184" width="80" height="144" rx="18" />
@@ -42,7 +42,7 @@ withDefaults(defineProps<Props>(), { size: 20, bare: false });
       width="120"
       height="224"
       rx="26"
-      :fill="bare ? 'currentColor' : '#ffffff'"
+      :fill="bare ? 'currentColor' : 'hsl(var(--accent-fg))'"
     />
   </svg>
 </template>

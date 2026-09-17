@@ -89,7 +89,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
         v-for="tag in visibleTags"
         :key="tag"
         type="button"
-        class="text-xs bg-card/10 px-1.5 py-0.5 rounded-sm tag-enter-active hover:bg-orange-500/15 hover:text-orange-600 transition-colors"
+        class="text-xs bg-card/10 px-1.5 py-0.5 rounded-sm tag-enter-active hover:bg-accent/15 hover:text-accent-ink transition-colors"
         :title="`Show every clip tagged #${tag}`"
         @click.stop="filterByTag(tag)"
       >
@@ -107,7 +107,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
             v-for="tag in clip.tags"
             :key="tag"
             type="button"
-            class="text-xs text-left hover:text-orange-600 transition-colors"
+            class="text-xs text-left hover:text-accent-ink transition-colors"
             :title="`Show every clip tagged #${tag}`"
             @click.stop="filterByTag(tag)"
           >
@@ -122,14 +122,14 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
       <template #trigger>
         <button
           v-if="prominent"
-          class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-500 transition-colors"
+          class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-accent-ink hover:text-accent-ink transition-colors"
         >
           <Icon icon="material-symbols:add" class="text-lg" />
           {{ clip.tags?.length ? 'Add or remove tags' : 'Add a tag' }}
         </button>
         <button
           v-else
-          class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 opacity-transition text-left transform-transition"
+          class="w-full mt-2 text-xs text-muted-400 hover:text-accent-ink opacity-0 group-hover:opacity-100 opacity-transition text-left transform-transition"
         >
           Manage tags
         </button>
@@ -143,18 +143,18 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
         <!-- Suggested Tags -->
         <div v-if="suggestedTags.length > 0" class="space-y-2">
           <div class="flex items-center gap-2 text-xs text-muted-600">
-            <Icon icon="material-symbols:auto-awesome" class="text-orange-500" />
+            <Icon icon="material-symbols:auto-awesome" class="text-accent-ink" />
             <span class="font-medium">Suggested Tags</span>
           </div>
           <div class="flex flex-wrap gap-1.5">
             <button
               v-for="tag in suggestedTags"
               :key="tag"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-linear-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/20 transition-all text-xs font-medium group scale-on-hover"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-linear-to-r from-accent/10 to-warning/10 border border-accent/30 hover:border-accent hover:bg-accent/20 transition-all text-xs font-medium group scale-on-hover"
               :title="`Category: ${getCategoryForTag(tag)}`"
               @click="applySuggestedTag(tag)"
             >
-              <Icon icon="material-symbols:add" class="text-orange-500 text-sm transform-transition group-hover:scale-110" />
+              <Icon icon="material-symbols:add" class="text-accent-ink text-sm transform-transition group-hover:scale-110" />
               <span class="text-foreground">#{{ tag }}</span>
             </button>
           </div>
@@ -164,12 +164,12 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
         <div class="flex items-center gap-2">
           <input
             v-model="newTagName"
-            class="flex-1 rounded-lg border border-border bg-card/5 px-3 h-9 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="flex-1 rounded-lg border border-border bg-card/5 px-3 h-9 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
             placeholder="New tag name"
             @keyup.enter="addTag()"
           />
           <button 
-            class="rounded-lg bg-orange-500 hover:bg-orange-600 px-3 h-9 text-white text-sm font-medium transition"
+            class="rounded-lg bg-accent hover:bg-accent-hover px-3 h-9 text-accent-fg text-sm font-medium transition"
             @click="addTag()"
           >
             Add
@@ -190,19 +190,19 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
             >
               <button
                 class="flex-1 text-left rounded-lg border-2 border-border px-3 py-2.5 bg-card/5 hover:bg-card/10 transition-colors"
-                :class="{ 'bg-orange-500/10 border-orange-500': clip.tags?.includes(tag) }"
+                :class="{ 'bg-accent/10 border-accent': clip.tags?.includes(tag) }"
                 @click="toggleTag(tag)"
               >
                 <span class="text-sm">#{{ tag }}</span>
-                <span v-if="clip.tags?.includes(tag)" class="ml-2 text-xs text-orange-500 font-medium">✓</span>
+                <span v-if="clip.tags?.includes(tag)" class="ml-2 text-xs text-accent-ink font-medium">✓</span>
               </button>
               
               <button
-                class="p-2 rounded-lg border border-border bg-card/5 hover:bg-red-500/20 hover:border-red-500/50 transition-colors group"
+                class="p-2 rounded-lg border border-border bg-card/5 hover:bg-danger/20 hover:border-danger/50 transition-colors group"
                 title="Delete tag"
                 @click.stop="removeTag(tag)"
               >
-                <Icon icon="material-symbols:delete" class="text-muted-400 group-hover:text-red-500 transition-colors" />
+                <Icon icon="material-symbols:delete" class="text-muted-400 group-hover:text-danger-ink transition-colors" />
               </button>
             </div>
           </div>

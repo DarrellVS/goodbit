@@ -1,6 +1,6 @@
 <template>
   <section class="relative group min-h-0 flex" aria-label="Video preview">
-    <div class="absolute -inset-0.5 bg-linear-to-r from-orange-500 to-orange-600 rounded-2xl opacity-20 group-hover:opacity-30 blur-sm transition" />
+    <div class="absolute -inset-0.5 bg-linear-to-r from-accent to-accent-hover rounded-2xl opacity-20 group-hover:opacity-30 blur-sm transition" />
 
     <!--
       The preview gives way to the timeline rather than the other way round: a
@@ -17,7 +17,7 @@
         ref="videoElement"
         :src="videoSource"
         preload="metadata"
-        class="w-full h-full object-contain bg-black m-0 p-0 cursor-pointer"
+        class="w-full h-full object-contain bg-video-bed m-0 p-0 cursor-pointer"
         @click="$emit('toggle')"
       />
     </div>

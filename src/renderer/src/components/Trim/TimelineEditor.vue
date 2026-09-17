@@ -2,8 +2,8 @@
   <section class="bg-card/5 backdrop-blur-sm rounded-2xl border border-border p-6 shadow-xl space-y-6">
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg bg-orange-500/10">
-          <Icon icon="material-symbols:timeline" class="text-orange-500 text-xl" />
+        <div class="p-2 rounded-lg bg-accent/10">
+          <Icon icon="material-symbols:timeline" class="text-accent-ink text-xl" />
         </div>
         <div>
           <h2 class="font-semibold text-lg">Timeline</h2>
@@ -19,10 +19,10 @@
       </div>
       
       <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/5">
-        <Icon icon="material-symbols:timer" class="text-orange-500" />
+        <Icon icon="material-symbols:timer" class="text-accent-ink" />
         <span class="text-muted-400">Duration:</span>
         <!-- `duration` is already formatted, frames and all. -->
-        <span class="font-mono font-semibold text-orange-500 tabular-nums">{{ duration }}</span>
+        <span class="font-mono font-semibold text-accent-ink tabular-nums">{{ duration }}</span>
         <!--
           The frame rate, beside the first timecode on the screen, because it is
           the legend for the last field of every one of them.
@@ -106,11 +106,11 @@
       
       <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
         <div
-          class="absolute inset-y-0 left-0 bg-linear-to-r from-black/60 to-black/40 backdrop-blur-xs"
+          class="absolute inset-y-0 left-0 bg-linear-to-r from-video-bed/60 to-video-bed/40 backdrop-blur-xs"
           :style="{ width: startPercentage + '%' }"
         />
         <div
-          class="absolute inset-y-0 right-0 bg-linear-to-l from-black/60 to-black/40 backdrop-blur-xs"
+          class="absolute inset-y-0 right-0 bg-linear-to-l from-video-bed/60 to-video-bed/40 backdrop-blur-xs"
           :style="{ width: (100 - endPercentage) + '%' }"
         />
 
@@ -119,10 +119,10 @@
           trimmed-away parts, and inert so it never fights the range handles.
         -->
         <div
-          class="absolute inset-y-0 w-0.5 -ml-px bg-white shadow-[0_0_6px_rgba(0,0,0,0.8)]"
+          class="absolute inset-y-0 w-0.5 -ml-px bg-on-video shadow-[0_0_6px_rgba(0,0,0,0.8)]"
           :style="{ left: playheadPercentage + '%' }"
         >
-          <div class="absolute -top-px left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-sm" />
+          <div class="absolute -top-px left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-on-video shadow-sm" />
         </div>
       </div>
 
@@ -146,7 +146,7 @@
     <!-- The preview has no controls of its own, so the transport lives here. -->
     <div class="flex items-center gap-3">
       <button
-        class="flex items-center justify-center w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg hover:bg-orange-600 transition-colors shrink-0"
+        class="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-on-video shadow-lg hover:bg-accent-hover transition-colors shrink-0"
         :title="isPlaying ? 'Pause (Space)' : 'Play (Space)'"
         :aria-label="isPlaying ? 'Pause' : 'Play'"
         @click="$emit('toggle-playback')"
@@ -202,14 +202,14 @@
         who wants the number.
       -->
       <button
-        class="relative overflow-hidden inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-linear-to-r from-orange-500 to-orange-600 text-card shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
+        class="relative overflow-hidden inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-linear-to-r from-accent to-accent-hover text-card shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
         :disabled="!isValid || isSaving"
         title="Cut the recording down to this range. This replaces the file, and cannot be undone."
         @click="$emit('save')"
       >
         <span
           v-if="isSaving"
-          class="absolute inset-y-0 left-0 bg-white/25 transition-[width] duration-200 ease-linear"
+          class="absolute inset-y-0 left-0 bg-on-video/25 transition-[width] duration-200 ease-linear"
           :style="{ width: `${Math.max(2, saveProgress)}%` }"
           aria-hidden="true"
         ></span>

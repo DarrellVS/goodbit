@@ -173,7 +173,7 @@ async function saveNew(): Promise<void> {
             v-model="newTag"
             type="text"
             placeholder="e.g., headshot"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
           />
         </div>
         
@@ -183,7 +183,7 @@ async function saveNew(): Promise<void> {
             v-model="newPatterns"
             type="text"
             placeholder="e.g., headshot, ace, clutch"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
           />
           <div class="text-xs text-muted-600 mt-2 space-y-1">
             <p><strong>Simple words</strong> (e.g., "clutch", "ace") will match whole words only.</p>
@@ -195,7 +195,7 @@ async function saveNew(): Promise<void> {
           <label class="block text-sm font-medium text-muted-700 mb-2">Category</label>
           <select
             v-model="newCategory"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
@@ -203,7 +203,7 @@ async function saveNew(): Promise<void> {
         
         <div class="flex gap-2">
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition"
+            class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg font-medium transition"
             @click="saveNew"
           >
             Save
@@ -224,13 +224,13 @@ async function saveNew(): Promise<void> {
           v-model="searchQuery"
           type="text"
           placeholder="Search patterns..."
-          class="w-full rounded-lg border border-border bg-card px-4 py-2.5 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition"
+          class="w-full rounded-lg border border-border bg-card px-4 py-2.5 outline-hidden focus:ring-2 focus:ring-accent/50 transition"
         >
       </div>
       
       <select
         v-model="selectedCategory"
-        class="rounded-lg border border-border bg-card pl-4 pr-10 py-2.5 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition cursor-pointer appearance-none bg-no-repeat"
+        class="rounded-lg border border-border bg-card pl-4 pr-10 py-2.5 outline-hidden focus:ring-2 focus:ring-accent/50 transition cursor-pointer appearance-none bg-no-repeat"
         style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27%3e%3cpath fill=%27%23374151%27 d=%27M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z%27/%3e%3c/svg%3e'); background-position: right 1rem center;"
       >
         <option value="All">All Categories</option>
@@ -238,7 +238,7 @@ async function saveNew(): Promise<void> {
       </select>
 
       <button
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-card font-medium shadow-lg shadow-orange-500/20 transition-all"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent-hover text-card font-medium shadow-lg shadow-accent/20 transition-all"
         @click="startAddNew"
       >
         <Icon icon="material-symbols:add" class="text-lg" />
@@ -247,14 +247,14 @@ async function saveNew(): Promise<void> {
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <BaseSpinner class="w-8 h-8 text-orange-500" />
+      <BaseSpinner class="w-8 h-8 text-accent-ink" />
     </div>
 
     <div v-else-if="selectedCategory === 'All'" class="space-y-6">
       <div v-for="category in categories" :key="category">
         <div v-if="patternsByCategory[category].length > 0">
           <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Icon icon="material-symbols:label" class="text-orange-500" />
+            <Icon icon="material-symbols:label" class="text-accent-ink" />
             {{ category }}
             <span class="text-sm font-normal text-muted-500">({{ patternsByCategory[category].length }})</span>
           </h2>
@@ -269,17 +269,17 @@ async function saveNew(): Promise<void> {
                 <input
                   v-model="editPatterns"
                   type="text"
-                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
                 />
                 <select
                   v-model="editCategory"
-                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
                 >
                   <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
                 <div class="flex gap-2">
                   <button
-                    class="flex-1 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
+                    class="flex-1 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium transition"
                     @click="saveEdit"
                   >
                     Save
@@ -298,16 +298,16 @@ async function saveNew(): Promise<void> {
                   <h3 class="font-semibold text-foreground">#{{ pattern.tag }}</h3>
                   <div class="flex gap-1">
                     <button
-                      class="p-1.5 rounded-lg hover:bg-orange-500/16 transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-accent/16 transition-colors"
                       @click="startEdit(pattern.tag)"
                     >
-                      <Icon icon="material-symbols:edit" class="text-orange-500" />
+                      <Icon icon="material-symbols:edit" class="text-accent-ink" />
                     </button>
                     <button
-                      class="p-1.5 rounded-lg hover:bg-red-500/16 transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-danger/16 transition-colors"
                       @click="handleDelete(pattern.tag)"
                     >
-                      <Icon icon="material-symbols:delete" class="text-red-500" />
+                      <Icon icon="material-symbols:delete" class="text-danger-ink" />
                     </button>
                   </div>
                 </div>
@@ -342,17 +342,17 @@ async function saveNew(): Promise<void> {
           <input
             v-model="editPatterns"
             type="text"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
           />
           <select
             v-model="editCategory"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-orange-500/50 transition text-sm"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
           >
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
           <div class="flex gap-2">
             <button
-              class="flex-1 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
+              class="flex-1 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium transition"
               @click="saveEdit"
             >
               Save
@@ -371,16 +371,16 @@ async function saveNew(): Promise<void> {
             <h3 class="font-semibold text-foreground">#{{ pattern.tag }}</h3>
             <div class="flex gap-1">
               <button
-                class="p-1.5 rounded-lg hover:bg-orange-500/16 transition-colors"
+                class="p-1.5 rounded-lg hover:bg-accent/16 transition-colors"
                 @click="startEdit(pattern.tag)"
               >
-                <Icon icon="material-symbols:edit" class="text-orange-500" />
+                <Icon icon="material-symbols:edit" class="text-accent-ink" />
               </button>
               <button
-                class="p-1.5 rounded-lg hover:bg-red-500/16 transition-colors"
+                class="p-1.5 rounded-lg hover:bg-danger/16 transition-colors"
                 @click="handleDelete(pattern.tag)"
               >
-                <Icon icon="material-symbols:delete" class="text-red-500" />
+                <Icon icon="material-symbols:delete" class="text-danger-ink" />
               </button>
             </div>
           </div>

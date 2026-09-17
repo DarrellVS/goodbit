@@ -106,9 +106,9 @@ async function handleMoveToGame(targetGame: string) {
       <MenubarTrigger
         v-else
         title="More actions"
-        class="rounded-lg inline-flex items-center justify-center bg-black/60 backdrop-blur-sm border border-white/30 px-2 py-2 outline-hidden size-8 hover:bg-black/80 transition cursor-pointer"
+        class="rounded-lg inline-flex items-center justify-center bg-video-bed/60 backdrop-blur-sm border border-on-video/30 px-2 py-2 outline-hidden size-8 hover:bg-video-bed/80 transition cursor-pointer"
       >
-        <Icon icon="material-symbols:more-vert" class="text-white" />
+        <Icon icon="material-symbols:more-vert" class="text-on-video" />
       </MenubarTrigger>
       <MenubarPortal>
         <MenubarContent
@@ -186,7 +186,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Remove from Collection -->
           <MenubarItem
             v-if="collectionId"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-orange-500/8 text-orange-600 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent/8 text-accent-ink outline-hidden cursor-pointer select-none"
             @click="onRemoveFromCollection"
           >
             <Icon icon="material-symbols:folder-delete" class="text-base" />
@@ -198,7 +198,7 @@ async function handleMoveToGame(targetGame: string) {
           <!-- Publish/Unpublish -->
           <MenubarItem
             v-if="clip.published"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onUnpublish"
           >
@@ -256,7 +256,7 @@ async function handleMoveToGame(targetGame: string) {
 
           <!-- Delete -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-red-500/8 text-red-600 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onDelete"
           >

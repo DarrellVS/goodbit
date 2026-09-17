@@ -247,7 +247,7 @@ async function onTrimmed(): Promise<void> {
 <template>
   <DialogRoot v-model:open="isOpen">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <!--
         `:key` is what makes this two modals rather than one that changes its
         mind: Vue sees a different element, so the old panel runs its leave and
@@ -305,20 +305,20 @@ async function onTrimmed(): Promise<void> {
         <div v-if="loading" class="flex-1 flex items-center justify-center">
           <div class="text-center space-y-3">
             <BaseSpinner
-              class="text-5xl text-orange-500" />
+              class="text-5xl text-accent-ink" />
             <p class="text-muted-600">Loading clip…</p>
           </div>
         </div>
 
         <div v-else-if="error || !clip" class="flex-1 flex items-center justify-center">
           <div class="text-center space-y-3 max-w-md px-6">
-            <Icon icon="material-symbols:error-outline" class="text-5xl text-red-500" />
+            <Icon icon="material-symbols:error-outline" class="text-5xl text-danger-ink" />
             <h2 class="text-xl font-bold text-foreground">Clip not found</h2>
             <p class="text-muted-600">
               {{ error || 'This clip does not exist any more.' }}
             </p>
             <button
-              class="px-5 py-2.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+              class="px-5 py-2.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover transition-colors"
               @click="close"
             >
               Close
@@ -392,7 +392,7 @@ async function onTrimmed(): Promise<void> {
 
                 <div class="bg-background/40 rounded-2xl p-5 border border-border">
                   <div class="flex items-center gap-2 mb-3">
-                    <Icon icon="material-symbols:label-rounded" class="text-lg text-orange-500" />
+                    <Icon icon="material-symbols:label-rounded" class="text-lg text-accent-ink" />
                     <h2 class="font-semibold text-foreground">Tags</h2>
                   </div>
                   <ClipTags :clip="clip" prominent @updated="clip = $event" />
@@ -402,7 +402,7 @@ async function onTrimmed(): Promise<void> {
                   <div class="flex items-center gap-2 mb-3">
                     <Icon
                       icon="material-symbols:folder-special-rounded"
-                      class="text-lg text-purple-500"
+                      class="text-lg text-muted-500"
                     />
                     <h2 class="font-semibold text-foreground">Collections</h2>
                   </div>

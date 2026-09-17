@@ -96,14 +96,14 @@ const showDetail = computed(() => props.route !== 'quick' || props.showEverythin
     installer. A button that says "Writing…" for ninety seconds reads
     as a hang, so this says which part is happening.
   -->
-  <div v-if="working" class="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5 space-y-2">
+  <div v-if="working" class="p-4 rounded-xl border border-accent/30 bg-accent/5 space-y-2">
     <div class="flex items-center gap-2 text-sm text-foreground">
-      <BaseSpinner class="text-lg text-orange-500" />
+      <BaseSpinner class="text-lg text-accent-ink" />
       <span>{{ progress?.message ?? 'Writing the settings' }}</span>
     </div>
     <div v-if="progress?.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
       <div
-        class="h-full bg-orange-500 transition-[width] duration-200"
+        class="h-full bg-accent transition-[width] duration-200"
         :style="{ width: `${progress.percent}%` }"
       ></div>
     </div>
@@ -120,5 +120,5 @@ const showDetail = computed(() => props.route !== 'quick' || props.showEverythin
   >
     {{ note }}
   </p>
-  <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
+  <p v-if="error" class="text-sm text-danger-ink">{{ error }}</p>
 </template>

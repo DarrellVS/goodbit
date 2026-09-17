@@ -109,7 +109,7 @@ watch(
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-lg flex flex-col outline-hidden modal-content-animate max-h-[85vh]"
       >
@@ -140,9 +140,9 @@ watch(
         </div>
 
         <!-- A parsed file, named before it is kept. -->
-        <div v-if="pendingImport" class="p-6 border-b border-border bg-orange-500/5 space-y-2">
+        <div v-if="pendingImport" class="p-6 border-b border-border bg-accent/5 space-y-2">
           <div class="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Icon icon="material-symbols:upload-file" class="text-lg text-orange-500" />
+            <Icon icon="material-symbols:upload-file" class="text-lg text-accent-ink" />
             Import draft
           </div>
           <div class="text-xs text-muted-600">
@@ -158,11 +158,11 @@ watch(
               v-model="importName"
               type="text"
               :placeholder="pendingImport.name"
-              class="flex-1 px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              class="flex-1 px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
               @keydown.enter="confirmImport"
             />
             <button
-              class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors"
+              class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors"
               @click="confirmImport"
             >
               Import
@@ -186,11 +186,11 @@ watch(
               v-model="name"
               type="text"
               :placeholder="defaultName()"
-              class="flex-1 px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              class="flex-1 px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
               @keydown.enter="save"
             />
             <button
-              class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               :disabled="!canSave || saving"
               @click="save"
             >
@@ -209,8 +209,8 @@ watch(
 
         <div class="flex-1 overflow-y-auto p-6">
           <div v-if="drafts.length === 0" class="text-center py-6">
-            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-500/16 flex items-center justify-center">
-              <Icon icon="material-symbols:bookmarks-outline" class="text-2xl text-orange-400" />
+            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-accent/16 flex items-center justify-center">
+              <Icon icon="material-symbols:bookmarks-outline" class="text-2xl text-accent-ink" />
             </div>
             <p class="text-sm font-medium text-muted-700">No saved drafts</p>
             <p class="text-xs mt-1 text-muted-500">
@@ -222,14 +222,14 @@ watch(
             <li
               v-for="draft in drafts"
               :key="draft.id"
-              class="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-orange-400 transition-colors"
+              class="flex items-center gap-2 p-3 rounded-lg border border-border hover:border-accent transition-colors"
             >
               <div class="min-w-0 flex-1">
                 <div class="text-sm font-medium text-foreground truncate flex items-center gap-1.5">
                   {{ draft.name }}
                   <span
                     v-if="draft.id === activeId"
-                    class="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-700 text-[10px] font-semibold shrink-0"
+                    class="px-1.5 py-0.5 rounded-full bg-accent/15 text-accent-ink text-[10px] font-semibold shrink-0"
                   >
                     editing
                   </span>
@@ -244,7 +244,7 @@ watch(
               </div>
 
               <button
-                class="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-500/10 text-orange-700 border border-orange-500/30 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium bg-accent/10 text-accent-ink border border-accent/30 hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 :disabled="draft.id === activeId"
                 :title="draft.id === activeId ? 'Already open' : 'Load this draft onto the timeline'"
                 @click="emit('open-draft', draft)"
@@ -252,14 +252,14 @@ watch(
                 Open
               </button>
               <button
-                class="p-1.5 rounded-lg text-muted-500 hover:text-orange-600 hover:bg-orange-500/8 transition-colors"
+                class="p-1.5 rounded-lg text-muted-500 hover:text-accent-ink hover:bg-accent/8 transition-colors"
                 title="Export to a file"
                 @click="downloadDraft(draft)"
               >
                 <Icon icon="material-symbols:download" class="text-lg" />
               </button>
               <button
-                class="p-1.5 rounded-lg text-muted-500 hover:text-red-600 hover:bg-red-500/8 transition-colors"
+                class="p-1.5 rounded-lg text-muted-500 hover:text-danger-ink hover:bg-danger/8 transition-colors"
                 title="Delete draft"
                 @click="emit('delete-draft', draft)"
               >

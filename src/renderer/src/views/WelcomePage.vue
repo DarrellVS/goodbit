@@ -141,7 +141,7 @@ async function finish(): Promise<void> {
           v-for="(entry, index) in steps"
           :key="entry.id"
           class="h-1 flex-1 rounded-full transition-colors"
-          :class="index <= step ? 'bg-orange-500' : 'bg-muted-100'"
+          :class="index <= step ? 'bg-accent' : 'bg-muted-100'"
           :title="entry.label"
         ></li>
       </ol>
@@ -170,7 +170,7 @@ async function finish(): Promise<void> {
         <button
           class="w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-colors"
           :class="settings.videosRoot
-            ? 'border-orange-400 bg-orange-500/5'
+            ? 'border-accent bg-accent/5'
             : 'border-border bg-card hover:bg-muted-50'"
           :disabled="working"
           @click="chooseVideos"
@@ -178,7 +178,7 @@ async function finish(): Promise<void> {
           <Icon
             :icon="settings.videosRoot ? 'material-symbols:check-circle' : 'material-symbols:folder-open'"
             class="text-2xl shrink-0"
-            :class="settings.videosRoot ? 'text-orange-500' : 'text-muted-400'"
+            :class="settings.videosRoot ? 'text-accent-ink' : 'text-muted-400'"
           />
           <span class="min-w-0 flex-1">
             <span class="block font-medium text-foreground">Your clips folder</span>
@@ -215,14 +215,14 @@ async function finish(): Promise<void> {
           <p class="text-sm text-muted-500">{{ progress.message }}</p>
           <div v-if="progress.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">
             <div
-              class="h-full bg-orange-500 transition-[width] duration-200"
+              class="h-full bg-accent transition-[width] duration-200"
               :style="{ width: `${progress.percent}%` }"
             ></div>
           </div>
         </div>
 
         <p v-if="installMessage" class="text-sm text-foreground">{{ installMessage }}</p>
-        <p v-if="setupError" class="text-sm text-red-500">{{ setupError }}</p>
+        <p v-if="setupError" class="text-sm text-danger-ink">{{ setupError }}</p>
 
         <div class="flex flex-wrap gap-2">
           <button
@@ -231,7 +231,7 @@ async function finish(): Promise<void> {
             class="px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
             :class="
               option.method === 'winget'
-                ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                ? 'bg-accent hover:bg-accent-hover text-accent-fg'
                 : 'border border-border hover:bg-muted-50 text-foreground'
             "
             :disabled="installing"
@@ -266,7 +266,7 @@ async function finish(): Promise<void> {
           </p>
 
           <button
-            class="w-full py-3 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 disabled:opacity-40"
+            class="w-full py-3 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-40"
             :disabled="setupWorking"
             @click="showSetupDialog = true"
           >
@@ -321,7 +321,7 @@ async function finish(): Promise<void> {
 
         <button
           v-if="current.id !== 'finish'"
-          class="flex-1 py-3 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 disabled:opacity-40 disabled:hover:bg-orange-500 transition-colors"
+          class="flex-1 py-3 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent transition-colors"
           :disabled="!canContinue"
           @click="next"
         >
@@ -330,7 +330,7 @@ async function finish(): Promise<void> {
 
         <button
           v-else
-          class="flex-1 py-3 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors"
+          class="flex-1 py-3 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover transition-colors"
           @click="finish"
         >
           Start using GoodBit

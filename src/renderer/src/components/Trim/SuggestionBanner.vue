@@ -181,7 +181,7 @@ function reject(): void {
   <div
     v-else-if="show && window"
     key="answer"
-    class="px-4 py-2.5 rounded-xl border border-orange-300 bg-orange-500/6 space-y-2"
+    class="px-4 py-2.5 rounded-xl border border-accent bg-accent/6 space-y-2"
   >
     <div class="flex flex-wrap items-center gap-3">
     <!--
@@ -189,8 +189,8 @@ function reject(): void {
       all we did was listen. `material-symbols:crosshair` is not a real icon
       name, so this was a blank space.
     -->
-    <Wordmark v-if="evidence" bare :size="20" class="text-orange-500" />
-    <Icon v-else icon="material-symbols:graphic-eq" class="text-lg text-orange-500 shrink-0" />
+    <Wordmark v-if="evidence" bare :size="20" class="text-accent-ink" />
+    <Icon v-else icon="material-symbols:graphic-eq" class="text-lg text-accent-ink shrink-0" />
 
     <div class="text-sm text-muted-800 min-w-0">
       <span class="font-semibold">{{ headline }}</span>
@@ -201,7 +201,7 @@ function reject(): void {
       <button
         v-for="goodBit in suggestions?.goodBits ?? []"
         :key="goodBit.t"
-        class="text-[11px] font-mono px-1.5 py-0.5 rounded-sm border border-orange-300 text-orange-700 hover:bg-orange-500/16 transition-colors"
+        class="text-[11px] font-mono px-1.5 py-0.5 rounded-sm border border-accent text-accent-ink hover:bg-accent/16 transition-colors"
         :title="`Jump to ${format(goodBit.t)}`"
         @click="emit('seek', goodBit.t)"
       >
@@ -209,7 +209,7 @@ function reject(): void {
       </button>
 
       <button
-        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-orange-500 transition-colors"
+        class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-50 disabled:hover:bg-accent transition-colors"
         :disabled="applied"
         @click="emit('apply', window.start, window.end)"
       >
@@ -217,7 +217,7 @@ function reject(): void {
       </button>
 
       <button
-        class="text-xs px-2 py-1.5 rounded-lg text-muted-500 hover:text-muted-800 hover:bg-black/5 transition-colors disabled:opacity-40"
+        class="text-xs px-2 py-1.5 rounded-lg text-muted-500 hover:text-muted-800 hover:bg-muted-100 transition-colors disabled:opacity-40"
         :disabled="dismissed"
         :title="dismissed ? 'Noted' : 'Tell GoodBit this suggestion is wrong'"
         @click="reject"
@@ -243,7 +243,7 @@ function reject(): void {
     -->
     <div
       v-if="anchors.length > 0"
-      class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-orange-300/50"
+      class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-accent/50"
     >
       <span class="text-xs text-muted-500 mr-1">
         This game showed {{ anchors.length }} moments. Keep any of them:
@@ -256,8 +256,8 @@ function reject(): void {
         class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors disabled:cursor-default"
         :class="
           keptAlready(anchor)
-            ? 'border-orange-300/60 text-muted-500 bg-orange-500/4'
-            : 'border-orange-300 text-orange-700 hover:bg-orange-500/16'
+            ? 'border-accent/60 text-muted-500 bg-accent/4'
+            : 'border-accent text-accent-ink hover:bg-accent/16'
         "
         :disabled="keptAlready(anchor)"
         :title="

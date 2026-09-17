@@ -64,7 +64,7 @@ const emit = defineEmits<Emits>();
         <RouterLink
           to="/"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-          exact-active-class="bg-orange-500/10 text-orange-500"
+          exact-active-class="bg-accent/10 text-accent-ink"
         >
           <Icon icon="material-symbols:video-library" class="text-lg" />
           <span class="font-medium">Library</span>
@@ -73,7 +73,7 @@ const emit = defineEmits<Emits>();
         <RouterLink
           to="/today"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-          exact-active-class="bg-orange-500/10 text-orange-500"
+          exact-active-class="bg-accent/10 text-accent-ink"
         >
           <Icon icon="material-symbols:schedule" class="text-lg" />
           <span class="font-medium">Today</span>
@@ -82,7 +82,7 @@ const emit = defineEmits<Emits>();
         <RouterLink
           to="/editor"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-          exact-active-class="bg-orange-500/10 text-orange-500"
+          exact-active-class="bg-accent/10 text-accent-ink"
         >
           <Icon icon="material-symbols:movie-edit" class="text-lg" />
           <span class="font-medium">Editor</span>
@@ -100,7 +100,7 @@ const emit = defineEmits<Emits>();
       <RouterLink
         to="/tag-patterns"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-        exact-active-class="bg-orange-500/10 text-orange-500"
+        exact-active-class="bg-accent/10 text-accent-ink"
       >
         <Icon icon="material-symbols:auto-awesome" class="text-lg" />
         <span class="font-medium">Smart Tags</span>
@@ -109,7 +109,7 @@ const emit = defineEmits<Emits>();
       <RouterLink
         to="/stats"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-        exact-active-class="bg-orange-500/10 text-orange-500"
+        exact-active-class="bg-accent/10 text-accent-ink"
       >
         <Icon icon="material-symbols:bar-chart" class="text-lg" />
         <span class="font-medium">Stats</span>
@@ -118,7 +118,7 @@ const emit = defineEmits<Emits>();
       <RouterLink
         to="/settings"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted-100 transition-colors group"
-        exact-active-class="bg-orange-500/10 text-orange-500"
+        exact-active-class="bg-accent/10 text-accent-ink"
       >
         <Icon icon="material-symbols:settings" class="text-lg" />
         <span class="font-medium">Settings</span>

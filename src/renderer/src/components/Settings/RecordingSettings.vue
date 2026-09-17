@@ -159,7 +159,7 @@ function openGuide(): void {
           v-else
           :icon="status.ready ? 'material-symbols:check-circle' : 'material-symbols:error-circle-rounded'"
           class="text-xl shrink-0 mt-0.5"
-          :class="status.ready ? 'text-emerald-500' : 'text-orange-500'"
+          :class="status.ready ? 'text-success' : 'text-accent-ink'"
         />
         <div class="min-w-0">
           <p class="font-medium text-foreground">{{ headline }}</p>
@@ -183,7 +183,7 @@ function openGuide(): void {
             class="flex items-start gap-2.5 p-3 rounded-xl border"
             :class="
               finding.level === 'blocker'
-                ? 'border-red-500/30 bg-red-500/5'
+                ? 'border-danger/30 bg-danger/5'
                 : 'border-border bg-muted-50'
             "
           >
@@ -194,7 +194,7 @@ function openGuide(): void {
                   : 'material-symbols:info-outline'
               "
               class="text-base shrink-0 mt-0.5"
-              :class="finding.level === 'blocker' ? 'text-red-500' : 'text-muted-400'"
+              :class="finding.level === 'blocker' ? 'text-danger-ink' : 'text-muted-400'"
             />
             <div class="min-w-0">
               <p class="text-sm font-medium text-foreground">{{ finding.title }}</p>
@@ -205,7 +205,7 @@ function openGuide(): void {
 
         <div class="flex flex-wrap items-center gap-2">
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium disabled:opacity-50"
+            class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium disabled:opacity-50"
             :disabled="loading || working"
             @click="openSetup"
           >
@@ -220,14 +220,14 @@ function openGuide(): void {
 
           <button
             v-if="status.ready"
-            class="px-4 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground"
+            class="px-4 py-2 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-sm font-medium text-foreground"
             @click="launch"
           >
             {{ status.running ? 'OBS is running' : 'Start OBS' }}
           </button>
 
           <button
-            class="inline-flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-500 ml-auto"
+            class="inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-accent-ink ml-auto"
             @click="openGuide"
           >
             <Icon icon="material-symbols:open-in-new" class="text-base" />
@@ -244,7 +244,7 @@ function openGuide(): void {
             restores the one key it changed in a file it did not, from the
             backup it took at the time.
           -->
-          <button class="text-orange-600 hover:text-orange-500 ml-1" @click="undo">
+          <button class="text-accent-ink hover:text-accent-ink ml-1" @click="undo">
             Undo that
           </button>
         </p>
@@ -266,7 +266,7 @@ function openGuide(): void {
         </p>
       </div>
       <button
-        class="px-3 py-2 rounded-lg border border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 text-sm font-medium text-foreground shrink-0"
+        class="px-3 py-2 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-sm font-medium text-foreground shrink-0"
         @click="runOnboarding"
       >
         Start it
@@ -367,7 +367,7 @@ function openGuide(): void {
               min="0"
               max="100"
               step="5"
-              class="w-40 accent-orange-500"
+              class="w-40 accent-accent"
               aria-label="Chime volume"
               @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
             />

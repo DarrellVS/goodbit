@@ -48,7 +48,7 @@ const emit = defineEmits<Emits>();
   <div class="flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-t border-border">
     <div class="flex items-center gap-2">
       <button
-        class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="!canUndo"
         title="Undo"
         aria-label="Undo"
@@ -58,7 +58,7 @@ const emit = defineEmits<Emits>();
       </button>
       
       <button
-        class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="!canRedo"
         title="Redo"
         aria-label="Redo"
@@ -70,7 +70,7 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-6 bg-muted-300 mx-2" />
       
       <button
-        class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors"
+        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors"
         :title="`Back ${SKIP_SECONDS} seconds`"
         :aria-label="`Back ${SKIP_SECONDS} seconds`"
         @click="emit('skip-backward')"
@@ -80,7 +80,7 @@ const emit = defineEmits<Emits>();
       
       <!-- Nothing plays while a render is reading the same files. -->
       <button
-        class="p-2.5 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="p-2.5 rounded-lg bg-linear-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent-hover transition-all shadow-lg shadow-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="props.exporting"
         :title="props.exporting ? 'Playback is paused while the export runs' : playing ? 'Pause' : 'Play'"
         :aria-label="playing ? 'Pause' : 'Play'"
@@ -90,7 +90,7 @@ const emit = defineEmits<Emits>();
       </button>
       
       <button
-        class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors"
+        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors"
         :title="`Forward ${SKIP_SECONDS} seconds`"
         :aria-label="`Forward ${SKIP_SECONDS} seconds`"
         @click="emit('skip-forward')"
@@ -108,7 +108,7 @@ const emit = defineEmits<Emits>();
       
       <div class="flex items-center gap-2">
         <button
-          class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40"
+          class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40"
           title="Zoom out"
           :disabled="zoom <= 0.25"
           @click="emit('zoom-out')"
@@ -123,7 +123,7 @@ const emit = defineEmits<Emits>();
           has this button; this one did not.
         -->
         <button
-          class="text-xs font-medium text-muted-600 w-12 text-center rounded-md py-1 hover:bg-black/5 hover:text-orange-600 transition-colors"
+          class="text-xs font-medium text-muted-600 w-12 text-center rounded-md py-1 hover:bg-muted-100 hover:text-accent-ink transition-colors"
           title="Fit the whole timeline on screen"
           @click="emit('zoom-fit')"
         >
@@ -131,7 +131,7 @@ const emit = defineEmits<Emits>();
         </button>
         
         <button
-          class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40"
+          class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40"
           title="Zoom in"
           :disabled="zoom >= 3"
           @click="emit('zoom-in')"
@@ -147,7 +147,7 @@ const emit = defineEmits<Emits>();
         button that turns it into a montage.
       -->
       <button
-        class="px-3 py-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors flex items-center gap-1.5 text-sm font-medium text-muted-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="px-3 py-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors flex items-center gap-1.5 text-sm font-medium text-muted-700 disabled:opacity-40 disabled:cursor-not-allowed"
         title="Trim every clip to the moment its sound spikes"
         :disabled="props.trimmingHighlights || !props.clipCount"
         @click="emit('trim-to-highlights')"
@@ -168,13 +168,13 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-6 bg-muted-300" />
 
       <button
-        class="px-4 py-2 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all font-medium shadow-lg shadow-orange-500/20 flex items-center gap-2 text-sm text-card disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+        class="px-4 py-2 rounded-lg bg-linear-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent-hover transition-all font-medium shadow-lg shadow-accent/20 flex items-center gap-2 text-sm text-card disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
         :disabled="props.exporting"
         @click="emit('export')"
       >
         <div
           v-if="props.exporting && props.exportProgress !== undefined"
-          class="absolute inset-0 bg-orange-700/30 transition-all duration-300"
+          class="absolute inset-0 bg-accent-hover/30 transition-all duration-300"
           :style="{ width: `${props.exportProgress}%` }"
         />
         <Icon 

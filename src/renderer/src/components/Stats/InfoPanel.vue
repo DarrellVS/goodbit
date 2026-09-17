@@ -16,7 +16,7 @@ defineProps<Props>();
 <template>
   <div class="bg-card border border-border rounded-xl p-6">
     <div class="flex items-center gap-2 mb-4">
-      <Icon icon="material-symbols:info" class="text-xl text-orange-500" />
+      <Icon icon="material-symbols:info" class="text-xl text-accent-ink" />
       <h3 class="text-lg font-semibold">Info</h3>
     </div>
     

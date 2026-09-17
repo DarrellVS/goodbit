@@ -205,7 +205,7 @@ watch(
 <template>
   <DialogRoot v-model:open="isOpen">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <Transition name="clip-modal" appear>
         <DialogContent
           class="fixed inset-8 z-50 bg-card rounded-2xl shadow-2xl border border-border flex flex-col outline-hidden overflow-hidden"
@@ -246,7 +246,7 @@ watch(
                   type="text"
                   :value="clipsStore.searchText"
                   placeholder="Search this collection"
-                  class="w-72 rounded-lg border border-border bg-card py-2 pl-10 pr-4 text-foreground placeholder:text-muted-400 outline-hidden transition focus:ring-2 focus:ring-orange-500/50"
+                  class="w-72 rounded-lg border border-border bg-card py-2 pl-10 pr-4 text-foreground placeholder:text-muted-400 outline-hidden transition focus:ring-2 focus:ring-accent/50"
                   @input="clipsStore.setSearch(($event.target as HTMLInputElement).value)"
                 />
               </div>

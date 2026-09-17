@@ -98,7 +98,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
       <button
         class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
         :class="[
-          { 'bg-orange-500/10 text-orange-500': !activeGame },
+          { 'bg-accent/10 text-accent-ink': !activeGame },
           props.disabled ? 'cursor-not-allowed' : 'hover:bg-muted-100'
         ]"
         @click="!props.disabled && emit('select-game', '')"
@@ -107,7 +107,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
           <!-- The same sixteen pixel box every game row uses, so All lines up
                with them rather than sitting two pixels to the left. -->
           <span class="w-4 h-4 flex items-center justify-center shrink-0">
-            <span class="w-2 h-2 rounded-full bg-orange-500" />
+            <span class="w-2 h-2 rounded-full bg-accent" />
           </span>
           <span class="font-medium">All</span>
         </div>
@@ -118,7 +118,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         :key="game.game"
         class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors group text-left"
         :class="[
-          { 'bg-orange-500/10 text-orange-500': activeGame === game.game },
+          { 'bg-accent/10 text-accent-ink': activeGame === game.game },
           props.disabled ? 'cursor-not-allowed' : 'hover:bg-muted-100'
         ]"
       >
@@ -138,7 +138,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
           -->
           <span class="w-4 h-4 flex items-center justify-center shrink-0">
             <GameArt :game="game.game" kind="icon" class="w-4 h-4 rounded-sm">
-              <span class="w-2 h-2 rounded-full bg-orange-500" />
+              <span class="w-2 h-2 rounded-full bg-accent" />
             </GameArt>
           </span>
           <span 

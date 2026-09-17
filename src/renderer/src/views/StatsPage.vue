@@ -25,8 +25,8 @@ const statCards = computed(() => {
       value: stats.value.totalClips.toLocaleString(),
       subtitle: `${stats.value.gamesCount} games`,
       icon: 'material-symbols:video-library',
-      iconColor: 'text-orange-500',
-      iconBg: 'bg-orange-500/8',
+      iconColor: 'text-muted-500',
+      iconBg: 'bg-muted-100',
       clickable: false,
       onClick: undefined,
     },
@@ -35,8 +35,8 @@ const statCards = computed(() => {
       value: formatBytes(stats.value.totalSize),
       subtitle: `${formatBytes(stats.value.avgClipSize)} avg`,
       icon: 'material-symbols:storage',
-      iconColor: 'text-blue-500',
-      iconBg: 'bg-blue-500/8',
+      iconColor: 'text-muted-500',
+      iconBg: 'bg-muted-100',
       clickable: false,
       onClick: undefined,
     },
@@ -45,8 +45,8 @@ const statCards = computed(() => {
       value: stats.value.publishedClips,
       subtitle: `${formatPercentage(stats.value.publishedClips, stats.value.totalClips)}%`,
       icon: 'material-symbols:cloud-upload',
-      iconColor: 'text-green-500',
-      iconBg: 'bg-green-500/8',
+      iconColor: 'text-muted-500',
+      iconBg: 'bg-muted-100',
       clickable: true,
       onClick: handlePublishedClick,
     },
@@ -55,8 +55,8 @@ const statCards = computed(() => {
       value: stats.value.starredClips,
       subtitle: `${formatPercentage(stats.value.starredClips, stats.value.totalClips)}%`,
       icon: 'material-symbols:star',
-      iconColor: 'text-orange-500',
-      iconBg: 'bg-orange-500/8',
+      iconColor: 'text-muted-500',
+      iconBg: 'bg-muted-100',
       clickable: true,
       onClick: handleStarredClick,
     },
@@ -104,7 +104,7 @@ onMounted(() => {
 <template>
   <div class="p-6 space-y-6">
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <BaseSpinner class="w-12 h-12 text-orange-500" />
+      <BaseSpinner class="w-12 h-12 text-accent-ink" />
     </div>
 
     <template v-else-if="stats">

@@ -85,7 +85,7 @@ async function apply(): Promise<void> {
 <template>
   <div
     v-if="invite"
-    class="fixed inset-0 z-200 flex items-center justify-center bg-black/50 p-6"
+    class="fixed inset-0 z-200 flex items-center justify-center bg-scrim p-6"
     role="dialog"
     aria-modal="true"
     aria-label="Set up publishing"
@@ -93,8 +93,8 @@ async function apply(): Promise<void> {
   >
     <div class="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
       <div class="flex items-start gap-4 p-6">
-        <div class="shrink-0 w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center">
-          <Icon icon="material-symbols:cloud-upload" class="text-white text-2xl" />
+        <div class="shrink-0 w-11 h-11 rounded-xl bg-accent flex items-center justify-center">
+          <Icon icon="material-symbols:cloud-upload" class="text-accent-fg text-2xl" />
         </div>
         <div class="min-w-0">
           <h2 class="text-lg font-semibold text-foreground leading-tight">Set up publishing?</h2>
@@ -113,7 +113,7 @@ async function apply(): Promise<void> {
           <dt class="text-muted-500 flex items-center gap-2">
             Using the token
             <button
-              class="text-xs text-orange-600 hover:text-orange-500"
+              class="text-xs text-accent-ink hover:text-accent-ink"
               @click="showToken = !showToken"
             >
               {{ showToken ? 'hide' : 'show' }}
@@ -129,7 +129,7 @@ async function apply(): Promise<void> {
       -->
       <p
         v-if="replacing"
-        class="mx-6 mt-3 px-4 py-3 rounded-xl border border-orange-400/50 bg-orange-500/8 text-sm text-muted-700"
+        class="mx-6 mt-3 px-4 py-3 rounded-xl border border-accent/50 bg-accent/8 text-sm text-muted-700"
       >
         This replaces the publisher you have set up, at
         <span class="font-mono">{{ settings.publisherBaseUrl }}</span>. Clips already published stay
@@ -148,7 +148,7 @@ async function apply(): Promise<void> {
           Not now
         </button>
         <button
-          class="px-4 py-2.5 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+          class="px-4 py-2.5 rounded-xl bg-accent text-accent-fg font-semibold hover:bg-accent-hover disabled:opacity-50 transition-colors"
           :disabled="saving"
           @click="apply"
         >

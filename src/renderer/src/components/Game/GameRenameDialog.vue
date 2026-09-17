@@ -58,7 +58,7 @@ const folderName = computed(() => props.game?.game || '');
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-xl shadow-2xl border border-border w-full max-w-md flex flex-col outline-hidden modal-content-animate"
       >
@@ -81,7 +81,7 @@ const folderName = computed(() => props.game?.game || '');
               v-model="displayName"
               type="text"
               placeholder="Enter a custom display name"
-              class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
               @keydown.enter="handleSave"
             />
           </div>
@@ -113,7 +113,7 @@ const folderName = computed(() => props.game?.game || '');
             </button>
           </DialogClose>
           <button
-            class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             :disabled="loading"
             @click="handleSave"
           >

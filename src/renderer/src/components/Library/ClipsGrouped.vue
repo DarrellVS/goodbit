@@ -84,7 +84,7 @@ function time(clip: Clip): number {
       :class="config.public.value.compactMode ? 'space-y-2' : 'space-y-3'"
     >
       <div class="flex items-center gap-3 px-2">
-        <Icon icon="material-symbols:label" class="w-5 h-5 text-orange-500" />
+        <Icon icon="material-symbols:label" class="w-5 h-5 text-accent-ink" />
         <div class="flex-1">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-semibold text-foreground">
@@ -111,7 +111,7 @@ function time(clip: Clip): number {
           costs nothing but the repetition.
         -->
         <button
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-orange-500 hover:bg-orange-500/10 transition-colors shrink-0
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-accent-ink hover:bg-accent/10 transition-colors shrink-0
                  opacity-0 group-hover/day:opacity-100 focus-visible:opacity-100 transition-opacity"
           :title="`Open these ${group.clips.length} clips in the editor, oldest first`"
           @click="editDayInEditor(group)"
