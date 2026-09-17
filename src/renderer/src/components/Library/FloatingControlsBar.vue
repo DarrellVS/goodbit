@@ -49,7 +49,7 @@ const showSelectionToolbar = computed(() => props.hasSelection);
 </script>
 
 <template>
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+  <div data-batch-bar class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
     <Transition name="floating-bar">
       <BatchOperationsToolbar
         v-if="showSelectionToolbar"

@@ -74,7 +74,7 @@ test.describe('the editor', () => {
 
       const overhang = await ctx.page.evaluate(() => {
         // The clip blocks sit inside the video lane; neither may extend past it.
-        const lane = document.querySelector('.h-16.rounded-lg');
+        const lane = document.querySelector('[data-lane="video"]');
         if (!lane) return null;
 
         const laneRight = lane.getBoundingClientRect().right;
@@ -118,14 +118,17 @@ test.describe('the editor', () => {
       const left = (element: Element | null | undefined): number | null =>
         element ? element.getBoundingClientRect().left : null;
 
-      const lane = document.querySelector('.h-16.rounded-lg');
-
-      const playhead = Array.from(document.querySelectorAll('div')).find(
-        (node) =>
-          node.className.includes('w-0.5') &&
-          node.className.includes('bg-orange-500') &&
-          node.className.includes('z-20'),
-      );
+      /*
+       * Found by name, not by paint.
+       *
+       * This used to look for a `div` whose class list contained `w-0.5`,
+       * `bg-orange-500` and `z-20`. The 3.x colour pass turned that orange
+       * into a token, the query stopped matching, and the only thing between
+       * a silently blind test and a green tick was the assertion below that
+       * the playhead is measurable at all. Both are named in the markup now.
+       */
+      const lane = document.querySelector('[data-lane="video"]');
+      const playhead = document.querySelector('[data-playhead]');
 
       // Each ruler mark is a zero width box holding a 1px tick and a label.
       const marks = Array.from(document.querySelectorAll('div')).filter(

@@ -175,7 +175,7 @@ function handleRulerMouseUp(): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-card/60 rounded-md border border-border overflow-hidden select-none">
+  <div class="flex flex-col h-full overflow-hidden select-none">
     <div
       ref="rulerRef"
       class="shrink-0 h-7 bg-accent/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
@@ -263,7 +263,7 @@ function handleRulerMouseUp(): void {
           has now drifted apart twice. Changing the gutter should be changing
           one number.
         -->
-        <div class="relative h-16 bg-accent/4 rounded-lg border border-border">
+        <div data-lane="video" class="relative h-16 bg-surface-sunk rounded-md">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -287,7 +287,7 @@ function handleRulerMouseUp(): void {
           which only became visible when Tailwind 4 started rendering off-scale
           opacities that Tailwind 3 dropped on the floor. A lane is a lane.
         -->
-        <div class="relative h-12 bg-accent/4 rounded-lg border border-border">
+        <div data-lane="audio" class="relative h-12 bg-surface-sunk rounded-md">
           <!--
             Everything past the last frame of video is dropped on export, so the
             lane says so rather than letting a long track look like it survives.
@@ -322,8 +322,18 @@ function handleRulerMouseUp(): void {
           </button>
         </div>
 
+        <!--
+      `data-playhead` is not decoration. `editor.spec.ts` measures where the
+      ruler, the lanes and this agree that time zero is, and it used to find
+      this element by looking for `bg-orange-500`, so the 3.x colour pass broke
+      it silently: the query returned nothing and the assertion that the
+      playhead is measurable was the only thing standing between that and a
+      green tick. A test that locates an element by how it is painted is a
+      test that a restyle can delete.
+    -->
         <div
-          class="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none z-20 shadow-accent/50"
+          data-playhead
+          class="absolute top-0 bottom-0 w-0.5 bg-accent pointer-events-none z-20"
           :style="{ left: `${playheadPosition}px` }"
         >
           <!--
@@ -348,7 +358,7 @@ function handleRulerMouseUp(): void {
             without either of those depending on a spacing rule reaching an
             element it was never aimed at.
           -->
-          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-accent rounded-full shadow-accent/50 border-2 border-card" />
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 size-3 bg-accent rounded-full border-2 border-card" />
         </div>
       </div>
     </div>

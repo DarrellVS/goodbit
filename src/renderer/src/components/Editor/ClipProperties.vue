@@ -51,8 +51,8 @@ function volumeToDecimal(percentage: number): number {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-card/60 rounded-md border border-border overflow-hidden">
-    <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border">
+  <div class="flex flex-col h-full overflow-hidden border-l border-border">
+    <div class="shrink-0 h-11 px-4 flex items-center border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
         <Icon icon="material-symbols:tune" class="text-muted-500" />
         Clip Properties
@@ -82,7 +82,7 @@ function volumeToDecimal(percentage: number): number {
 
         <div
           v-if="highlightLoading"
-          class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600"
+          class="flex items-center gap-2 px-3 py-2.5 rounded-md bg-muted-50 text-xs text-muted-600"
         >
           <BaseSpinner class="text-accent-ink text-base" />
           Listening to this clip…
@@ -104,7 +104,7 @@ function volumeToDecimal(percentage: number): number {
           {{ onHighlight ? 'Trimmed to the highlight' : `Trim to ${formatDuration(highlight.start)}–${formatDuration(highlight.end)}` }}
         </button>
 
-        <p v-else class="px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600">
+        <p v-else class="px-3 py-2.5 rounded-md bg-muted-50 text-xs text-muted-600">
           The sound of this clip never really changes, so there is nothing to point at.
         </p>
       </div>
@@ -202,7 +202,7 @@ function volumeToDecimal(percentage: number): number {
           <Icon icon="material-symbols:info" class="text-muted-500" />
           Clip Info
         </div>
-        <div class="space-y-1.5 text-xs bg-card/80 rounded-lg p-3 border border-border">
+        <div class="space-y-1.5 text-xs bg-muted-50 rounded-md p-3">
           <div class="flex justify-between">
             <span class="text-muted-600">Original:</span>
             <span class="font-mono text-foreground">{{ formatDuration(clip.originalDuration) }}</span>

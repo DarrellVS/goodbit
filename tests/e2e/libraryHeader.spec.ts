@@ -178,7 +178,7 @@ test.describe('the library header', () => {
      * still had height would be the bug, and it is invisible to a count.
      */
     const footprint = await ctx.page.evaluate(() => {
-      const bar = document.querySelector('.fixed.bottom-6');
+      const bar = document.querySelector('[data-batch-bar]');
       if (!bar) return { present: false, width: 0, height: 0, hits: false };
 
       const box = bar.getBoundingClientRect();
@@ -191,7 +191,7 @@ test.describe('the library header', () => {
         present: true,
         width: Math.round(box.width),
         height: Math.round(box.height),
-        hits: !!at?.closest('.fixed.bottom-6'),
+        hits: !!at?.closest('[data-batch-bar]'),
       };
     });
 

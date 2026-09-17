@@ -776,7 +776,7 @@ watch(
 <template>
   <!-- h-full, not h-screen: 100vh ignores the title bar above and overflows by exactly its height. -->
   <div class="h-full flex flex-col bg-background text-foreground overflow-hidden">
-    <header class="shrink-0 flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-b border-border">
+    <header class="shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-border">
       <!--
         A real way out, in the app rather than in the window chrome.
 
@@ -986,14 +986,14 @@ watch(
             banner asked only about continuing.
           -->
           <button
-            class="h-8 px-4 rounded-lg border border-border bg-card/70 text-muted-700 text-xs font-semibold hover:bg-card transition-colors inline-flex items-center justify-center shrink-0"
+            class="h-8 px-3.5 rounded-md border border-border text-foreground text-xs font-medium hover:bg-card transition-colors inline-flex items-center justify-center shrink-0"
             @click="dismissResumable"
           >
             {{ timelineClips.length > 0 ? 'Keep what I have' : 'Discard' }}
           </button>
         </div>
 
-        <div class="flex-1 relative bg-card/60 backdrop-blur-sm rounded-md border border-border overflow-hidden">
+        <div class="flex-1 relative overflow-hidden">
           <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
             <!--
               Two stacked players: one is on screen while the other preloads and

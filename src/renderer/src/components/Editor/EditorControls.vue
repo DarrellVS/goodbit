@@ -110,7 +110,7 @@ const emit = defineEmits<Emits>();
     </div>
 
     <div class="flex items-center gap-4">
-      <div class="text-sm font-mono text-muted-700">
+      <div data-transport-clock class="text-sm font-mono tabular-nums text-muted-600">
         {{ formatTime(currentTime) }} <span class="text-muted-400">/</span> {{ formatTime(duration) }}
       </div>
 

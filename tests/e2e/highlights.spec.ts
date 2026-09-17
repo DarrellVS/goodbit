@@ -57,9 +57,16 @@ test.describe('a day, edited', () => {
   test('the analysis finds the loud moment and the lane gets shorter', async () => {
     await editTheDay();
 
-    const readClock = () => ctx.page.locator('div.text-sm.font-mono').first().innerText();
-    // The transport's own readout: "0:00.00 / 1:18.00". The per-clip figures
-    // in the properties panel share the font and would not move.
+    /*
+     * The transport's own readout: "0:00.00 / 1:18.00".
+     *
+     * Found by name rather than by `div.text-sm.font-mono`, which picked it
+     * out of every element that happened to be small and monospaced, and
+     * therefore out of the per-clip figures in the properties panel as well.
+     * A restyle that changed either class would have moved this quietly onto
+     * a number that never changes.
+     */
+    const readClock = () => ctx.page.locator('[data-transport-clock]').first().innerText();
     const before = await readClock();
 
     await ctx.page.getByTitle(/trim every clip/i).click();
