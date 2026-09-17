@@ -45,57 +45,67 @@ const emit = defineEmits<Emits>();
 </script>
 
 <template>
-  <div class="flex items-center justify-between px-6 py-3 bg-card/60 backdrop-blur-sm border-t border-border">
-    <div class="flex items-center gap-2">
+  <div class="flex items-center justify-between gap-4 px-4 h-14 bg-card border-t border-border">
+    <div class="flex items-center gap-1.5">
       <button
-        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        type="button"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :disabled="!canUndo"
         title="Undo"
         aria-label="Undo"
         @click="emit('undo')"
       >
-        <Icon icon="material-symbols:undo" class="text-lg text-muted-700" />
+        <Icon icon="material-symbols:undo" class="size-5 shrink-0 block" />
       </button>
-      
+
       <button
-        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        type="button"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :disabled="!canRedo"
         title="Redo"
         aria-label="Redo"
         @click="emit('redo')"
       >
-        <Icon icon="material-symbols:redo" class="text-lg text-muted-700" />
+        <Icon icon="material-symbols:redo" class="size-5 shrink-0 block" />
       </button>
-      
-      <div class="w-px h-6 bg-muted-300 mx-2" />
-      
+
+      <div class="w-px h-5 bg-line-strong mx-1 shrink-0" aria-hidden="true" />
+
       <button
-        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors"
+        type="button"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :title="`Back ${SKIP_SECONDS} seconds`"
         :aria-label="`Back ${SKIP_SECONDS} seconds`"
         @click="emit('skip-backward')"
       >
-        <Icon icon="material-symbols:fast-rewind" class="text-lg text-muted-700" />
+        <Icon icon="material-symbols:fast-rewind" class="size-5 shrink-0 block" />
       </button>
-      
-      <!-- Nothing plays while a render is reading the same files. -->
+
+      <!--
+        The one filled control in this row, and the only one allowed to be
+        bigger. Its centre is on the same axis as the arrows either side, so
+        the gaps around it are equal by construction. Nothing plays while a
+        render is reading the same files.
+      -->
       <button
-        class="p-2.5 rounded-lg bg-accent hover:bg-accent-hover transition-all shadow-lg shadow-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        type="button"
+        class="size-9 inline-flex items-center justify-center shrink-0 rounded-full bg-accent text-accent-fg hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :disabled="props.exporting"
         :title="props.exporting ? 'Playback is paused while the export runs' : playing ? 'Pause' : 'Play'"
         :aria-label="playing ? 'Pause' : 'Play'"
         @click="playing ? emit('pause') : emit('play')"
       >
-        <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-xl text-accent-fg" />
+        <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="size-5 shrink-0 block" />
       </button>
-      
+
       <button
-        class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors"
+        type="button"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :title="`Forward ${SKIP_SECONDS} seconds`"
         :aria-label="`Forward ${SKIP_SECONDS} seconds`"
         @click="emit('skip-forward')"
       >
-        <Icon icon="material-symbols:fast-forward" class="text-lg text-muted-700" />
+        <Icon icon="material-symbols:fast-forward" class="size-5 shrink-0 block" />
       </button>
     </div>
 
@@ -103,19 +113,21 @@ const emit = defineEmits<Emits>();
       <div class="text-sm font-mono text-muted-700">
         {{ formatTime(currentTime) }} <span class="text-muted-400">/</span> {{ formatTime(duration) }}
       </div>
-      
-      <div class="w-px h-6 bg-muted-300" />
-      
-      <div class="flex items-center gap-2">
+
+      <div class="w-px h-5 bg-line-strong shrink-0" aria-hidden="true" />
+
+      <div class="flex items-center gap-1.5">
         <button
-          class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40"
+          type="button"
+          class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
           title="Zoom out"
+          aria-label="Zoom out"
           :disabled="zoom <= 0.25"
           @click="emit('zoom-out')"
         >
-          <Icon icon="material-symbols:zoom-out" class="text-lg text-muted-700" />
+          <Icon icon="material-symbols:zoom-out" class="size-5 shrink-0 block" />
         </button>
-        
+
         <!--
           The zoom floor is 25%, which is not far enough: a three clip, eighty
           second montage did not fit at the minimum, so there was no way to see
@@ -123,37 +135,41 @@ const emit = defineEmits<Emits>();
           has this button; this one did not.
         -->
         <button
-          class="text-xs font-medium text-muted-600 w-12 text-center rounded-md py-1 hover:bg-muted-100 hover:text-accent-ink transition-colors"
+          type="button"
+          class="h-8 w-14 inline-flex items-center justify-center shrink-0 rounded-md font-mono text-xs tabular-nums text-muted-500 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
           title="Fit the whole timeline on screen"
           @click="emit('zoom-fit')"
         >
           {{ Math.round(zoom * 100) }}%
         </button>
-        
+
         <button
-          class="p-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors disabled:opacity-40"
+          type="button"
+          class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
           title="Zoom in"
+          aria-label="Zoom in"
           :disabled="zoom >= 3"
           @click="emit('zoom-in')"
         >
-          <Icon icon="material-symbols:zoom-in" class="text-lg text-muted-700" />
+          <Icon icon="material-symbols:zoom-in" class="size-5 shrink-0 block" />
         </button>
       </div>
-      
-      <div class="w-px h-6 bg-muted-300" />
+
+      <div class="w-px h-5 bg-line-strong shrink-0" aria-hidden="true" />
 
       <!--
         A whole day dropped on the timeline is mostly dead air. This is the one
         button that turns it into a montage.
       -->
       <button
-        class="px-3 py-2 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors flex items-center gap-1.5 text-sm font-medium text-muted-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        type="button"
+        class="h-8 px-2.5 inline-flex items-center gap-2 rounded-md text-sm font-medium text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         title="Trim every clip to the moment its sound spikes"
         :disabled="props.trimmingHighlights || !props.clipCount"
         @click="emit('trim-to-highlights')"
       >
-        <BaseSpinner v-if="trimmingHighlights" class="text-lg" />
-        <Icon v-else icon="material-symbols:auto-awesome" class="text-lg" />
+        <BaseSpinner v-if="trimmingHighlights" class="size-4 shrink-0 block" />
+        <Icon v-else icon="material-symbols:auto-awesome" class="size-4 shrink-0 block" />
         <span class="hidden xl:inline">
           <!--
             "Trim to highlights" and the properties panel's "Trim to 19.90s-25.90s"
@@ -165,10 +181,11 @@ const emit = defineEmits<Emits>();
         </span>
       </button>
 
-      <div class="w-px h-6 bg-muted-300" />
+      <div class="w-px h-5 bg-line-strong shrink-0" aria-hidden="true" />
 
       <button
-        class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover transition-all font-medium shadow-lg shadow-accent/20 flex items-center gap-2 text-sm text-accent-fg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+        type="button"
+        class="h-8 px-3.5 rounded-md bg-accent hover:bg-accent-hover text-accent-fg font-medium inline-flex items-center gap-2 text-sm outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none relative overflow-hidden"
         :disabled="props.exporting"
         @click="emit('export')"
       >
@@ -177,8 +194,8 @@ const emit = defineEmits<Emits>();
           class="absolute inset-0 bg-accent-hover/30 transition-all duration-300"
           :style="{ width: `${props.exportProgress}%` }"
         />
-        <Icon 
-          :icon="props.exporting ? 'material-symbols:hourglass-top' : 'material-symbols:download'" 
+        <Icon
+          :icon="props.exporting ? 'material-symbols:hourglass-top' : 'material-symbols:download'"
           class="text-lg relative z-10"
           :class="{ 'animate-spin': props.exporting }"
         />

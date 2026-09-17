@@ -5,6 +5,8 @@ import { useTagPatterns } from '@renderer/composables/library/useTagPatterns';
 import { useToastStore } from '@renderer/stores/toast';
 import type { TagCategory } from '@renderer/utils/tagSuggestions';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
+import type { ComboBoxOption } from '@renderer/components/Base/types';
 import TagLibraryCard from '@renderer/components/Library/TagLibraryCard.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
@@ -32,6 +34,16 @@ function readablePattern(source: string): string {
 const toastStore = useToastStore();
 
 const categories: TagCategory[] = ['General', 'Gameplay', 'Weapons', 'Maps', 'Modes', 'Quality'];
+
+const categoryOptions = computed<ComboBoxOption[]>(() =>
+  categories.map((category) => ({ value: category, label: category })),
+);
+
+/** The filter's own list, which has one more entry than the editor's. */
+const filterCategoryOptions = computed<ComboBoxOption[]>(() => [
+  { value: 'All', label: 'All categories' },
+  ...categoryOptions.value,
+]);
 
 const selectedCategory = ref<TagCategory | 'All'>('All');
 const searchQuery = ref('');
@@ -193,12 +205,12 @@ async function saveNew(): Promise<void> {
         
         <div>
           <label class="block text-sm font-medium text-muted-700 mb-2">Category</label>
-          <select
-            v-model="newCategory"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
-          >
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
+          <BaseComboBox
+            label="Category"
+            :model-value="newCategory"
+            :options="categoryOptions"
+            @update:model-value="(value) => (newCategory = value as TagCategory)"
+          />
         </div>
         
         <div class="flex gap-2">
@@ -228,14 +240,13 @@ async function saveNew(): Promise<void> {
         >
       </div>
       
-      <select
-        v-model="selectedCategory"
-        class="rounded-lg border border-border bg-card pl-4 pr-10 py-2.5 outline-hidden focus:ring-2 focus:ring-accent/50 transition cursor-pointer appearance-none bg-no-repeat"
-        style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%277%27 viewBox=%270 0 12 7%27%3e%3cpath fill=%27%23374151%27 d=%27M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z%27/%3e%3c/svg%3e'); background-position: right 1rem center;"
-      >
-        <option value="All">All Categories</option>
-        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-      </select>
+      <BaseComboBox
+        class="w-48"
+        label="Filter by category"
+        :model-value="selectedCategory"
+        :options="filterCategoryOptions"
+        @update:model-value="(value) => (selectedCategory = value as TagCategory | 'All')"
+      />
 
       <button
         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-fg font-medium shadow-lg shadow-accent/20 transition-all"
@@ -271,12 +282,12 @@ async function saveNew(): Promise<void> {
                   type="text"
                   class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
                 />
-                <select
-                  v-model="editCategory"
-                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
-                >
-                  <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
+                <BaseComboBox
+                  label="Category"
+                  :model-value="editCategory"
+                  :options="categoryOptions"
+                  @update:model-value="(value) => (editCategory = value as TagCategory)"
+                />
                 <div class="flex gap-2">
                   <button
                     class="flex-1 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium transition"
@@ -344,12 +355,12 @@ async function saveNew(): Promise<void> {
             type="text"
             class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
           />
-          <select
-            v-model="editCategory"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
-          >
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
+          <BaseComboBox
+            label="Category"
+            :model-value="editCategory"
+            :options="categoryOptions"
+            @update:model-value="(value) => (editCategory = value as TagCategory)"
+          />
           <div class="flex gap-2">
             <button
               class="flex-1 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium transition"

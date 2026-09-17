@@ -795,60 +795,92 @@ watch(
           <Icon icon="material-symbols:arrow-back" class="text-lg" />
           <span>Back</span>
         </button>
-        <div class="w-px h-6 bg-border"></div>
+        <!--
+          A 1px element with an explicit height, centred, rather than a border
+          on a padded box. A border's height is whatever the padding happens
+          to make it, which is why the three rules in this header were three
+          different lengths.
+        -->
+        <div class="w-px h-5 bg-border shrink-0" aria-hidden="true"></div>
 
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-            <Icon icon="material-symbols:movie-edit" class="text-accent-fg" />
-          </div>
-          <div>
-            <h1 class="text-lg font-bold">Editor</h1>
-            <p v-if="!activeDraft" class="text-[10px] text-muted-600">Join clips, add music, export one movie</p>
-            <p v-else class="text-[10px] text-muted-600 flex items-center gap-1">
-              <Icon icon="material-symbols:bookmark" class="text-accent-ink text-xs" />
-              <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
-              <button
-                class="text-muted-400 hover:text-muted-700 transition-colors"
-                title="Stop editing this draft. Further changes go to the autosave"
-                @click="detachDraft"
-              >
-                <Icon icon="material-symbols:close" class="text-xs" />
-              </button>
-            </p>
-          </div>
+        <!--
+          The subtitle shares the title's left edge.
+
+          It used to share the accent tile's, because the tile was a flex
+          sibling of a block holding both lines, so both lines were indented by
+          the tile and the title was not where it looked like it was. That is
+          `05-editor-header`. The tile is gone rather than realigned: the
+          screen is called Editor, once, at the top of it, and a coloured
+          square repeating the word is furniture.
+        -->
+        <div class="min-w-0">
+          <h1 class="font-display text-lg font-medium text-foreground leading-tight">Editor</h1>
+          <p v-if="!activeDraft" class="text-xs text-muted-500 leading-tight">
+            Join clips, add music, export one movie
+          </p>
+          <p v-else class="text-xs text-muted-500 leading-tight flex items-center gap-1.5">
+            <Icon icon="material-symbols:bookmark" class="size-3.5 shrink-0 block text-accent-ink" />
+            <span class="truncate max-w-[16rem]">Editing “{{ activeDraft.name }}”</span>
+            <button
+              type="button"
+              class="size-5 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-400 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+              title="Stop editing this draft. Further changes go to the autosave"
+              aria-label="Stop editing this draft"
+              @click="detachDraft"
+            >
+              <Icon icon="material-symbols:close" class="size-3.5 shrink-0 block" />
+            </button>
+          </p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <!--
+        Three controls that do one job, so they get one treatment.
+
+        They had three: Drafts was neutral, and the other two turned an accent
+        tint on when their panel was open, which put two accent-bordered pills
+        beside a grey one and read as "these two are special". That is
+        `09-editor-header-toggles`. A panel being open is the state of a
+        toggle, so `aria-pressed` says it and a tone step shows it, at the same
+        height and padding as its neighbours. The count is a fixed-height pill
+        with tabular figures, so one digit becoming two cannot change the
+        button's height.
+      -->
+      <div class="flex items-center gap-1.5">
         <button
-          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium bg-muted-100 hover:bg-muted-200 border border-transparent text-muted-700"
+          type="button"
+          class="h-8 px-2.5 inline-flex items-center gap-2 rounded-md text-xs font-medium border border-transparent text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="showDraftsDialog = true"
         >
-          <Icon icon="material-symbols:bookmarks-outline" />
+          <Icon icon="material-symbols:bookmarks-outline" class="size-4 shrink-0 block" />
           Drafts
           <span
             v-if="drafts.length"
-            class="px-1.5 rounded-full bg-accent/20 text-accent-ink text-[10px] font-semibold"
+            class="h-4 min-w-4 px-1 inline-flex items-center justify-center rounded-full bg-muted-200 text-muted-600 font-mono text-[10px] tabular-nums"
           >
             {{ drafts.length }}
           </span>
         </button>
 
         <button
-          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
-          :class="showLibrary ? 'bg-accent/20 text-accent-ink border border-accent/30' : 'bg-muted-100 hover:bg-muted-200 border border-transparent text-muted-700'"
+          type="button"
+          :aria-pressed="showLibrary"
+          class="h-8 px-2.5 inline-flex items-center gap-2 rounded-md text-xs font-medium border border-transparent outline-none focus-visible:focus-ring transition-colors duration-150"
+          :class="showLibrary ? 'bg-muted-200 text-foreground' : 'text-muted-600 hover:bg-muted-100 hover:text-foreground'"
           @click="toggleLibrary"
         >
-          <Icon icon="material-symbols:video-library" />
+          <Icon icon="material-symbols:video-library" class="size-4 shrink-0 block" />
           Library
         </button>
 
         <button
-          class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-xs font-medium"
-          :class="showProperties ? 'bg-accent/20 text-accent-ink border border-accent/30' : 'bg-muted-100 hover:bg-muted-200 border border-transparent text-muted-700'"
+          type="button"
+          :aria-pressed="showProperties"
+          class="h-8 px-2.5 inline-flex items-center gap-2 rounded-md text-xs font-medium border border-transparent outline-none focus-visible:focus-ring transition-colors duration-150"
+          :class="showProperties ? 'bg-muted-200 text-foreground' : 'text-muted-600 hover:bg-muted-100 hover:text-foreground'"
           @click="toggleProperties"
         >
-          <Icon icon="material-symbols:tune" />
+          <Icon icon="material-symbols:tune" class="size-4 shrink-0 block" />
           Properties
         </button>
       </div>
@@ -856,21 +888,33 @@ watch(
 
     <div class="flex-1 flex gap-3 p-3 overflow-hidden">
       <aside v-if="showLibrary" class="w-96 shrink-0 flex flex-col gap-2">
-        <div class="shrink-0 grid grid-cols-2 gap-1 p-1 bg-card/60 rounded-lg border border-border">
+        <!--
+          A two-way switch, not two buttons one of which is the loudest thing
+          on the screen. The accent marks the good bit and the one primary
+          action in a region; which half of a side panel you are looking at is
+          neither.
+        -->
+        <div class="shrink-0 grid grid-cols-2 gap-1 p-1 bg-muted-50 rounded-md border border-border" role="tablist">
           <button
-            class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
-            :class="libraryTab === 'clips' ? 'bg-accent text-accent-fg' : 'text-muted-700 hover:bg-muted-100'"
+            type="button"
+            role="tab"
+            :aria-selected="libraryTab === 'clips'"
+            class="h-8 inline-flex items-center justify-center gap-2 rounded-sm text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
+            :class="libraryTab === 'clips' ? 'bg-card text-foreground' : 'text-muted-500 hover:text-foreground'"
             @click="libraryTab = 'clips'"
           >
-            <Icon icon="material-symbols:video-library" />
+            <Icon icon="material-symbols:video-library" class="size-4 shrink-0 block" />
             Clips
           </button>
           <button
-            class="px-2 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
-            :class="libraryTab === 'music' ? 'bg-accent text-accent-fg' : 'text-muted-700 hover:bg-muted-100'"
+            type="button"
+            role="tab"
+            :aria-selected="libraryTab === 'music'"
+            class="h-8 inline-flex items-center justify-center gap-2 rounded-sm text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
+            :class="libraryTab === 'music' ? 'bg-card text-foreground' : 'text-muted-500 hover:text-foreground'"
             @click="libraryTab = 'music'"
           >
-            <Icon icon="material-symbols:library-music" />
+            <Icon icon="material-symbols:library-music" class="size-4 shrink-0 block" />
             Music
           </button>
         </div>

@@ -134,13 +134,15 @@ async function recheck(): Promise<void> {
       -->
       <div class="flex items-center gap-2 shrink-0">
         <button
-          class="px-3.5 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium whitespace-nowrap"
+          type="button"
+          class="h-9 px-3.5 inline-flex items-center justify-center rounded-md border border-transparent bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium whitespace-nowrap outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="showDialog = true"
         >
           Set up OBS for me
         </button>
         <button
-          class="px-3.5 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm text-foreground whitespace-nowrap"
+          type="button"
+          class="h-9 px-3.5 inline-flex items-center justify-center rounded-md border border-border hover:bg-muted-50 text-sm font-medium text-foreground whitespace-nowrap outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="dismiss"
         >
           Not now

@@ -36,8 +36,8 @@ function selectSection(sectionId: string): void {
         v-for="section in sections"
         :key="section.id"
         class="w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-colors text-left"
-        :class="activeSection === section.id 
-          ? 'bg-accent/10 text-accent-ink' 
+        :class="activeSection === section.id
+          ? 'bg-accent/10 text-accent-ink'
           : 'hover:bg-muted-100 text-muted-700'"
         @click="selectSection(section.id)"
       >
@@ -50,34 +50,44 @@ function selectSection(sectionId: string): void {
     </nav>
 
     <div class="p-3 border-t border-border space-y-2">
+      <!--
+        One grid, three rows, so the glyphs form a column and the labels share
+        a left edge. They were flex rows with an inline icon sized by its own
+        font, which is `04-settings-footer-actions`: three icons at three
+        widths and three labels starting at three different x. The danger row
+        has the same geometry as the two above it and differs only in colour.
+      -->
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted-100 transition-colors text-sm text-muted-700"
+        type="button"
+        class="w-full h-9 grid grid-cols-[1rem_1fr] items-center gap-2.5 px-3 rounded-md text-left text-sm outline-none focus-visible:focus-ring transition-colors duration-150 text-muted-600 hover:bg-muted-100 hover:text-foreground"
         @click="emit('export')"
       >
-        <Icon icon="material-symbols:download" />
-        Export Settings
+        <Icon icon="material-symbols:download" class="size-4 shrink-0 block" />
+        <span>Export Settings</span>
       </button>
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted-100 transition-colors text-sm text-muted-700"
+        type="button"
+        class="w-full h-9 grid grid-cols-[1rem_1fr] items-center gap-2.5 px-3 rounded-md text-left text-sm outline-none focus-visible:focus-ring transition-colors duration-150 text-muted-600 hover:bg-muted-100 hover:text-foreground"
         @click="emit('import')"
       >
-        <Icon icon="material-symbols:upload" />
-        Import Settings
+        <Icon icon="material-symbols:upload" class="size-4 shrink-0 block" />
+        <span>Import Settings</span>
       </button>
       <button
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-danger/8 transition-colors text-sm text-danger-ink"
+        type="button"
+        class="w-full h-9 grid grid-cols-[1rem_1fr] items-center gap-2.5 px-3 rounded-md text-left text-sm outline-none focus-visible:focus-ring transition-colors duration-150 text-danger-ink hover:bg-danger/10"
         title="Puts every setting on this screen back the way it came. Your clips, tags, stars and collections are not touched."
         @click="emit('reset')"
       >
-        <Icon icon="material-symbols:restart-alt" />
-        Reset to Defaults
+        <Icon icon="material-symbols:restart-alt" class="size-4 shrink-0 block" />
+        <span>Reset to Defaults</span>
       </button>
       <!--
         Somebody who cannot tell whether this wipes their tags will not press
         it, and somebody who presses it expecting a wipe is worse off. Say
         which it is.
       -->
-      <p class="px-3 pt-1 text-xs text-muted-500">
+      <p class="px-3 pt-2 text-xs text-muted-500">
         Settings only. Your clips, tags, stars and collections stay as they are.
       </p>
     </div>

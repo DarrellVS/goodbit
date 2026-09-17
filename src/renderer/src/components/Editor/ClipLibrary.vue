@@ -7,6 +7,8 @@ import type { Clip } from '@renderer/types/clip';
 import type { Game } from '@renderer/types/game';
 import type { Tag } from '@renderer/types/tag';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
+import type { ComboBoxOption } from '@renderer/components/Base/types';
 
 interface Props {
   clips: Clip[];
@@ -39,29 +41,37 @@ const selectedTags = defineModel<string[]>('selectedTags', { required: true });
 const { formatBytes } = useFormat();
 const { groupedClips, getGameDisplayName } = useClipGrouping(computed(() => props.clips));
 
-const showTagFilter = ref(false);
-const tagSearch = ref('');
-
 const addedIds = computed(() => new Set(props.addedClipIds));
 
 const hasFilters = computed(
   () => search.value !== '' || selectedGame.value !== '' || selectedTags.value.length > 0
 );
 
-const visibleTags = computed(() => {
-  const needle = tagSearch.value.trim().toLowerCase();
-  if (!needle) return props.tags;
-  return props.tags.filter((tag) => tag.name.toLowerCase().includes(needle));
-});
+/**
+ * `All games` is an option of this list, not a label above it.
+ *
+ * Reka reserves the empty string for "nothing is chosen", so the placeholder
+ * carries the words and the value stays `''`, which is what the query wants.
+ */
+const gameOptions = computed<ComboBoxOption[]>(() =>
+  props.games.map((game) => ({
+    value: game.game,
+    label: game.displayName || game.game,
+    count: game.clipCount,
+  })),
+);
+
+const tagOptions = computed<ComboBoxOption[]>(() =>
+  props.tags.map((tag) => ({ value: tag.name, label: tag.name })),
+);
+
+function tagSummary(selected: ComboBoxOption[]): string {
+  if (selected.length === 1) return selected[0].label;
+  return `${selected.length} tags`;
+}
 
 function isAdded(clip: Clip): boolean {
   return addedIds.value.has(clip.id);
-}
-
-function toggleTag(name: string): void {
-  selectedTags.value = selectedTags.value.includes(name)
-    ? selectedTags.value.filter((tag) => tag !== name)
-    : [...selectedTags.value, name];
 }
 </script>
 
@@ -104,71 +114,46 @@ function toggleTag(name: string): void {
         </button>
       </div>
 
-      <select
-        v-model="selectedGame"
-        class="w-full px-2.5 py-2 text-sm rounded-lg bg-card/80 border border-border focus:border-accent focus:outline-hidden focus:ring-1 focus:ring-accent/40"
-      >
-        <option value="">All games</option>
-        <option v-for="game in games" :key="game.game" :value="game.game">
-          {{ game.displayName || game.game }} ({{ game.clipCount }})
-        </option>
-      </select>
+      <!--
+        Two dropdowns, one component, one height.
 
-      <div>
-        <button
-          class="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg bg-card/80 border transition-colors"
-          :class="selectedTags.length ? 'border-accent/60 text-accent-ink' : 'border-border text-muted-700 hover:border-accent'"
-          @click="showTagFilter = !showTagFilter"
-        >
-          <span class="flex items-center gap-1.5">
-            <Icon icon="material-symbols:label" class="text-base" />
-            {{ selectedTags.length ? `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''}` : 'Filter by tag' }}
-          </span>
-          <Icon
-            :icon="showTagFilter ? 'material-symbols:expand-less' : 'material-symbols:expand-more'"
-            class="text-sm"
-          />
-        </button>
+        The games filter was a bare `<select>` sitting directly above the tag
+        filter, so this panel showed a control drawn by Windows and a control
+        drawn by the app, one under the other, differing in height, font,
+        chevron weight and focus ring. That pair is `07-editor-filter-
+        dropdowns`, and CLAUDE.md has had the rule since `BaseComboBox` was
+        written: there is one dropdown component.
 
-        <div v-if="showTagFilter" class="mt-2 space-y-2">
-          <input
-            v-model="tagSearch"
-            type="search"
-            placeholder="Find a tag"
-            class="w-full px-2.5 py-1.5 text-sm rounded-md bg-card/80 border border-border focus:border-accent focus:outline-hidden"
-          />
-          <div class="max-h-32 overflow-y-auto flex flex-wrap gap-1.5">
-            <button
-              v-for="tag in visibleTags"
-              :key="tag.id"
-              class="px-2 py-1 rounded-full text-xs font-medium border transition-colors"
-              :class="selectedTags.includes(tag.name)
-                ? 'bg-accent text-on-video border-accent'
-                : 'bg-card/80 text-muted-700 border-border hover:border-accent'"
-              @click="toggleTag(tag.name)"
-            >
-              {{ tag.name }}
-            </button>
-            <span v-if="visibleTags.length === 0" class="text-xs text-muted-500 px-1">No tags match</span>
-          </div>
-        </div>
-      </div>
+        Both reserve a leading icon so their labels start at the same x, which
+        is the other half of that example.
+      -->
+      <BaseComboBox
+        label="Filter by game"
+        placeholder="All games"
+        :model-value="selectedGame"
+        :options="gameOptions"
+        :searchable="games.length > 8"
+        search-placeholder="Find a game"
+        @update:model-value="(value) => (selectedGame = (value as string) ?? '')"
+      />
 
-      <div v-if="selectedTags.length" class="flex flex-wrap gap-1">
-        <button
-          v-for="tag in selectedTags"
-          :key="tag"
-          class="px-2 py-1 rounded-full text-xs font-medium bg-accent/15 text-accent-ink border border-accent/30 flex items-center gap-1"
-          @click="toggleTag(tag)"
-        >
-          {{ tag }}
-          <Icon icon="material-symbols:close" class="text-xs" />
-        </button>
-      </div>
+      <BaseComboBox
+        label="Filter by tag"
+        placeholder="Filter by tag"
+        search-placeholder="Find a tag"
+        empty-message="No tags yet. Tag a clip and it turns up here."
+        multiple
+        searchable
+        :model-value="selectedTags"
+        :options="tagOptions"
+        :summary="tagSummary"
+        @update:model-value="(value) => (selectedTags = (value as string[]) ?? [])"
+      />
 
       <button
         v-if="hasFilters"
-        class="w-full py-1.5 text-xs text-muted-600 hover:text-accent-ink transition-colors"
+        type="button"
+        class="w-full h-9 text-sm text-muted-500 hover:text-foreground rounded-md hover:bg-muted-100 outline-none focus-visible:focus-ring transition-colors duration-150"
         @click="emit('clear-filters')"
       >
         Clear filters
@@ -302,12 +287,13 @@ function toggleTag(name: string): void {
 
       <button
         v-if="hasMore"
-        class="w-full py-2.5 rounded-lg text-sm font-medium bg-card/80 border border-border hover:border-accent/60 text-muted-700 transition-colors flex items-center justify-center gap-1.5"
+        type="button"
+        class="w-full h-9 rounded-md text-sm font-medium border border-border text-muted-600 hover:bg-muted-100 hover:text-foreground inline-flex items-center justify-center gap-2 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
         :disabled="loading"
         @click="emit('load-more')"
       >
-        <BaseSpinner v-if="loading" />
-        <Icon v-else icon="material-symbols:expand-more" />
+        <BaseSpinner v-if="loading" class="size-4 shrink-0 block" />
+        <Icon v-else icon="material-symbols:expand-more" class="size-4 shrink-0 block" />
         {{ loading ? 'Loading…' : 'Load more' }}
       </button>
     </div>
