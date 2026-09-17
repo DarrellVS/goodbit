@@ -33,8 +33,14 @@ test.describe('the editor', () => {
   }
 
   const readZoom = async (): Promise<number> => {
-    const text = await ctx.page.locator('span').filter({ hasText: /^\d+%$/ }).first().textContent();
-    return Number((text ?? '').replace('%', ''));
+    // The readout is the "fit the whole timeline" button now, so it is a
+    // `button` rather than the `span` it used to be.
+    const text = await ctx.page
+      .locator('button, span')
+      .filter({ hasText: /^\s*\d+%\s*$/ })
+      .first()
+      .textContent();
+    return Number((text ?? '').trim().replace('%', ''));
   };
 
   test('zooming in makes the timeline bigger, not smaller', async () => {
