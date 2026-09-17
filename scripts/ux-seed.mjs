@@ -20,7 +20,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const ffmpeg = (await import('ffmpeg-static')).default;
@@ -64,6 +64,14 @@ const LOOKS = [
 ];
 
 const HUES = ['f97316', '2563eb', '16a34a', 'dc2626', '9333ea', '0891b2', 'ca8a04', 'be185d'];
+
+/** `Battlefield 6_17.05.2026_21-09-49.mp4` back into a Date. */
+function dateFromName(name) {
+  const m = /_(\d{2})\.(\d{2})\.(\d{4})_(\d{2})-(\d{2})-(\d{2})\./.exec(name);
+  if (!m) return null;
+  const [, d, mo, y, h, mi, s] = m.map(Number);
+  return new Date(y, mo - 1, d, h, mi, s);
+}
 
 /** OBS names a recording after the game and the moment it started. */
 function obsName(game, index) {
@@ -190,9 +198,16 @@ for (const { game, clips } of LIBRARY) {
       '-c:a', 'aac', '-b:a', '96k', '-shortest', '-y', file,
     ]);
 
-    // Spread them over the last few weeks so "newest first" has something to
-    // sort, rather than forty clips all recorded in the same second.
-    const when = new Date(Date.now() - n * 9.5 * 3600 * 1000);
+    /*
+     * The date in the clip's own name is the date it was recorded.
+     *
+     * This used to be `Date.now() - n * 9.5 hours`, which spread them nicely
+     * and disagreed with `obsName` about every single one: a card called
+     * `Battlefield 6_12.07.2026_...` would sit under a heading in September.
+     * Nobody auditing this app should have to work out that the fixture is
+     * lying rather than the grouping, so the two now come from one place.
+     */
+    const when = dateFromName(basename(file)) ?? new Date(Date.now() - n * 9.5 * 3600 * 1000);
     utimesSync(file, when, when);
     stamps.push({ file, when });
     made += 1;
