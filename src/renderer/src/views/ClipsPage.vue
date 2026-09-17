@@ -74,7 +74,7 @@ const emptyState = computed(() => {
       title:
         activeFilter.value === 'published' ? 'Nothing published yet' : 'Everything here is published',
       description:
-        'Publishing puts a copy behind a public link, and needs a publisher set up under Settings, App.',
+        'Publishing puts a copy behind a public link, and needs a publisher set up under Settings, Connections.',
       actionLabel: 'Show every clip',
     };
   }

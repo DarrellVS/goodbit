@@ -30,4 +30,4 @@ export function isPublisherConfigured(): boolean {
 
 /** The message shown when something tries to publish without a publisher. */
 export const NO_PUBLISHER =
-  'No publisher is set up. Add one under Settings → App to publish clips.';
+  'No publisher is set up. Add one under Settings, Connections to publish clips.';

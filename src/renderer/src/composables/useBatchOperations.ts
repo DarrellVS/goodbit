@@ -38,12 +38,33 @@ function handleBatchResult(
   result: BatchOperationResult,
   toastStore: ReturnType<typeof useToastStore>,
   actionPastTense: string,
+  /** The plain verb, for a headline that has to read as a sentence. */
+  actionVerb: string,
 ) {
   if (result.failed > 0) {
-    toastStore.warning(
-      `${result.success} ${actionPastTense}, ${result.failed} failed`,
-      `Batch ${actionPastTense} completed with errors`
-    );
+    /*
+     * Say what went wrong, in a sentence, and say it the same way the
+     * single-clip route does.
+     *
+     * This read `Batch published completed with errors` over `0 published, 1
+     * failed`: broken English, no cause, and no next step. Publishing the same
+     * clip from its own panel explained itself properly ("No publisher is set
+     * up. Add one under Settings, Connections"), so the identical failure told
+     * you two different things depending on which menu you reached it from,
+     * and the worse one was on the bulk route.
+     *
+     * `result.errors` already carried the reason and it was only ever written
+     * to the console. The first one is enough: a batch that fails usually
+     * fails for one reason, and a toast is not a log.
+     */
+    const failedClips = `${result.failed} ${pluralize(result.failed, 'clip')}`;
+    const headline =
+      result.success === 0
+        ? `Could not ${actionVerb}${failedClips === '1 clip' ? ' that clip' : ` those ${failedClips}`}`
+        : `${result.success} ${actionPastTense}, ${result.failed} could not be`;
+
+    toastStore.warning(result.errors?.[0] ?? `${failedClips} could not be ${actionPastTense}.`, headline);
+
     if (result.errors) {
       console.error(`Batch ${actionPastTense} errors:`, result.errors);
     }
@@ -101,7 +122,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     
     try {
       const result = await operation();
-      handleBatchResult(result, toastStore, actionPastTense);
+      handleBatchResult(result, toastStore, actionPastTense, actionName);
       
       exitAndCleanup(batchStore);
       
@@ -229,7 +250,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     
     try {
       const result = await clipsService.batchAddTags(clipIds, tags);
-      handleBatchResult(result, toastStore, 'tagged');
+      handleBatchResult(result, toastStore, 'tagged', 'tag');
       
       await tagsStore.fetchTags();
       
