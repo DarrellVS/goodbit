@@ -307,6 +307,29 @@ async function loadSuggestions(): Promise<void> {
   suggestionsLoading.value = true;
   try {
     suggestions.value = await getClipSuggestions(Number(props.id));
+
+    /*
+     * Take the suggestion, rather than offering it and asking for a drag.
+     *
+     * The button that gets here is called "Trim to the good bit" and the
+     * screen it opened said "Drag the handles to keep the good bit", with the
+     * handles still at both ends and the answer sitting unused in a banner
+     * beside them. A button that promises a result and hands over homework is
+     * the complaint every walkthrough user arrived at independently.
+     *
+     * Only when the handles have not been touched, so this can never overwrite
+     * a range somebody chose: a full-width range is the untouched state, and
+     * anything narrower means they have already started. The banner reads
+     * "Applied" the moment it lands, "Wrong" still rejects it, and both handles
+     * still drag, so nothing is taken away by starting from the answer.
+     */
+    const window = suggestions.value?.window;
+    const untouched =
+      duration.value > 0 &&
+      range.value[0] <= FRAME_SLOP &&
+      range.value[1] >= duration.value - FRAME_SLOP;
+
+    if (window && untouched) applySuggestion(window.start, window.end);
   } catch (error) {
     console.error('Failed to analyse clip:', error);
     suggestions.value = null;

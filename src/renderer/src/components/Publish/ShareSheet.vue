@@ -156,6 +156,18 @@ async function copy(): Promise<void> {
           <p v-if="isLocal" class="text-xs text-center text-muted-500">
             Point a camera at this from a phone on the same wifi. Nothing leaves the house, and the
             link stops working in {{ minutesLeft }} minutes.
+            <!--
+              Closing this leaves the clip being served, which is the right
+              behaviour and was invisible: "Done" dismissed the dialog and a
+              walkthrough user reasonably read that as finishing. Reopening it
+              showed the same link still live, and nothing anywhere else in the
+              app said a clip was on the network. For a feature whose whole
+              pitch is "nothing leaves the house", not being able to tell what
+              is currently leaving the house is the wrong gap.
+            -->
+            <span class="block mt-1 text-muted-400">
+              Closing this window keeps the link working. Stop sharing ends it now.
+            </span>
           </p>
           <p v-else class="text-xs text-center text-muted-500">
             This is the public link. Anyone with it can watch.
@@ -226,8 +238,12 @@ async function copy(): Promise<void> {
 
         <div class="p-6 border-t border-border flex justify-end">
           <DialogClose as-child>
+            <!--
+              "Done" claimed the job was finished while the clip carried on
+              being served. It says what pressing it actually does.
+            -->
             <button class="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors">
-              Done
+              {{ isLocal && url ? 'Keep sharing and close' : 'Done' }}
             </button>
           </DialogClose>
         </div>

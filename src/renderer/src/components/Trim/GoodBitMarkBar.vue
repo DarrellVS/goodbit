@@ -219,10 +219,18 @@ function submit(): void {
     <!--
       One line of footnote, and it changes rather than stacking.
 
-      What it says depends on what is true: that the recording survives this
-      (the thing that makes a GoodBit not a trim, said where somebody is about
-      to press the button), that this range is already marked, or that it sits
-      on top of one that is.
+      What it says depends on what is true: that this range is already marked,
+      that it sits on top of one that is, or which one is being edited.
+
+      **The sentence that defines the feature is not conditional any more.**
+      "A GoodBit names a range and leaves the recording whole, unlike a trim,
+      which replaces it" was the empty state, and a walkthrough user called it
+      the single most useful sentence in the app. It then disappeared the
+      moment they made their first mark, which is exactly when they started
+      needing to know that this button and the orange one above it do opposite
+      things to the file. A second-time user never saw it at all. It sits under
+      the line below now, in the muted ladder so it reads as a standing note
+      rather than as news.
     -->
     <p class="text-xs text-muted-500">
       <template v-if="duplicate">
@@ -237,13 +245,16 @@ function submit(): void {
         Drag the handles to move this one, or press another band on the strip.
       </template>
       <template v-else-if="count === 0">
-        Nothing marked yet. A GoodBit names a range and leaves the recording
-        whole, unlike a trim, which replaces it.
+        Nothing marked yet.
       </template>
       <template v-else>
         {{ count }} marked on this clip. Press one below, or a band on the strip,
         to change it.
       </template>
+    </p>
+    <p class="text-xs text-muted-400">
+      A GoodBit names a range and leaves the recording whole, unlike a trim,
+      which replaces it.
     </p>
 
     <!--

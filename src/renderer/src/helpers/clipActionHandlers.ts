@@ -177,9 +177,19 @@ export function createClipActionHandlers(params: {
     try {
       const clip = getClip();
       const result = await exportAudio(clip.id);
+      /*
+       * Say where it went.
+       *
+       * "Audio exported to <name>.mp3" names the file and not the folder, and
+       * it lands in the music folder, which is not where anybody looks for the
+       * audio of a clip. A walkthrough user had to press "Show in Folder" to
+       * find out where their file was. The folder is the part that was
+       * missing, so the sentence carries it and the button stays for opening
+       * it.
+       */
       toastStore.success(
-        `Audio exported to ${result.filename}`, 
-        'Export Complete',
+        `${result.filename} is in your music folder.`,
+        'Audio exported',
         {
           label: 'Show in Folder',
           onClick: async () => {
