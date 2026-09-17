@@ -91,6 +91,28 @@ writeFileSync(
       startAtLogin: false,
       keepRunningInTray: false,
       migratedFromWebApp: false,
+
+      /*
+       * Three things that did not exist when this script was written, and all
+       * three default to on or would reach outside the sandbox.
+       *
+       * `clipToast` builds a second `BrowserWindow` during boot. It defaults
+       * to true, and a walkthrough that opens it is a walkthrough where
+       * `firstWindow()` can return a transparent overlay instead of the app.
+       * `ux-session.mjs` picks the right window regardless now, but there is
+       * no reason for a sandbox to draw a card over somebody's screen.
+       *
+       * `startObsWithGoodbit` starts OBS. A walkthrough must never launch
+       * another program on the machine running it. Absent is already falsy,
+       * so this is written down to say it is deliberate.
+       *
+       * `mcpEnabled` opens a port. The installed copy may already be on the
+       * default one, and a sandbox has no business listening at all.
+       */
+      clipToast: false,
+      clipToastSound: false,
+      startObsWithGoodbit: false,
+      mcpEnabled: false,
     },
     null,
     2,
@@ -100,6 +122,40 @@ writeFileSync(
 let made = 0;
 let skipped = 0;
 let n = 0;
+const stamps = [];
+
+/**
+ * Windows keeps a creation time separate from the modified time, and it is the
+ * one the app groups clips by. Node cannot set it, so PowerShell does, in one
+ * go rather than one process per clip.
+ *
+ * Without this the careful spreading below does nothing: `utimes` moves the
+ * modified time, the app reads the creation time, and all forty clips land
+ * under one heading of today. Which makes "newest first", the date groups and
+ * the whole library screen impossible to judge, since there is only ever one
+ * group in it.
+ */
+function setCreationTimes(list) {
+  if (list.length === 0) return;
+
+  // One command per batch, because a few hundred PowerShell launches is slower
+  // than making the clips was.
+  const BATCH = 60;
+  for (let at = 0; at < list.length; at += BATCH) {
+    const script = list
+      .slice(at, at + BATCH)
+      .map(
+        ({ file, when }) =>
+          `(Get-Item -LiteralPath ${JSON.stringify(file)}).CreationTime = ` +
+          `[datetime]::Parse(${JSON.stringify(when.toISOString())}).ToLocalTime()`,
+      )
+      .join('; ');
+
+    execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], {
+      stdio: 'ignore',
+    });
+  }
+}
 
 for (const { game, clips } of LIBRARY) {
   const dir = join(videosRoot, game);
@@ -138,9 +194,12 @@ for (const { game, clips } of LIBRARY) {
     // sort, rather than forty clips all recorded in the same second.
     const when = new Date(Date.now() - n * 9.5 * 3600 * 1000);
     utimesSync(file, when, when);
+    stamps.push({ file, when });
     made += 1;
   }
 }
+
+setCreationTimes(stamps);
 
 const games = readdirSync(videosRoot).length;
 console.log(JSON.stringify({ profile, base, dataDir, videosRoot, games, made, skipped, total: n }, null, 2));

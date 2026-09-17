@@ -134,7 +134,31 @@ const app = await electron.launch({
   env: { ...process.env, GOODBIT_USER_DATA: dataDir },
 });
 
-const page = await app.firstWindow();
+/**
+ * The window with the app in it, which is not reliably the first one.
+ *
+ * The clip toast is a second `BrowserWindow`, built during boot so the first
+ * replay of a session does not wait for one to be constructed, and `clipToast`
+ * defaults to on. So it is quite capable of winning this race, and
+ * `firstWindow()` then hands back a transparent 344 pixel overlay with no app
+ * in it: every screenshot in the walkthrough would be of that, and a
+ * walkthrough is nothing but screenshots. The same fix as `tests/e2e/app.ts`
+ * and `scripts/screenshots.mjs`, told apart the same way, because the overlay
+ * is a self contained `data:` page and the app is a file.
+ */
+async function mainWindow(instance) {
+  const isApp = (candidate) => !candidate.url().startsWith('data:');
+
+  const existing = instance.windows().find(isApp);
+  if (existing) return existing;
+
+  for (;;) {
+    const opened = await instance.waitForEvent('window', { timeout: 30_000 });
+    if (isApp(opened)) return opened;
+  }
+}
+
+const page = await mainWindow(app);
 await page.waitForLoadState('domcontentloaded');
 await page.setViewportSize({ width: 1440, height: 900 }).catch(() => {});
 // The library has to index forty clips and make thumbnails before the first
