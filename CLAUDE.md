@@ -631,17 +631,75 @@ stays.
 
 ### Colours
 
-**No literal colour in a component.** `styles.css` defines the token ladder (`--background`,
-`--foreground`, `--muted-50..900`, `--card`, `--border`, `--line-strong`) for both palettes, and
-Tailwind maps them. Dark mode falls out of the tokens.
+**No literal colour in a component.** `styles.css` defines the ladder for both palettes and Tailwind
+maps it. Dark mode falls out of the tokens.
 
 This is not a style preference. Adding `dark:` variants beside literals was tried and shipped
 visibly broken: variants cannot reach colours inside bound `:class` expressions, and `bg-white/60` is
 a different class from `bg-white`, so whole screens stayed light while the shell went dark. Tokens
 have neither problem.
 
-White stays literal **only** where it sits on a brand or fixed-dark surface (an orange button, a chip
-over video), since those grounds do not follow the theme.
+**What each rung is for**, because the ramp was doing several jobs at once until the audit went
+through it by usage rather than by name:
+
+| Rung | For |
+|---|---|
+| `muted-50`, `-100`, `-200` | surfaces. Raised panels, chips, hover grounds. **Never text** |
+| `muted-300` | decorative only: rules, toggle tracks, disabled glyphs. **Never a label or a number** |
+| `muted-400` .. `-900` | text, dimmest to strongest |
+| `card`, `surface-sunk` | a panel above the page, and a well below it |
+| `accent` / `accent-hover` / `accent-fg` / `accent-sunk` | the fill, its rollover, ink **on** it, its wash |
+| `accent-ink` | accent-coloured **text**, which is a different problem from an accent fill |
+| `danger`, `danger-fg`, `danger-ink` | the same three, for the same reason |
+| `success`, `warning` (+ `-fg`) | it worked; it worked with a caveat |
+| `border`, `line-strong` | the two hairlines |
+| `on-video`, `video-bed`, `scrim*` | fixed in both palettes, because a frame is its own ground |
+
+Every rung from `muted-400` up clears **4.5:1 against all five grounds it can land on**, not just
+against the page, because a label moves onto a panel all the time. `accent` at button size is 4.28:1
+on a card, which is why accent *text* is `accent-ink` instead: a fill and a letterform are not the
+same problem.
+
+**The accent has one meaning: the good bit, plus the single primary action per region.** It is not a
+hover colour, not a decoration, and not the colour of every icon. It was on 46 icons at once, which
+is how a screen ends up with no obviously primary anything.
+
+White stays literal **only** where it sits on the accent or over video, and those have tokens
+(`accent-fg`, `on-video`) so the allowance is visible in a grep. Three literals survive on purpose
+and each says why beside itself: the QR code's ink and ground, which a camera reads rather than a
+person, and the Windows caption glyph colour, which crosses IPC into a title bar overlay that has
+never heard of a CSS variable.
+
+### Geometry, and why nothing is centred by eye
+
+`Base/geometry.ts` holds one height per control class, one icon box, one gap, one focus ring.
+`COMBO_BOX_HEIGHT` was already doing this for dropdowns; the rest followed for the same reason.
+
+Almost every alignment defect in the 3.x review was the same defect: two things that should have
+lined up were each given their own padding by hand, and drifted. The rules that come out of it:
+
+- **An icon and a label are an `inline-flex` centred on one axis**, never baseline aligned, with the
+  glyph in a fixed square box and `block` on the svg. An inline svg sits on the text baseline and
+  picks up the line box's descender gap.
+- **A list row is a grid, not a flex row of guesses.** Every row in a list uses the same template, so
+  glyphs, labels and counts each form a column whatever an individual row contains. `Shell/
+  SidebarRow.vue` is the worked example: the navigation links, the utility links, `All` and every
+  game are all it.
+- **Sibling actions share a height, a padding and a line-height.** If any trigger in a group has a
+  leading icon, every trigger in that group reserves the icon column.
+- **A vertical divider is a 1px element with an explicit height**, vertically centred, never a border
+  on a padded box, whose height is whatever the padding happens to make it.
+- **Numbers that can change are mono, tabular and right-aligned**, and anything holding one has a
+  `min-width` for its largest value. `font-variant-numeric` binds to the mono face in `styles.css`
+  rather than to each call site.
+- **Nothing changes size on hover, focus, active or select.** Colour moves; geometry does not. A
+  hover-revealed affordance either overlays its container absolutely or has its space reserved at
+  rest with only its opacity changing. Selection is an `outline`, which is painted outside the box.
+  `screens.spec.ts` measures every control on every route, hovers it, focuses it and measures again.
+- **Depth is a tone step and a hairline.** One shadow, `shadow-pop`, on the three things that
+  genuinely float: modals, menus, toasts.
+- **Motion is 120 to 180ms**, opacity and transform, nothing bouncing. `prefers-reduced-motion` is
+  honoured once in `styles.css`, not per component.
 
 ## Testing
 
@@ -672,9 +730,18 @@ fixes it. Fixing it makes that test fail, which is the announcement.
 root and database; fixtures are generated with the bundled ffmpeg. **A test must never touch the real
 library.**
 
-`screens.spec.ts` walks every screen in both palettes and fails on text below 2.5:1 against its own
-*painted* background, translucent layers composited, since a tint like `bg-orange-500/10` computes to
-`rgb(249 115 22 / 0.1)` and reading it as opaque orange flags every label on it.
+`screens.spec.ts` walks every screen in both palettes and measures each text node against its own
+*painted* background, translucent layers composited, since a tint like `bg-accent/10` computes to
+`rgb(193 99 62 / 0.1)` and reading it as opaque terracotta flags every label on it. The floor is
+**4.5:1 for body and small text and 3:1 for large**, by WCAG's own definition of large. Exceptions
+are named in a list in `contrast.ts` with a reason each, never a lower global floor.
+
+**A checker must assert its own instrument.** That file's regex lost its two backslashes on the day
+it was written, so `/rgba?\(([^)]+)\)/` shipped as `/rgba?(([^)]+))/`, which still matches and
+returns a group starting with `(`. `parseFloat` gave `NaN`, every ratio was `NaN`, `NaN < threshold`
+is `false`, and the gate reported zero problems across 400 runs of text in two palettes for four
+days and two releases. So it now throws if a single channel comes back non-finite, and asserts a
+floor on how much it inspected: an empty problem list and a broken walk look identical.
 
 These do not run in CI (they need a desktop session, a GPU and ffmpeg). `build:win` depends on them.
 
