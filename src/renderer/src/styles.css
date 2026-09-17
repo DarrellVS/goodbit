@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './fonts.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -26,6 +27,26 @@
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
 
+  /*
+   * The neutral ramp, and what each rung is for.
+   *
+   * It runs from the page toward the text, in both palettes, so a component
+   * asks for "one step away from the page" rather than for a colour. In dark
+   * that is upward in lightness and in light it is downward, which is why the
+   * two lists below look like mirror images rather than like the same numbers.
+   *
+   *   50, 100, 200  surfaces. Raised panels, chips, hover grounds. Never text
+   *   300           decorative only: rules, toggle tracks, disabled glyphs.
+   *                 It sits at 2.9:1 dark and 3.1:1 light and MUST NOT carry
+   *                 a label, a number or anything a person has to read
+   *   400 .. 900    text, dimmest to strongest
+   *
+   * Every rung from 400 up clears 4.5:1 against all three surface rungs as
+   * well as against the page and the card, so a label does not become
+   * illegible by being moved onto a panel. That is checked, not assumed:
+   * `tests/e2e/screens.spec.ts` measures each text node against the
+   * background it is actually painted on.
+   */
   --color-muted-50: hsl(var(--muted-50));
   --color-muted-100: hsl(var(--muted-100));
   --color-muted-200: hsl(var(--muted-200));
@@ -40,32 +61,94 @@
   --color-card: hsl(var(--card));
   --color-cardFg: hsl(var(--card-fg));
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-fg: hsl(var(--primary-fg));
+  /*
+   * A well, rather than a panel. Below the page instead of above it, for the
+   * timeline bed and the frame strip, where the content is what should be
+   * lit and the container should not be.
+   */
+  --color-surface-sunk: hsl(var(--surface-sunk));
+
+  /*
+   * The accent has one meaning: the good bit, plus the single primary action
+   * in a region. It is not a hover colour, not a decoration and not the
+   * colour of every icon.
+   *
+   * Two values, because a fill and a letterform are not the same problem. At
+   * the size of a button the terracotta is the right weight, and at the
+   * weight of 13px text it is 4.28:1 on a card, which fails. `accent-ink` is
+   * the same hue lifted until it clears 4.5:1 on every surface in the ramp.
+   *
+   *   bg-accent / border-accent / ring-accent   the fill
+   *   text-accent-ink                           accent-coloured text
+   *   text-accent-fg                            text ON the fill
+   *
+   * `danger` is split the same way and for the same reason.
+   */
+  --color-accent: hsl(var(--accent));
+  --color-accent-hover: hsl(var(--accent-hover));
+  --color-accent-fg: hsl(var(--accent-fg));
+  --color-accent-sunk: hsl(var(--accent-sunk));
+  --color-accent-ink: hsl(var(--accent-ink));
 
   --color-danger: hsl(var(--danger));
   --color-danger-fg: hsl(var(--danger-fg));
+  --color-danger-ink: hsl(var(--danger-ink));
+
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
 
   --color-ring: hsl(var(--ring));
   --color-border: hsl(var(--border));
   --color-line-strong: hsl(var(--line-strong));
 
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
+  /*
+   * White over video, and the scrims that make it readable.
+   *
+   * A frame is its own ground: it does not follow the palette, so these hold
+   * the same values in both. CLAUDE.md allows literal white exactly here and
+   * on the accent, and naming it keeps the allowance visible in a grep.
+   */
+  --color-on-video: #ffffff;
 
-  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.06);
-  --shadow-card: 0 6px 24px rgba(15, 23, 42, 0.06);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 14px;
+  --radius-2xl: 14px;
+
+  /*
+   * Depth is a tone step and a hairline. The only shadow in the system is on
+   * things that genuinely float, and there is one of it.
+   */
+  --shadow-pop: 0 30px 60px -24px rgb(0 0 0 / 0.66);
+  --shadow-soft: none;
+  --shadow-card: none;
+
+  --font-display: 'Cabinet Grotesk', 'Satoshi', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Satoshi', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Cascadia Mono', Consolas, ui-monospace, monospace;
+
+  /* Three sizes per screen region, not six. */
+  --text-hero: 34px;
+  --text-hero--line-height: 1.12;
+  --text-lg: 17px;
+  --text-lg--line-height: 1.4;
+  --text-base: 14.5px;
+  --text-base--line-height: 1.6;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.5;
+  --text-xs: 11.5px;
+  --text-xs--line-height: 1.45;
+
+  --tracking-label: 0.06em;
 
   --backdrop-blur-xs: 2px;
 }
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  so a bare `border` would paint in the text colour. Everything here that has
+  a hairline means the palette's own, so that is the default.
 */
 @layer base {
   *,
@@ -73,7 +156,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: hsl(var(--border));
   }
 }
 
@@ -99,67 +182,142 @@
   }
 }
 
+/*
+  Numbers that can change are tabular, everywhere, without asking.
+
+  A count going from 9 to 10, a timecode ticking, a duration in a card's meta
+  line: with proportional figures each of those nudges everything beside it,
+  which is half of why the counts in the games list and the pager in the clip
+  modal never formed a column. The mono face is only ever used for metadata,
+  so binding the feature to the face rather than to each call site means a
+  number cannot be set in it and still be proportional.
+*/
+@layer base {
+  .font-mono,
+  code,
+  kbd,
+  samp,
+  pre {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/*
+  Motion is 120 to 180ms, opacity and transform, and it stops when the
+  machine has been asked to stop it. Honouring the preference component by
+  component is a rule nobody remembers on the fortieth component, so it is
+  enforced once, here.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * The palette.
+ *
+ * Hex is in the comment and HSL triplets are the value, because `@theme`
+ * wraps each one in `hsl()` and Tailwind's opacity modifiers (`bg-card/60`)
+ * compose over that. The hex is what a designer reads and what the contrast
+ * numbers were computed from, so it stays beside the value it produced.
+ *
+ * Contrast against the page is in the comment for every colour that carries
+ * text. The floor is 4.5:1, and it is met against the surface rungs too, not
+ * only against the page, because a label moves onto a panel all the time.
+ * ---------------------------------------------------------------------------
+ */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --muted-50: 210 40% 98%;
-  --muted-100: 210 40% 96%;
-  --muted-200: 214 32% 91%;
-  --muted-300: 213 27% 84%;
-  --muted-400: 215 20% 65%;
-  --muted-500: 215 16% 47%;
-  --muted-600: 215 19% 35%;
-  --muted-700: 215 25% 27%;
-  --muted-800: 217 33% 17%;
-  --muted-900: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-fg: 222 47% 11%;
-  --primary: 224 76% 50%;
-  --primary-fg: 0 0% 100%;
-  --danger: 0 84% 60%;
-  --danger-fg: 0 0% 100%;
-  --ring: 224 76% 50%;
-  --border: 214 32% 91%;
+  --background: 36 33.3% 97.1%;   /* #faf8f5 */
+  --foreground: 30 7.7% 10.2%;    /* #1c1a18  16.37:1 */
+
+  --muted-50: 38 23.5% 93.3%;     /* #f2efea  surface */
+  --muted-100: 35 22.2% 89.4%;    /* #eae5de  surface */
+  --muted-200: 36 18.1% 83.7%;    /* #ddd7ce  surface */
+  --muted-300: 36 8.5% 54.1%;     /* #948c80   3.13:1  decorative only */
+  --muted-400: 32 8.1% 36.3%;     /* #645d55   6.12:1 */
+  --muted-500: 34 10.1% 31%;      /* #575047   7.49:1 */
+  --muted-600: 33 8% 26.9%;       /* #4a453f   8.95:1 */
+  --muted-700: 33 9.3% 19%;       /* #35312c  12.18:1 */
+  --muted-800: 34 9.9% 13.9%;     /* #272420  14.57:1 */
+  --muted-900: 30 7.7% 10.2%;     /* #1c1a18  16.37:1 */
+
+  --card: 0 0% 100%;              /* #ffffff */
+  --card-fg: 30 7.7% 10.2%;       /* #1c1a18 */
+  --surface-sunk: 35 22.2% 89.4%; /* #eae5de */
+
+  --accent: 13 60% 41.2%;         /* #a8462a   5.54:1 */
+  --accent-hover: 14 62.5% 34.5%; /* #8f3a21 */
+  --accent-fg: 24 100% 97.1%;     /* #fff6f0   5.51:1 on accent */
+  --accent-sunk: 18 56.1% 92%;    /* #f6e6df */
+  --accent-ink: 14 60.4% 38.6%;   /* #9e4227   6.07:1 */
+
+  --success: 102 41.9% 29%;       /* #3e692b   6.08:1 */
+  --warning: 42 100% 24.3%;       /* #7c5700   6.15:1 */
+  --danger: 9 68% 38%;            /* #a3331f   6.49:1 */
+  --danger-fg: 11 100% 97.8%;     /* #fff6f4   6.47:1 on danger */
+  --danger-ink: 9 68% 38%;        /* #a3331f   6.49:1 */
+
+  --ring: 13 60% 41.2%;           /* #a8462a */
+  --border: 35 17.6% 86.7%;       /* #e3ded7 */
   /*
-   * A border one step stronger than `--border`, for hover and emphasis.
+   * A hairline one step stronger than `--border`, for hover and emphasis.
    *
-   * CLAUDE.md has listed this as part of the ladder and `tailwind.config.ts`
-   * has mapped `border-line-strong` to it, and it was **never defined**, so
-   * every use compiled to `hsl()` of nothing and the browser dropped the
-   * declaration. Two components asked for it and silently got no border change
-   * at all: the notes panel's hover edge in its read mode, and the unselected
-   * format cards in the export dialog.
+   * CLAUDE.md listed this as part of the ladder and Tailwind mapped
+   * `border-line-strong` to it, and it was never defined, so every use
+   * compiled to `hsl()` of nothing and the browser dropped the declaration.
+   * Two components asked for it and silently got no border change at all.
    *
-   * `--muted-300` in each palette, which is the next rung up from the one
-   * `--border` sits on, so the emphasis is a step on the existing scale rather
-   * than a new colour.
+   * Both hairlines are deliberately below 3:1. They are tone separators, not
+   * the thing that identifies a control: this design separates with space and
+   * a step in surface, and the hairline only confirms the edge. Anything a
+   * person has to find by its outline gets `--border-strong` plus a label, or
+   * a surface of its own.
    */
-  --line-strong: 213 27% 84%;
+  --line-strong: 35 15.4% 75.9%;  /* #cbc3b8 */
 }
 
 .dark {
-  --background: 222 47% 5%;
-  --foreground: 210 40% 98%;
-  --muted-50: 222 47% 11%;
-  --muted-100: 217 33% 17%;
-  --muted-200: 215 25% 27%;
-  --muted-300: 215 19% 35%;
-  --muted-400: 215 16% 47%;
-  --muted-500: 215 20% 65%;
-  --muted-600: 213 27% 84%;
-  --muted-700: 214 32% 91%;
-  --muted-800: 210 40% 96%;
-  --muted-900: 210 40% 98%;
-  --card: 222 47% 8%;
-  --card-fg: 210 40% 98%;
-  --primary: 224 76% 60%;
-  --primary-fg: 0 0% 100%;
-  --danger: 0 84% 60%;
-  --danger-fg: 0 0% 100%;
-  --ring: 224 76% 60%;
-  --border: 217 33% 17%;
+  --background: 30 5.9% 6.7%;     /* #121110 */
+  --foreground: 34 16.3% 91.6%;   /* #edeae6  15.73:1 */
+
+  --muted-50: 24 7.9% 12.4%;      /* #221f1d  surface */
+  --muted-100: 30 7.7% 15.3%;     /* #2a2724  surface */
+  --muted-200: 38 11.8% 18.2%;    /* #343029  surface */
+  --muted-300: 35 6.5% 36.5%;     /* #635e57   2.94:1  decorative only */
+  --muted-400: 37 6.2% 58.6%;     /* #9c978f   6.50:1 */
+  --muted-500: 34 7.6% 63.9%;     /* #aaa49c   7.66:1 */
+  --muted-600: 35 7.8% 69.8%;     /* #b8b3ac   9.06:1 */
+  --muted-700: 36 9.4% 79.2%;     /* #cfcbc5  11.68:1 */
+  --muted-800: 33 12% 85.3%;      /* #dedad5  13.56:1 */
+  --muted-900: 34 16.3% 91.6%;    /* #edeae6  15.73:1 */
+
+  --card: 30 4% 9.8%;             /* #1a1918 */
+  --card-fg: 34 16.3% 91.6%;      /* #edeae6 */
+  --surface-sunk: 30 8.3% 4.7%;   /* #0d0c0b */
+
+  --accent: 17 51.4% 50%;         /* #c1633e   4.60:1 */
+  --accent-hover: 17 63.6% 59%;   /* #d97a54 */
+  --accent-fg: 19 44.4% 7.1%;     /* #1a0f0a   4.59:1 on accent */
+  --accent-sunk: 16 55.2% 13.1%;  /* #34190f */
+  --accent-ink: 17 51.8% 61%;     /* #cf8568   6.47:1 */
+
+  --success: 97 25.3% 52.7%;      /* #7fa568   6.72:1 */
+  --warning: 40 56.3% 51.6%;      /* #c99a3e   7.34:1 */
+  --danger: 0 59.2% 58.6%;        /* #d45757   4.76:1 */
+  --danger-fg: 0 40.5% 7.3%;      /* #1a0b0b   4.83:1 on danger */
+  --danger-ink: 0 58.8% 67.6%;    /* #dd7c7c   6.51:1 */
+
+  --ring: 17 63.6% 59%;           /* #d97a54 */
+  --border: 30 7.1% 16.5%;        /* #2d2a27 */
   /* See the note in `:root`. One rung up from `--border`, in this palette. */
-  --line-strong: 215 25% 27%;
+  --line-strong: 30 8.2% 23.9%;   /* #423d38 */
 }
 
 html, body, #app { height: 100%; }
@@ -167,28 +325,49 @@ body {
   background-color: hsl(var(--background));
   background-attachment: fixed;
   color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-.card { @apply rounded-2xl shadow-card bg-card border border-border; }
+/*
+ * One focus ring, and it does not move anything.
+ *
+ * `box-shadow` rather than `outline` so the ring follows a rounded corner,
+ * and two rings so it reads on a surface of any tone: the inner one is the
+ * page punching a gap, the outer one is the accent. Neither is in flow, so
+ * focusing a control cannot change a layout.
+ */
+@utility focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
 
-.btn { @apply inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-soft border border-border hover:shadow-md transition-all duration-200 active:scale-[0.98]; }
-.btn-primary { @apply bg-orange-500 hover:bg-orange-600 text-white; }
-.btn-danger { @apply bg-danger text-danger-fg; }
-.btn-ghost { @apply bg-transparent; }
+/*
+ * Depth as a tone step and a hairline, which is what `.card` now means.
+ * It used to mean a drop shadow and an 18px radius.
+ */
+.card { @apply rounded-lg bg-card border border-border; }
+
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 h-9 text-sm font-medium border border-border transition-colors duration-150; }
+.btn-primary { @apply bg-accent hover:bg-accent-hover text-accent-fg border-transparent; }
+.btn-danger { @apply bg-danger text-danger-fg border-transparent; }
+.btn-ghost { @apply bg-transparent border-transparent; }
 .btn-outline { @apply bg-transparent border-border hover:bg-muted-50; }
 
-.input { @apply w-full rounded-xl border border-border bg-card/10 px-4 py-2.5 outline-hidden focus:ring-2 focus:ring-ring/70 transition; }
+.input { @apply w-full rounded-md border border-border bg-card px-3 h-9 outline-hidden focus:ring-2 focus:ring-ring/70 transition-colors; }
 
-.clip-card { @apply transition-all duration-200; }
+.clip-card { @apply transition-opacity duration-150; }
 
 /* Subtle custom scrollbar */
 *::-webkit-scrollbar { width: 14px; height: 14px; }
 *::-webkit-scrollbar-track { background-color: transparent; margin: 4px; }
-*::-webkit-scrollbar-thumb { 
-  background-color: hsl(var(--muted-200)); 
-  border-radius: 10px; 
-  border: 3px solid transparent; 
-  background-clip: padding-box; 
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--line-strong));
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--muted-300)); }
 
@@ -199,5 +378,3 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
-
