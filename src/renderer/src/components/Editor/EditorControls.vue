@@ -155,7 +155,13 @@ const emit = defineEmits<Emits>();
         <BaseSpinner v-if="trimmingHighlights" class="text-lg" />
         <Icon v-else icon="material-symbols:auto-awesome" class="text-lg" />
         <span class="hidden xl:inline">
-          {{ props.trimmingHighlights ? 'Listening…' : 'Trim to highlights' }}
+          <!--
+            "Trim to highlights" and the properties panel's "Trim to 19.90s-25.90s"
+            sat in opposite corners with no stated relationship, and a reviewer
+            could not tell whether this one applied to the selected clip, to all
+            of them, or was simply the other one's twin. One word says which.
+          -->
+          {{ props.trimmingHighlights ? 'Listening…' : 'Trim all to highlights' }}
         </span>
       </button>
 

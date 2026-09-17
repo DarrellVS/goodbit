@@ -235,8 +235,18 @@ function toggleTag(name: string): void {
             {{ entry.clip.displayName || entry.clip.filename }}
           </span>
 
-          <span class="flex items-center gap-1 text-[10px] font-medium text-orange-700 shrink-0 pr-1">
-            <Icon icon="material-symbols:check-circle" class="text-sm" />
+          <!--
+            Muted, because this is a state and not an offer.
+
+            In the accent colour it read as something to press: a reviewer
+            seeing it at size took the filled circle for a remove control and
+            could not tell whether the badge was telling them the clip was on
+            the timeline or offering to take it off. It is also one of five
+            orange things competing on this screen, and the one with the least
+            claim to the colour.
+          -->
+          <span class="flex items-center gap-1 text-[10px] font-medium text-muted-500 shrink-0 pr-1">
+            <Icon icon="material-symbols:check-circle-outline" class="text-sm" />
             In timeline
           </span>
         </button>

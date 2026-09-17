@@ -80,6 +80,7 @@ function time(clip: Clip): number {
     <div
       v-for="group in groupedClips"
       :key="`${group.date}-${group.game}`"
+      class="group/day"
       :class="config.public.value.compactMode ? 'space-y-2' : 'space-y-3'"
     >
       <div class="flex items-center gap-3 px-2">
@@ -101,9 +102,17 @@ function time(clip: Clip): number {
           A day of one game is the unit a montage is usually made from, so it
           gets a one-click way into the editor with the whole day already on the
           timeline, oldest first.
+
+          On hover, because it is one header per game per day and this was the
+          most repeated text in the app: a library with forty clips spread over
+          thirty days drew thirty copies of a five word secondary action down
+          the page, competing with the clips somebody actually came to look at.
+          It stays keyboard reachable through `focus-within`, so hiding it
+          costs nothing but the repetition.
         -->
         <button
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-orange-500 hover:bg-orange-500/10 transition-colors shrink-0"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-orange-500 hover:bg-orange-500/10 transition-colors shrink-0
+                 opacity-0 group-hover/day:opacity-100 focus-visible:opacity-100 transition-opacity"
           :title="`Open these ${group.clips.length} clips in the editor, oldest first`"
           @click="editDayInEditor(group)"
         >

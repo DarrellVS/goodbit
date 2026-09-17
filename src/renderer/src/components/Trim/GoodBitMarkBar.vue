@@ -199,10 +199,25 @@ function submit(): void {
         </button>
       </template>
 
+      <!--
+        Outlined, not filled, and that is a safety decision rather than taste.
+
+        This and "Save Trimmed Clip" were the same size, the same orange and
+        the same weight, ninety pixels apart, and they do opposite things to
+        the file: one writes a bookmark and changes nothing, the other replaces
+        the recording. The only thing telling them apart was reading the words.
+        An independent reviewer called it the most dangerous thing on the
+        screen, and they are right: a destructive action must not look like its
+        safe neighbour.
+
+        The safe one gives up the fill. It is still obviously a button and
+        still the accent colour, so nothing is lost except the claim to be the
+        same kind of act as the one above it.
+      -->
       <button
         v-else
         type="button"
-        class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:hover:bg-orange-500"
+        class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border border-orange-500/50 text-orange-600 hover:bg-orange-500/10 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
         :disabled="saving || !valid || duplicate"
         :title="
           duplicate
