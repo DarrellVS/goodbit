@@ -502,8 +502,18 @@ section {
   background: var(--panel);
 }
 
+/*
+ * `display: block` because these are wrapped in `<picture>`, which is an
+ * inline element and would otherwise sit on a text baseline and leave a few
+ * pixels of panel showing under every screenshot.
+ */
+.frame picture {
+  display: block;
+}
+
 .frame img {
   width: 100%;
+  display: block;
 }
 
 .frame figcaption {

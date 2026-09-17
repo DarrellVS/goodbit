@@ -35,6 +35,20 @@ import { announceRoot, libraryRoot } from './lib/libraryRoot.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = join(ROOT, 'site', 'assets', 'shots');
+const IMG = join(ROOT, 'site', 'assets', 'img');
+
+/**
+ * The social card, at the size the pages promise it is.
+ *
+ * `index.html` declares `og:image:width` 1200 and `og:image:height` 630, so
+ * this is shot at exactly that rather than cropped down from a 1440x1080 one,
+ * which would cut the library in half. It is the picture Discord and every
+ * other unfurler shows for the whole site, and it was the most out of date
+ * thing here by a wide margin: a "Published / Not Published" tab pair, "Tags"
+ * and "Rescan" buttons, "9 Videos", and the browser's own video controls on
+ * every card, none of which the app has had for a long time.
+ */
+const OG_CARD = { width: 1200, height: 630 };
 const FFMPEG = ffmpegPath;
 
 const KEEP_PNG = process.argv.includes('--keep-png');
@@ -587,6 +601,49 @@ async function waitForStrips(page, timeoutMs = 120_000) {
 }
 
 /**
+ * Put the timeline back to its start, and check the gutter survived.
+ *
+ * The lanes sit `TIMELINE_OFFSET_PX` in from the scroller's edge, and that
+ * gutter is only visible while the scroller is at zero. Adding clips and
+ * zooming both move `scrollLeft`, and the editor screenshot came back with the
+ * playhead sitting on the panel's own border: correct code, photographed from
+ * 26 pixels along. Nothing in the app is wrong there, a scrolled timeline is
+ * supposed to scroll its gutter away, so this is the rig's problem to fix.
+ *
+ * It measures afterwards rather than trusting the reset, and says so when the
+ * number is wrong, because this is exactly the sort of thing that is invisible
+ * until somebody puts a screenshot next to a ruler.
+ */
+async function settleTimeline(page) {
+  const gutter = await page.evaluate(() => {
+    const lane = document.querySelector('.h-16.rounded-lg');
+    if (!lane) return null;
+
+    // The lanes' own scroller, and the ruler that scrolls in step with it.
+    const content = lane.parentElement?.parentElement;
+    const ruler = content?.previousElementSibling;
+    if (content) content.scrollLeft = 0;
+    if (ruler) ruler.scrollLeft = 0;
+
+    const scroller = content?.getBoundingClientRect().left;
+    const inset = lane.getBoundingClientRect().left;
+    return scroller == null ? null : Math.round((inset - scroller) * 100) / 100;
+  });
+
+  await page.waitForTimeout(600);
+
+  if (gutter === null) {
+    console.warn('  could not measure the timeline gutter');
+    return;
+  }
+
+  console.log(`  timeline gutter: ${gutter}px`);
+  if (gutter < 6) {
+    console.warn(`  the timeline is photographed flush against its panel (${gutter}px)`);
+  }
+}
+
+/**
  * The window with the app in it, which is not reliably the first one.
  *
  * The clip toast is a second `BrowserWindow`, built during boot so the first
@@ -616,6 +673,13 @@ function dateFromName(name) {
   return new Date(y, mo - 1, d, h, mi, s);
 }
 
+/** The social card is a jpg, because that is the name every unfurler is given. */
+function toJpeg(png, target) {
+  execFileSync(FFMPEG, ['-hide_banner', '-v', 'error', '-i', png, '-q:v', '3', '-y', target]);
+  if (!KEEP_PNG) unlinkSync(png);
+  return target;
+}
+
 /** PNG is what Chromium gives us; webp is what should be on a web page. */
 function toWebp(png) {
   const webp = png.replace(/\.png$/, '.webp');
@@ -635,6 +699,7 @@ async function main() {
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(join(base, 'music'), { recursive: true });
   mkdirSync(SHOTS, { recursive: true });
+  mkdirSync(IMG, { recursive: true });
 
   writeFileSync(
     join(dataDir, 'settings.json'),
@@ -685,25 +750,6 @@ async function main() {
 
   await dressTheLibrary(page);
 
-  await page.evaluate(() => {
-    localStorage.setItem('goodbit-theme', 'dark');
-
-    /*
-     * Put the OBS banner away before anything is photographed.
-     *
-     * It is correct, and it is the single loudest thing on the library shot: a
-     * full width orange warning saying OBS is not set up to record into your
-     * library, above the clips. It is correct because this *is* a throw-away
-     * library in a temp folder that no OBS has ever recorded into, which makes
-     * it a true statement about the screenshot rig and a false impression of
-     * the app. The same key the dismiss button writes, so nothing here has to
-     * know how the banner decides.
-     */
-    sessionStorage.setItem('goodbit.obs-banner-dismissed', 'yes');
-  });
-  await page.reload();
-  await page.waitForTimeout(3000);
-
   const go = async (hash, settle = 2500) => {
     await page.evaluate((h) => {
       window.location.hash = h;
@@ -711,143 +757,223 @@ async function main() {
     await page.waitForTimeout(settle);
   };
 
-  const shoot = async (name) => {
-    const png = join(SHOTS, `${name}.png`);
-    await page.screenshot({ path: png });
-    console.log(`  ${toWebp(png)}`);
-  };
-
-  await go('#/');
-  await shoot('library');
-
-  await go('#/stats');
-  await shoot('stats');
-
-  // The featured recording if it is in there, else whatever is newest.
-  const subject = await page.evaluate(async (wanted) => {
-    const answer = await window.goodbit.apiRequest({
-      method: 'GET',
-      path: '/clips',
-      query: { pageSize: 100 },
-    });
-    const items = answer.body.items;
-    return (items.find((c) => c.filename === wanted) ?? items[0]).id;
-  }, FEATURED.file);
-
-  await go(`#/clips/${subject}`);
   /*
-   * Hold the player still, just before the first marked range.
+   * Both palettes, because the website follows the reader's own.
    *
-   * The `<video>` autoplays, so without this the shot lands wherever the clip
-   * happened to be two and a half seconds in, with the button caught between
-   * its two states.
-   *
-   * The position is the part that matters, and two things decide it.
-   *
-   * The played portion is `orange-500` and it is drawn *over* the bands, which
-   * are `orange-400/80`, so a playhead past a mark covers it and a playhead
-   * between the two joins them into one long orange run: the bar stops reading
-   * as "two moments in here" and starts reading as a progress bar that has
-   * lost track of itself. That rules out everything from the first mark on.
-   *
-   * Which leaves the opening few seconds, and those were looked at rather than
-   * guessed: rendering the candidates as a contact sheet puts a sniper scope
-   * over the middle of this clip, so 12% and 16% are both a big black donut.
-   * 4% is the open shot, water and sky and the weapon in frame, with the HUD
-   * legible. The fill is short there, which is the honest thing for a clip
-   * that has just started.
+   * `style.css` switches on `prefers-color-scheme` and has no toggle, so a
+   * reader in light mode got a page of light panels wrapped around six dark
+   * screenshots. The app has the same two palettes, so the honest fix is to
+   * photograph it twice. The light set is suffixed and the dark set keeps the
+   * bare names, since the dark ones are what every existing `<img>` points at.
    */
-  await page.evaluate(async () => {
+  for (const palette of ['dark', 'light']) {
+    const suffix = palette === 'dark' ? '' : '-light';
+    console.log(`${palette}:`);
+
+    await page.evaluate((choice) => {
+      localStorage.setItem('goodbit-theme', choice);
+
+      /*
+       * Put the OBS banner away before anything is photographed.
+       *
+       * It is correct, and it is the single loudest thing on the library shot:
+       * a full width orange warning saying OBS is not set up to record into
+       * your library, above the clips. It is correct because this *is* a
+       * throw-away library in a temp folder that no OBS has ever recorded
+       * into, which makes it a true statement about the screenshot rig and a
+       * false impression of the app. The same key the dismiss button writes,
+       * so nothing here has to know how the banner decides.
+       */
+      sessionStorage.setItem('goodbit.obs-banner-dismissed', 'yes');
+    }, palette);
+    await page.reload();
+    await page.waitForTimeout(3000);
+
+    const shoot = async (name) => {
+      const png = join(SHOTS, `${name}${suffix}.png`);
+      await page.screenshot({ path: png });
+      console.log(`  ${toWebp(png)}`);
+    };
+
+    await go('#/');
+    await shoot('library');
+
     /*
-     * The biggest `<video>` on the page, not the first one.
+     * The social card, from the dark palette only, and taken here rather than
+     * at the end.
      *
-     * `document.querySelector('video')` does not return the player. A card's
-     * thumbnail is a `<video>` too (`AppClipCard.vue`), the library is still
-     * mounted behind the modal because a clip is a layer over it rather than a
-     * route, and those come first in the document. So every pause and every
-     * seek was being applied to a 270 pixel thumbnail in the grid underneath,
-     * while the player carried on playing: the shot kept coming back at 0:03
-     * with the button showing the playing state, from code that looked right.
+     * There is one `og:image` and no way to offer an unfurler a choice, so it
+     * gets the dark one, which is what the app ships as by default.
      *
-     * Area tells them apart with nothing to keep in sync.
+     * The position in the sequence is the load-bearing part. Taken last, after
+     * the clip and trim shots, it came back showing the trim screen: a clip is
+     * a *layer* over the library held in module state rather than a route, so
+     * setting the hash back to `#/` stepped the route back and left the layer
+     * open on top of it. Here, nothing has been opened yet, so there is no
+     * state to undo and no modal to race.
      */
-    const videos = Array.from(document.querySelectorAll('video'));
-    const player = videos
-      .map((element) => {
-        const box = element.getBoundingClientRect();
-        return { element, area: box.width * box.height };
-      })
-      .sort((a, b) => b.area - a.area)[0]?.element;
+    if (palette === 'dark') {
+      await page.setViewportSize(OG_CARD);
+      await page.waitForTimeout(1500);
 
-    if (!player) return;
-    if (!Number.isFinite(player.duration) || player.duration <= 0) return;
+      const png = join(IMG, 'og-card.png');
+      await page.screenshot({ path: png });
+      console.log(`  ${toJpeg(png, join(IMG, 'og-card.jpg'))}`);
 
-    await new Promise((resolve) => {
-      player.addEventListener('seeked', resolve, { once: true });
-      player.currentTime = player.duration * 0.04;
-      // A seek that lands on the frame it is already showing fires nothing.
-      setTimeout(resolve, 3000);
+      await page.setViewportSize({ width: SHOT_WIDTH, height: SHOT_HEIGHT });
+      await page.waitForTimeout(1500);
+    }
+
+    await go('#/stats');
+    await shoot('stats');
+
+    // The featured recording if it is in there, else whatever is newest.
+    const subject = await page.evaluate(async (wanted) => {
+      const answer = await window.goodbit.apiRequest({
+        method: 'GET',
+        path: '/clips',
+        query: { pageSize: 100 },
+      });
+      const items = answer.body.items;
+      return (items.find((c) => c.filename === wanted) ?? items[0]).id;
+    }, FEATURED.file);
+
+    await go(`#/clips/${subject}`);
+    /*
+     * Hold the player still, just before the first marked range.
+     *
+     * The `<video>` autoplays, so without this the shot lands wherever the clip
+     * happened to be two and a half seconds in, with the button caught between
+     * its two states.
+     *
+     * The position is the part that matters, and two things decide it.
+     *
+     * The played portion is `orange-500` and it is drawn *over* the bands, which
+     * are `orange-400/80`, so a playhead past a mark covers it and a playhead
+     * between the two joins them into one long orange run: the bar stops reading
+     * as "two moments in here" and starts reading as a progress bar that has
+     * lost track of itself. That rules out everything from the first mark on.
+     *
+     * Which leaves the opening few seconds, and those were looked at rather than
+     * guessed: rendering the candidates as a contact sheet puts a sniper scope
+     * over the middle of this clip, so 12% and 16% are both a big black donut.
+     * 4% is the open shot, water and sky and the weapon in frame, with the HUD
+     * legible. The fill is short there, which is the honest thing for a clip
+     * that has just started.
+     */
+    await page.evaluate(async () => {
+      /*
+       * The biggest `<video>` on the page, not the first one.
+       *
+       * `document.querySelector('video')` does not return the player. A card's
+       * thumbnail is a `<video>` too (`AppClipCard.vue`), the library is still
+       * mounted behind the modal because a clip is a layer over it rather than a
+       * route, and those come first in the document. So every pause and every
+       * seek was being applied to a 270 pixel thumbnail in the grid underneath,
+       * while the player carried on playing: the shot kept coming back at 0:03
+       * with the button showing the playing state, from code that looked right.
+       *
+       * Area tells them apart with nothing to keep in sync.
+       */
+      const videos = Array.from(document.querySelectorAll('video'));
+      const player = videos
+        .map((element) => {
+          const box = element.getBoundingClientRect();
+          return { element, area: box.width * box.height };
+        })
+        .sort((a, b) => b.area - a.area)[0]?.element;
+
+      if (!player) return;
+      if (!Number.isFinite(player.duration) || player.duration <= 0) return;
+
+      await new Promise((resolve) => {
+        player.addEventListener('seeked', resolve, { once: true });
+        player.currentTime = player.duration * 0.04;
+        // A seek that lands on the frame it is already showing fires nothing.
+        setTimeout(resolve, 3000);
+      });
+      player.pause();
     });
-    player.pause();
-  });
-  await page.waitForTimeout(1200);
-  /*
-   * Pause everything, with nothing between this and the shutter.
-   *
-   * The element autoplays, so a pause issued while it is still opening is
-   * simply overtaken. Asking again once it has settled leaves nothing that can
-   * restart it in between, and every video rather than the player alone,
-   * because the thumbnails behind the modal are playing too.
-   */
-  await page.evaluate(() => {
-    for (const video of document.querySelectorAll('video')) video.pause();
-  });
-  await shoot('clip');
-
-  await go(`#/trim/${subject}`, 4000);
-  // Same story as the editor: the strip is generated on demand, and for a real
-  // 3440x1440 recording that is ten seconds of ffmpeg.
-  await waitForStrips(page);
-  // And the suggestion takes a moment of its own on a game whose HUD is read,
-  // which is the whole reason this clip was chosen.
-  await waitForSuggestion(page);
-  await shoot('trim');
-
-  await go('#/editor', 4000);
-  // Put a couple of clips on the timeline so the lane is not empty.
-  const thumbs = page.locator('img[src^="goodbit://media/thumb"]');
-  for (let i = 0; i < 3; i++) {
-    await thumbs.nth(i).click();
     await page.waitForTimeout(1200);
+    /*
+     * Pause everything, with nothing between this and the shutter.
+     *
+     * The element autoplays, so a pause issued while it is still opening is
+     * simply overtaken. Asking again once it has settled leaves nothing that can
+     * restart it in between, and every video rather than the player alone,
+     * because the thumbnails behind the modal are playing too.
+     */
+    await page.evaluate(() => {
+      for (const video of document.querySelectorAll('video')) video.pause();
+    });
+    await shoot('clip');
+
+    await go(`#/trim/${subject}`, 4000);
+    // Same story as the editor: the strip is generated on demand, and for a real
+    // 3440x1440 recording that is ten seconds of ffmpeg.
+    await waitForStrips(page);
+    // And the suggestion takes a moment of its own on a game whose HUD is read,
+    // which is the whole reason this clip was chosen.
+    await waitForSuggestion(page);
+    await shoot('trim');
+
+    await go('#/editor', 4000);
+
+    /*
+     * Throw away the scratch draft before building the timeline.
+     *
+     * The editor keeps one unsaved timeline per profile, so the first palette's
+     * three clips are still there when the second one opens, and the light
+     * editor shot came back with "Continue where you left off? 3 clips, just
+     * now" across the top of it, which the dark shot does not have. Two
+     * screenshots of the same screen should differ by palette and nothing
+     * else.
+     *
+     * Discard rather than Resume: this pass is about to add its own clips, and
+     * resuming would leave the timeline holding both.
+     */
+    await page
+      .getByRole('button', { name: 'Discard', exact: true })
+      .click({ timeout: 2500 })
+      .catch(() => {});
+    await page.waitForTimeout(1000);
+    // Put a couple of clips on the timeline so the lane is not empty.
+    const thumbs = page.locator('img[src^="goodbit://media/thumb"]');
+    for (let i = 0; i < 3; i++) {
+      await thumbs.nth(i).click();
+      await page.waitForTimeout(1200);
+    }
+    // Select the first block, so the properties panel shows the highlight the
+    // analysis found rather than "no clip selected".
+    await page.locator('.cursor-grab').first().click({ timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+
+    /*
+     * Zoom out until the whole movie is on screen.
+     *
+     * The editor opens at 100%, which is 50 pixels per second, so a minute and
+     * a half of clips runs several screens wide and the shot showed the first
+     * thirteen seconds of it: one block, no sense that there is a sequence here
+     * at all. The point of this screen is the arrangement, so the arrangement
+     * has to fit in the picture.
+     */
+    for (let i = 0; i < 3; i += 1) {
+      await page.getByTitle('Zoom out').click();
+      await page.waitForTimeout(500);
+    }
+    await page.waitForTimeout(1500);
+
+    // The strip behind a timeline block is a CSS background, generated on demand
+    // from the source clip, which for a real 3440x1440 recording takes several
+    // seconds. Shooting before it arrives gives a picture of an empty block.
+    await waitForStrips(page);
+    await settleTimeline(page);
+    await shoot('editor');
+
+    await go('#/settings?section=general');
+    await shoot('settings');
+
   }
-  // Select the first block, so the properties panel shows the highlight the
-  // analysis found rather than "no clip selected".
-  await page.locator('.cursor-grab').first().click({ timeout: 3000 }).catch(() => {});
-  await page.waitForTimeout(2000);
-
-  /*
-   * Zoom out until the whole movie is on screen.
-   *
-   * The editor opens at 100%, which is 50 pixels per second, so a minute and
-   * a half of clips runs several screens wide and the shot showed the first
-   * thirteen seconds of it: one block, no sense that there is a sequence here
-   * at all. The point of this screen is the arrangement, so the arrangement
-   * has to fit in the picture.
-   */
-  for (let i = 0; i < 3; i += 1) {
-    await page.getByTitle('Zoom out').click();
-    await page.waitForTimeout(500);
-  }
-  await page.waitForTimeout(1500);
-
-  // The strip behind a timeline block is a CSS background, generated on demand
-  // from the source clip, which for a real 3440x1440 recording takes several
-  // seconds. Shooting before it arrives gives a picture of an empty block.
-  await waitForStrips(page);
-  await shoot('editor');
-
-  await go('#/settings?section=general');
-  await shoot('settings');
 
   await app.close();
   rmSync(base, { recursive: true, force: true });
