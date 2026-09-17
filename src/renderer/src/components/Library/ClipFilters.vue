@@ -3,7 +3,9 @@ import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useClipsStore, CLIP_SORTS, type ClipSort } from '@renderer/stores/clips';
 import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
-import { COMBO_BOX_HEIGHT, type ComboBoxValue } from '@renderer/components/Base/types';
+import type { ComboBoxValue } from '@renderer/components/Base/types';
+import { QUIET_CONTROL_HEIGHT } from '@renderer/components/Base/geometry';
+import { useTheme } from '@renderer/composables/ui/useTheme';
 import ClipFilterPopover from './ClipFilterPopover.vue';
 
 /**
@@ -22,9 +24,15 @@ import ClipFilterPopover from './ClipFilterPopover.vue';
  * filters at all but the way most people use the screen.
  *
  * Left to right: which clips, then how they are narrowed and ordered, then
- * what to do with them, then how many there are. The whole right hand group is
- * `h-9`, because `COMBO_BOX_HEIGHT` is not a prop: two controls of the same
- * kind at two heights is the thing `BaseComboBox` exists to stop.
+ * what to do with them, then how many there are, then the palette.
+ *
+ * **The line is mostly text**, which is the design's phrase for it and is not
+ * a style note. Everything in the right hand group describes the list below it
+ * rather than changing what is in it, and a box gives a control the weight of
+ * one that does; the sort was the only rectangle on the line and read as the
+ * important thing on it. They are the quiet class now, all at
+ * `QUIET_CONTROL_HEIGHT`, because one height per class is still the rule and
+ * "no border" is not the same as "no height".
  */
 interface Props {
   totalCount: number;
@@ -62,11 +70,30 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const clipsStore = useClipsStore();
+const { isDark, setTheme } = useTheme();
+
+/**
+ * One control, two states, no third.
+ *
+ * `useTheme` also holds `system`, and Settings is where that is chosen. A
+ * toggle in a toolbar answers "lighter or darker, now", and a three-way
+ * control that has to explain its middle state does not belong on the end of
+ * a line of filters.
+ */
+function toggleTheme(): void {
+  setTheme(isDark.value ? 'light' : 'dark');
+}
+
+/** Every control in the line, at the one height controls in this line are. */
+const QUIET =
+  QUIET_CONTROL_HEIGHT +
+  ' inline-flex items-center gap-1.5 rounded-md px-1 text-sm text-muted-600' +
+  ' hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150';
 
 const rowClass = computed(() =>
   props.flush
-    ? 'flex flex-wrap items-center gap-x-3 gap-y-2 px-6'
-    : 'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-6 pt-6',
+    ? 'flex flex-wrap items-center gap-x-4 gap-y-2 px-6 pb-3.5'
+    : 'flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-6 pt-7 pb-3.5',
 );
 
 /**
@@ -94,40 +121,49 @@ function onSortChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
 </script>
 
 <template>
-  <!--
-    The hairline is the row's, and the views sit on it: `-mb-px` puts the
-    active view's own 2px underline over the top of it rather than a pixel
-    below. Both states carry `border-b-2`, so becoming active changes a colour
-    and never a height.
-  -->
   <div :class="rowClass">
-    <nav class="flex items-center gap-6" aria-label="Which clips">
+    <nav class="flex items-center gap-2.5 -ml-2.5" aria-label="Which clips">
+      <!--
+        The rule is an overlay, not a border.
+
+        A `border-b-2` is part of the tab's own box, so it and the row's
+        hairline were competing to be the same pixel and `-mb-px` was papering
+        over it. An absolutely positioned bar sits under the label at the
+        label's own width, costs no layout, and lets the row's hairline be the
+        row's.
+      -->
       <button
         v-for="view in VIEWS"
         :key="view.label"
         type="button"
-        class="-mb-px h-11 px-1 border-b-2 text-sm outline-none focus-visible:focus-ring transition-colors duration-150"
+        class="relative h-8 min-w-11 px-2.5 text-sm outline-none focus-visible:focus-ring rounded-sm transition-colors duration-150"
         :class="clipsStore.starredFilter === view.starred
-          ? 'border-accent text-foreground font-medium'
-          : 'border-transparent text-muted-500 hover:text-foreground'"
+          ? 'text-foreground font-medium'
+          : 'text-muted-500 hover:text-foreground'"
         :aria-current="clipsStore.starredFilter === view.starred ? 'page' : undefined"
         @click="clipsStore.setStarredFilter(view.starred)"
       >
         {{ view.label }}
+        <span
+          v-if="clipsStore.starredFilter === view.starred"
+          aria-hidden="true"
+          class="absolute inset-x-2.5 -bottom-1.5 h-0.5 bg-accent"
+        />
       </button>
     </nav>
 
-    <div class="ml-auto flex items-center gap-2">
+    <div class="ml-auto flex items-center gap-4">
       <ClipFilterPopover />
 
       <!--
         The library had no sort at all: newest first was the only order on
         offer. It sits beside the count because both describe the list you are
-        looking at rather than changing what is in it.
+        looking at rather than changing what is in it, and it is quiet for the
+        same reason.
       -->
       <BaseComboBox
         v-if="sortable"
-        class="w-44"
+        variant="quiet"
         label="Order the clips"
         :model-value="clipsStore.sort"
         :options="sortOptions"
@@ -143,31 +179,46 @@ function onSortChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
       <button
         v-if="isSelectionMode"
         type="button"
-        :class="[COMBO_BOX_HEIGHT, 'inline-flex items-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 hover:bg-muted-50']"
+        :class="[QUIET, 'text-foreground']"
         title="Stop selecting (Esc)"
         @click="emit('exit-selection')"
       >
-        <Icon icon="material-symbols:close" class="size-4 shrink-0 block" />
-        <span>Cancel</span>
+        Cancel
       </button>
       <button
         v-else
         type="button"
-        :class="[COMBO_BOX_HEIGHT, 'inline-flex items-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 hover:bg-muted-50']"
+        :class="QUIET"
+        :aria-pressed="false"
         title="Pick clips to star, tag, publish, move or delete together (Ctrl+A for all of them)"
         @click="emit('enter-selection')"
       >
-        <Icon icon="material-symbols:check-box-outline-blank" class="size-4 shrink-0 block" />
-        <span>Select</span>
+        Select
       </button>
 
       <!--
-        A number about the list, so it is in the face numbers are in, and
-        tabular, so the row does not breathe when a filter changes the count.
+        A number about the list. Tabular, so the row does not breathe when a
+        filter changes the count, and in the UI face rather than the mono one:
+        mono is for a measurement you read digit by digit, and this is a
+        sentence that happens to start with a number.
       -->
-      <div class="font-mono text-xs tabular-nums text-muted-400 whitespace-nowrap pl-1" role="status">
+      <div class="text-sm tabular-nums text-muted-400 whitespace-nowrap" role="status">
         {{ totalCount }} {{ totalCount === 1 ? 'clip' : 'clips' }}
       </div>
+
+      <button
+        type="button"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+        :aria-pressed="isDark"
+        :title="isDark ? 'Switch to the light palette' : 'Switch to the dark palette'"
+        :aria-label="isDark ? 'Switch to the light palette' : 'Switch to the dark palette'"
+        @click="toggleTheme"
+      >
+        <Icon
+          :icon="isDark ? 'material-symbols:light-mode-outline' : 'material-symbols:dark-mode-outline'"
+          class="size-4 shrink-0 block"
+        />
+      </button>
     </div>
   </div>
 </template>

@@ -14,6 +14,7 @@ import {
   ComboboxViewport,
 } from 'reka-ui';
 import { COMBO_BOX_HEIGHT, type ComboBoxOption, type ComboBoxValue } from './types';
+import { QUIET_CONTROL_HEIGHT } from './geometry';
 
 /**
  * The dropdown, wherever the app has one.
@@ -97,6 +98,19 @@ interface Props {
   summary?: (selected: ComboBoxOption[]) => string;
   /** What the list says when a search matches nothing. */
   emptyMessage?: string;
+  /**
+   * `bordered` is a control in a form; `quiet` is a word in a line of words.
+   *
+   * The library's control line is mostly text by design: `Filter`, the sort,
+   * `Select` and the count sit in a row with no boxes, because boxing four
+   * things that only describe the list below them gives them the weight of
+   * four things that change it. A bordered dropdown in that row was the only
+   * rectangle on the line and read as the important one.
+   *
+   * Still one component and still one height per class: bordered controls are
+   * 36px and quiet ones are 32px, and neither is a free number.
+   */
+  variant?: 'bordered' | 'quiet';
 }
 
 interface Emits {
@@ -111,6 +125,7 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   summary: undefined,
   emptyMessage: 'Nothing matches',
+  variant: 'bordered',
 });
 
 const emit = defineEmits<Emits>();
@@ -219,28 +234,46 @@ const LIST_Z_INDEX = 'z-300';
   >
     <ComboboxAnchor as-child>
       <ComboboxTrigger
+        v-if="variant === 'quiet'"
+        tabindex="0"
+        :aria-label="label"
+        :class="[
+          QUIET_CONTROL_HEIGHT,
+          'inline-flex items-center gap-1.5 rounded-md px-1 text-sm text-left',
+          'outline-none focus-visible:focus-ring transition-colors duration-150',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          open ? 'text-foreground' : 'text-muted-600 hover:text-foreground',
+        ]"
+      >
+        <Icon v-if="triggerIcon" :icon="triggerIcon" class="size-4 shrink-0 block text-muted-400" />
+        <span class="min-w-0 truncate">{{ triggerLabel }}</span>
+        <Icon
+          icon="material-symbols:expand-more"
+          class="size-4 shrink-0 block text-muted-400 transition-transform duration-150"
+          :class="open ? 'rotate-180' : ''"
+        />
+      </ComboboxTrigger>
+
+      <ComboboxTrigger
+        v-else
         tabindex="0"
         :aria-label="label"
         :class="[
           COMBO_BOX_HEIGHT,
-          'flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm',
-          'text-left outline-hidden transition-colors',
+          'flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 text-sm',
+          'text-left outline-hidden transition-colors duration-150',
           'focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40',
           'disabled:cursor-not-allowed disabled:opacity-50',
           open ? 'border-accent' : 'hover:bg-muted-50',
         ]"
       >
-        <Icon
-          v-if="triggerIcon"
-          :icon="triggerIcon"
-          class="shrink-0 text-base text-muted-500"
-        />
+        <Icon v-if="triggerIcon" :icon="triggerIcon" class="size-4 shrink-0 block text-muted-500" />
         <span class="min-w-0 flex-1 truncate" :class="hasSelection ? 'text-foreground' : 'text-muted-500'">
           {{ triggerLabel }}
         </span>
         <Icon
           icon="material-symbols:expand-more"
-          class="shrink-0 text-lg text-muted-500 transition-transform"
+          class="size-4 shrink-0 block text-muted-500 transition-transform duration-150"
           :class="open ? 'rotate-180' : ''"
         />
       </ComboboxTrigger>

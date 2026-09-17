@@ -110,21 +110,21 @@ const HEADING = 'h-8 px-2 flex items-center text-xs font-medium uppercase tracki
     <PopoverTrigger as-child>
       <button
         type="button"
-        class="h-9 px-2.5 inline-flex items-center gap-2 rounded-md text-sm outline-none focus-visible:focus-ring transition-colors duration-150 hover:bg-muted-100"
-        :class="activeCount ? 'text-foreground font-medium' : 'text-muted-600'"
+        class="h-8 px-1 inline-flex items-center gap-1.5 rounded-md text-sm outline-none focus-visible:focus-ring transition-colors duration-150"
+        :class="activeCount ? 'text-foreground' : 'text-muted-600 hover:text-foreground'"
         title="Narrow the library by tag, game or state"
       >
-        <Icon icon="material-symbols:filter-alt-outline" class="size-4 shrink-0 block" />
+        <Icon icon="material-symbols:filter-alt-outline" class="size-4 shrink-0 block text-muted-400" />
         <span>Filter</span>
         <!--
-          A fixed-height pill with tabular figures, so one answer becoming two
-          cannot change the button's height, and going from 9 to 10 cannot
-          change its width by a hair.
+          The count is a number in the accent, not a filled pill.
+
+          A pill in a line of plain words is a badge, and a badge says "new" or
+          "unread". What this number means is "something is hiding clips from
+          you", which the accent says on its own. Tabular and mono so it cannot
+          change the trigger's width as it goes from 9 to 10.
         -->
-        <span
-          v-if="activeCount"
-          class="h-4 min-w-4 px-1 inline-flex items-center justify-center rounded-full bg-accent text-accent-fg font-mono text-[10px] tabular-nums"
-        >
+        <span v-if="activeCount" class="font-mono text-xs tabular-nums text-accent-ink">
           {{ activeCount }}
         </span>
       </button>

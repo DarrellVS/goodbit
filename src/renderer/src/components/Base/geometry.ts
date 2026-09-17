@@ -27,6 +27,17 @@
 export const CONTROL_HEIGHT = 'h-9';
 
 /**
+ * 32px. A control that is a word in a line of words.
+ *
+ * The library's control line is mostly text by design: `Filter`, the sort,
+ * `Select` and the count describe the list below them rather than changing it,
+ * and boxing them gives them the weight of things that do. So they are a class
+ * of their own, with one height, rather than bordered controls with the border
+ * switched off.
+ */
+export const QUIET_CONTROL_HEIGHT = 'h-8';
+
+/**
  * 28px, and only inside a dense toolbar where 36 will not fit.
  *
  * Still above the 24px minimum target in its smaller dimension. If a screen
