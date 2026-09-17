@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
+import BaseField from '@renderer/components/Base/BaseField.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import {
@@ -183,52 +184,61 @@ watch(
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-full max-w-lg max-h-[90vh] flex flex-col outline-hidden modal-content-animate"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-lg shadow-pop border border-border w-full max-w-xl max-h-[90vh] flex flex-col outline-hidden modal-content-animate px-9 pt-8 pb-9"
       >
-        <div class="p-6 border-b border-border">
-          <DialogTitle class="text-xl font-bold text-foreground mb-1">Export timeline</DialogTitle>
-          <DialogDescription class="text-sm text-muted-600">
+        <!--
+          One sheet. The header had a rule under it and 24px of padding of its
+          own, inside a modal that already has padding, so the title sat in a
+          band of its own.
+        -->
+        <div class="mb-6 shrink-0">
+          <DialogTitle class="font-display text-[26px] leading-tight font-medium text-foreground">
+            Export timeline
+          </DialogTitle>
+          <DialogDescription class="mt-1.5 text-sm text-muted-500">
             The render lands in the Exports folder beside your games, under this name
           </DialogDescription>
         </div>
 
-        <div class="p-6 space-y-5 overflow-y-auto">
+        <div class="space-y-6 overflow-y-auto min-h-0">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-muted-600 uppercase tracking-wide">
-              Clip name
-            </label>
-            <div class="relative">
+            <label class="block text-xs font-medium uppercase tracking-label text-muted-400">Clip name</label>
+            <BaseField>
               <input
                 ref="input"
                 v-model="name"
                 type="text"
                 placeholder="Name your clip"
-                class="w-full px-4 py-2.5 pr-14 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all disabled:bg-muted-50 disabled:text-muted-500"
                 :disabled="exporting"
                 @keydown.enter="submit"
               />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-mono text-muted-400">
-                .mp4
-              </span>
-            </div>
+              <template #trailing>
+                <span class="font-mono text-sm text-muted-400 shrink-0">.mp4</span>
+              </template>
+            </BaseField>
             <p v-if="wasCleaned" class="text-xs text-warning">
               Saved as “{{ cleanName }}”. Characters a filename cannot hold were dropped.
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-muted-600 uppercase tracking-wide">
-              Made for
-            </label>
+            <label class="block text-xs font-medium uppercase tracking-label text-muted-400">Made for</label>
+            <!--
+              `.b-chip`: a 32px pill with a hairline, taking an accent edge and
+              the accent's own wash when chosen. They were rectangles, which is
+              the shape this design uses for a control you press rather than a
+              choice you make.
+            -->
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="preset in PLATFORM_PRESETS"
                 :key="preset.id"
                 type="button"
-                class="px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-50"
+                :aria-pressed="activePreset?.id === preset.id"
+                class="h-8 px-2.5 inline-flex items-center rounded-full border text-sm outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50"
                 :class="activePreset?.id === preset.id
-                  ? 'border-accent bg-accent/8 text-accent-ink'
-                  : 'border-border text-muted-700 hover:bg-muted-50'"
+                  ? 'border-accent bg-accent/12 text-foreground'
+                  : 'border-border text-muted-600 hover:bg-muted-50 hover:text-foreground'"
                 :title="preset.hint"
                 :disabled="exporting"
                 @click="applyPreset(preset.id)"
@@ -239,32 +249,39 @@ watch(
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold text-muted-600 uppercase tracking-wide">
-              Shape
-            </label>
-            <div class="grid grid-cols-5 gap-2">
+            <label class="block text-xs font-medium uppercase tracking-label text-muted-400">Shape</label>
+            <!--
+              Three across rather than five, so each one has room for the
+              sentence that says what it is for. Squeezed into one row they were
+              a glyph and a word apiece, and `As recorded` against `Classic`
+              means nothing without the line under it.
+            -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
                 v-for="spec in EXPORT_FORMATS"
                 :key="spec.id"
                 type="button"
-                class="flex flex-col items-center gap-1.5 px-1 py-2 rounded-lg border transition-colors disabled:opacity-50"
+                :aria-pressed="format === spec.id"
+                class="flex items-start gap-2.5 p-3 rounded-md border text-left outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50"
                 :class="format === spec.id
                   ? 'border-accent bg-accent/8'
                   : 'border-border hover:bg-muted-50'"
-                :title="spec.hint"
                 :disabled="exporting"
                 @click="format = spec.id"
               >
-                <span
-                  class="block border-2 rounded-[2px]"
-                  :class="format === spec.id ? 'border-accent' : 'border-line-strong'"
-                  :style="{
-                    width: spec.ratio === null ? '22px' : (spec.ratio >= 1 ? '22px' : `${22 * spec.ratio}px`),
-                    height: spec.ratio === null ? '12px' : (spec.ratio >= 1 ? `${22 / spec.ratio}px` : '22px'),
-                  }"
-                />
-                <span class="text-[10px] font-medium text-muted-700 text-center leading-tight">
-                  {{ spec.label }}
+                <span class="shrink-0 w-6 h-6 flex items-center justify-center mt-0.5">
+                  <span
+                    class="block border-2 rounded-[2px]"
+                    :class="format === spec.id ? 'border-accent' : 'border-line-strong'"
+                    :style="{
+                      width: spec.ratio === null ? '20px' : (spec.ratio >= 1 ? '20px' : `${20 * spec.ratio}px`),
+                      height: spec.ratio === null ? '11px' : (spec.ratio >= 1 ? `${20 / spec.ratio}px` : '20px'),
+                    }"
+                  />
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-sm font-medium text-foreground">{{ spec.label }}</span>
+                  <span class="block text-xs text-muted-500 leading-snug">{{ spec.hint }}</span>
                 </span>
               </button>
             </div>
@@ -293,19 +310,25 @@ watch(
             </div>
           </div>
 
-          <div class="flex items-start gap-2.5">
+          <!--
+            The switch on the right, where every setting row in the app puts
+            it. It was to the left of its own label, which made this the one
+            toggle in the app you read right to left.
+          -->
+          <div class="flex items-start justify-between gap-6">
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-foreground">Even out the sound</span>
+              <span class="block text-sm text-muted-500 mt-1">
+                Puts the whole movie at −14 LUFS, the level the platforms turn everything down to
+                anyway
+              </span>
+            </span>
             <BaseToggle
               v-model="normalizeLoudness"
-              class="mt-0.5"
+              class="shrink-0"
               label="Even out the sound"
               :disabled="exporting"
             />
-            <span class="text-sm text-muted-700">
-              Even out the sound
-              <span class="block text-xs text-muted-500">
-                Puts the whole movie at −14 LUFS, the level the platforms turn everything down to anyway
-              </span>
-            </span>
           </div>
 
           <div v-if="exporting" class="space-y-1.5">
@@ -313,7 +336,7 @@ watch(
               <span>{{ message || 'Rendering…' }}</span>
               <span class="font-mono">{{ Math.round(progress) }}%</span>
             </div>
-            <div class="h-2 rounded-full bg-accent/16 overflow-hidden">
+            <div class="h-1 rounded-full bg-muted-200 overflow-hidden">
               <div
                 class="h-full bg-accent transition-[width] duration-300"
                 :style="{ width: `${Math.max(2, progress)}%` }"
@@ -324,7 +347,7 @@ watch(
             </p>
           </div>
 
-          <div class="rounded-lg bg-muted-50 border border-border p-3 space-y-1.5 text-sm text-muted-700">
+          <div class="rounded-md bg-muted-50 p-3 space-y-1.5 text-sm text-muted-600">
             <div class="flex items-center gap-2">
               <Icon icon="material-symbols:movie" class="text-lg text-muted-500" />
               {{ clipCount }} clip{{ clipCount === 1 ? '' : 's' }}
@@ -350,11 +373,12 @@ watch(
           </div>
         </div>
 
-        <div class="p-6 border-t border-border flex items-center justify-end gap-3">
+        <div class="mt-6 pt-4 border-t border-border flex items-center justify-end gap-3 shrink-0">
           <!-- A render in flight can be stopped; ffmpeg is killed server-side. -->
           <button
             v-if="exporting"
-            class="px-4 py-2 rounded-lg border border-danger text-danger-ink font-medium hover:bg-danger/8 transition-colors"
+            type="button"
+            class="h-9 px-3.5 inline-flex items-center rounded-md border border-danger text-sm font-medium text-danger-ink hover:bg-danger/10 outline-none focus-visible:focus-ring transition-colors duration-150"
             @click="emit('cancel-export')"
           >
             Stop
@@ -362,14 +386,16 @@ watch(
 
           <DialogClose v-else as-child>
             <button
-              class="px-4 py-2 rounded-lg border border-border text-muted-700 font-medium hover:bg-muted-50 transition-colors"
+              type="button"
+              class="h-9 px-3.5 inline-flex items-center rounded-md border border-line-strong text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
             >
               Cancel
             </button>
           </DialogClose>
 
           <button
-            class="px-4 py-2 rounded-lg bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            type="button"
+            class="h-9 px-3.5 inline-flex items-center justify-center gap-2 rounded-md bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
             :disabled="!isValid || exporting"
             @click="submit"
           >
