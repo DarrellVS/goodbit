@@ -30,7 +30,7 @@ defineEmits<{
 </script>
 
 <template>
-  <header class="px-6 pt-8 pb-1">
+  <header class="px-12 pt-8 pb-1">
     <div class="flex items-end gap-8">
       <div class="min-w-0">
         <h1 class="font-display text-hero font-medium tracking-tight text-foreground">

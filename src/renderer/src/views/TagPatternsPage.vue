@@ -163,7 +163,7 @@ async function saveNew(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="px-12 py-6 space-y-6">
     <!--
       The tags themselves, above the rules that make them.
 

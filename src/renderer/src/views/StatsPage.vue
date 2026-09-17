@@ -102,7 +102,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="px-12 py-6 space-y-6">
     <div v-if="loading" class="flex items-center justify-center py-20">
       <BaseSpinner class="w-12 h-12 text-accent-ink" />
     </div>

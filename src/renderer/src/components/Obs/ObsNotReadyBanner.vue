@@ -121,7 +121,7 @@ async function recheck(): Promise<void> {
     library: it is a notice, so it is a line at the top of the content with a
     hairline under it, and its two actions are words.
   -->
-  <div v-if="visible" class="px-6 py-3 border-b border-border">
+  <div v-if="visible" class="px-12 py-3 border-b border-border">
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
       <Icon
         icon="material-symbols:error-circle-rounded"

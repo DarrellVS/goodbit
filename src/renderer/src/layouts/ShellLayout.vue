@@ -1,4 +1,14 @@
 <template>
+  <!--
+    232px of sidebar, then everything else.
+
+    The design also fixes a 1240px cap on the content column, and that one is
+    deliberately not taken. A reading measure is a typographic decision about
+    lines of text; this column is a grid of 21:9 thumbnails, and on the 3440
+    wide screen these recordings come off, a 1240px cap would leave two thirds
+    of the monitor empty and shrink every card to a third of the width it could
+    have. The 48px gutters that go with it are taken.
+  -->
   <div
     class="h-full min-h-0 overflow-hidden grid grid-cols-[232px_1fr] grid-rows-1"
     @dragenter="fileImport.handleDragEnter"

@@ -236,7 +236,7 @@ onMounted(() => {
       bar it makes room for now only exists while there is a selection, and a
       selection is something you just made.
     -->
-    <div class="p-6 space-y-6">
+    <div class="px-12 py-6 space-y-6">
       <!--
         Collections come before the clips, because a collection is a way of
         looking at them.

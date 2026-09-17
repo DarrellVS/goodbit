@@ -92,8 +92,8 @@ const QUIET =
 
 const rowClass = computed(() =>
   props.flush
-    ? 'flex flex-wrap items-center gap-x-4 gap-y-2 px-6 pb-3.5'
-    : 'flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-6 pt-7 pb-3.5',
+    ? 'flex flex-wrap items-center gap-x-4 gap-y-2 px-12 pb-3.5'
+    : 'flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-12 pt-7 pb-3.5',
 );
 
 /**

@@ -62,7 +62,7 @@ watch(todayClips, async () => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6 max-w-7xl mx-auto">
+  <div class="px-12 py-6 space-y-6">
     <!-- Same reason as the library: this is where the waiting happens. -->
 
     <div class="embla relative group">
