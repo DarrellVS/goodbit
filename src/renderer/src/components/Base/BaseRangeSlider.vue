@@ -32,12 +32,21 @@
       class="group relative block h-full w-0 outline-hidden pointer-events-auto touch-none"
     >
       <!--
-        A hairline you can see, and a target eight times wider you can hit. A
-        one-pixel target is why the strip behind it kept getting grabbed instead.
+        A hairline you can see, and a target you can hit.
+
+        The target was 16px across, under the 24px minimum, which is why the
+        frame strip behind it kept getting dragged instead of the handle. It is
+        24px now, centred on the hairline.
+
+        The hairline used to animate from 3px to 5px on hover and focus, which
+        is the no-layout-shift rule broken in the one place the app-wide test
+        cannot see it: that test walks buttons, cards and rows, and this is an
+        absolutely positioned div inside a slider thumb. It changes colour
+        instead, which is what says "you have hold of this" regardless.
       -->
-      <div class="absolute inset-y-0 -left-2 -right-2 cursor-ew-resize" />
+      <div class="absolute inset-y-0 -left-3 -right-3 cursor-ew-resize" />
       <div
-        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] bg-accent rounded-xs shadow-[0_0_0_1px_rgba(0,0,0,0.35)] pointer-events-none transition-[width,background-color] group-hover:w-[5px] group-focus-visible:w-[5px] group-focus-visible:bg-accent"
+        class="absolute inset-y-0 left-0 -translate-x-1/2 w-[3px] rounded-xs pointer-events-none bg-accent transition-colors duration-150 group-hover:bg-accent-hover group-focus-visible:bg-accent-hover"
       />
 
       <div

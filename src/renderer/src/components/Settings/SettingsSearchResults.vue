@@ -67,6 +67,13 @@ function sectionIcon(entry: SettingEntry): string {
               </span>
             </div>
             <p class="text-sm text-muted-500 mt-1 line-clamp-2">{{ entry.description }}</p>
+            <!--
+              Two of these rows are behind a switch, so the list says which one
+              rather than letting somebody press a result that goes nowhere.
+            -->
+            <p v-if="entry.shownWhen" class="text-xs text-muted-400 mt-1">
+              Appears once {{ entry.shownWhen }}.
+            </p>
           </div>
           <Icon
             icon="material-symbols:chevron-right"

@@ -32,6 +32,24 @@ export interface SettingEntry {
   /** Exactly the label on screen, and the row's `data-setting` value. */
   label: string;
   /**
+   * What has to be switched on before this row is drawn at all.
+   *
+   * Most rows are always there. Two are not: the chime toggle only exists
+   * while the clip card is on, and its volume only exists while the chime is.
+   * The catalogue is a declared list and the test that keeps it honest reads
+   * the section components statically, so it can see that a row exists and
+   * cannot see that the row is behind a `v-if`.
+   *
+   * Without this, searching `volume` with the card off offered a result that
+   * navigated to Recording, looked for an anchor that was not in the document,
+   * and gave up silently: you land on a page you did not ask for with nothing
+   * highlighted, which reads as the search being broken rather than as the
+   * setting being unavailable.
+   *
+   * A sentence rather than a predicate, because it is shown to a person.
+   */
+  shownWhen?: string;
+  /**
    * What the row says under its label.
    *
    * A card with no description of its own gets one written here: a result with
@@ -119,12 +137,14 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
       'Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption.',
     section: 'recording',
     keywords: ['chime', 'sound', 'beep', 'audio', 'notification'],
+    shownWhen: 'Say when a clip is saved is on',
   },
   {
     label: 'How loud',
     description: 'Press Show me after changing it, to hear where it lands',
     section: 'recording',
     keywords: ['volume', 'loudness', 'chime', 'quiet'],
+    shownWhen: 'Say when a clip is saved and Play a sound with it are both on',
   },
   {
     label: 'Where it appears',

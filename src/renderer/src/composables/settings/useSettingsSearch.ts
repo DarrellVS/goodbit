@@ -1,4 +1,5 @@
 import { computed, nextTick, ref, type ComputedRef, type Ref } from 'vue';
+import { useToastStore } from '@renderer/stores/toast';
 import { SETTINGS_CATALOG, type SettingEntry } from '@renderer/utils/settingsCatalog';
 import { searchSettings } from '@renderer/utils/settingsSearch';
 
@@ -74,7 +75,14 @@ function clearTimers(): void {
   findTimer = undefined;
 }
 
-function scrollToSetting(label: string, attempt = 0): void {
+/**
+ * Scroll to a row, and say when there is no row to scroll to.
+ *
+ * `onMissing` is the whole point of the change: this used to run out of
+ * attempts and return, so a search result for a row that is behind a `v-if`
+ * navigated you to its section and then did nothing at all.
+ */
+function scrollToSetting(label: string, onMissing: () => void, attempt = 0): void {
   const target = document.querySelector(`[data-setting="${CSS.escape(label)}"]`);
 
   if (target) {
@@ -83,8 +91,11 @@ function scrollToSetting(label: string, attempt = 0): void {
   }
 
   const next = FIND_ATTEMPTS[attempt + 1];
-  if (next === undefined) return;
-  findTimer = window.setTimeout(() => scrollToSetting(label, attempt + 1), next);
+  if (next === undefined) {
+    onMissing();
+    return;
+  }
+  findTimer = window.setTimeout(() => scrollToSetting(label, onMissing, attempt + 1), next);
 }
 
 export function useSettingsSearch(): SettingsSearch {
@@ -110,7 +121,17 @@ export function useSettingsSearch(): SettingsSearch {
 
     // The results panel is what is on screen; the section has to replace it
     // before there is anything to scroll to.
-    void nextTick(() => scrollToSetting(entry.label));
+    void nextTick(() =>
+      scrollToSetting(entry.label, () => {
+        highlighted.value = null;
+        useToastStore().info(
+          entry.shownWhen
+            ? `${entry.label} appears once ${entry.shownWhen}.`
+            : `${entry.label} is not on this screen at the moment.`,
+          'Not shown right now',
+        );
+      }),
+    );
 
     /*
      * The ring goes on its own.

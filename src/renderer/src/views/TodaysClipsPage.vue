@@ -12,7 +12,7 @@ import CarouselNavigation from '@renderer/components/Library/CarouselNavigation.
 import ThumbnailStrip from '@renderer/components/Library/ThumbnailStrip.vue';
 import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
 
-const { todayClips, clipsStore } = useTodayClips();
+const { todayClips, loading, clipsStore } = useTodayClips();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
 
 const [emblaRef, emblaApi] = emblaCarouselVue(
@@ -101,8 +101,13 @@ watch(todayClips, async () => {
       </div>
     </nav>
 
+    <!--
+      Only once the fetch is in. This screen asks for its own list now, so
+      `length === 0` is true for the moment before the answer arrives, and
+      "No clips from today" flashed up on a day that had plenty.
+    -->
     <BaseEmptyState
-      v-if="todayClips.length === 0"
+      v-if="!loading && todayClips.length === 0"
       icon="material-symbols:video-library"
       title="No clips from today"
       description="Clips you create today will appear here."

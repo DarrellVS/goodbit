@@ -212,6 +212,20 @@
 }
 
 /*
+  One clear button per search field, and it is ours.
+
+  `type="search"` makes Chromium draw its own clear glyph, and every search
+  field in this app already draws one that matches the rest of the UI. Both
+  were live, a few pixels apart, and only one of them looked like it belonged.
+*/
+@layer base {
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-decoration {
+    display: none;
+  }
+}
+
+/*
   Numbers that can change are tabular, everywhere, without asking.
 
   A count going from 9 to 10, a timecode ticking, a duration in a card's meta
