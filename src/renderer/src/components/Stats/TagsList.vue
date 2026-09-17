@@ -17,16 +17,15 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div class="bg-card border border-border rounded-md p-6">
+  <div class="bg-muted-50 rounded-md p-5">
     <div class="flex items-center gap-2 mb-4">
-      <Icon icon="material-symbols:label" class="text-xl text-muted-500" />
-      <h3 class="text-lg font-semibold">Top Tags</h3>
+      <h3 class="text-sm font-medium text-muted-600">Top Tags</h3>
     </div>
-    
+
     <div v-if="tags.length === 0" class="text-center py-8 text-muted-400 text-sm">
       No tags yet
     </div>
-    
+
     <div v-else class="space-y-2">
       <div
         v-for="(tag, index) in tags.slice(0, limit)"

@@ -14,12 +14,11 @@ defineProps<Props>();
 </script>
 
 <template>
-  <div class="bg-card border border-border rounded-md p-6">
+  <div class="bg-muted-50 rounded-md p-5">
     <div class="flex items-center gap-2 mb-4">
-      <Icon icon="material-symbols:info" class="text-xl text-muted-500" />
-      <h3 class="text-lg font-semibold">Info</h3>
+      <h3 class="text-sm font-medium text-muted-600">Info</h3>
     </div>
-    
+
     <div class="space-y-2 text-sm">
       <div
         v-for="(item, index) in items"

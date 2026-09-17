@@ -33,16 +33,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="bg-card border border-border rounded-md p-6 shadow-xs">
-    <div class="flex items-start gap-3 mb-4">
-      <div
-        class="w-10 h-10 rounded-md bg-accent/12 flex items-center justify-center shrink-0"
-      >
-        <Icon icon="material-symbols:label" class="text-xl text-muted-500" />
-      </div>
-      <div class="min-w-0 flex-1">
-        <h2 class="text-lg font-semibold text-foreground">Tags in your library</h2>
-        <p class="text-sm text-muted-600 mt-1">
+  <!--
+    A section, not a card with a tinted tile on it.
+
+    The tile was a 40px block of accent wash holding a label glyph beside a
+    heading that says "Tags", which is the glyph again in words.
+  -->
+  <section class="pb-6 border-b border-border">
+    <div class="mb-3">
+      <div class="min-w-0">
+        <h2 class="text-sm font-medium text-muted-600">Tags in your library</h2>
+        <p class="text-sm text-muted-500 mt-1 max-w-[70ch]">
           Every tag on a clip, however it got there. Removing one takes it off every clip that
           has it. The clips themselves are not touched.
         </p>

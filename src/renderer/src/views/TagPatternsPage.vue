@@ -59,19 +59,19 @@ const editCategory = ref<TagCategory>('General');
 
 const filteredPatterns = computed(() => {
   let result = patterns.value;
-  
+
   if (selectedCategory.value !== 'All') {
     result = result.filter(p => p.category === selectedCategory.value);
   }
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    result = result.filter(p => 
+    result = result.filter(p =>
       p.tag.toLowerCase().includes(query) ||
       p.patterns.some(pattern => pattern.source.toLowerCase().includes(query))
     );
   }
-  
+
   return result;
 });
 
@@ -84,18 +84,18 @@ const patternsByCategory = computed(() => {
     Modes: [],
     Quality: [],
   };
-  
+
   filteredPatterns.value.forEach(pattern => {
     grouped[pattern.category].push(pattern);
   });
-  
+
   return grouped;
 });
 
 function startEdit(tag: string): void {
   const pattern = patterns.value.find(p => p.tag === tag);
   if (!pattern) return;
-  
+
   editingTag.value = tag;
   editPatterns.value = pattern.patterns.map(p => p.source).join(', ');
   editCategory.value = pattern.category;
@@ -109,10 +109,10 @@ function cancelEdit(): void {
 
 async function saveEdit(): Promise<void> {
   if (!editingTag.value || !editPatterns.value) return;
-  
+
   try {
     const patternStrings = editPatterns.value.split(',').map(p => p.trim()).filter(Boolean);
-    
+
     await updatePattern(editingTag.value, patternStrings, editCategory.value);
     toastStore.success('Pattern updated successfully');
     cancelEdit();
@@ -149,10 +149,10 @@ function cancelAddNew(): void {
 
 async function saveNew(): Promise<void> {
   if (!newTag.value || !newPatterns.value) return;
-  
+
   try {
     const patternStrings = newPatterns.value.split(',').map(p => p.trim()).filter(Boolean);
-    
+
     await addPattern(newTag.value, patternStrings, newCategory.value);
     toastStore.success('Pattern added successfully');
     cancelAddNew();
@@ -166,7 +166,7 @@ async function saveNew(): Promise<void> {
   <div class="p-6 space-y-6">
     <!--
       The tags themselves, above the rules that make them.
-      
+
       This screen was only ever about patterns, and the one control for
       removing a tag from every clip lived in the library header's popover,
       which 3.9 replaced with a filter dropdown. A dropdown you choose from is
@@ -175,9 +175,9 @@ async function saveNew(): Promise<void> {
     -->
     <TagLibraryCard />
 
-    <div v-if="isAddingNew" class="bg-card border border-border rounded-md p-6 shadow-xs">
-      <h3 class="text-lg font-semibold mb-4">New Tag Pattern</h3>
-      
+    <div v-if="isAddingNew" class="py-6 border-b border-border">
+      <h3 class="text-sm font-medium text-muted-600 mb-4">New tag pattern</h3>
+
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-muted-700 mb-2">Tag Name</label>
@@ -185,24 +185,24 @@ async function saveNew(): Promise<void> {
             v-model="newTag"
             type="text"
             placeholder="e.g., headshot"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
+            class="w-full h-9 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-accent focus-visible:focus-ring transition-colors duration-150"
           />
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-muted-700 mb-2">Patterns (comma-separated)</label>
           <input
             v-model="newPatterns"
             type="text"
             placeholder="e.g., headshot, ace, clutch"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
+            class="w-full h-9 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-accent focus-visible:focus-ring transition-colors duration-150"
           />
           <div class="text-xs text-muted-600 mt-2 space-y-1">
             <p><strong>Simple words</strong> (e.g., "clutch", "ace") will match whole words only.</p>
             <p><strong>Advanced regex</strong> (e.g., "\\b5k\\b", "1v[2-5]") will be used as-is.</p>
           </div>
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-muted-700 mb-2">Category</label>
           <BaseComboBox
@@ -212,7 +212,7 @@ async function saveNew(): Promise<void> {
             @update:model-value="(value) => (newCategory = value as TagCategory)"
           />
         </div>
-        
+
         <div class="flex gap-2">
           <button
             class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg font-medium transition"
@@ -235,11 +235,11 @@ async function saveNew(): Promise<void> {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search patterns..."
-          class="w-full rounded-lg border border-border bg-card px-4 py-2.5 outline-hidden focus:ring-2 focus:ring-accent/50 transition"
+          placeholder="Search patterns"
+          class="w-full h-9 bg-transparent text-sm border-b border-line-strong focus:border-accent focus:outline-none transition-colors duration-150"
         >
       </div>
-      
+
       <BaseComboBox
         class="w-48"
         label="Filter by category"
@@ -265,23 +265,23 @@ async function saveNew(): Promise<void> {
     <div v-else-if="selectedCategory === 'All'" class="space-y-6">
       <div v-for="category in categories" :key="category">
         <div v-if="patternsByCategory[category].length > 0">
-          <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <h2 class="text-xs font-medium uppercase tracking-label text-muted-400 mb-3 flex items-center gap-2">
             <Icon icon="material-symbols:label" class="text-muted-500" />
             {{ category }}
             <span class="text-sm font-normal text-muted-500">({{ patternsByCategory[category].length }})</span>
           </h2>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div
               v-for="pattern in patternsByCategory[category]"
               :key="pattern.tag"
-              class="bg-card border border-border rounded-lg p-4  transition-shadow"
+              class="bg-muted-50 rounded-md p-4"
             >
               <div v-if="editingTag === pattern.tag" class="space-y-3">
                 <input
                   v-model="editPatterns"
                   type="text"
-                  class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
+                  class="w-full h-9 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-accent focus-visible:focus-ring transition-colors duration-150"
                 />
                 <BaseComboBox
                   label="Category"
@@ -304,7 +304,7 @@ async function saveNew(): Promise<void> {
                   </button>
                 </div>
               </div>
-              
+
               <div v-else>
                 <div class="flex items-start justify-between mb-2">
                   <h3 class="font-semibold text-foreground">#{{ pattern.tag }}</h3>
@@ -323,7 +323,7 @@ async function saveNew(): Promise<void> {
                     </button>
                   </div>
                 </div>
-                
+
                 <div class="space-y-2">
                   <div class="flex flex-wrap gap-1">
                     <span
@@ -348,13 +348,13 @@ async function saveNew(): Promise<void> {
       <div
         v-for="pattern in filteredPatterns"
         :key="pattern.tag"
-        class="bg-card border border-border rounded-lg p-4  transition-shadow"
+        class="bg-muted-50 rounded-md p-4"
       >
         <div v-if="editingTag === pattern.tag" class="space-y-3">
           <input
             v-model="editPatterns"
             type="text"
-            class="w-full rounded-lg border border-border bg-card px-3 py-2 outline-hidden focus:ring-2 focus:ring-accent/50 transition text-sm"
+            class="w-full h-9 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-accent focus-visible:focus-ring transition-colors duration-150"
           />
           <BaseComboBox
             label="Category"
@@ -377,7 +377,7 @@ async function saveNew(): Promise<void> {
             </button>
           </div>
         </div>
-        
+
         <div v-else>
           <div class="flex items-start justify-between mb-2">
             <h3 class="font-semibold text-foreground">#{{ pattern.tag }}</h3>
@@ -396,7 +396,7 @@ async function saveNew(): Promise<void> {
               </button>
             </div>
           </div>
-          
+
           <div class="space-y-2">
             <div class="flex flex-wrap gap-1">
               <span

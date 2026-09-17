@@ -16,8 +16,8 @@ interface Emits {
 }
 
 withDefaults(defineProps<Props>(), {
-  iconColor: 'text-accent-ink',
-  iconBg: 'bg-accent/8',
+  iconColor: 'text-muted-400',
+  iconBg: '',
   clickable: false,
 });
 
@@ -27,15 +27,20 @@ const emit = defineEmits<Emits>();
 <template>
   <component
     :is="clickable ? 'button' : 'div'"
-    class="bg-card border border-border rounded-md p-6 text-left"
-    :class="{ 'hover:bg-muted-50 transition-colors cursor-pointer': clickable }"
+    class="bg-muted-50 rounded-md p-5 text-left w-full outline-none focus-visible:focus-ring"
+    :class="{ 'hover:bg-muted-100 transition-colors duration-150 cursor-pointer': clickable }"
     @click="clickable && emit('click')"
   >
-    <div class="flex items-center justify-between mb-3">
-      <span class="text-sm font-medium text-muted-600">{{ title }}</span>
-      <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="iconBg">
-        <Icon :icon="icon" class="text-xl" :class="iconColor" />
-      </div>
+    <!--
+      A tile is a tone step, and its glyph is a glyph.
+
+      It was a bordered card holding a 40px filled disc, so a row of four read
+      as four buttons rather than as four numbers, and the disc was the second
+      loudest thing in each one after the number it was supposed to label.
+    -->
+    <div class="flex items-center justify-between gap-2 mb-3">
+      <span class="text-sm text-muted-500">{{ title }}</span>
+      <Icon :icon="icon" class="size-4 shrink-0 block" :class="iconColor" />
     </div>
     <div class="font-mono text-2xl font-medium text-foreground tabular-nums">{{ value }}</div>
     <div v-if="subtitle" class="text-xs text-muted-500 mt-1">{{ subtitle }}</div>

@@ -21,16 +21,15 @@ function handleGameClick(gameName: string): void {
 </script>
 
 <template>
-  <div class="bg-card border border-border rounded-md p-6">
+  <div class="bg-muted-50 rounded-md p-5">
     <div class="flex items-center gap-2 mb-4">
-      <Icon icon="material-symbols:bar-chart" class="text-xl text-muted-500" />
-      <h3 class="text-lg font-semibold">Games</h3>
+      <h3 class="text-sm font-medium text-muted-600">Games</h3>
     </div>
-    
+
     <div v-if="games.length === 0" class="text-center py-12 text-muted-400">
       No games yet
     </div>
-    
+
     <div v-else class="space-y-2 max-h-96 overflow-y-auto">
       <button
         v-for="game in games"

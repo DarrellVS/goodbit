@@ -19,24 +19,23 @@ function getBarHeight(count: number): string {
 </script>
 
 <template>
-  <div class="bg-card border border-border rounded-md p-6">
+  <div class="bg-muted-50 rounded-md p-5">
     <div class="flex items-center gap-2 mb-6">
-      <Icon icon="material-symbols:calendar-month" class="text-xl text-muted-500" />
-      <h3 class="text-lg font-semibold">Activity</h3>
+      <h3 class="text-sm font-medium text-muted-600">Activity</h3>
       <span class="text-sm text-muted-500 ml-auto">Last 14 days</span>
     </div>
-    
+
     <div v-if="days.length === 0" class="text-center py-12 text-muted-400">
       No activity in the last 14 days
     </div>
-    
+
     <div v-else class="flex items-end justify-between gap-2">
       <div
         v-for="day in days"
         :key="day.date"
         class="flex-1 flex flex-col items-center gap-2"
       >
-        <div 
+        <div
           class="w-full rounded-t-lg transition-all hover:opacity-80 cursor-default"
           :class="day.count === 0 ? 'bg-muted-100' : 'bg-accent'"
           :style="{ height: getBarHeight(day.count) }"
