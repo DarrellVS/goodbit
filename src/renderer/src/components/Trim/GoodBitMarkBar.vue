@@ -139,11 +139,19 @@ function submit(): void {
 </script>
 
 <template>
-  <div class="rounded-xl border border-border bg-card/40 px-4 py-3 space-y-2">
+  <!--
+    Its own quiet band, which is what the design calls it. Marking a range
+    leaves the recording whole, so it must not look like the control above it
+    that replaces the file.
+  -->
+  <div class="border-t border-border pt-4 space-y-2">
     <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-2 shrink-0">
-        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-lg text-accent-ink" />
-        <span class="text-sm font-semibold text-foreground">
+        <Icon
+          icon="material-symbols:bookmark-add-outline-rounded"
+          class="size-4 shrink-0 block text-accent-ink"
+        />
+        <span class="text-sm font-medium text-foreground">
           {{ selected ? 'Editing a GoodBit' : 'Mark a GoodBit' }}
         </span>
       </div>
@@ -160,7 +168,7 @@ function submit(): void {
         v-model="name"
         type="text"
         maxlength="60"
-        class="min-w-0 flex-1 basis-40 rounded-lg border border-border bg-card px-3 py-1.5 text-sm outline-hidden focus:border-accent/60 focus:ring-2 focus:ring-ring/40 transition"
+        class="min-w-0 flex-1 basis-40 h-9 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-accent focus-visible:focus-ring transition-colors duration-150"
         :placeholder="selected ? goodBitLabel(selected) : 'Name it, or leave this blank'"
         :aria-label="selected ? 'Name for this GoodBit' : 'Name for the GoodBit you are about to mark'"
         @keydown.enter.prevent="submit"
@@ -169,18 +177,18 @@ function submit(): void {
       <template v-if="selected">
         <button
           type="button"
-          class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:hover:bg-accent"
+          class="shrink-0 inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
           :disabled="saving || !dirty || !valid"
           :title="dirty ? 'Save the new name and range' : 'Nothing has changed yet'"
           @click="submit"
         >
-          <Icon icon="material-symbols:check-rounded" class="text-base" />
+          <Icon icon="material-symbols:check-rounded" class="size-4 shrink-0 block" />
           Save changes
         </button>
 
         <button
           type="button"
-          class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-muted-600 hover:bg-muted-50 transition-colors"
+          class="shrink-0 inline-flex items-center h-9 px-3 rounded-md text-sm text-muted-600 hover:bg-muted-50 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
           title="Stop editing this one and mark a new range instead"
           @click="emit('deselect')"
         >
@@ -189,12 +197,12 @@ function submit(): void {
 
         <button
           type="button"
-          class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
+          class="shrink-0 inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm text-danger-ink hover:bg-danger/10 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
           :disabled="saving"
           title="Forget this GoodBit. The recording is not touched."
           @click="emit('forget', selected)"
         >
-          <Icon icon="material-symbols:bookmark-remove-outline-rounded" class="text-base" />
+          <Icon icon="material-symbols:bookmark-remove-outline-rounded" class="size-4 shrink-0 block" />
           Forget
         </button>
       </template>
@@ -217,7 +225,7 @@ function submit(): void {
       <button
         v-else
         type="button"
-        class="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border border-accent/50 text-accent-ink hover:bg-accent/10 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+        class="shrink-0 inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-sm font-medium border border-border text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
         :disabled="saving || !valid || duplicate"
         :title="
           duplicate
@@ -226,7 +234,7 @@ function submit(): void {
         "
         @click="submit"
       >
-        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-base" />
+        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="size-4 shrink-0 block" />
         Mark this range
       </button>
     </div>

@@ -168,19 +168,14 @@ function discard(): void {
 </script>
 
 <template>
-  <div class="bg-card rounded-2xl p-5 border border-border">
+  <section class="border-t border-border pt-5">
     <!--
       One header, holding everything. The title, the formatting buttons and the
       preview toggle were on two rows with a border between them, which read as
       a panel inside a panel rather than as one thing.
     -->
     <div class="flex items-center gap-3 mb-3">
-      <div
-        class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0"
-      >
-        <Icon icon="material-symbols:note-rounded" class="text-lg text-accent-fg" />
-      </div>
-      <h2 class="font-semibold text-foreground shrink-0">Notes &amp; Annotations</h2>
+      <h2 class="text-sm font-medium text-muted-600 shrink-0">Notes &amp; Annotations</h2>
 
       <!--
         Read mode has one control, and the note itself is the other. It sits
@@ -307,5 +302,5 @@ function discard(): void {
         Write a note
       </span>
     </button>
-  </div>
+  </section>
 </template>

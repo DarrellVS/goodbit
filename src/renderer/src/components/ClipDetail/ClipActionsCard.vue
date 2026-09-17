@@ -60,63 +60,79 @@ async function copyPublicUrl(): Promise<void> {
     toastStore.error('Could not copy the link');
   }
 }
+
+/**
+ * One row, used by every action under the filled one.
+ *
+ * A grid rather than a flex row, so the glyphs form a column and the labels
+ * share a left edge whatever a row carries on its right. `ClipStarButton` and
+ * `ClipActionsMenu` draw their own row in this column and carry the same
+ * template, since a `<script setup>` block cannot export a constant and one
+ * that could would be a Base concern rather than this file's.
+ */
+const CLIP_ACTION_ROW =
+  'w-full h-11 grid grid-cols-[1.25rem_1fr_auto] items-center gap-3 px-3 rounded-md text-left ' +
+  'hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150';
 </script>
 
 <template>
-  <div class="bg-card rounded-2xl p-4 border border-border">
-    <div class="space-y-2">
-      <div
-        v-if="clip.published && clip.publishedUrl"
-        class="flex items-center gap-2 px-3 py-2 rounded-xl bg-success/10 border border-success/30"
-      >
-        <Icon icon="material-symbols:cloud-done-rounded" class="text-lg text-success shrink-0" />
-        <span class="text-sm font-medium text-foreground">Published</span>
-        <button
-          class="ml-auto text-xs font-medium text-success hover:underline"
-          @click="copyPublicUrl"
-        >
-          Copy link
-        </button>
-      </div>
-
+  <div class="space-y-1">
+    <div
+      v-if="clip.published && clip.publishedUrl"
+      class="flex items-center gap-2 h-10 px-3 mb-2 rounded-md bg-success/10"
+    >
+      <Icon icon="material-symbols:cloud-done-rounded" class="size-4 shrink-0 block text-success" />
+      <span class="text-sm font-medium text-foreground">Published</span>
       <button
-        class="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-accent hover:bg-accent-hover transition-colors text-left"
-        @mouseenter="prefetchFrameStrip(clip.id)"
-        @click="onTrim"
+        type="button"
+        class="ml-auto text-xs font-medium text-success hover:underline outline-none focus-visible:focus-ring rounded-sm"
+        @click="copyPublicUrl"
       >
-        <Icon icon="material-symbols:content-cut" class="text-xl text-accent-fg shrink-0" />
-        <span class="text-sm font-semibold text-accent-fg">Trim to the good bit</span>
-      </button>
-
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors text-left"
-        @click="onAdvancedEdit"
-      >
-        <Icon icon="material-symbols:video-settings" class="text-xl text-muted-500 shrink-0" />
-        <span class="text-sm font-medium text-foreground">Open in the editor</span>
+        Copy link
       </button>
     </div>
 
-    <div class="h-px bg-border my-3" role="presentation"></div>
+    <!--
+      The one filled control in this column, and the reason the four under it
+      are not: a trim replaces the recording, and the rest write a label, open
+      another screen or hand out a link.
+    -->
+    <button
+      type="button"
+      class="w-full h-11 grid grid-cols-[1.25rem_1fr] items-center gap-3 px-3 rounded-md bg-accent hover:bg-accent-hover text-left outline-none focus-visible:focus-ring transition-colors duration-150"
+      @mouseenter="prefetchFrameStrip(clip.id)"
+      @click="onTrim"
+    >
+      <Icon icon="material-symbols:content-cut" class="size-5 shrink-0 block text-accent-fg" />
+      <span class="text-sm font-medium text-accent-fg">Trim to the good bit</span>
+    </button>
 
-    <div class="space-y-2">
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
-        @click="emit('share')"
-      >
-        <Icon icon="material-symbols:qr-code-2" class="text-xl text-muted-500 shrink-0" />
-        <span class="text-sm font-medium text-foreground">Share on your wifi</span>
-      </button>
+    <button
+      type="button"
+      :class="CLIP_ACTION_ROW"
+      @click="onAdvancedEdit"
+    >
+      <Icon icon="material-symbols:video-settings" class="size-5 shrink-0 block text-muted-500" />
+      <span class="text-sm font-medium text-foreground">Open in the editor</span>
+    </button>
 
-      <ClipStarButton variant="row" :clip="clip" @updated="emit('updated', $event)" />
+    <button
+      type="button"
+      :class="CLIP_ACTION_ROW"
+      @click="emit('share')"
+    >
+      <Icon icon="material-symbols:qr-code-2" class="size-5 shrink-0 block text-muted-500" />
+      <span class="text-sm font-medium text-foreground">Share on your wifi</span>
+    </button>
 
-      <ClipActionsMenu
-        variant="row"
-        :clip="clip"
-        :show-edit-actions="false"
-        @updated="emit('updated', $event)"
-        @deleted="emit('deleted')"
-      />
-    </div>
+    <ClipStarButton variant="row" :clip="clip" @updated="emit('updated', $event)" />
+
+    <ClipActionsMenu
+      variant="row"
+      :clip="clip"
+      :show-edit-actions="false"
+      @updated="emit('updated', $event)"
+      @deleted="emit('deleted')"
+    />
   </div>
 </template>

@@ -1,28 +1,19 @@
 <template>
-  <section class="bg-card/5 backdrop-blur-sm rounded-2xl border border-border p-6 shadow-xl space-y-6">
-    <header class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg bg-accent/10">
-          <Icon icon="material-symbols:timeline" class="text-muted-500 text-xl" />
-        </div>
-        <div>
-          <h2 class="font-semibold text-lg">Timeline</h2>
-          <!--
-            The handles do two things now, so the line says both. Trimming
-            replaces the recording and marking a GoodBit does not, which is the
-            one distinction somebody has to hold in their head on this screen.
-          -->
-          <p class="text-xs text-muted-400">
-            Drag the handles to pick a range, then mark it or trim to it
-          </p>
-        </div>
-      </div>
-      
-      <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/5">
-        <Icon icon="material-symbols:timer" class="text-muted-500" />
-        <span class="text-muted-400">Duration:</span>
+  <!--
+    A band, not a card.
+
+    This was a bordered panel with a shadow, inside a modal that is already a
+    bordered panel with a shadow, headed `Timeline` beside a tinted disc. The
+    heading named the only timeline on a screen called Trim, and the sentence
+    under it explained a control that two handles and two timecode bubbles
+    already explain by existing.
+  -->
+  <section class="space-y-5">
+    <header class="flex items-center justify-end gap-2">
+      <div class="flex items-center gap-2 text-sm">
+        <span class="text-muted-500">Duration</span>
         <!-- `duration` is already formatted, frames and all. -->
-        <span class="font-mono font-semibold text-accent-ink tabular-nums">{{ duration }}</span>
+        <span class="font-mono font-medium text-foreground tabular-nums">{{ duration }}</span>
         <!--
           The frame rate, beside the first timecode on the screen, because it is
           the legend for the last field of every one of them.
@@ -103,7 +94,7 @@
         :min-steps-between-thumbs="1"
         :format="handleFormat"
       />
-      
+
       <div class="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
         <div
           class="absolute inset-y-0 left-0 bg-linear-to-r from-video-bed/60 to-video-bed/40 backdrop-blur-xs"
@@ -192,7 +183,7 @@
         -->
         <TimeIndicator label="Length" :time="length" :sub="lengthSub" variant="primary" />
       </div>
-      
+
       <!--
         The button fills as the cut runs.
 
@@ -202,7 +193,8 @@
         who wants the number.
       -->
       <button
-        class="relative overflow-hidden inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-accent text-accent-fg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
+        type="button"
+        class="relative overflow-hidden inline-flex items-center justify-center gap-2 h-9 px-4 rounded-md text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
         :disabled="!isValid || isSaving"
         title="Cut the recording down to this range. This replaces the file, and cannot be undone."
         @click="$emit('save')"
@@ -213,8 +205,8 @@
           :style="{ width: `${Math.max(2, saveProgress)}%` }"
           aria-hidden="true"
         ></span>
-        <BaseSpinner v-if="isSaving" class="relative text-lg" />
-        <Icon v-else icon="material-symbols:save" class="relative text-lg" />
+        <BaseSpinner v-if="isSaving" class="relative size-4 shrink-0 block" />
+        <Icon v-else icon="material-symbols:save" class="relative size-4 shrink-0 block" />
         <!--
           Tabular figures, or the button shrinks and grows as the count goes
           from 9 to 10 to 100 and the whole label jitters under the pointer.

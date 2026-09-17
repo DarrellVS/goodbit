@@ -1,10 +1,16 @@
 <template>
-  <div class="flex items-center gap-2" :class="containerClass">
-    <div class="w-2 h-2 rounded-full bg-accent shrink-0" />
-    <span class="text-muted-400">{{ label }}:</span>
+  <!--
+    Three readouts on one line, and they were three different objects: an
+    accent dot in front of each label, and a tinted pill with an accent border
+    around whichever one was `primary`. The dot pointed at a number rather than
+    at a good bit, and the pill made Length look like a control while Start and
+    End, which are the two you can actually change, looked like text.
+  -->
+  <div class="flex items-center gap-2 text-sm" :class="containerClass">
+    <span class="text-muted-500">{{ label }}</span>
 
     <span class="flex items-baseline gap-1.5">
-      <span class="font-mono font-semibold tabular-nums" :class="textClass">{{ time }}</span>
+      <span class="font-mono font-medium tabular-nums" :class="textClass">{{ time }}</span>
       <!--
         The count of frames beside the length, in the muted ladder so it reads
         as a gloss on the number rather than a second number.
@@ -23,23 +29,23 @@
     <span v-if="steppable" class="flex items-center gap-0.5 ml-0.5">
       <button
         type="button"
-        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-accent-ink hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
+        class="size-6 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-400 hover:text-foreground hover:bg-muted-100 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :title="`Back ${stepName} (left arrow, with this handle selected)`"
         :aria-label="`Move ${label.toLowerCase()} back ${stepName}`"
         :disabled="disabled"
         @click="emit('step', -1)"
       >
-        <Icon icon="material-symbols:chevron-left" class="text-base" />
+        <Icon icon="material-symbols:chevron-left" class="size-4 shrink-0 block" />
       </button>
       <button
         type="button"
-        class="w-5 h-5 flex items-center justify-center rounded-sm border border-transparent text-muted-400 hover:text-accent-ink hover:border-line-strong transition-colors disabled:opacity-40 disabled:pointer-events-none"
+        class="size-6 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-400 hover:text-foreground hover:bg-muted-100 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
         :title="`Forward ${stepName} (right arrow, with this handle selected)`"
         :aria-label="`Move ${label.toLowerCase()} forward ${stepName}`"
         :disabled="disabled"
         @click="emit('step', 1)"
       >
-        <Icon icon="material-symbols:chevron-right" class="text-base" />
+        <Icon icon="material-symbols:chevron-right" class="size-4 shrink-0 block" />
       </button>
     </span>
   </div>
@@ -74,13 +80,14 @@ const emit = defineEmits<{ (e: 'step', delta: number): void }>();
 
 const isPrimary = computed(() => props.variant === 'primary');
 
-const containerClass = computed(() =>
-  isPrimary.value
-    ? 'px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20'
-    : ''
-);
+/**
+ * `primary` is a weight, not a container.
+ *
+ * It was a tinted pill with an accent border, which made Length look like a
+ * control while Start and End, the two you can actually change, looked like
+ * text.
+ */
+const containerClass = computed(() => (isPrimary.value ? '' : ''));
 
-const textClass = computed(() =>
-  isPrimary.value ? 'text-accent-ink' : ''
-);
+const textClass = computed(() => (isPrimary.value ? 'text-foreground' : 'text-muted-700'));
 </script>

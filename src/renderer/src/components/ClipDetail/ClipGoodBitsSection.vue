@@ -118,15 +118,13 @@ const sourceIcon: Record<string, string> = {
 </script>
 
 <template>
-  <div class="bg-card rounded-2xl p-5 border border-border">
+  <section class="border-t border-border pt-5">
     <div class="flex items-center gap-3 mb-3">
-      <div
-        class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0"
+      <h2 class="text-sm font-medium text-muted-600 shrink-0">GoodBits</h2>
+      <span
+        v-if="goodBits.length > 0"
+        class="font-mono text-xs tabular-nums text-muted-400 shrink-0"
       >
-        <Icon icon="material-symbols:bookmarks-rounded" class="text-lg text-accent-fg" />
-      </div>
-      <h2 class="font-semibold text-foreground shrink-0">GoodBits</h2>
-      <span v-if="goodBits.length > 0" class="text-sm text-muted-500 shrink-0">
         {{ goodBits.length }}
       </span>
 
@@ -286,5 +284,5 @@ const sourceIcon: Record<string, string> = {
         </div>
       </li>
     </ul>
-  </div>
+  </section>
 </template>

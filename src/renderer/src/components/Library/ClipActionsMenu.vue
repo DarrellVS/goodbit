@@ -90,16 +90,13 @@ async function handleMoveToGame(targetGame: string) {
       <MenubarTrigger
         v-if="variant === 'row'"
         title="Publish, move or delete this clip"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left outline-hidden cursor-pointer"
+        class="w-full h-11 grid grid-cols-[1.25rem_1fr_auto] items-center gap-3 px-3 rounded-md text-left hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150 cursor-pointer"
       >
-        <Icon
-          icon="material-symbols:more-horiz"
-          class="text-xl text-muted-500 shrink-0"
-        />
+        <Icon icon="material-symbols:more-horiz" class="size-5 shrink-0 block text-muted-500" />
         <span class="text-sm font-medium text-foreground">Publish, move or delete</span>
         <Icon
           icon="material-symbols:chevron-right-rounded"
-          class="ml-auto text-lg text-muted-400 shrink-0"
+          class="size-4 shrink-0 block text-muted-400"
         />
       </MenubarTrigger>
 

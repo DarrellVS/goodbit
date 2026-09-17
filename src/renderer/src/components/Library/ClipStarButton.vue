@@ -36,13 +36,14 @@ async function handleToggleStar(): Promise<void> {
 <template>
   <button
     v-if="variant === 'row'"
-    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
+    type="button"
+    class="w-full h-11 grid grid-cols-[1.25rem_1fr_auto] items-center gap-3 px-3 rounded-md text-left hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
     :title="clip.starred ? 'Remove the star' : 'Star this clip'"
     @click.stop="handleToggleStar"
   >
     <Icon
       icon="material-symbols:star"
-      class="text-xl shrink-0"
+      class="size-5 shrink-0 block"
       :class="clip.starred ? 'text-accent' : 'text-muted-400'"
     />
     <span class="text-sm font-medium text-foreground">
