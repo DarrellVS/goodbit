@@ -21,7 +21,7 @@ defineProps<Props>();
     <div
       v-for="tile in tiles"
       :key="tile.label"
-      class="p-3 rounded-md border border-border flex items-start gap-2.5"
+      class="p-3 rounded-md bg-muted-50 flex items-start gap-2.5"
     >
       <Icon :icon="tile.icon" class="text-base text-muted-500 shrink-0 mt-0.5" />
       <div class="min-w-0">

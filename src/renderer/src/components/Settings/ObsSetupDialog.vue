@@ -165,7 +165,7 @@ function notNow(): void {
     <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-lg border border-border shadow-pop">
       <header class="flex items-start justify-between gap-4 p-5 pb-3 shrink-0">
         <div class="min-w-0">
-          <h2 class="text-lg font-semibold text-foreground">{{ pages[at]?.title ?? 'Set up OBS' }}</h2>
+          <h2 class="font-display text-lg font-medium text-foreground">{{ pages[at]?.title ?? 'Set up OBS' }}</h2>
           <p v-if="page !== 'route'" class="text-sm text-muted-500 mt-0.5">
             Step {{ at + 1 }} of {{ pages.length }}
           </p>
@@ -277,7 +277,7 @@ function notNow(): void {
       >
         <button
           v-if="at > 0 && page !== 'done'"
-          class="px-4 py-2 rounded-lg border border-border text-sm text-foreground"
+          class="h-9 px-3.5 inline-flex items-center justify-center rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="wizard.back"
         >
           Back
@@ -287,7 +287,7 @@ function notNow(): void {
         <div class="flex items-center gap-2">
           <button
             v-if="page !== 'done'"
-            class="px-4 py-2 rounded-lg border border-border text-sm text-foreground"
+            class="h-9 px-3.5 inline-flex items-center justify-center rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
             @click="notNow"
           >
             Not now

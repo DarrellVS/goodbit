@@ -44,7 +44,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
     </div>
   </div>
 
-  <div class="p-4 rounded-md border border-border space-y-3">
+  <div class="p-4 rounded-md bg-muted-50 space-y-3">
     <p class="text-sm text-foreground font-medium">Try it now</p>
     <p class="text-sm text-muted-500">
       GoodBit starts OBS with its own profile and the buffer running. Play something, press
@@ -63,7 +63,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
 
     <button
       v-else
-      class="px-4 py-2 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-sm font-medium text-foreground"
+      class="h-9 px-3.5 inline-flex items-center rounded-md border border-border hover:bg-muted-100 text-sm font-medium text-foreground"
       @click="emit('start')"
     >
       Start OBS and wait for a clip

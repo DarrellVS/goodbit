@@ -23,7 +23,7 @@ defineProps<Props>();
 </script>
 
 <template>
-  <div class="rounded-md border border-border overflow-hidden">
+  <div class="rounded-md bg-muted-50 overflow-hidden">
     <div class="px-4 py-3 flex items-start gap-2.5 bg-muted-50">
       <Icon
         :icon="
