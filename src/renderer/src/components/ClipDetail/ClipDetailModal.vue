@@ -395,7 +395,7 @@ async function onTrimmed(): Promise<void> {
                     <Icon icon="material-symbols:label-rounded" class="text-lg text-orange-500" />
                     <h2 class="font-semibold text-foreground">Tags</h2>
                   </div>
-                  <ClipTags :clip="clip" @updated="clip = $event" />
+                  <ClipTags :clip="clip" prominent @updated="clip = $event" />
                 </div>
 
                 <div class="bg-background/40 rounded-2xl p-5 border border-border">

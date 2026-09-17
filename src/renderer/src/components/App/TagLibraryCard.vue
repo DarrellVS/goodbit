@@ -50,7 +50,7 @@ onMounted(() => {
     </div>
 
     <p v-if="tagsStore.items.length === 0" class="text-sm text-muted-500">
-      No tags yet. Open a clip, choose Manage tags, and the ones you make turn up here.
+      No tags yet. Open a clip, press Add a tag, and the ones you make turn up here.
     </p>
 
     <div v-else class="flex flex-wrap gap-2">

@@ -9,6 +9,22 @@ import BasePopover from '../Base/BasePopover.vue';
 
 interface Props {
   clip: Clip;
+  /**
+   * Show the control rather than waiting for a hover.
+   *
+   * On a library card the trigger is deliberately quiet: forty cards each
+   * showing a permanent "Manage tags" line would be forty pieces of furniture
+   * nobody asked for, so it fades in with the rest of the card's controls.
+   *
+   * In the clip panel that reasoning inverts and the same styling becomes a
+   * bug. There is one clip, its Tags card sits beside three others that each
+   * carry a visible `+`, and the card has no `group` ancestor for
+   * `group-hover` to fire from, so the control was at `opacity-0` permanently:
+   * present in the DOM, clickable if you knew the pixel, invisible to a
+   * person. Tagging was unreachable from the one screen that is about a single
+   * clip, and the Smart Tags page told people to do it there.
+   */
+  prominent?: boolean;
 }
 
 interface Emits {
@@ -31,7 +47,16 @@ const {
   getCategoryForTag,
 } = useClipTags(toRef(() => props.clip), (updated) => emit('updated', updated));
 
-const visibleTags = computed(() => props.clip.tags?.slice(0, 2) || []);
+/**
+ * Two on a card, all of them in the panel.
+ *
+ * A card is one tile in a grid and has room for a couple before it starts
+ * pushing its own metadata around. The panel is a column with space, and
+ * hiding a clip's third tag behind a `+1` there is hiding it for no reason.
+ */
+const visibleTags = computed(() =>
+  props.prominent ? (props.clip.tags ?? []) : (props.clip.tags?.slice(0, 2) ?? []),
+);
 
 /**
  * Show every clip carrying this tag.
@@ -95,7 +120,17 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
     <!-- Manage Tags Popover -->
     <BasePopover side="bottom" :side-offset="8">
       <template #trigger>
-        <button class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 opacity-transition text-left transform-transition">
+        <button
+          v-if="prominent"
+          class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-500 transition-colors"
+        >
+          <Icon icon="material-symbols:add" class="text-lg" />
+          {{ clip.tags?.length ? 'Add or remove tags' : 'Add a tag' }}
+        </button>
+        <button
+          v-else
+          class="w-full mt-2 text-xs text-muted-400 hover:text-orange-500 opacity-0 group-hover:opacity-100 opacity-transition text-left transform-transition"
+        >
           Manage tags
         </button>
       </template>
