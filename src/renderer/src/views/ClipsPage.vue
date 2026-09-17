@@ -51,11 +51,29 @@ const narrowed = computed(
 
 const emptyState = computed(() => {
   if (clipsStore.searchText) {
+    /*
+     * Say when a filter is why, because the search is not always why.
+     *
+     * With a game selected in the sidebar, searching for a clip in a different
+     * game says "Nothing matches" and offers "Clear the search", which does not
+     * clear the game. A walkthrough user searching `ready` while filtered to
+     * Satisfactory was told nothing matched and would reasonably have concluded
+     * they had no Ready Or Not clips at all.
+     */
+    const alsoNarrowing = [
+      clipsStore.selectedGame ? `the ${clipsStore.selectedGame} filter` : null,
+      clipsStore.selectedTags.length > 0
+        ? `${clipsStore.selectedTags.length === 1 ? 'a tag filter' : 'your tag filters'}`
+        : null,
+    ].filter(Boolean) as string[];
+
     return {
       icon: 'material-symbols:search-off',
       title: `Nothing matches “${clipsStore.searchText}”`,
-      description: 'Search looks at clip names, the dates in them, and your tags.',
-      actionLabel: 'Clear the search',
+      description: alsoNarrowing.length
+        ? `${alsoNarrowing.join(' and ')} ${alsoNarrowing.length === 1 ? 'is' : 'are'} narrowing this too. Search looks at clip names, the dates in them, and your tags.`
+        : 'Search looks at clip names, the dates in them, and your tags.',
+      actionLabel: alsoNarrowing.length ? 'Clear the search and filters' : 'Clear the search',
     };
   }
 
@@ -99,7 +117,13 @@ const emptyState = computed(() => {
 
 function handleEmptyAction(): void {
   if (clipsStore.searchText) {
+    // The label promises the filters too when they are part of the reason, so
+    // clearing only the search would leave the same empty screen behind.
     clipsStore.setSearch('');
+    if (clipsStore.selectedGame || clipsStore.selectedTags.length > 0) {
+      clipsStore.setGame('');
+      clipsStore.setTags([]);
+    }
     return;
   }
   if (narrowed.value) {

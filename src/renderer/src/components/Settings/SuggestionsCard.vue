@@ -215,12 +215,16 @@ onMounted(refresh);
       <button
         class="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
         :disabled="working || !ready"
-        :title="ready ? 'Fit the model to every decision so far' : 'Not enough decisions yet'"
+        :title="
+          ready
+            ? 'Work out what you keep, from every trim you have made so far'
+            : 'Not enough decisions yet'
+        "
         @click="fitNow"
       >
         <BaseSpinner v-if="working" class="text-lg" />
         <Icon v-else icon="material-symbols:model-training" class="text-lg" />
-        {{ summary?.model ? 'Refit now' : 'Fit now' }}
+        {{ summary?.model ? 'Learn from them again' : 'Learn from them now' }}
       </button>
 
       <button
@@ -236,11 +240,11 @@ onMounted(refresh);
       <button
         class="ml-auto px-3 py-2 rounded-lg text-muted-500 text-sm hover:text-muted-800 hover:bg-muted-50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
         :disabled="!summary?.total"
-        title="For fitting something of your own, offline"
+        title="Save your trim decisions as a file, for building something of your own offline"
         @click="exportLabels"
       >
         <Icon icon="material-symbols:download" class="text-base" />
-        Export
+        Export decisions
       </button>
     </div>
   </div>

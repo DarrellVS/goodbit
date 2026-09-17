@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { updateClipName } from '@renderer/services/clips';
 import type { Clip } from '@renderer/types/clip';
@@ -18,6 +19,29 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), { large: false });
 const emit = defineEmits<Emits>();
+
+/*
+ * On a card the name is a label until you ask for it to be a field.
+ *
+ * It was always an input, so the most obvious thing on a tile, its title,
+ * swallowed the click that should open the clip. Three walkthrough users tried
+ * to open a clip by its name, got nothing, and one of them found the way in by
+ * clicking the file size instead.
+ *
+ * `readonly` rather than a swap to a `<span>`: the click still bubbles, so the
+ * card opens, and the pencil is the explicit way in for renaming. In the modal
+ * header this does not apply, because there the name is the title of the thing
+ * you are already looking at and there is nothing behind it to open.
+ */
+const editing = ref(false);
+const field = ref<HTMLInputElement | null>(null);
+
+async function beginEditing(): Promise<void> {
+  editing.value = true;
+  await nextTick();
+  field.value?.focus();
+  field.value?.select();
+}
 
 async function handleNameChange(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement;
