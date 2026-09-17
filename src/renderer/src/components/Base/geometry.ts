@@ -112,3 +112,37 @@ export const PANEL_HEADER = 'text-sm font-medium text-muted-600';
 /** The motion budget. Opacity and transform only, and nothing bounces. */
 export const MOTION = 'transition-colors duration-150';
 export const MOTION_OPACITY = 'transition-opacity duration-150';
+
+/**
+ * A button, and the three tones it comes in.
+ *
+ * Every settings screen wrote its own: `px-3 py-2 rounded-lg border
+ * border-border` in one file, `px-4 py-2 rounded-lg bg-accent` in the next,
+ * `px-2.5 py-1 rounded-md text-xs` in a third, which is four heights and three
+ * radii for one control. The tone says what kind of act it is and nothing
+ * else: `BUTTON` for the ordinary one, `BUTTON_STRONG` for the single action a
+ * screen is *for*, `BUTTON_QUIET` for a word you can press.
+ *
+ * There is deliberately no danger tone here. A destructive action is written
+ * where it is used, next to the sentence explaining what it destroys, because
+ * making one easy to reach for is how it ends up on the wrong button.
+ */
+const BUTTON_BASE =
+  `${CONTROL_HEIGHT} px-3.5 inline-flex items-center justify-center ${ICON_GAP} ` +
+  `rounded-md text-sm font-medium ${FOCUS_RING} ${MOTION} ` +
+  'disabled:opacity-50 disabled:pointer-events-none';
+
+export const BUTTON = `${BUTTON_BASE} border border-line-strong text-foreground hover:bg-muted-50`;
+
+export const BUTTON_STRONG = `${BUTTON_BASE} bg-accent text-accent-fg hover:bg-accent-hover`;
+
+export const BUTTON_QUIET =
+  `${CONTROL_HEIGHT} px-3 inline-flex items-center justify-center ${ICON_GAP} ` +
+  `rounded-md text-sm text-muted-600 hover:text-foreground hover:bg-muted-50 ${FOCUS_RING} ` +
+  `${MOTION} disabled:opacity-50 disabled:pointer-events-none`;
+
+/** The same button at `QUIET_CONTROL_HEIGHT`, for a row inside a list. */
+export const BUTTON_SMALL =
+  `${QUIET_CONTROL_HEIGHT} px-3 inline-flex items-center justify-center ${ICON_GAP} ` +
+  `rounded-md border border-line-strong text-sm font-medium text-foreground hover:bg-muted-50 ` +
+  `${FOCUS_RING} ${MOTION} disabled:opacity-50 disabled:pointer-events-none`;

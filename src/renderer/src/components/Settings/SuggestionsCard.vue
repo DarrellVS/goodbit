@@ -5,6 +5,12 @@ import { Icon } from '@iconify/vue';
 import { useToastStore } from '@renderer/stores/toast';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import {
+  BUTTON,
+  BUTTON_QUIET,
+  BUTTON_STRONG,
+  ICON_BOX,
+} from '@renderer/components/Base/geometry';
+import {
   fitSuggestionModel,
   forgetSuggestionModel,
   getLabelSummary,
@@ -116,26 +122,19 @@ onMounted(refresh);
     at ten clips. This is where that gets replaced by what you actually keep,
     on its own, as you trim, with nothing to run.
   -->
-  <div class="setting-block space-y-4">
-    <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-md bg-accent/12 flex items-center justify-center shrink-0">
-        <Icon icon="material-symbols:graphic-eq" class="text-xl text-accent-ink" />
-      </div>
-      <div class="min-w-0 flex-1">
-        <h3 class="font-medium text-foreground">Suggestions learn from your trims</h3>
-        <p class="text-sm text-muted-600 mt-1">
-          Every trim records where you cut and what GoodBit had suggested. Once there are enough,
-          it fits a small model to those decisions and uses it instead of the built-in rule,
-          then keeps refitting as you go. Nothing leaves this machine.
-        </p>
-      </div>
-    </div>
+  <div class="setting-card">
+    <h3>Suggestions learn from your trims</h3>
+    <p>
+      Every trim records where you cut and what GoodBit had suggested. Once there are enough, it
+      fits a small model to those decisions and uses it instead of the built-in rule, then keeps
+      refitting as you go. Nothing leaves this machine.
+    </p>
 
     <template v-if="summary">
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center justify-between gap-3 mt-4">
         <!--
           A label, so the words are part of the control.
-          
+
           The switch and its text were siblings, so clicking the sentence did
           nothing while every other settings row in the app responds to it.
           `<label>` makes the whole thing one target without either half
@@ -151,38 +150,37 @@ onMounted(refresh);
         </label>
       </div>
 
-      <div v-if="summary.model" class="px-3 py-2.5 rounded-lg bg-success/10 border border-success/30 text-sm space-y-1">
-        <div class="flex items-center gap-2 text-foreground">
-          <Icon icon="material-symbols:model-training" class="text-lg text-success shrink-0" />
-          <span>
-            Using a model fitted to <strong>{{ summary.model.examples }}</strong> of your decisions
-            <template v-if="summary.model.trainedAt">on {{ when(summary.model.trainedAt) }}</template>.
-          </span>
-        </div>
-        <p v-if="summary.model.heldOutAccuracy !== null" class="text-xs text-muted-600 pl-7">
+      <div v-if="summary.model" class="setting-inset space-y-1">
+        <p class="text-sm text-foreground">
+          Using a model fitted to {{ summary.model.examples }} of your decisions<template
+            v-if="summary.model.trainedAt"
+          >, on {{ when(summary.model.trainedAt) }}</template>.
+        </p>
+        <p v-if="summary.model.heldOutAccuracy !== null" class="text-sm text-muted-500">
           It got {{ Math.round(summary.model.heldOutAccuracy * 100) }}% of the decisions it was not
           shown right. It refits itself after every 25 new ones.
         </p>
       </div>
 
-      <div v-else class="space-y-2">
-        <div class="flex items-center justify-between text-sm">
-          <span class="text-muted-600">
+      <div v-else class="space-y-2 mt-3.5">
+        <div class="flex items-center justify-between gap-3 text-sm">
+          <span class="text-muted-500">
             <template v-if="ready">Enough decisions to fit a model.</template>
             <template v-else>{{ summary.usable }} of {{ summary.needed }} decisions so far.</template>
           </span>
-          <span class="text-xs text-muted-500">{{ progress }}%</span>
+          <span class="font-mono text-xs tabular-nums text-muted-400">{{ progress }}%</span>
         </div>
-        <div class="h-1.5 rounded-full bg-muted-100 overflow-hidden">
+        <!-- 4px, like every other progress line in the app. -->
+        <div class="h-1 rounded-full bg-muted-200 overflow-hidden">
           <div class="h-full bg-accent transition-all" :style="{ width: progress + '%' }" />
         </div>
-        <p class="text-xs text-muted-500">
+        <p class="text-sm text-muted-400">
           A decision is a trim made while a suggestion was on screen, or the Wrong button. Until
           there are enough, the built-in rule decides.
         </p>
       </div>
 
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-3 gap-px bg-border border-y border-border mt-4">
         <div
           v-for="stat in [
             { label: 'Trims', value: summary.trims + summary.accepted },
@@ -190,20 +188,26 @@ onMounted(refresh);
             { label: 'Marked wrong', value: summary.rejected },
           ]"
           :key="stat.label"
-          class="px-3 py-2 rounded-lg bg-muted-50 border border-border"
+          class="bg-background px-3 py-3.5"
         >
-          <div class="text-lg font-semibold text-foreground">{{ stat.value }}</div>
-          <div class="text-xs text-muted-500">{{ stat.label }}</div>
+          <div class="text-xs font-medium uppercase tracking-label text-muted-400">
+            {{ stat.label }}
+          </div>
+          <div class="font-display text-[22px] leading-tight font-medium text-foreground mt-1">
+            {{ stat.value }}
+          </div>
         </div>
       </div>
 
-      <div v-if="lastFit" class="text-xs text-muted-600 space-y-1">
-        <div class="font-medium text-foreground">What the last fit weighed most</div>
+      <div v-if="lastFit" class="mt-4 space-y-2">
+        <div class="text-xs font-medium uppercase tracking-label text-muted-400">
+          What the last fit weighed most
+        </div>
         <div class="flex flex-wrap gap-1.5">
           <span
             v-for="w in lastFit.weights.slice(0, 4)"
             :key="w.feature"
-            class="px-2 py-0.5 rounded-full bg-muted-50 border border-border font-mono"
+            class="h-7 px-2.5 inline-flex items-center rounded-full border border-border font-mono text-xs tabular-nums text-muted-600"
           >
             {{ w.feature }} {{ w.weight >= 0 ? '+' : '' }}{{ w.weight.toFixed(2) }}
           </span>
@@ -211,9 +215,10 @@ onMounted(refresh);
       </div>
     </template>
 
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-wrap items-center gap-2 mt-4">
       <button
-        class="px-4 py-2 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center gap-2"
+        type="button"
+        :class="BUTTON_STRONG"
         :disabled="working || !ready"
         :title="
           ready
@@ -222,28 +227,30 @@ onMounted(refresh);
         "
         @click="fitNow"
       >
-        <BaseSpinner v-if="working" class="text-lg" />
-        <Icon v-else icon="material-symbols:model-training" class="text-lg" />
+        <BaseSpinner v-if="working" :class="ICON_BOX" />
+        <Icon v-else icon="material-symbols:model-training" :class="ICON_BOX" />
         {{ summary?.model ? 'Learn from them again' : 'Learn from them now' }}
       </button>
 
       <button
         v-if="summary?.model"
-        class="px-4 py-2 rounded-lg border border-border text-muted-700 text-sm font-medium hover:bg-muted-50 transition-colors flex items-center gap-2"
+        type="button"
+        :class="BUTTON"
         :disabled="working"
         @click="revert"
       >
-        <Icon icon="material-symbols:undo" class="text-lg" />
+        <Icon icon="material-symbols:undo" :class="ICON_BOX" />
         Back to the built-in rule
       </button>
 
       <button
-        class="ml-auto px-3 py-2 rounded-lg text-muted-500 text-sm hover:text-muted-800 hover:bg-muted-50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+        type="button"
+        :class="[BUTTON_QUIET, 'ml-auto']"
         :disabled="!summary?.total"
         title="Save your trim decisions as a file, for building something of your own offline"
         @click="exportLabels"
       >
-        <Icon icon="material-symbols:download" class="text-base" />
+        <Icon icon="material-symbols:download" :class="ICON_BOX" />
         Export decisions
       </button>
     </div>

@@ -462,7 +462,16 @@ body {
  * swapping a class keeps every one of those.
  */
 .setting-card {
-  @apply pt-5 pb-5.5 border-t border-border;
+  @apply py-5 border-b border-border;
+}
+/*
+ * The hairline goes underneath, not on top.
+ *
+ * `.setting-block` already carried one underneath, so a section holding one of
+ * each drew two lines between the same pair of rows, three pixels apart.
+ */
+.setting-card:last-child {
+  @apply border-b-0 pb-0;
 }
 .setting-card > h3,
 .setting-card > .setting-card-title {

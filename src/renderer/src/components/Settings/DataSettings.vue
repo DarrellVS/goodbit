@@ -32,7 +32,7 @@ const config = useConfiguration();
       </p>
     </div>
 
-    <div class="space-y-4">
+    <div>
       <SettingAnchor label="Library backups">
         <BackupsCard />
       </SettingAnchor>

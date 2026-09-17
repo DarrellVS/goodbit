@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { Icon } from '@iconify/vue';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import { getEncoderInfo, type EncoderInfo } from '@renderer/services/clips';
 
@@ -40,39 +39,39 @@ const encoderLabel = computed(() => {
 </script>
 
 <template>
-  <div
-    data-setting="Health"
-    :class="['setting-block space-y-2', settingRing('Health')]"
-  >
-    <h3 class="font-medium text-foreground flex items-center gap-2">
-      <Icon icon="material-symbols:favorite-outline" class="text-muted-500" />
-      Health
-    </h3>
-    <dl class="text-sm space-y-1">
-      <div class="flex justify-between gap-4">
-        <dt class="text-muted-500">Version</dt>
-        <dd class="text-foreground font-mono">{{ appVersion || 'unknown' }}</dd>
-      </div>
-      <div class="flex justify-between gap-4">
-        <dt class="text-muted-500">Video encoder</dt>
-        <dd class="text-foreground font-mono truncate">
-          {{ encodersLoading ? 'checking…' : encoderLabel }}
-        </dd>
-      </div>
-      <div class="flex justify-between gap-4">
-        <dt class="text-muted-500">Decoding</dt>
-        <dd class="text-foreground font-mono">
-          {{ encodersLoading ? '…' : (encoders?.hwaccel ?? 'software') }}
-        </dd>
-      </div>
-      <div class="flex justify-between gap-4">
-        <dt class="text-muted-500">ffmpeg</dt>
-        <dd class="text-foreground font-mono truncate">
-          {{ encoders?.ffmpegVersion ?? 'unknown' }}
-        </dd>
-      </div>
+  <div data-setting="Health" :class="['setting-card', settingRing('Health')]">
+    <h3>Health</h3>
+    <p>Four facts about this machine, and the first four lines of any bug report.</p>
+
+    <!--
+      A description list, which is what this is: a label and the fact it names.
+      Each cell carries the hairline rather than the row, so the rules run the
+      full width instead of stopping at a row's own padding. The same shape as
+      the Info column on Stats, deliberately.
+    -->
+    <dl class="grid grid-cols-[auto_1fr] mt-3.5">
+      <dt class="py-2.5 pr-4 border-t border-border text-sm text-muted-500">Version</dt>
+      <dd class="py-2.5 border-t border-border text-sm text-foreground text-right font-mono tabular-nums">
+        {{ appVersion || 'unknown' }}
+      </dd>
+
+      <dt class="py-2.5 pr-4 border-t border-border text-sm text-muted-500">Video encoder</dt>
+      <dd class="py-2.5 border-t border-border text-sm text-foreground text-right font-mono truncate">
+        {{ encodersLoading ? 'checking' : encoderLabel }}
+      </dd>
+
+      <dt class="py-2.5 pr-4 border-t border-border text-sm text-muted-500">Decoding</dt>
+      <dd class="py-2.5 border-t border-border text-sm text-foreground text-right font-mono">
+        {{ encodersLoading ? '\u2026' : (encoders?.hwaccel ?? 'software') }}
+      </dd>
+
+      <dt class="py-2.5 pr-4 border-t border-border text-sm text-muted-500">ffmpeg</dt>
+      <dd class="py-2.5 border-t border-border text-sm text-foreground text-right font-mono truncate">
+        {{ encoders?.ffmpegVersion ?? 'unknown' }}
+      </dd>
     </dl>
-    <p v-if="!encodersLoading && encoders && !encoders.hardware" class="text-xs text-warning">
+
+    <p v-if="!encodersLoading && encoders && !encoders.hardware" class="!text-warning !mt-3">
       No graphics-card encoder was found, so exports run on the processor and will be slower.
     </p>
   </div>

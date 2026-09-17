@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { Icon } from '@iconify/vue';
 import SettingToggle from './SettingToggle.vue';
 import PublisherCard from './PublisherCard.vue';
 import { useToastStore } from '@renderer/stores/toast';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { BUTTON_SMALL } from '@renderer/components/Base/geometry';
 
 /**
  * The two programs GoodBit talks to, and nothing else.
@@ -149,127 +149,123 @@ async function copyCommand(): Promise<void> {
       </p>
     </div>
 
-    <div class="setting-block space-y-4">
-      <div data-setting="Claude" :class="['flex items-start gap-3', settingRing('Claude')]">
-        <Icon icon="material-symbols:robot-2-outline" class="text-xl text-muted-500 mt-0.5" />
-        <div class="min-w-0">
-          <p class="font-medium text-foreground">Claude</p>
-          <p class="text-sm text-muted-500 mt-1">
-            GoodBit can answer questions about your library and act on it: find the clip you are
-            thinking of, tag a batch of them, say where the interesting part of a recording is, and
-            trim to it.
-          </p>
-          <p class="text-xs text-muted-500 mt-2">
-            It listens on this machine only, behind a token, and nothing it offers can delete a
-            clip.
-          </p>
-        </div>
+    <div class="setting-card">
+      <!--
+        No glyph beside the heading. Nothing else on these pages has one, and a
+        robot face over a paragraph about what a program may read is a decoration
+        on the one block here that wants to be read carefully.
+      -->
+      <div data-setting="Claude" :class="settingRing('Claude')">
+        <h3 class="font-display text-lg font-medium text-foreground">Claude</h3>
+        <p class="text-sm text-muted-500 mt-1 max-w-[76ch]">
+          GoodBit can answer questions about your library and act on it: find the clip you are
+          thinking of, tag a batch of them, say where the interesting part of a recording is, and
+          trim to it.
+        </p>
+        <p class="text-sm text-muted-400 mt-1.5 max-w-[76ch]">
+          It listens on this machine only, behind a token, and nothing it offers can delete a clip.
+        </p>
       </div>
 
-      <SettingToggle
-        :model-value="state?.enabled ?? false"
-        :disabled="working"
-        label="Let Claude reach this library"
-        description="Off by default. Nothing is listening until you turn this on."
-        @update:model-value="toggleServer"
-      />
+      <div class="mt-1">
+        <SettingToggle
+          :model-value="state?.enabled ?? false"
+          :disabled="working"
+          label="Let Claude reach this library"
+          description="Off by default. Nothing is listening until you turn this on."
+          @update:model-value="toggleServer"
+        />
+      </div>
 
       <template v-if="state?.enabled">
-        <div class="pt-3 border-t border-border space-y-3">
-          <div class="flex items-center gap-2 text-sm">
-            <span
-              class="w-2 h-2 rounded-full shrink-0"
-              :class="state.running ? 'bg-success' : 'bg-accent'"
-            />
-            <span class="text-foreground">
-              {{ state.running ? 'Listening' : 'Not listening' }}
-            </span>
-            <code class="text-xs text-muted-500 truncate">{{ state.url }}</code>
-          </div>
-
-          <div v-if="found.length" class="space-y-2">
-            <SettingToggle
-              :model-value="allRegistered"
-              :disabled="working || !state.running"
-              label="Set them up for me"
-              description="Writes GoodBit into the config of everything below, so there is nothing to paste. Your other servers are left alone and each file is backed up first."
-              @update:model-value="(wanted: boolean) => toggleRegistration(wanted)"
-            />
-
-            <!--
-              One row per client actually on this machine, so somebody can
-              connect Claude Code and leave Cursor alone. A client that is not
-              installed is never listed and never written: an empty config for
-              an app somebody does not have is litter.
-            -->
-            <div
-              v-for="client in found"
-              :key="client.id"
-              class="flex items-start justify-between gap-3 rounded-lg border border-border p-3"
-            >
-              <div class="min-w-0">
-                <p class="text-sm text-foreground">{{ client.label }}</p>
-                <p v-if="client.writable" class="text-xs text-muted-500 truncate">
-                  {{ client.configPath }}
-                </p>
-                <p v-if="client.note" class="text-xs text-muted-500 mt-1">{{ client.note }}</p>
-              </div>
-              <button
-                v-if="client.writable"
-                class="px-2.5 py-1.5 rounded-lg border text-xs shrink-0"
-                :class="
-                  client.registered
-                    ? 'border-success/40 text-success hover:bg-success/10'
-                    : 'border-border text-foreground hover:bg-muted-50'
-                "
-                :disabled="working || !state.running"
-                @click="toggleRegistration(!client.registered, client.id)"
-              >
-                {{ client.registered ? 'Connected' : 'Connect' }}
-              </button>
-              <button
-                v-else
-                class="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted-50 text-xs text-foreground shrink-0"
-                @click="copyAddress"
-              >
-                Copy address
-              </button>
-            </div>
-          </div>
-
-          <p v-else class="text-xs text-muted-500">
-            Nothing that speaks MCP was found on this machine. The command below works wherever you
-            do have one.
-          </p>
-
-          <div class="rounded-lg border border-border p-3 space-y-2">
-            <p class="text-xs text-muted-500">
-              Or do it yourself. This is the same thing the switch above writes.
-            </p>
-            <code
-              class="block text-xs text-muted-500 bg-muted-50 rounded-sm p-2 break-all font-mono"
-            >{{ shownCommand }}</code>
-            <div class="flex items-center gap-2">
-              <button
-                class="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted-50 text-xs text-foreground"
-                @click="copyCommand"
-              >
-                Copy
-              </button>
-              <button
-                class="px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted-50 text-xs text-foreground"
-                @click="showToken = !showToken"
-              >
-                {{ showToken ? 'Hide the token' : 'Show the token' }}
-              </button>
-            </div>
-          </div>
-
-          <p class="text-xs text-muted-500">
-            These read their config when they start, so restart after connecting. Then ask
-            something like "what did I record yesterday?"
-          </p>
+        <!--
+          What is true, read back from the machine: a dot, a word and the
+          address it is answering on.
+        -->
+        <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
+          <span
+            class="size-1.5 rounded-full shrink-0"
+            :class="state.running ? 'bg-success' : 'bg-accent'"
+          />
+          <span class="text-foreground">{{ state.running ? 'Listening' : 'Not listening' }}</span>
+          <code class="font-mono text-xs text-muted-400 truncate">{{ state.url }}</code>
         </div>
+
+        <template v-if="found.length">
+          <SettingToggle
+            :model-value="allRegistered"
+            :disabled="working || !state.running"
+            label="Set them up for me"
+            description="Writes GoodBit into the config of everything below, so there is nothing to paste. Your other servers are left alone and each file is backed up first."
+            @update:model-value="(wanted: boolean) => toggleRegistration(wanted)"
+          />
+
+          <!--
+            One row per client actually on this machine, so somebody can
+            connect Claude Code and leave Cursor alone. A client that is not
+            installed is never listed and never written: an empty config for
+            an app somebody does not have is litter.
+
+            Hairline rows, not bordered boxes. Three boxes in a column inside a
+            block that is itself a list of blocks was three nested frames deep.
+          -->
+          <div
+            v-for="client in found"
+            :key="client.id"
+            class="flex items-center justify-between gap-3 py-3 border-b border-border"
+          >
+            <div class="min-w-0">
+              <p class="text-sm text-foreground">{{ client.label }}</p>
+              <p v-if="client.writable" class="font-mono text-xs text-muted-400 truncate">
+                {{ client.configPath }}
+              </p>
+              <p v-if="client.note" class="text-sm text-muted-500 mt-1">{{ client.note }}</p>
+            </div>
+            <button
+              v-if="client.writable"
+              type="button"
+              :class="[
+                BUTTON_SMALL,
+                'shrink-0',
+                client.registered ? '!border-success/40 !text-success hover:!bg-success/10' : '',
+              ]"
+              :disabled="working || !state.running"
+              @click="toggleRegistration(!client.registered, client.id)"
+            >
+              {{ client.registered ? 'Connected' : 'Connect' }}
+            </button>
+            <button v-else type="button" :class="[BUTTON_SMALL, 'shrink-0']" @click="copyAddress">
+              Copy address
+            </button>
+          </div>
+        </template>
+
+        <p v-else class="text-sm text-muted-500 py-3 border-b border-border">
+          Nothing that speaks MCP was found on this machine. The command below works wherever you
+          do have one.
+        </p>
+
+        <!--
+          The one filled thing allowed in a block like this, and it holds
+          exactly what an inset is for: something you copy rather than read.
+        -->
+        <div class="setting-inset space-y-2">
+          <p class="text-sm text-muted-500">
+            Or do it yourself. This is the same thing the switch above writes.
+          </p>
+          <code class="block font-mono text-xs text-muted-600 break-all">{{ shownCommand }}</code>
+          <div class="flex items-center gap-2 pt-0.5">
+            <button type="button" :class="BUTTON_SMALL" @click="copyCommand">Copy</button>
+            <button type="button" :class="BUTTON_SMALL" @click="showToken = !showToken">
+              {{ showToken ? 'Hide the token' : 'Show the token' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="text-sm text-muted-400 mt-3 max-w-[76ch]">
+          These read their config when they start, so restart after connecting. Then ask something
+          like "what did I record yesterday?"
+        </p>
       </template>
     </div>
 

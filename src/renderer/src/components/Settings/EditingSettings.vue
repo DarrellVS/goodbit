@@ -30,7 +30,7 @@ onMounted(load);
       </p>
     </div>
 
-    <div class="space-y-4">
+    <div>
       <!--
         The other half of this decision, compressing a published copy, is under
         Connections with the publisher. They read like one setting and are two:

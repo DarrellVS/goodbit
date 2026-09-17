@@ -4,6 +4,12 @@ import { Icon } from '@iconify/vue';
 import { useShortcutCustomization } from '@renderer/composables/settings/useShortcutCustomization';
 import { useShortcutEditor } from '@renderer/composables/settings/useShortcutEditor';
 import { getKeyDisplayName, SHORTCUT_ACTIONS, type ShortcutKey } from '@renderer/constants/shortcuts';
+import { BUTTON_SMALL, ICON_BOX } from '@renderer/components/Base/geometry';
+
+/** A key, drawn the same way wherever one is shown. */
+const KEY_CAP =
+  'inline-flex items-center justify-center h-7 min-w-[2.75rem] px-2 rounded-sm border ' +
+  'font-mono text-xs tabular-nums';
 
 const shortcuts = useShortcutCustomization();
 const editor = useShortcutEditor();
@@ -18,96 +24,110 @@ function getActionLabel(actionId: string): string {
 
 <!--
   The conflict warning uses the app's own warning colours, not literal yellows.
-  
+
   It was `bg-warning/10` with `text-warning` and `text-warning`, which is
   light text on a light ground the moment the dark palette is on. It survived
   because it is doubly conditional: `screens.spec.ts` visits this section, but
   the editor only renders while keyboard shortcuts are enabled and this box only
   while there is an actual conflict, so the contrast walk has never painted it.
-  
+
   `text-accent-ink` on `bg-accent/8` with a `border-accent/40` is what
   `BaseToast.vue` uses for a warning, and being a tint rather than a fixed
   colour it works in both palettes.
 -->
 <template>
-  <div class="space-y-4 pt-8">
-    <div>
-      <h3 class="font-medium text-foreground">Keyboard Shortcut Customization</h3>
-      <p class="text-sm text-muted-500 mt-1">Customize keyboard shortcuts to match your workflow</p>
-    </div>
+  <div class="setting-card">
+    <h3>Change a shortcut</h3>
+    <p>Change any of these to whatever your hands already do.</p>
 
-    <div v-if="Object.keys(conflicts).length > 0" class="p-4 bg-accent/8 border border-accent/40 rounded-lg">
-      <div class="flex gap-3">
-        <Icon icon="material-symbols:warning" class="text-muted-500 text-xl shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <h4 class="font-medium text-foreground mb-2">Shortcut Conflicts Detected</h4>
-          <div class="space-y-1 text-sm text-muted-700">
-            <div v-for="(actionIds, key) in conflicts" :key="key" class="flex items-center gap-2">
-              <kbd class="px-2 py-0.5 bg-card rounded-sm border border-accent/40 font-mono text-xs">
-                {{ getKeyDisplayName(key as ShortcutKey) }}
-              </kbd>
-              <span>is assigned to:</span>
-              <span class="font-medium">{{ actionIds?.map(id => getActionLabel(id)).join(', ') }}</span>
-            </div>
-          </div>
-        </div>
+    <!--
+      A conflict is the one thing on this screen that has gone wrong, so it is
+      the one thing allowed a tinted ground. It has no glyph: the sentence
+      says what happened, and a warning triangle beside a sentence that
+      already says "assigned to" is the same information twice.
+    -->
+    <div
+      v-if="Object.keys(conflicts).length > 0"
+      class="setting-inset !bg-accent/8 !text-foreground space-y-1.5 mt-4"
+    >
+      <p class="text-sm font-medium text-foreground">Two things want the same key</p>
+      <div v-for="(actionIds, key) in conflicts" :key="key" class="flex items-center gap-2 text-sm">
+        <kbd :class="[KEY_CAP, 'border-accent/40 bg-card text-foreground']">
+          {{ getKeyDisplayName(key as ShortcutKey) }}
+        </kbd>
+        <span class="text-muted-500">is assigned to</span>
+        <span class="text-foreground">
+          {{ actionIds?.map(id => getActionLabel(id)).join(', ') }}
+        </span>
       </div>
     </div>
 
-    <div class="space-y-6">
-      <div v-for="categoryGroup in actionsByCategory" :key="categoryGroup.category" class="space-y-3">
-        <h4 class="font-semibold text-foreground capitalize">{{ categoryGroup.category }} Shortcuts</h4>
-        <div class="space-y-2">
-          <div
-            v-for="action in categoryGroup.actions"
-            :key="action.id"
-            :data-action-id="action.id"
-            class="setting-block flex items-center justify-between gap-4"
-            :class="editingActionId === action.id ? 'border-accent ring-2 ring-accent/20' : 'border-border'"
-            tabindex="0"
-          >
-            <div class="flex-1">
-              <div class="font-medium text-foreground">{{ action.label }}</div>
-              <p class="text-sm text-muted-500 mt-0.5">{{ action.description }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <div v-if="editingActionId === action.id" class="flex items-center gap-2">
-                <span class="text-sm text-accent-ink font-medium">Press a key...</span>
-                <button
-                  class="px-2 py-1 text-sm text-muted-600 hover:text-foreground"
-                  @click="editor.cancelEditing"
-                >
-                  Cancel
-                </button>
-              </div>
-              <div v-else class="flex items-center gap-2">
-                <kbd
-                  v-if="shortcuts.getActionKey(action.id)"
-                  class="px-3 py-1.5 rounded-sm border font-mono text-sm min-w-[60px] text-center"
-                  :class="shortcuts.isKeyAssigned(shortcuts.getActionKey(action.id)!, action.id) ? 'bg-accent/8 border-accent/40 text-accent-ink' : 'bg-muted-50 border-border text-muted-700'"
-                >
-                  {{ getKeyDisplayName(shortcuts.getActionKey(action.id)!) }}
-                </kbd>
-                <button
-                  class="px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted-50 transition-colors text-sm"
-                  @click="editor.startEditing(action.id)"
-                >
-                  Change
-                </button>
-                <button
-                  v-if="shortcuts.customShortcuts.value[action.id]"
-                  class="px-2 py-1.5 rounded-lg border border-border bg-card hover:bg-muted-50 transition-colors text-sm"
-                  @click="editor.assignKey(action.id, null)"
-                  title="Reset to default"
-                >
-                  <Icon icon="material-symbols:restart-alt" class="text-base" />
-                </button>
-              </div>
-            </div>
+    <div class="mt-4">
+      <section v-for="categoryGroup in actionsByCategory" :key="categoryGroup.category">
+        <h4
+          class="h-8 flex items-center text-xs font-medium uppercase tracking-label text-muted-400 mt-3 first:mt-0"
+        >
+          {{ categoryGroup.category }}
+        </h4>
+
+        <!--
+          One row per action, separated by a hairline, with the key and its
+          two buttons at the end. Each row was a bordered box of its own, and
+          a list of fourteen boxes is a list that has to be read one box at a
+          time.
+        -->
+        <div
+          v-for="action in categoryGroup.actions"
+          :key="action.id"
+          :data-action-id="action.id"
+          class="flex items-center justify-between gap-4 py-3 border-t border-border"
+          :class="editingActionId === action.id ? 'bg-accent/6' : ''"
+          tabindex="0"
+        >
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium text-foreground">{{ action.label }}</div>
+            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">{{ action.description }}</p>
+          </div>
+
+          <div v-if="editingActionId === action.id" class="flex items-center gap-2 shrink-0">
+            <span class="text-sm text-accent-ink">Press a key</span>
+            <button
+              type="button"
+              :class="BUTTON_SMALL"
+              @click="editor.cancelEditing"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div v-else class="flex items-center gap-2 shrink-0">
+            <kbd
+              v-if="shortcuts.getActionKey(action.id)"
+              :class="[
+                KEY_CAP,
+                shortcuts.isKeyAssigned(shortcuts.getActionKey(action.id)!, action.id)
+                  ? 'border-accent/40 bg-accent/8 text-accent-ink'
+                  : 'border-border bg-muted-50 text-muted-600',
+              ]"
+            >
+              {{ getKeyDisplayName(shortcuts.getActionKey(action.id)!) }}
+            </kbd>
+            <button type="button" :class="BUTTON_SMALL" @click="editor.startEditing(action.id)">
+              Change
+            </button>
+            <button
+              v-if="shortcuts.customShortcuts.value[action.id]"
+              type="button"
+              :class="[BUTTON_SMALL, '!px-2']"
+              title="Put this one back to its default"
+              aria-label="Put this one back to its default"
+              @click="editor.assignKey(action.id, null)"
+            >
+              <Icon icon="material-symbols:restart-alt" :class="ICON_BOX" />
+            </button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
-

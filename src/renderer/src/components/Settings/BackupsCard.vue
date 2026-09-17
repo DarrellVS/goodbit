@@ -6,6 +6,12 @@ import { useFormat } from '@renderer/composables/ui/useFormat';
 import { formatDate } from '@renderer/helpers/dateFormat';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import {
+  BUTTON,
+  BUTTON_SMALL,
+  BUTTON_STRONG,
+  ICON_BOX,
+} from '@renderer/components/Base/geometry';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -98,32 +104,39 @@ onMounted(() => {
     What is there now is copied and verified first, so there is a way back from
     the way back.
   -->
-  <div class="setting-block space-y-4">
-    <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-md bg-accent/12 flex items-center justify-center shrink-0">
-        <Icon icon="material-symbols:database" class="text-xl text-muted-500" />
-      </div>
-      <div class="min-w-0 flex-1">
-        <h3 class="font-medium text-foreground">Library backups</h3>
-        <p class="text-sm text-muted-600 mt-1">
-          A copy of the library is taken and read back whenever a new version of GoodBit starts, in
-          case an update changes how things are stored. The last five are kept, and any of them can
-          be put back. Your clips themselves are never touched. This is only the names, tags, notes
-          and collections.
-        </p>
-      </div>
-    </div>
+  <div class="setting-card">
+    <!--
+      No glyph in a tinted tile beside the heading. Nothing else on these
+      pages has one, and a 40px accent square is the loudest thing on the
+      screen next to a paragraph that is only explaining itself.
+    -->
+    <h3>Library backups</h3>
+    <p>
+      A copy of the library is taken and read back whenever a new version of GoodBit starts, in
+      case an update changes how things are stored. The last five are kept, and any of them can
+      be put back. Your clips themselves are never touched. This is only the names, tags, notes
+      and collections.
+    </p>
 
-    <div v-if="backups.length" class="space-y-1.5">
+    <!--
+      Five hairline rows, not five filled boxes with borders.
+
+      Each copy is the same kind of thing as the one above it and differs only
+      by a date, so a box around each said five unrelated things. The name,
+      the size and the date are one mono line; the numbers are tabular, so
+      they form columns down the list.
+    -->
+    <div v-if="backups.length" class="mt-4">
       <div
         v-for="backup in backups"
         :key="backup.path"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted-50 border border-border text-sm"
+        class="flex items-center gap-3 py-2.5 border-t border-border text-sm"
       >
-        <Icon icon="material-symbols:save" class="text-muted-500 shrink-0" />
         <span class="font-mono text-xs text-foreground truncate flex-1">{{ backup.name }}</span>
-        <span class="text-xs text-muted-500 shrink-0">{{ formatBytes(backup.sizeBytes) }}</span>
-        <span class="text-xs text-muted-500 shrink-0 hidden sm:inline">
+        <span class="font-mono text-xs tabular-nums text-muted-400 shrink-0">
+          {{ formatBytes(backup.sizeBytes) }}
+        </span>
+        <span class="text-xs text-muted-400 shrink-0 hidden sm:inline">
           {{ formatDate(new Date(backup.takenAt)) }}
         </span>
 
@@ -134,36 +147,30 @@ onMounted(() => {
           that hides which one is selected.
         -->
         <button
-          class="px-2.5 py-1 rounded-md border border-border text-xs font-medium text-muted-700 hover:bg-card hover:border-accent/50 transition-colors shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+          type="button"
+          :class="[BUTTON_SMALL, 'shrink-0']"
           :disabled="!!restoring || working"
-          :title="`Replace the current library with this copy and restart`"
+          title="Replace the current library with this copy and restart"
           @click="restore(backup)"
         >
-          <BaseSpinner v-if="restoring === backup.path" class="text-sm" />
-          <Icon v-else icon="material-symbols:history" class="text-base" />
-          {{ restoring === backup.path ? 'Restoring…' : 'Restore' }}
+          <BaseSpinner v-if="restoring === backup.path" :class="ICON_BOX" />
+          <Icon v-else icon="material-symbols:history" :class="ICON_BOX" />
+          {{ restoring === backup.path ? 'Restoring' : 'Restore' }}
         </button>
       </div>
     </div>
 
-    <p v-else class="text-sm text-muted-500">No copies yet.</p>
+    <p v-else class="!mt-4">No copies yet.</p>
 
-    <div class="flex flex-wrap gap-2">
-      <button
-        class="px-4 py-2 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-60 flex items-center gap-2"
-        :disabled="working"
-        @click="backUpNow"
-      >
-        <BaseSpinner v-if="working" class="text-lg" />
-        <Icon v-else icon="material-symbols:backup" class="text-lg" />
-        {{ working ? 'Copying…' : 'Back up now' }}
+    <div class="flex flex-wrap gap-2 mt-4">
+      <button type="button" :class="BUTTON_STRONG" :disabled="working" @click="backUpNow">
+        <BaseSpinner v-if="working" :class="ICON_BOX" />
+        <Icon v-else icon="material-symbols:backup" :class="ICON_BOX" />
+        {{ working ? 'Copying' : 'Back up now' }}
       </button>
 
-      <button
-        class="px-4 py-2 rounded-lg border border-border text-muted-700 text-sm font-medium hover:bg-muted-50 transition-colors flex items-center gap-2"
-        @click="reveal"
-      >
-        <Icon icon="material-symbols:folder-open" class="text-lg" />
+      <button type="button" :class="BUTTON" @click="reveal">
+        <Icon icon="material-symbols:folder-open" :class="ICON_BOX" />
         Show me the files
       </button>
     </div>

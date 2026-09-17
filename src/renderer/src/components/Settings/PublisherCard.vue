@@ -6,6 +6,12 @@ import { usePublisher } from '@renderer/composables/clips/usePublisher';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import { useToastStore } from '@renderer/stores/toast';
 import SettingToggle from './SettingToggle.vue';
+import BaseField from '@renderer/components/Base/BaseField.vue';
+import {
+  BUTTON,
+  BUTTON_STRONG,
+  ICON_BOX,
+} from '@renderer/components/Base/geometry';
 
 /**
  * The server that hosts your public links.
@@ -73,49 +79,55 @@ async function testPublisher(): Promise<void> {
   <div class="space-y-4">
     <div
       data-setting="Publisher"
-      :class="['setting-block space-y-3', settingRing('Publisher')]"
+      :class="['setting-card', settingRing('Publisher')]"
     >
-      <div>
-        <label class="font-medium text-foreground">Publisher</label>
-        <p class="text-sm text-muted-500 mt-1">
-          Optional. A server that hosts public links for the clips you publish. Leave empty and
-          publishing is simply off.
-        </p>
-        <!--
-          The one genuinely hands-on thing GoodBit asks of anyone, so the
-          guide is a click away rather than something to go looking for.
-        -->
-        <button
-          class="mt-2 inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-accent-ink transition-colors"
-          @click="openGuide"
-        >
-          <Icon icon="material-symbols:open-in-new" class="text-base" />
-          How to set one up
-        </button>
-      </div>
+      <h3>Publisher</h3>
+      <p>
+        Optional. A server that hosts public links for the clips you publish. Leave empty and
+        publishing is simply off.
+      </p>
 
-      <div class="flex gap-2">
-        <input
-          v-model="publisherUrl"
-          type="text"
-          placeholder="http://192.168.1.20:5555"
-          aria-label="Publisher address"
-          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm outline-hidden focus:ring-2 focus:ring-accent"
-          @keydown.enter="savePublisher"
-        />
+      <!--
+        The one genuinely hands-on thing GoodBit asks of anyone, so the guide is
+        a click away rather than something to go looking for. A text button, and
+        the underline is on the text rather than on a box around it.
+      -->
+      <button
+        type="button"
+        class="mt-2.5 inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
+        @click="openGuide"
+      >
+        <Icon icon="material-symbols:open-in-new" :class="ICON_BOX" />
+        How to set one up
+      </button>
+
+      <!--
+        The address and the token, on underlined fields.
+
+        They were bordered boxes with a two pixel ring on focus, which is the
+        only pair of boxes left on these pages and the only focus treatment in
+        the app that is not the one ring.
+      -->
+      <div class="flex items-end gap-2 mt-4">
+        <BaseField class="flex-1">
+          <input
+            v-model="publisherUrl"
+            type="text"
+            placeholder="http://192.168.1.20:5555"
+            aria-label="Publisher address"
+            class="text-sm"
+            @keydown.enter="savePublisher"
+          />
+        </BaseField>
         <button
-          class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+          type="button"
+          :class="BUTTON"
           :disabled="!publisherUrl.trim()"
           @click="testPublisher"
         >
           Test
         </button>
-        <button
-          class="px-3 py-2 rounded-lg bg-accent text-accent-fg text-sm hover:bg-accent-hover"
-          @click="savePublisher"
-        >
-          Save
-        </button>
+        <button type="button" :class="BUTTON_STRONG" @click="savePublisher">Save</button>
       </div>
 
       <!--
@@ -123,35 +135,42 @@ async function testPublisher(): Promise<void> {
         Without this the address is an open file drop under your own domain,
         so the publisher refuses every upload until both ends have it.
       -->
-      <div class="flex gap-2">
-        <input
-          v-model="publisherToken"
-          :type="showToken ? 'text' : 'password'"
-          placeholder="Publish token"
-          aria-label="Publish token"
-          autocomplete="off"
-          spellcheck="false"
-          class="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono outline-hidden focus:ring-2 focus:ring-accent"
-          @keydown.enter="savePublisher"
-        />
+      <div class="flex items-end gap-2 mt-3">
+        <BaseField class="flex-1">
+          <input
+            v-model="publisherToken"
+            :type="showToken ? 'text' : 'password'"
+            placeholder="Publish token"
+            aria-label="Publish token"
+            autocomplete="off"
+            spellcheck="false"
+            class="font-mono text-sm"
+            @keydown.enter="savePublisher"
+          />
+        </BaseField>
         <button
-          class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+          type="button"
+          :class="[BUTTON, '!px-3']"
           :title="showToken ? 'Hide the token' : 'Show the token'"
+          :aria-label="showToken ? 'Hide the token' : 'Show the token'"
           @click="showToken = !showToken"
         >
           <Icon
             :icon="showToken ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"
-            class="text-base"
+            :class="ICON_BOX"
           />
         </button>
       </div>
-      <p class="text-xs text-muted-500">
-        The same value as <code>PUBLISH_TOKEN</code> on the server. Uploads are refused without it.
+
+      <p class="!mt-2.5">
+        The same value as <code class="font-mono">PUBLISH_TOKEN</code> on the server. Uploads are
+        refused without it.
       </p>
 
-      <p v-if="publisherState === 'checking'" class="text-xs text-muted-500">Checking…</p>
-      <p v-else-if="publisherState === 'ok'" class="text-xs text-success">That address answers.</p>
-      <p v-else-if="publisherState === 'unreachable'" class="text-xs text-danger-ink">
+      <!-- One line, and what it says depends on what the address answered. -->
+      <p v-if="publisherState === 'checking'" class="!mt-2 !text-muted-400">Checking</p>
+      <p v-else-if="publisherState === 'ok'" class="!mt-2 !text-success">That address answers.</p>
+      <p v-else-if="publisherState === 'unreachable'" class="!mt-2 !text-danger-ink">
         No answer from that address.
       </p>
     </div>

@@ -318,14 +318,14 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
 
   // Advanced
   {
-    label: 'Enable Keyboard Shortcuts',
-    description: 'Use keyboard shortcuts for navigation and actions',
+    label: 'Keyboard shortcuts',
+    description: 'Move around and act on a clip without the mouse',
     section: 'advanced',
     keywords: ['hotkeys', 'keys', 'keybindings'],
   },
   {
-    label: 'Keyboard Shortcut Customization',
-    description: 'Customize keyboard shortcuts to match your workflow',
+    label: 'Change a shortcut',
+    description: 'Change any of these to whatever your hands already do',
     section: 'advanced',
     keywords: ['hotkeys', 'rebind', 'keys', 'keybindings', 'change key'],
   },

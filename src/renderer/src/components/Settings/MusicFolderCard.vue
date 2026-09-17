@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { BUTTON } from '@renderer/components/Base/geometry';
 import { useToastStore } from '@renderer/stores/toast';
 
 /**
@@ -29,27 +30,26 @@ async function change(): Promise<void> {
 </script>
 
 <template>
+  <!--
+    A heading, the path, what it is for, then the button. The same shape as the
+    clips folder directly above it, which it was not: the button sat level with
+    the heading while the path and the sentence ran underneath it, so the one
+    control on the row belonged to the shortest line on it.
+  -->
   <div
     data-setting="Music folder"
-    :class="[
-      'setting-block flex items-start justify-between gap-4',
-      settingRing('Music folder'),
-    ]"
+    :class="['setting-card', settingRing('Music folder')]"
   >
-    <div class="min-w-0">
-      <label class="font-medium text-foreground">Music folder</label>
-      <p class="text-sm text-muted-500 mt-1 truncate">
-        {{ settings.audioRoot || 'Not set' }}
-      </p>
-      <p class="text-xs text-muted-500 mt-1.5">
-        Where GoodBit looks for the audio you can lay under a clip in the editor.
-      </p>
+    <h3>Music folder</h3>
+
+    <p class="font-mono !text-foreground !mt-2 truncate" :title="settings.audioRoot">
+      {{ settings.audioRoot || 'Not set' }}
+    </p>
+
+    <p>Where GoodBit looks for the audio you can lay under a clip in the editor.</p>
+
+    <div class="mt-4">
+      <button type="button" :class="BUTTON" @click="change">Change</button>
     </div>
-    <button
-      class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm shrink-0"
-      @click="change"
-    >
-      Change
-    </button>
   </div>
 </template>
