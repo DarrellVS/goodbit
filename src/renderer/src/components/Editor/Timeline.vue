@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue';
+import { computed, shallowRef, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { formatTimeSimple } from '@renderer/utils/timeFormat';
 import { EDITOR_CONSTANTS, getRulerInterval } from '@renderer/constants/editor';
@@ -65,6 +65,58 @@ const playheadPosition = computed(
 const videoEndPosition = computed(() => props.videoDuration * pixelsPerSecond.value);
 const showOverrunHatch = computed(
   () => props.videoDuration > 0 && props.duration > props.videoDuration + 0.05
+);
+
+/**
+ * The zoom at which the whole movie fits, for the "Fit" button.
+ *
+ * Returned rather than applied, because `zoom` is the page's state and this
+ * component only knows the one thing the page cannot: how wide the scroller
+ * actually is.
+ *
+ * Clamped to the zoom range, so a very long timeline settles at the minimum
+ * and a very short one does not zoom to absurdity.
+ */
+function zoomToFit(): number {
+  const scroller = contentRef.value;
+  if (!scroller || props.duration <= 0) return props.zoom;
+
+  const usable = scroller.clientWidth - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX * 2;
+  if (usable <= 0) return props.zoom;
+
+  const wanted = usable / props.duration / EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE;
+  return Math.min(EDITOR_CONSTANTS.ZOOM.MAX, Math.max(EDITOR_CONSTANTS.ZOOM.MIN, wanted));
+}
+
+defineExpose({ zoomToFit });
+
+/*
+ * Keep the playhead in sight while it is moving.
+ *
+ * The timeline did not follow playback: pressing space on a montage longer
+ * than the window left the ruler showing 0:00 to 0:13 while the preview played
+ * clip two, with no playhead anywhere on screen. Nothing told you where you
+ * were.
+ *
+ * Only when it has actually left the visible strip, and only by enough to put
+ * it a third of the way in, so it is not scrolling on every frame and there is
+ * some of what comes next already on screen.
+ */
+watch(
+  () => props.currentTime,
+  () => {
+    const scroller = contentRef.value;
+    if (!scroller) return;
+
+    const at = playheadPosition.value;
+    const left = scroller.scrollLeft;
+    const right = left + scroller.clientWidth;
+
+    if (at >= left && at <= right) return;
+
+    scroller.scrollLeft = Math.max(0, at - scroller.clientWidth / 3);
+    if (rulerRef.value) rulerRef.value.scrollLeft = scroller.scrollLeft;
+  },
 );
 
 function syncScroll(event: Event): void {

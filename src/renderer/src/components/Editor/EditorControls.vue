@@ -2,6 +2,14 @@
 import { Icon } from '@iconify/vue';
 import { formatTime } from '@renderer/utils/timeFormat';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { EDITOR_CONSTANTS } from '@renderer/constants/editor';
+
+/*
+ * The transport buttons carried no text and no tooltip, so the only way to
+ * learn what the two arrows did was to press one and watch. Naming the step
+ * from the constant means the label cannot drift from the behaviour.
+ */
+const SKIP_SECONDS = EDITOR_CONSTANTS.SKIP_SECONDS;
 
 interface Props {
   playing: boolean;
@@ -24,6 +32,8 @@ interface Emits {
   (e: 'skip-forward'): void;
   (e: 'zoom-in'): void;
   (e: 'zoom-out'): void;
+  /** Zoom until the whole movie is on screen. */
+  (e: 'zoom-fit'): void;
   (e: 'undo'): void;
   (e: 'redo'): void;
   (e: 'export'): void;
@@ -40,6 +50,8 @@ const emit = defineEmits<Emits>();
       <button
         class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="!canUndo"
+        title="Undo"
+        aria-label="Undo"
         @click="emit('undo')"
       >
         <Icon icon="material-symbols:undo" class="text-lg text-muted-700" />
@@ -48,6 +60,8 @@ const emit = defineEmits<Emits>();
       <button
         class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="!canRedo"
+        title="Redo"
+        aria-label="Redo"
         @click="emit('redo')"
       >
         <Icon icon="material-symbols:redo" class="text-lg text-muted-700" />
@@ -57,6 +71,8 @@ const emit = defineEmits<Emits>();
       
       <button
         class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors"
+        :title="`Back ${SKIP_SECONDS} seconds`"
+        :aria-label="`Back ${SKIP_SECONDS} seconds`"
         @click="emit('skip-backward')"
       >
         <Icon icon="material-symbols:fast-rewind" class="text-lg text-muted-700" />
@@ -66,7 +82,8 @@ const emit = defineEmits<Emits>();
       <button
         class="p-2.5 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="props.exporting"
-        :title="props.exporting ? 'Playback is paused while the export runs' : undefined"
+        :title="props.exporting ? 'Playback is paused while the export runs' : playing ? 'Pause' : 'Play'"
+        :aria-label="playing ? 'Pause' : 'Play'"
         @click="playing ? emit('pause') : emit('play')"
       >
         <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-xl text-card" />
@@ -74,6 +91,8 @@ const emit = defineEmits<Emits>();
       
       <button
         class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors"
+        :title="`Forward ${SKIP_SECONDS} seconds`"
+        :aria-label="`Forward ${SKIP_SECONDS} seconds`"
         @click="emit('skip-forward')"
       >
         <Icon icon="material-symbols:fast-forward" class="text-lg text-muted-700" />
@@ -97,7 +116,19 @@ const emit = defineEmits<Emits>();
           <Icon icon="material-symbols:zoom-out" class="text-lg text-muted-700" />
         </button>
         
-        <span class="text-xs font-medium text-muted-600 w-12 text-center">{{ Math.round(zoom * 100) }}%</span>
+        <!--
+          The zoom floor is 25%, which is not far enough: a three clip, eighty
+          second montage did not fit at the minimum, so there was no way to see
+          the arrangement, which is the whole job of a montage. Every editor
+          has this button; this one did not.
+        -->
+        <button
+          class="text-xs font-medium text-muted-600 w-12 text-center rounded-md py-1 hover:bg-black/5 hover:text-orange-600 transition-colors"
+          title="Fit the whole timeline on screen"
+          @click="emit('zoom-fit')"
+        >
+          {{ Math.round(zoom * 100) }}%
+        </button>
         
         <button
           class="p-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors disabled:opacity-40"

@@ -6,6 +6,8 @@ import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   clip: TimelineClip | null;
+  /** Where this clip sits, so the move buttons know when to stop. */
+  position?: { index: number; total: number };
   /** What the audio analysis found in this clip, once it has been asked. */
   highlight?: { start: number; end: number } | null;
   highlightLoading?: boolean;
@@ -14,11 +16,15 @@ interface Props {
 interface Emits {
   (e: 'update', updates: Partial<TimelineClip>): void;
   (e: 'trim-to-highlight'): void;
+  /** Swap with the neighbour. The only findable way to change the order. */
+  (e: 'reorder', direction: 'earlier' | 'later'): void;
+  (e: 'remove'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   highlight: null,
   highlightLoading: false,
+  position: undefined,
 });
 const emit = defineEmits<Emits>();
 
@@ -135,6 +141,48 @@ function volumeToDecimal(percentage: number): number {
         >
           <Icon :icon="clip.muted ? 'material-symbols:volume-off' : 'material-symbols:volume-up'" class="text-lg" />
           {{ clip.muted ? 'Unmute Clip' : 'Mute Clip' }}
+        </button>
+      </div>
+
+      <!--
+        Order and removal, where you can see them.
+        
+        Reordering had no route at all: no grip, no hover state, no context
+        menu, no keyboard, and nothing saying clips could be dragged. Removal
+        worked on the Delete key and nowhere else, so it was found by guessing.
+        Both are the ordinary business of a montage, so both are buttons.
+      -->
+      <div class="pt-4 border-t border-border space-y-2">
+        <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide">
+          Order
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex-1 h-8 rounded-lg bg-black/5 hover:bg-black/10 text-xs font-medium text-muted-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1"
+            :disabled="!position || position.index === 0"
+            title="Swap with the clip before this one"
+            @click="emit('reorder', 'earlier')"
+          >
+            <Icon icon="material-symbols:arrow-back" class="text-base" />
+            Earlier
+          </button>
+          <button
+            class="flex-1 h-8 rounded-lg bg-black/5 hover:bg-black/10 text-xs font-medium text-muted-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1"
+            :disabled="!position || position.index >= position.total - 1"
+            title="Swap with the clip after this one"
+            @click="emit('reorder', 'later')"
+          >
+            Later
+            <Icon icon="material-symbols:arrow-forward" class="text-base" />
+          </button>
+        </div>
+        <button
+          class="w-full h-8 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors inline-flex items-center justify-center gap-1.5"
+          title="Take this clip off the timeline"
+          @click="emit('remove')"
+        >
+          <Icon icon="material-symbols:delete-outline" class="text-base" />
+          Remove from timeline
         </button>
       </div>
 

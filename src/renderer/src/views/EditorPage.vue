@@ -78,6 +78,7 @@ const {
   removeClip,
   updateClipProperties,
   moveClip,
+  reorderClip,
   trimClip,
   reflowClips,
   snapshotClips,
@@ -587,6 +588,20 @@ function handleRemoveAudio(audioId: string): void {
   if (selectedAudioId.value === audioId) selectedAudioId.value = null;
 }
 
+/** Where the selected clip sits, so the move buttons know when to stop. */
+const selectedClipPosition = computed(() => {
+  if (!selectedClipId.value) return undefined;
+  const ordered = [...timelineClips.value].sort((a, b) => a.startTime - b.startTime);
+  const index = ordered.findIndex((clip) => clip.id === selectedClipId.value);
+  return index === -1 ? undefined : { index, total: ordered.length };
+});
+
+function handleReorderSelected(direction: 'earlier' | 'later'): void {
+  if (!selectedClipId.value) return;
+  record();
+  reorderClip(selectedClipId.value, direction);
+}
+
 function handleRemoveClip(clipId: string): void {
   record();
   removeClip(clipId);
@@ -632,12 +647,25 @@ function openMusicPanel(): void {
 // Zoom multiplies pixels-per-second, so zooming in has to raise it. These two
 // were the wrong way round, which also made the readout count down as the
 // timeline got bigger.
+const timelineRef = ref<{ zoomToFit: () => number } | null>(null);
+
 function handleZoomIn(): void {
   setZoom(zoom.value * 1.25);
 }
 
 function handleZoomOut(): void {
   setZoom(zoom.value * 0.75);
+}
+
+/**
+ * Zoom until the whole movie is on screen.
+ *
+ * The timeline owns this number because it is the only thing that knows how
+ * wide its own scroller is, so it works it out and the page applies it.
+ */
+function handleZoomFit(): void {
+  const fitted = timelineRef.value?.zoomToFit();
+  if (fitted) setZoom(fitted);
 }
 
 function goBack(): void {
@@ -968,6 +996,7 @@ watch(
 
         <div class="h-56 shrink-0">
           <Timeline
+            ref="timelineRef"
             :clips="timelineClips"
             :audio="timelineAudio"
             :current-time="currentTime"
@@ -1005,8 +1034,11 @@ watch(
           :clip="selectedClip"
           :highlight="selectedHighlight"
           :highlight-loading="selectedHighlightLoading"
+          :position="selectedClipPosition"
           @update="handleUpdateClip"
           @trim-to-highlight="trimSelectedToHighlight"
+          @reorder="handleReorderSelected"
+          @remove="selectedClipId && handleRemoveClip(selectedClipId)"
         />
       </aside>
     </div>
@@ -1029,6 +1061,7 @@ watch(
       @skip-forward="skipForward()"
       @zoom-in="handleZoomIn"
       @zoom-out="handleZoomOut"
+      @zoom-fit="handleZoomFit"
       @undo="undo"
       @redo="redo"
       @export="openExportDialog"

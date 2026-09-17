@@ -72,7 +72,15 @@ function toggleTag(name: string): void {
         <Icon icon="material-symbols:video-library" class="text-orange-500" />
         Clip Library
       </h3>
-      <span class="text-xs text-muted-500">{{ clips.length }}</span>
+      <!--
+        `40` beside a library that says "41 clips" reads as a contradiction.
+        It was never a total: the list pages, so it is what has loaded, and
+        there is a "Load more" at the bottom saying so. The `+` is the smallest
+        thing that stops it claiming to be the whole number.
+      -->
+      <span class="text-xs text-muted-500" :title="hasMore ? 'Loaded so far' : 'All of them'">
+        {{ clips.length }}{{ hasMore ? '+' : '' }}
+      </span>
     </div>
 
     <div class="shrink-0 p-3 space-y-2 border-b border-border">

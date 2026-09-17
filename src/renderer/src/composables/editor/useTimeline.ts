@@ -115,6 +115,42 @@ export function useTimeline() {
     clipMap.set(clipId, updated);
   }
 
+  /**
+   * Swap a clip with the one before or after it.
+   *
+   * Reordering had no discoverable route at all: no grip, no hover state, no
+   * context menu, no keyboard, and nothing on screen saying clips could be
+   * dragged. Deciding the order is most of what making a montage is, so there
+   * has to be a way to do it that you can find by looking.
+   *
+   * Expressed as a swap rather than as a time, because "put this one before
+   * that one" is the intent and `moveClip`'s re-pack then lays them end to end
+   * again. Swapping positions rather than durations means a long clip and a
+   * short one trade places correctly.
+   */
+  function reorderClip(clipId: string, direction: 'earlier' | 'later'): void {
+    const ordered = [...clips.value].sort((a, b) => a.startTime - b.startTime);
+    const at = ordered.findIndex((c) => c.id === clipId);
+    if (at === -1) return;
+
+    const to = direction === 'earlier' ? at - 1 : at + 1;
+    if (to < 0 || to >= ordered.length) return;
+
+    const swapped = [...ordered];
+    [swapped[at], swapped[to]] = [swapped[to], swapped[at]];
+
+    // Lay the new order end to end from zero, so there are no gaps to explain.
+    let cursor = 0;
+    const repacked = swapped.map((clip) => {
+      const placed = { ...clip, startTime: cursor };
+      cursor += clip.duration;
+      clipMap.set(clip.id, placed);
+      return placed;
+    });
+
+    clips.value = repacked;
+  }
+
   function trimClip(clipId: string, trimStart: number, trimEnd: number): void {
     const clip = clipMap.get(clipId);
     if (!clip) return;
@@ -260,6 +296,7 @@ export function useTimeline() {
     removeClip,
     updateClipProperties,
     moveClip,
+    reorderClip,
     trimClip,
     reflowClips,
     snapshotClips,
