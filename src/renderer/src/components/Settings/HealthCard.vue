@@ -42,7 +42,7 @@ const encoderLabel = computed(() => {
 <template>
   <div
     data-setting="Health"
-    :class="['p-4 bg-card rounded-lg border border-border space-y-2', settingRing('Health')]"
+    :class="['setting-block space-y-2', settingRing('Health')]"
   >
     <h3 class="font-medium text-foreground flex items-center gap-2">
       <Icon icon="material-symbols:favorite-outline" class="text-muted-500" />

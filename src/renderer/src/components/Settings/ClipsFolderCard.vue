@@ -133,7 +133,7 @@ async function followMove(jobId: string): Promise<void> {
   <div
     data-setting="Clips folder"
     :class="[
-      'p-4 bg-card rounded-lg border border-border flex items-start justify-between gap-4',
+      'setting-block flex items-start justify-between gap-4',
       settingRing('Clips folder'),
     ]"
   >

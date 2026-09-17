@@ -116,7 +116,7 @@ onMounted(refresh);
     at ten clips. This is where that gets replaced by what you actually keep,
     on its own, as you trim, with nothing to run.
   -->
-  <div class="p-4 bg-card border border-border rounded-lg space-y-4">
+  <div class="setting-block space-y-4">
     <div class="flex items-start gap-3">
       <div class="w-10 h-10 rounded-xl bg-accent/12 flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:graphic-eq" class="text-xl text-accent-ink" />

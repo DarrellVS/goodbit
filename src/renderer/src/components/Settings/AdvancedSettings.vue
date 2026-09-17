@@ -34,9 +34,9 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-1">Advanced</h2>
+  <section>
+    <div class="pb-2">
+      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Advanced</h2>
       <p class="text-sm text-muted-500">Keyboard shortcuts, and what this machine can do</p>
     </div>
 

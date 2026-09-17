@@ -30,11 +30,11 @@ export const router = createRouter({
       path: '/',
       component: ShellLayout,
       children: [
-        { 
-          path: '', 
-          name: 'clips', 
+        {
+          path: '',
+          name: 'clips',
           component: ClipsPage,
-          meta: { 
+          meta: {
             title: 'My Library',
             // The one line the app gets to explain itself on launch. It used
             // to describe the grid people were already looking at, and never
@@ -42,20 +42,20 @@ export const router = createRouter({
             subtitle: 'Everything OBS recorded. Open one and GoodBit points at the good bit.'
           }
         },
-        { 
-          path: 'today', 
-          name: 'today', 
+        {
+          path: 'today',
+          name: 'today',
           component: TodaysClipsPage,
-          meta: { 
+          meta: {
             title: "Today's Clips",
             subtitle: 'Review what you recorded today, one at a time'
           }
         },
-        { 
-          path: 'tag-patterns', 
-          name: 'tag-patterns', 
+        {
+          path: 'tag-patterns',
+          name: 'tag-patterns',
           component: TagPatternsPage,
-          meta: { 
+          meta: {
             title: 'Smart Tag Patterns',
             // Says what is matched and when, because the old subtitle,
             // "Manage automatic tag suggestions", implied tags were being
@@ -64,23 +64,29 @@ export const router = createRouter({
             subtitle: 'Words that offer a tag when you open the tag box on a clip'
           }
         },
-        { 
-          path: 'stats', 
-          name: 'stats', 
+        {
+          path: 'stats',
+          name: 'stats',
           component: StatsPage,
-          meta: { 
+          meta: {
             title: 'Statistics',
             subtitle: 'View your clip statistics'
           }
         },
-        { 
-          path: 'settings', 
-          name: 'settings', 
+        {
+          path: 'settings',
+          name: 'settings',
           component: SettingsPage,
-          meta: { 
-            title: 'Settings',
-            subtitle: 'Customize your experience',
-          }
+          /*
+           * No `title`, and that is what stops the shell drawing a header.
+           *
+           * Settings is two columns under the title bar: the sections on the
+           * left and the section you picked on the right, which carries its
+           * own name as its heading. A header over both of them repeated that
+           * name one line higher and pushed the list a third of the way down
+           * the window.
+           */
+          meta: {},
         },
         /*
          * A collection is a layer over the library now, for the same reasons a

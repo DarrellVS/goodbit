@@ -78,9 +78,9 @@ const dateFormatOptions = [
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-1">Watching</h2>
+  <section>
+    <div class="pb-2">
+      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Watching</h2>
       <p class="text-sm text-muted-500">
         How your library looks, how clips play, and which games you see
       </p>

@@ -23,7 +23,15 @@ function selectSection(sectionId: string): void {
 </script>
 
 <template>
-  <aside class="w-64 shrink-0 border-r border-border bg-muted-50 flex flex-col min-h-0">
+  <!--
+    The page colour, and a hairline. Not a second filled column.
+
+    It was `bg-muted-50`, the same ground as the app's sidebar, so Settings
+    showed two filled columns side by side and the right hand one is not a
+    sidebar: it is this screen's own contents, narrowed. The hairline is the
+    only thing that needs to say where the list stops.
+  -->
+  <aside class="w-64 shrink-0 border-r border-border flex flex-col min-h-0">
     <!--
       The search, above the list it makes optional. The page owns the field
       rather than this component, so the keystroke that opens a result does not

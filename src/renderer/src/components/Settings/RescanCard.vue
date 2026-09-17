@@ -21,7 +21,7 @@ const { settingRing } = useSettingsSearch();
   <div
     data-setting="Rescan the clips folder"
     :class="[
-      'p-4 bg-card rounded-lg border border-border flex items-start justify-between gap-4',
+      'setting-block flex items-start justify-between gap-4',
       settingRing('Rescan the clips folder'),
     ]"
   >

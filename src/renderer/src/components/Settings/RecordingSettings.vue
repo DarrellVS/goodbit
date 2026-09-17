@@ -141,9 +141,9 @@ function openGuide(): void {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-1">Recording</h2>
+  <section>
+    <div class="pb-2">
+      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Recording</h2>
       <p class="text-sm text-muted-500">
         OBS, your clips folder, and what happens when you press the key
       </p>
@@ -151,7 +151,7 @@ function openGuide(): void {
 
     <div
       data-setting="OBS setup"
-      :class="['p-4 bg-card rounded-lg border border-border space-y-4', settingRing('OBS setup')]"
+      :class="['setting-block space-y-4', settingRing('OBS setup')]"
     >
       <div class="flex items-start gap-3">
         <BaseSpinner v-if="!status" class="text-xl shrink-0 mt-0.5 text-muted-400" />
@@ -254,7 +254,7 @@ function openGuide(): void {
     <div
       data-setting="Run the setup again"
       :class="[
-        'p-4 bg-card rounded-lg border border-border flex items-start justify-between gap-4',
+        'setting-block flex items-start justify-between gap-4',
         settingRing('Run the setup again'),
       ]"
     >

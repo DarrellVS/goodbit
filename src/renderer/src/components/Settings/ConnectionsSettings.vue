@@ -140,16 +140,16 @@ async function copyCommand(): Promise<void> {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-1">Connections</h2>
+  <section>
+    <div class="pb-2">
+      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Connections</h2>
       <p class="text-sm text-muted-500">
         Claude, and the server that hosts your public links. Both optional, both off until you set
         them up.
       </p>
     </div>
 
-    <div class="p-4 bg-card rounded-lg border border-border space-y-4">
+    <div class="setting-block space-y-4">
       <div data-setting="Claude" :class="['flex items-start gap-3', settingRing('Claude')]">
         <Icon icon="material-symbols:robot-2-outline" class="text-xl text-muted-500 mt-0.5" />
         <div class="min-w-0">

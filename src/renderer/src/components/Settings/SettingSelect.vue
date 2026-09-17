@@ -61,7 +61,7 @@ function onChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
     :class="[
       flat
         ? 'flex items-center justify-between gap-4 py-3'
-        : 'flex items-center justify-between gap-4 min-h-[72px] p-4 bg-card rounded-lg border border-border',
+        : 'setting-block flex items-center justify-between gap-4',
       ring,
     ]"
   >

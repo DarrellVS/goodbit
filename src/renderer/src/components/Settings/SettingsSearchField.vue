@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Icon } from '@iconify/vue';
+import BaseField from '@renderer/components/Base/BaseField.vue';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import type { SettingEntry } from '@renderer/utils/settingsCatalog';
 
@@ -53,38 +54,43 @@ function clear(): void {
 </script>
 
 <template>
-  <div class="px-3 pt-4 pb-1">
-    <div class="relative">
-      <Icon
-        icon="material-symbols:search"
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted-400 pointer-events-none"
-      />
+  <div class="px-4 pt-5 pb-3">
+    <!--
+      The same field the library's search is, because they are the same kind
+      of thing: a rule under the text, not a filled pill. It was a bordered box
+      on its own ground, sitting in a column that has no ground, which made it
+      the only object on that column rather than the first line of it.
+    -->
+    <BaseField icon="material-symbols:search">
       <input
         ref="field"
         v-model="query"
-        type="text"
+        type="search"
         aria-label="Search settings"
         placeholder="Search settings"
         autocomplete="off"
         spellcheck="false"
-        class="w-full pl-10 pr-9 py-2.5 rounded-lg bg-card text-foreground placeholder:text-muted-400 border border-border text-sm outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+        class="text-sm"
         @input="onInput"
         @keydown.down.prevent="move(1)"
         @keydown.up.prevent="move(-1)"
         @keydown.enter.prevent="onEnter"
         @keydown.esc="onEscape"
       />
-      <button
-        v-if="query"
-        class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-sm text-muted-400 hover:text-foreground transition-colors"
-        aria-label="Clear the search"
-        @click="clear"
-      >
-        <Icon icon="material-symbols:close" class="text-base" />
-      </button>
-    </div>
+      <template #trailing>
+        <button
+          v-if="query"
+          type="button"
+          class="size-6 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-400 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+          aria-label="Clear the search"
+          @click="clear"
+        >
+          <Icon icon="material-symbols:close" class="size-4 shrink-0 block" />
+        </button>
+      </template>
+    </BaseField>
 
-    <p v-if="query" class="px-1 pt-2 text-xs text-muted-500">
+    <p v-if="query" class="pt-2 text-xs text-muted-500">
       {{ results.length }}
       {{ results.length === 1 ? 'setting' : 'settings' }}
       across every section

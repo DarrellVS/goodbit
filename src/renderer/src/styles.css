@@ -371,6 +371,26 @@ body {
  */
 .card { @apply rounded-lg bg-card border border-border; }
 
+/*
+ * One setting, and the rule under it.
+ *
+ * Every row in Settings was a card: its own ground, its own 1px border, its
+ * own radius, stacked six deep down a column. A box says "this is a thing in
+ * its own right", and six of them say it six times about what is actually one
+ * list. Space and a hairline separate them now, the way everything else in
+ * this design is separated, so the column reads as a list of settings rather
+ * than as a shelf of panels.
+ *
+ * `:last-child` drops the final rule, or every section ends on a line with
+ * nothing under it.
+ */
+.setting-block {
+  @apply py-5 border-b border-border;
+}
+.setting-block:last-child {
+  @apply border-b-0 pb-0;
+}
+
 .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 h-9 text-sm font-medium border border-border transition-colors duration-150; }
 .btn-primary { @apply bg-accent hover:bg-accent-hover text-accent-fg border-transparent; }
 .btn-danger { @apply bg-danger text-danger-fg border-transparent; }

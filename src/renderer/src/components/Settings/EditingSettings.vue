@@ -22,9 +22,9 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-1">Editing</h2>
+  <section>
+    <div class="pb-2">
+      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Editing</h2>
       <p class="text-sm text-muted-500">
         Trimming, your music, and what the suggestions have learned
       </p>

@@ -99,7 +99,7 @@ onMounted(load);
 
     <div
       v-else-if="!filteredGames.length"
-      class="p-6 text-center text-sm text-muted-500 bg-card rounded-lg border border-border"
+      class="setting-block text-center text-sm text-muted-500"
     >
       {{ search ? 'No games match that search' : 'No games found' }}
     </div>
@@ -108,7 +108,7 @@ onMounted(load);
       <div
         v-for="game in filteredGames"
         :key="game.game"
-        class="flex items-center justify-between p-4 bg-card rounded-lg border border-border"
+        class="setting-block flex items-center justify-between gap-4"
         :class="{ 'opacity-60': game.hidden }"
       >
         <div class="min-w-0">

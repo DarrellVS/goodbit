@@ -73,7 +73,7 @@ async function testPublisher(): Promise<void> {
   <div class="space-y-4">
     <div
       data-setting="Publisher"
-      :class="['p-4 bg-card rounded-lg border border-border space-y-3', settingRing('Publisher')]"
+      :class="['setting-block space-y-3', settingRing('Publisher')]"
     >
       <div>
         <label class="font-medium text-foreground">Publisher</label>

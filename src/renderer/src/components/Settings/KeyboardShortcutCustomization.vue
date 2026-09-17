@@ -62,7 +62,7 @@ function getActionLabel(actionId: string): string {
             v-for="action in categoryGroup.actions"
             :key="action.id"
             :data-action-id="action.id"
-            class="flex items-center justify-between p-4 bg-card rounded-lg border"
+            class="setting-block flex items-center justify-between gap-4"
             :class="editingActionId === action.id ? 'border-accent ring-2 ring-accent/20' : 'border-border'"
             tabindex="0"
           >

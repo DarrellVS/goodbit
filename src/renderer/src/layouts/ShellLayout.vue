@@ -1,19 +1,26 @@
 <template>
-  <div 
-    class="h-full min-h-0 overflow-hidden grid grid-cols-[256px_1fr] grid-rows-1"
+  <div
+    class="h-full min-h-0 overflow-hidden grid grid-cols-[232px_1fr] grid-rows-1"
     @dragenter="fileImport.handleDragEnter"
     @dragleave="fileImport.handleDragLeave"
     @dragover="fileImport.handleDragOver"
     @drop="fileImport.handleDrop"
   >
-    <Sidebar 
-      :active-game="selectedGame" 
-      :disable-games-filter="disableGamesFilter" 
-      @select-game="selectGame" 
+    <Sidebar
+      :active-game="selectedGame"
+      :disable-games-filter="disableGamesFilter"
+      @select-game="selectGame"
     />
-    
+
     <div class="flex flex-col h-full overflow-hidden">
+      <!--
+        A screen gets a header when it asks for one, by carrying a `title` in
+        its route meta. Settings does not: it is two columns and the right one
+        already says which section it is showing. The editor does not either,
+        and was drawing its own underneath this one.
+      -->
       <PageHeader
+        v-if="router.currentRoute.value.meta.title"
         v-model:search="searchText"
         :title="(router.currentRoute.value.meta.title as string)"
         :subtitle="(router.currentRoute.value.meta.subtitle as string)"
