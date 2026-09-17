@@ -12,6 +12,10 @@ import ObsSetupReviewStep from './ObsSetup/ObsSetupReviewStep.vue';
 import ObsSetupRouteStep from './ObsSetup/ObsSetupRouteStep.vue';
 import ObsSetupScreenStep from './ObsSetup/ObsSetupScreenStep.vue';
 import ObsSetupSortingStep from './ObsSetup/ObsSetupSortingStep.vue';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 /**
  * The setup, by one of two routes.
@@ -140,7 +144,7 @@ function close(): void {
  * sentence.
  */
 function notNow(): void {
-  toast.confirm(
+  confirmAction(
     'Settings, Recording has this waiting whenever you want it, and can replay the whole first run.',
     () => close(),
     'Leave the setup for now?',

@@ -11,6 +11,10 @@ import { useObsSetup } from '../../composables/useObsSetup';
 import { useSettingsSearch } from '../../composables/useSettingsSearch';
 import { useToastStore } from '../../stores/toast';
 import AppLoading from '../App/AppLoading.vue';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 /**
  * Recording: the OBS half of the app, and where what it records lands.
@@ -120,7 +124,7 @@ async function launch(): Promise<void> {
 }
 
 function undo(): void {
-  toast.confirm(
+  confirmAction(
     'The GoodBit profile and scene collection go, and the one setting GoodBit changed outside them goes back to what it was. Your own profiles and scenes are untouched. Close OBS first.',
     async () => {
       await setup.undo();

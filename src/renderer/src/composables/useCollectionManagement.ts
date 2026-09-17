@@ -3,6 +3,10 @@ import { useCollectionsStore } from '../stores/collections';
 import { useToastStore } from '../stores/toast';
 import { useDragAndDrop, type DragData } from './useDragAndDrop';
 import { useCollectionDetail } from './useCollectionDetail';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 /**
  * Making, renaming, deleting and dropping clips on a collection.
@@ -69,7 +73,7 @@ export function useCollectionManagement() {
   }
 
   async function deleteCollection(id: number, name: string) {
-    toastStore.confirm(
+    confirmAction(
       `This will permanently delete "${name}".`,
       async () => {
         try {

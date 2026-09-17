@@ -6,6 +6,10 @@ import { useToastStore } from '../stores/toast';
 import type { TagCategory } from '../utils/tagSuggestions';
 import AppLoading from '../components/App/AppLoading.vue';
 import TagLibraryCard from '../components/App/TagLibraryCard.vue';
+import { useConfirm } from '../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 const { patterns, loading, addPattern, updatePattern, removePattern } = useTagPatterns();
 
@@ -106,7 +110,7 @@ async function saveEdit(): Promise<void> {
 }
 
 async function handleDelete(tag: string): Promise<void> {
-  toastStore.confirm(
+  confirmAction(
     `This will remove the tag pattern for "${tag}".`,
     async () => {
       try {

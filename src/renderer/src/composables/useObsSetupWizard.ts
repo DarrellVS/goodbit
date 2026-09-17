@@ -2,6 +2,10 @@ import { computed, onBeforeUnmount, onMounted, ref, toValue, watch, type MaybeRe
 import type { SetupStep, useObsSetup } from './useObsSetup';
 import { skipObsWizard } from '../services/obs';
 import { useToastStore } from '../stores/toast';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 import {
   continueDisabled,
   currentPageId,
@@ -255,7 +259,7 @@ export function useObsSetupWizard(options: {
         // No window, no tray icon, nothing to click. Say so, and offer the only
         // thing that works rather than asking them to find a window that is not
         // there.
-        toast.confirm(
+        confirmAction(
           'OBS is running with no window open, so there is nothing to close. GoodBit can end it. Nothing is lost: it writes its settings when it exits normally, and GoodBit is about to write them anyway.',
           () => void endObs(),
           'OBS has no window',

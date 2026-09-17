@@ -48,24 +48,6 @@ export const useToastStore = defineStore('toast', () => {
     return show({ description, title, type: 'warning', duration: 4000 });
   }
 
-  function confirm(description: string, onConfirm: () => void, title?: string): string {
-    const id = `toast-${++idCounter}`;
-    toasts.value.push({
-      id,
-      description,
-      title: title || 'Confirm',
-      type: 'warning',
-      duration: 10000,
-      action: {
-        label: 'Confirm',
-        onClick: () => {
-          onConfirm();
-          dismiss(id);
-        },
-      },
-    });
-    return id;
-  }
 
   /**
    * Change a toast that is already on screen.
@@ -94,7 +76,6 @@ export const useToastStore = defineStore('toast', () => {
     error,
     info,
     warning,
-    confirm,
     update,
     dismiss,
     clear,

@@ -2,6 +2,10 @@
 import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'reka-ui';
 import { useToastStore } from '../../stores/toast';
 import type { Clip } from '../../types/clip';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 interface Props {
   clip: Clip;
@@ -24,7 +28,7 @@ function handleRename(name: string): void {
 }
 
 function handleDelete(): void {
-  toastStore.confirm(
+  confirmAction(
     'It goes to the Recycle Bin, so you can still get it back from there.',
     () => emit('delete'),
     'Move this clip to the Recycle Bin?',

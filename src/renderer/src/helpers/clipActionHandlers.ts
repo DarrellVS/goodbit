@@ -9,6 +9,10 @@ import { useToastStore } from '../stores/toast';
 import { useConfiguration } from '../composables/useConfiguration';
 import { useGamesStore } from '../stores/games';
 import { useCollectionsStore } from '../stores/collections';
+import { useConfirm } from '../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 export function createClipActionHandlers(params: {
   clip: MaybeRefOrGetter<Clip>;
@@ -123,7 +127,7 @@ export function createClipActionHandlers(params: {
     };
 
     if (config.public.value.confirmBeforeDelete) {
-      toastStore.confirm(
+      confirmAction(
         `${clip.filename}`,
         performDelete,
         'Move to Recycle Bin?'

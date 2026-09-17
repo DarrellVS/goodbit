@@ -9,6 +9,10 @@ import { pluralize } from '../utils/pluralize';
 import * as clipsService from '../services/clips';
 import type { Clip } from '../types/clip';
 import type { BatchOperationResult } from '../services/clips';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 interface UseBatchOperationsOptions {
   clips: Ref<Clip[]>;
@@ -147,7 +151,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     // Asked the same way a single delete is, and skipped under the same
     // setting, a native `confirm()` blocks the whole renderer.
     if (config.public.value.confirmBeforeDelete) {
-      toastStore.confirm(
+      confirmAction(
         `${count} ${pluralize(count, 'clip')} will be moved to the Recycle Bin.`,
         () => void performDelete(),
         'Move to Recycle Bin?'
@@ -291,7 +295,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
 
     const count = selectedClips.value.length;
 
-    toastStore.confirm(
+    confirmAction(
       `${count} ${pluralize(count, 'clip')} stay in the library; only this collection loses them.`,
       () => void removeFromCollection(collectionId, count),
       'Remove from this collection?'

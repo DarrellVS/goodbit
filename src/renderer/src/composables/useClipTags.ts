@@ -7,6 +7,10 @@ import { listTagPatterns } from '../services/tagPatterns';
 import { getCategoryForTag } from '../utils/tagSuggestions';
 import type { Clip } from '../types/clip';
 import type { TagPattern } from '../utils/tagSuggestions';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) {
   const tagsStore = useTagsStore();
@@ -118,7 +122,7 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
   }
 
   async function removeTag(tagName: string): Promise<void> {
-    toastStore.confirm(
+    confirmAction(
       `This will remove "${tagName}" from all clips.`,
       async () => {
         try {

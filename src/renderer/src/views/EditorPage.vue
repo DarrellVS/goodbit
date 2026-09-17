@@ -42,6 +42,10 @@ import type { EditorDraft, ResumableDraft } from '../types/editor';
 import { draftAsResumable } from '../utils/draftResume';
 import type { DraftFilePayload } from '../utils/draftFile';
 import AppLoading from '../components/App/AppLoading.vue';
+import { useConfirm } from '../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 type LibraryTab = 'clips' | 'music';
 
@@ -299,6 +303,35 @@ async function handleExportConfirm(name: string, options: ExportOptions): Promis
  * anything that has since been deleted from disk simply drops out, with a count
  * rather than a silent gap.
  */
+/**
+ * Resume, but not over the top of work in progress without asking.
+ *
+ * The banner arrives a few seconds after the editor opens, which is long
+ * enough to have started. A walkthrough user added a clip, the banner slid in,
+ * they pressed Resume, and their clip was gone with undo already emptied:
+ * `restoreDraft` replaces the timeline and calls `clearHistory()`, both
+ * correct for opening a named draft from the Drafts dialog, and both data loss
+ * when the same function is reached from a banner nobody asked for.
+ *
+ * An empty timeline is the ordinary case and is left alone: there is nothing
+ * to lose, so a confirmation there would be furniture.
+ */
+async function resumeFromBanner(draft: ResumableDraft): Promise<void> {
+  if (timelineClips.value.length === 0) {
+    await restoreDraft(draft);
+    return;
+  }
+
+  const mine = `${timelineClips.value.length} clip${timelineClips.value.length === 1 ? '' : 's'}`;
+  const theirs = `${draft.clips.length} clip${draft.clips.length === 1 ? '' : 's'}`;
+
+  confirmAction(
+    `The ${mine} on your timeline now will be replaced by the ${theirs} from the earlier session, and this cannot be undone.`,
+    () => void restoreDraft(draft),
+    'Replace what you have?',
+  );
+}
+
 async function restoreDraft(draft: ResumableDraft): Promise<void> {
   restoring.value = true;
 
@@ -408,7 +441,7 @@ async function handleImportDraft(payload: DraftFilePayload): Promise<void> {
 }
 
 function handleDeleteDraft(draft: EditorDraft): void {
-  toastStore.confirm(
+  confirmAction(
     `"${draft.name}" is removed from your library.`,
     async () => {
       try {
@@ -854,6 +887,10 @@ watch(
             <div class="text-sm font-medium text-foreground">
               {{ resumable.projectId === null ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
             </div>
+            <div v-if="timelineClips.length > 0" class="text-xs text-orange-600 mt-0.5">
+              Resuming replaces the {{ timelineClips.length }}
+              clip{{ timelineClips.length === 1 ? '' : 's' }} already on your timeline.
+            </div>
             <div class="text-xs text-muted-600">
               {{ resumable.clips.length }} clip{{ resumable.clips.length === 1 ? '' : 's' }}
               <span v-if="resumable.audio.length">
@@ -865,16 +902,22 @@ watch(
           <button
             class="h-8 px-4 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 shrink-0"
             :disabled="restoring"
-            @click="restoreDraft(resumable)"
+            @click="resumeFromBanner(resumable)"
           >
             <AppLoading v-if="restoring" class="text-sm" />
             <span>{{ restoring ? 'Restoring…' : 'Resume' }}</span>
           </button>
+          <!--
+            "Discard" said nothing about which of the two timelines it meant,
+            and neither did "Resume". With work already on the timeline, one of
+            them throws that away and the other throws the draft away, and the
+            banner asked only about continuing.
+          -->
           <button
             class="h-8 px-4 rounded-lg border border-border bg-card/70 text-muted-700 text-xs font-semibold hover:bg-card transition-colors inline-flex items-center justify-center shrink-0"
             @click="dismissResumable"
           >
-            Discard
+            {{ timelineClips.length > 0 ? 'Keep what I have' : 'Discard' }}
           </button>
         </div>
 

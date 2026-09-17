@@ -125,6 +125,10 @@ import VideoPreview from './VideoPreview.vue';
 import TimelineEditor from './TimelineEditor.vue';
 import SuggestionBanner from './SuggestionBanner.vue';
 import GoodBitMarkBar from './GoodBitMarkBar.vue';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 interface Props {
   id: string;
@@ -445,20 +449,47 @@ async function keepAnchor(anchor: SuggestionEvent): Promise<void> {
   if (created) selectGoodBit(created);
 }
 
+/**
+ * Close enough to an edge to mean "I did not move this handle".
+ *
+ * A twentieth of a second, which is comfortably under one frame at 60fps and
+ * comfortably over the float error that comes back from a dragged handle.
+ */
+const FRAME_SLOP = 0.05;
+
 async function handleSave(): Promise<void> {
   if (isSaving.value || !isValidRange.value) return;
 
   /*
+   * Refuse a cut that is the whole recording.
+   *
+   * "Save Trimmed Clip" with the handles untouched replaced the file with
+   * itself: a full re-encode, over the only copy, for no change in content. A
+   * walkthrough user did exactly that and watched a 104 KB recording become
+   * 308 KB, with no question asked, because the confirmation below only fires
+   * when a mark is at risk.
+   *
+   * Refused rather than confirmed. There is no version of this the person
+   * wanted, so asking them to approve it would be asking them to approve
+   * nothing happening, slowly and destructively.
+   */
+  const whole = duration.value;
+  if (whole > 0 && range.value[0] <= FRAME_SLOP && range.value[1] >= whole - FRAME_SLOP) {
+    toastStore.info(
+      'Drag a handle, or take the suggestion, to choose the part worth keeping.',
+      'That is the whole clip',
+    );
+    return;
+  }
+
+  /*
    * A trim renumbers the timeline the GoodBits are written against.
    *
-   * Keeping 0 to 10 seconds of a thirty second recording leaves a GoodBit
-   * marked at 20 to 25 pointing outside the file, and one at 8 to 14 half in
-   * it. Nothing corrects them: `TrimAndSwapClipAction` does not know the table
-   * exists, so the rows survive the cut unchanged and are then wrong.
-   *
-   * This is a warning and not a fix, and the fix belongs where the cut happens.
-   * What it buys is that somebody finds out before pressing rather than after,
-   * which for the one irreversible operation in this app is worth a click.
+   * The cut itself now carries them: marks inside it shift, marks across its
+   * edge are clamped, and marks outside it are removed, in
+   * `TrimAndSwapClipAction`. So this is no longer a warning about rows going
+   * wrong, it is a warning about rows going away, which is the one part a
+   * person cannot undo and cannot see coming.
    */
   const orphaned = goodBitsLostToTrim(goodBits.value, {
     startSec: range.value[0],
@@ -466,8 +497,8 @@ async function handleSave(): Promise<void> {
   });
 
   if (orphaned.length > 0) {
-    toastStore.confirm(
-      `${orphaned.map(goodBitLabel).join(', ')} ${orphaned.length === 1 ? 'is' : 'are'} outside this cut, and a trim replaces the recording. ${orphaned.length === 1 ? 'That mark' : 'Those marks'} will point at the wrong part of the file afterwards.`,
+    confirmAction(
+      `${orphaned.map(goodBitLabel).join(', ')} ${orphaned.length === 1 ? 'is' : 'are'} outside this cut, and a trim replaces the recording. ${orphaned.length === 1 ? 'That mark will be removed' : 'Those marks will be removed'} with the footage ${orphaned.length === 1 ? 'it names' : 'they name'}.`,
       () => void runTrim(),
       'Trim anyway?',
     );

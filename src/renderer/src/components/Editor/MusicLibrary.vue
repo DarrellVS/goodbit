@@ -8,6 +8,10 @@ import { useToastStore } from '../../stores/toast';
 import { deleteAudioTrack, importAudioTracks, pickAudioFiles, pathForFile } from '../../services/audio';
 import type { AudioTrack } from '../../types/audio';
 import AppLoading from '../App/AppLoading.vue';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 interface Props {
   tracks: AudioTrack[];
@@ -114,7 +118,7 @@ function togglePreview(track: AudioTrack): void {
 }
 
 function remove(track: AudioTrack): void {
-  toastStore.confirm(
+  confirmAction(
     `"${track.displayName}" moves to the Recycle Bin.`,
     async () => {
       try {

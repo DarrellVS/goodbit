@@ -4,6 +4,10 @@ import { useAppSettings } from '../../composables/useAppSettings';
 import { useSettingsSearch } from '../../composables/useSettingsSearch';
 import { useToastStore } from '../../stores/toast';
 import { listJobs } from '../../services/clips';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 /**
  * Where your clips are, which is also where OBS records into.
@@ -58,7 +62,7 @@ async function moveClipsFolder(): Promise<void> {
    */
   if (picked.obsRunning) {
     const closed = await new Promise<boolean>((resolve) => {
-      toast.confirm(
+      confirmAction(
         'OBS has to be closed while your clips move, or a replay saved mid-move lands in the old folder. GoodBit can ask it to close now.',
         () => resolve(true),
         'Close OBS first?',

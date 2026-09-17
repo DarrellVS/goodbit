@@ -2,6 +2,10 @@ import { useToastStore } from '../stores/toast';
 import { useTagsStore } from '../stores/tags';
 import { useClipsStore } from '../stores/clips';
 import { deleteTag } from '../services/clips';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 export function useTagManagement() {
   const toastStore = useToastStore();
@@ -9,7 +13,7 @@ export function useTagManagement() {
   const clipsStore = useClipsStore();
 
   async function removeTag(tagName: string): Promise<void> {
-    toastStore.confirm(
+    confirmAction(
       `This will remove "${tagName}" from all clips.`,
       async () => {
         try {

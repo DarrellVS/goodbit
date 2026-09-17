@@ -5,6 +5,10 @@ import { useToastStore } from '../../stores/toast';
 import { useFormat } from '../../composables/useFormat';
 import { formatDate } from '../../helpers/dateFormat';
 import AppLoading from '../App/AppLoading.vue';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 const toastStore = useToastStore();
 const { formatBytes } = useFormat();
@@ -28,7 +32,7 @@ async function refresh(): Promise<void> {
 function restore(backup: BackupFileWire): void {
   if (working.value || restoring.value) return;
 
-  toastStore.confirm(
+  confirmAction(
     `Replace the current names, tags, notes and collections with the copy from ${formatDate(
       new Date(backup.takenAt),
     )}, then restart. Your clips are not touched, and what is there now is copied first.`,

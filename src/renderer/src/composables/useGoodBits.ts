@@ -11,6 +11,10 @@ import {
 import { cancelJob, formatEta, pollJob } from '../services/jobs';
 import { durationLabel, goodBitLabel, overlapping, rangeLabel } from '../utils/goodBits';
 import type { GoodBit, NewGoodBit } from '../types/goodbit';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 /**
  * One clip's GoodBits, and everything that can be done to them.
@@ -210,7 +214,7 @@ export function useGoodBits(clipId: Ref<number>) {
    * delete where it does not.
    */
   function remove(goodBit: GoodBit): void {
-    toastStore.confirm(
+    confirmAction(
       `Forget ${goodBitLabel(goodBit)}? The recording is not touched, only the mark on it.`,
       () => {
         void (async () => {

@@ -4,6 +4,10 @@ import { Icon } from '@iconify/vue';
 import ObsSetupDialog from '../Settings/ObsSetupDialog.vue';
 import { getObsStatus, type ObsStatus } from '../../services/obs';
 import { useToastStore } from '../../stores/toast';
+import { useConfirm } from '../../composables/useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 /**
  * The library saying why it is empty, where the library is.
@@ -82,7 +86,7 @@ onMounted(async () => {
 });
 
 function dismiss(): void {
-  toast.confirm(
+  confirmAction(
     'Settings, Recording has the setup waiting whenever you want it. This comes back next time GoodBit starts.',
     () => hide(),
     'Hide this for now?',

@@ -1,5 +1,9 @@
 import { useConfiguration, type PublicConfig } from './useConfiguration';
 import { useToastStore } from '../stores/toast';
+import { useConfirm } from './useConfirm';
+
+// Confirmations are a dialog, never a toast.
+const { confirm: confirmAction } = useConfirm();
 
 // Typed so that adding a setting without a default here is a compile error.
 const DEFAULT_SETTINGS: PublicConfig = {
@@ -33,7 +37,7 @@ export function useSettingsManagement() {
   function resetToDefaults(): void {
     // Not `confirm()`: a native dialog blocks the whole renderer, and every
     // other destructive action in the app asks the same way this does.
-    toastStore.confirm(
+    confirmAction(
       'Every preference goes back to how it shipped. Your clips are not touched.',
       () => {
         // Copy, or later edits would mutate the shared constant.
