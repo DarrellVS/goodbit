@@ -2,7 +2,6 @@
 import { useRoute } from 'vue-router';
 import SidebarGames from './SidebarGames.vue';
 import SidebarRow from './SidebarRow.vue';
-import SidebarSectionHeader from './SidebarSectionHeader.vue';
 
 interface Props {
   activeGame?: string;
@@ -81,8 +80,16 @@ function isActive(to: string): boolean {
       of thing as Starred, and this column is navigation.
     -->
     <nav class="flex-1 min-h-0 overflow-y-auto px-2 space-y-6">
+      <!--
+        No heading over the first group.
+
+        `MAIN MENU` labelled the only thing it could have been: the three rows
+        directly under the title bar, at the top of the navigation column, in
+        an app with one navigation column. `Games` below it earns its heading
+        because the list under it is a different kind of thing and can be long
+        enough to need finding.
+      -->
       <div class="space-y-0.5">
-        <SidebarSectionHeader title="Main menu" />
         <SidebarRow
           v-for="item in MAIN"
           :key="item.to"

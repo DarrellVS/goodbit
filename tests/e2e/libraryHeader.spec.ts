@@ -79,6 +79,9 @@ test.describe('the library header', () => {
       );
       return {
         select: labelled('Select'),
+        filter: [...document.querySelectorAll('button')]
+          .find((b) => (b.textContent ?? '').trim().startsWith('Filter'))
+          ?.getBoundingClientRect() ?? null,
         combos: combos.map((r) => ({ top: r.top, height: r.height, left: r.left })),
       };
     });
@@ -86,18 +89,24 @@ test.describe('the library header', () => {
     console.log(`select: ${JSON.stringify(boxes.select)}`);
     console.log(`dropdowns: ${JSON.stringify(boxes.combos)}`);
 
-    // Two dropdowns in the row: the tag filter and the sort.
-    expect(boxes.combos.length).toBeGreaterThanOrEqual(2);
+    /*
+     * One dropdown now, not two.
+     *
+     * The tag filter moved into the Filter popover beside the game and the
+     * state, so the row is Filter, the sort, Select and the count. What this
+     * test is about is unchanged and is the more useful half: every control in
+     * the row shares a height and sits on one line.
+     */
+    expect(boxes.combos.length).toBeGreaterThanOrEqual(1);
+
+    const measured = [boxes.select!, boxes.filter!, ...boxes.combos];
 
     // Same height, which is the whole reason `COMBO_BOX_HEIGHT` is exported.
-    const heights = new Set([
-      Math.round(boxes.select!.height),
-      ...boxes.combos.map((c) => Math.round(c.height)),
-    ]);
+    const heights = new Set(measured.map((r) => Math.round(r.height)));
     expect([...heights]).toHaveLength(1);
 
     // And on one line: every control's top within a pixel of the others.
-    const tops = [boxes.select!.top, ...boxes.combos.map((c) => c.top)].map(Math.round);
+    const tops = measured.map((r) => Math.round(r.top));
     expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
 
     await ctx.page.screenshot({ path: join(SHOTS, 'filter-row.png') });

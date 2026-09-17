@@ -15,7 +15,6 @@ import { useGamesStore } from '@renderer/stores/games';
 import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
-import { useClipFilters } from '@renderer/composables/library/useClipFilters';
 import { useBatchOperations } from '@renderer/composables/library/useBatchOperations';
 import { useKeyboardShortcuts } from '@renderer/composables/ui/useKeyboardShortcuts';
 import { useClipListKeyboardShortcuts } from '@renderer/composables/library/useClipListKeyboardShortcuts';
@@ -56,7 +55,6 @@ const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
 const config = useConfiguration();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
-const { activeFilter } = useClipFilters();
 
 const isOpen = computed({
   get: () => openCollectionId.value !== null,
@@ -262,7 +260,6 @@ watch(
             </div>
 
             <ClipFilters
-              v-model:active-filter="activeFilter"
               flush
               :total-count="total"
               :is-selection-mode="isSelectionMode"

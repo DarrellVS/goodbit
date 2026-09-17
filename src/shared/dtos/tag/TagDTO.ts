@@ -8,12 +8,26 @@ export class TagDTO extends BaseDTO<TagDTO, any> {
   name!: string;
 
   /**
+   * How many visible clips carry this tag.
+   *
+   * A filter has to say what it would do. The library's filter panel lists
+   * every tag and a tag with no clips behind it is a row that can only empty
+   * the screen, which is exactly the case somebody needs warning about.
+   *
+   * Counted the way the library counts, so hidden games are left out and the
+   * number matches the list the filter produces. `0` when the caller did not
+   * ask for counts, rather than `undefined`, so a template never has to.
+   */
+  clipCount!: number;
+
+  /**
    * Create a TagDTO from a database entity
    */
-  static fromEntity(entity: any): TagDTO {
+  static fromEntity(entity: any, clipCount = 0): TagDTO {
     const dto = new TagDTO();
     dto.id = entity.id;
     dto.name = entity.name;
+    dto.clipCount = clipCount;
     return dto;
   }
 

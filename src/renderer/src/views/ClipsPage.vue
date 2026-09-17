@@ -2,7 +2,6 @@
 import { onMounted, computed } from 'vue';
 import { useClipsStore } from '@renderer/stores/clips';
 import { useGamesStore } from '@renderer/stores/games';
-import { useClipFilters } from '@renderer/composables/library/useClipFilters';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
 import { preserveScrollPosition } from '@renderer/utils/scroll';
@@ -25,7 +24,6 @@ import BatchCollectionDialog from '@renderer/components/Library/BatchCollectionD
 const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
 const config = useConfiguration();
-const { activeFilter } = useClipFilters();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
 const { rescan } = useLibraryRescan();
 
@@ -46,7 +44,8 @@ const narrowed = computed(
     Boolean(clipsStore.searchText) ||
     clipsStore.selectedTags.length > 0 ||
     Boolean(clipsStore.selectedGame) ||
-    activeFilter.value !== 'videos',
+    clipsStore.starredFilter ||
+    clipsStore.publishedFilter !== null,
 );
 
 const emptyState = computed(() => {
@@ -77,7 +76,7 @@ const emptyState = computed(() => {
     };
   }
 
-  if (activeFilter.value === 'starred') {
+  if (clipsStore.starredFilter) {
     return {
       icon: 'material-symbols:star-outline',
       title: 'Nothing starred yet',
@@ -86,11 +85,11 @@ const emptyState = computed(() => {
     };
   }
 
-  if (activeFilter.value === 'published' || activeFilter.value === 'not-published') {
+  if (clipsStore.publishedFilter !== null) {
     return {
       icon: 'material-symbols:cloud-off',
       title:
-        activeFilter.value === 'published' ? 'Nothing published yet' : 'Everything here is published',
+        clipsStore.publishedFilter ? 'Nothing published yet' : 'Everything here is published',
       description:
         'Publishing puts a copy behind a public link, and needs a publisher set up under Settings, Connections.',
       actionLabel: 'Show every clip',
@@ -127,7 +126,8 @@ function handleEmptyAction(): void {
     return;
   }
   if (narrowed.value) {
-    activeFilter.value = 'videos';
+    clipsStore.setStarredFilter(false);
+    clipsStore.setPublishedFilter(null);
     clipsStore.setGame('');
     clipsStore.setTags([]);
     return;
@@ -225,7 +225,6 @@ onMounted(() => {
 <template>
   <div>
     <ClipFilters
-      v-model:active-filter="activeFilter"
       :total-count="total"
       :is-selection-mode="isSelectionMode"
       @enter-selection="enterSelectionMode"

@@ -109,9 +109,11 @@ export function useClipTags(clipRef: Ref<Clip>, onUpdate: (clip: Clip) => void) 
     const updated = await updateClipTags(clip.id, Array.from(currentTags));
     onUpdate(updated);
 
-    // Add to tags store if not exists
+    // Add to tags store if not exists. The id and the count are both
+    // placeholders: the next fetch replaces the row with the real one, and a
+    // tag that has just been put on this clip has exactly one clip.
     if (!tagsStore.tagNames.includes(name)) {
-      tagsStore.items.push({ id: Date.now(), name }); // Temporary ID, will be updated on next fetch
+      tagsStore.items.push({ id: Date.now(), name, clipCount: 1 });
     }
 
     newTagName.value = '';
