@@ -121,9 +121,9 @@ const sourceIcon: Record<string, string> = {
   <div class="bg-card rounded-2xl p-5 border border-border">
     <div class="flex items-center gap-3 mb-3">
       <div
-        class="w-8 h-8 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0"
+        class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0"
       >
-        <Icon icon="material-symbols:bookmarks-rounded" class="text-lg text-card" />
+        <Icon icon="material-symbols:bookmarks-rounded" class="text-lg text-accent-fg" />
       </div>
       <h2 class="font-semibold text-foreground shrink-0">GoodBits</h2>
       <span v-if="goodBits.length > 0" class="text-sm text-muted-500 shrink-0">

@@ -59,8 +59,8 @@ function applyFadePreset(seconds: number): void {
 
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
     <div class="flex items-start gap-2">
-      <div class="w-9 h-9 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0">
-        <Icon icon="material-symbols:music-note" class="text-card" />
+      <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
+        <Icon icon="material-symbols:music-note" class="text-accent-fg" />
       </div>
       <div class="min-w-0">
         <div class="text-sm font-semibold text-foreground line-clamp-2 leading-tight">{{ item.name }}</div>

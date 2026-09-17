@@ -191,7 +191,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', item.id)"
   >
-    <div class="relative w-full h-full bg-linear-to-br from-accent/16 to-warning/8 border border-accent">
+    <div class="relative w-full h-full bg-accent/16 border border-accent">
       <canvas ref="canvas" class="absolute inset-0 w-full h-full" />
 
       <!-- Fade ramps, drawn as the wedge that the export actually applies. -->
@@ -219,7 +219,7 @@ onBeforeUnmount(stopDrag);
           class="opacity-0 group-hover:opacity-100 transition-opacity bg-danger hover:bg-danger rounded-sm p-0.5 shrink-0"
           @click.stop="emit('remove', item.id)"
         >
-          <Icon icon="material-symbols:close" class="text-card text-xs" />
+          <Icon icon="material-symbols:close" class="text-accent-fg text-xs" />
         </button>
       </div>
 

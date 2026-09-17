@@ -798,8 +798,8 @@ watch(
         <div class="w-px h-6 bg-border"></div>
 
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center">
-            <Icon icon="material-symbols:movie-edit" class="text-card" />
+          <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+            <Icon icon="material-symbols:movie-edit" class="text-accent-fg" />
           </div>
           <div>
             <h1 class="text-lg font-bold">Editor</h1>
@@ -977,7 +977,7 @@ watch(
                 class="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
                 <div class="bg-scrim backdrop-blur-sm rounded-full p-3">
-                  <BaseSpinner class="text-2xl text-card" />
+                  <BaseSpinner class="text-2xl text-accent-fg" />
                 </div>
               </div>
             </div>

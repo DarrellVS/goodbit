@@ -7,11 +7,11 @@
   <header class="relative overflow-hidden border-b border-border shrink-0">
     <div class="relative max-w-7xl mx-auto px-6 py-4">
       <div class="flex items-center gap-4">
-        <div class="p-2.5 rounded-xl bg-linear-to-br from-accent to-accent-hover shadow-lg shrink-0">
-          <Icon icon="material-symbols:content-cut" class="text-card text-xl" />
+        <div class="p-2.5 rounded-md bg-accent shrink-0">
+          <Icon icon="material-symbols:content-cut" class="text-accent-fg text-xl" />
         </div>
         <div class="min-w-0">
-          <h1 class="text-2xl font-bold bg-linear-to-b from-accent to-accent-hover bg-clip-text text-transparent">
+          <h1 class="text-lg font-display font-medium text-foreground">
             Trim Your Clip
           </h1>
           <p class="text-xs text-muted-400">Select the perfect moment</p>

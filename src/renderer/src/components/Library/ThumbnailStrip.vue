@@ -28,8 +28,8 @@ const emit = defineEmits<Emits>();
       <div 
         class="relative p-[3px] rounded-xl transition-all duration-300"
         :class="selectedIndex === index 
-          ? 'bg-linear-to-br from-accent to-accent-hover' 
-          : 'bg-transparent hover:bg-linear-to-br hover:from-accent/30 hover:to-accent-hover/30'"
+          ? 'bg-accent' 
+          : 'bg-transparent hover:bg-accent/30'"
       >
         <div class="relative rounded-[10px] overflow-hidden aspect-21/9 bg-card shadow-md transition-all duration-300 group">
           <img 

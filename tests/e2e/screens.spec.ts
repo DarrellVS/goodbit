@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { launchApp, seedClips, type TestApp } from './app';
+import {
+  assertParserWorks,
+  collectTextRuns,
+  contrast,
+  excused,
+  floorFor,
+  FREEZE_CSS,
+} from './contrast';
 
 /**
  * Every screen, in both palettes.
@@ -8,6 +16,9 @@ import { launchApp, seedClips, type TestApp } from './app';
  * ground, while typecheck, build and the CSS itself were all correct. Nothing
  * that existed could see the result. These walk the app and assert that what is
  * drawn is actually legible, which is the only check that would have caught it.
+ *
+ * The measuring is in `./contrast.ts`, along with the story of why it is worth
+ * a file of its own.
  */
 
 const ROUTES = [
@@ -36,20 +47,6 @@ const ROUTES = [
   { hash: '#/editor', name: 'editor' },
 ];
 
-/** Relative luminance, for the contrast ratio below. */
-function luminance([r, g, b]: number[]): number {
-  const channel = (v: number): number => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-}
-
-function contrast(a: number[], b: number[]): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-}
-
 test.describe('every screen, in both palettes', () => {
   let ctx: TestApp;
 
@@ -77,6 +74,84 @@ test.describe('every screen, in both palettes', () => {
       );
       expect(applied, `the ${theme} theme was not actually applied`).toBe(theme === 'dark');
 
+      // Nothing may be caught mid-transition while its colour is being read.
+      await ctx.page.addStyleTag({ content: FREEZE_CSS });
+
+      const problems: string[] = [];
+      let measured = 0;
+      let skipped = 0;
+
+      for (const route of ROUTES) {
+        await ctx.page.evaluate((h) => {
+          window.location.hash = h;
+        }, route.hash);
+        await ctx.page.waitForTimeout(700);
+        await ctx.page.addStyleTag({ content: FREEZE_CSS });
+
+        await ctx.page.screenshot({
+          path: `test-results/screens/${theme}-${route.name}.png`,
+          fullPage: false,
+        });
+
+        const runs = await ctx.page.evaluate(collectTextRuns);
+
+        // Before believing a single number below: prove the thing that
+        // produced them can still read a colour.
+        assertParserWorks(runs);
+
+        for (const run of runs) {
+          if (excused(run)) {
+            skipped++;
+            continue;
+          }
+          measured++;
+
+          const ratio = contrast(run.fg, run.bg);
+          const floor = floorFor(run);
+          if (ratio < floor) {
+            problems.push(
+              `${route.name}: "${run.text}" ${ratio.toFixed(2)}:1, wanted ${floor}:1 ` +
+                `[${run.large ? 'large' : 'body'}] ` +
+                `fg rgb(${run.fg.map(Math.round)}) on bg rgb(${run.bg.map(Math.round)}) ` +
+                `at ${run.where}`,
+            );
+          }
+        }
+      }
+
+      // A walk that found almost nothing is a walk that went wrong, and it
+      // would report an empty problem list either way.
+      expect(measured, `only ${measured} text runs were measured across every screen`)
+        .toBeGreaterThan(200);
+      console.log(`${theme}: measured ${measured} text runs, excused ${skipped}`);
+
+      expect(
+        problems,
+        `Text below the contrast floor in ${theme}:\n${problems.join('\n')}`,
+      ).toEqual([]);
+    });
+  }
+
+  /**
+   * Nothing moves when you point at it.
+   *
+   * A card that grows on hover, a row whose label shifts by a pixel when it
+   * becomes active, a button that gains a border only when focused: each is
+   * invisible in a screenshot and obvious the moment a pointer crosses the
+   * screen. The rule is that a box may change colour, never size.
+   *
+   * Deliberate expansions are exempt by name. A disclosure is supposed to
+   * grow; that is the whole of what it does.
+   */
+  const ALLOWED_TO_GROW = /(^|\s)(group\/disclosure|allow-grow)(\s|$)/;
+
+  for (const theme of ['dark'] as const) {
+    test(`${theme}: nothing changes size on hover or focus`, async () => {
+      await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
+      await ctx.page.reload();
+      await ctx.page.waitForTimeout(1200);
+      await ctx.page.addStyleTag({ content: FREEZE_CSS });
+
       const problems: string[] = [];
 
       for (const route of ROUTES) {
@@ -84,95 +159,51 @@ test.describe('every screen, in both palettes', () => {
           window.location.hash = h;
         }, route.hash);
         await ctx.page.waitForTimeout(700);
+        await ctx.page.addStyleTag({ content: FREEZE_CSS });
 
-        await ctx.page.screenshot({
-          path: `test-results/screens/${theme}-${route.name}.png`,
-          fullPage: false,
-        });
+        const targets = await ctx.page
+          .locator('button:visible, a[href]:visible, [role="button"]:visible')
+          .all();
 
-        // Walk the visible text and compare each run against whatever is
-        // actually painted behind it.
-        const bad = await ctx.page.evaluate(() => {
-          const parse = (value: string): number[] | null => {
-            const m = /rgba?(([^)]+))/.exec(value);
-            if (!m) return null;
-            const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
-            const alpha = parts.length > 3 ? parts[3] : 1;
-            if (alpha === 0) return null;
-            return [parts[0], parts[1], parts[2], alpha];
-          };
+        for (const target of targets.slice(0, 40)) {
+          const before = await target.boundingBox();
+          if (!before || before.width < 4 || before.height < 4) continue;
 
-          /**
-           * The painted background, with translucent layers composited.
-           *
-           * A tint like  computes to rgb(249 115 22 / 0.1);
-           * reading that as opaque orange claims every label on it is
-           * unreadable, when what is actually painted is a pale wash.
-           */
-          const backgroundOf = (el: Element): number[] => {
-            const layers: number[][] = [];
-            let node: Element | null = el;
-            while (node) {
-              const parsed = parse(getComputedStyle(node).backgroundColor);
-              if (parsed) {
-                layers.push(parsed);
-                if (parsed[3] >= 1) break;
-              }
-              node = node.parentElement;
+          const className = (await target.getAttribute('class')) ?? '';
+          if (ALLOWED_TO_GROW.test(className)) continue;
+
+          // Hovering the element itself, then whatever contains it, because a
+          // card reveals its actions from the card's own `group` rather than
+          // from the button that appears.
+          await target.hover({ force: true, timeout: 2000 }).catch(() => undefined);
+          await ctx.page.waitForTimeout(120);
+          const hovered = await target.boundingBox();
+
+          await target.focus({ timeout: 2000 }).catch(() => undefined);
+          await ctx.page.waitForTimeout(120);
+          const focused = await target.boundingBox();
+
+          for (const [state, after] of [
+            ['hover', hovered],
+            ['focus', focused],
+          ] as const) {
+            if (!after) continue;
+            const dw = Math.abs(after.width - before.width);
+            const dh = Math.abs(after.height - before.height);
+            if (dw > 1 || dh > 1) {
+              const text = ((await target.textContent()) ?? '').trim().slice(0, 30);
+              problems.push(
+                `${route.name}: "${text}" grows on ${state} by ${dw.toFixed(1)}x${dh.toFixed(1)}px ` +
+                  `(${before.width.toFixed(1)}x${before.height.toFixed(1)} to ` +
+                  `${after.width.toFixed(1)}x${after.height.toFixed(1)}) ` +
+                  `class="${className.slice(0, 70)}"`,
+              );
             }
-            let [r, g, b] = [255, 255, 255];
-            for (let i = layers.length - 1; i >= 0; i--) {
-              const [lr, lg, lb, la] = layers[i];
-              r = lr * la + r * (1 - la);
-              g = lg * la + g * (1 - la);
-              b = lb * la + b * (1 - la);
-            }
-            return [r, g, b];
-          };
-
-          const results: Array<{ text: string; fg: number[]; bg: number[] }> = [];
-          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-
-          let node: Node | null;
-          while ((node = walker.nextNode())) {
-            const text = node.textContent?.trim() ?? '';
-            if (text.length < 3) continue;
-
-            const el = node.parentElement;
-            if (!el) continue;
-
-            const style = getComputedStyle(el);
-            if (style.visibility === 'hidden' || style.display === 'none') continue;
-            if (parseFloat(style.opacity) < 0.5) continue;
-
-            const box = el.getBoundingClientRect();
-            if (box.width < 4 || box.height < 4) continue;
-            if (box.bottom < 0 || box.top > window.innerHeight) continue;
-
-            const fgRaw = parse(style.color);
-            if (!fgRaw) continue;
-            const fg = [fgRaw[0], fgRaw[1], fgRaw[2]];
-
-            results.push({ text: text.slice(0, 40), fg, bg: backgroundOf(el) });
-          }
-          return results;
-        });
-
-        for (const item of bad) {
-          const ratio = contrast(item.fg, item.bg);
-          // 2.5:1 is far below the accessibility bar on purpose, this is
-          // looking for text that is effectively invisible, not for text that
-          // is merely low contrast.
-          if (ratio < 2.5) {
-            problems.push(
-              `${route.name}: "${item.text}" ${ratio.toFixed(2)}:1 ` +
-                `(fg rgb(${item.fg}) on bg rgb(${item.bg}))`,
-            );
           }
         }
       }
 
-      expect(problems, `Unreadable text in ${theme}:\n${problems.join('\n')}`).toEqual([]);
+      expect(problems, `Layout shifts on state change:\n${problems.join('\n')}`).toEqual([]);
     });
   }
 });

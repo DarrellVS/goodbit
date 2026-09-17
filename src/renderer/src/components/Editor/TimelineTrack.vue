@@ -140,7 +140,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', clip.id)"
   >
-    <div class="relative w-full h-full bg-linear-to-br from-card to-accent/4 border border-border backdrop-blur-sm overflow-hidden">
+    <div class="relative w-full h-full bg-card border border-border backdrop-blur-sm overflow-hidden">
       <!--
         The frame strip covers the whole source clip, so the block shows only
         the slice between the trim handles, scroll it by trimStart and stretch
@@ -171,7 +171,7 @@ onBeforeUnmount(stopDrag);
           class="opacity-0 group-hover:opacity-100 transition-opacity bg-danger hover:bg-danger rounded-sm p-0.5"
           @click.stop="emit('remove', clip.id)"
         >
-          <Icon icon="material-symbols:close" class="text-card text-xs" />
+          <Icon icon="material-symbols:close" class="text-accent-fg text-xs" />
         </button>
       </div>
       

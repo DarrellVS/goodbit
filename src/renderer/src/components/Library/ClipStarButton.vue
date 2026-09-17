@@ -60,7 +60,7 @@ async function handleToggleStar(): Promise<void> {
     <Icon
       icon="material-symbols:star"
       class="text-lg transform-transition"
-      :class="clip.starred ? 'text-accent-ink scale-110' : 'text-card'"
+      :class="clip.starred ? 'text-accent-ink scale-110' : 'text-on-video'"
     />
   </button>
 </template>

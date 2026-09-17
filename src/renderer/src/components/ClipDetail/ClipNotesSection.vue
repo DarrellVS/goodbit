@@ -168,7 +168,7 @@ function discard(): void {
 </script>
 
 <template>
-  <div class="bg-linear-to-br from-card to-accent/4 rounded-2xl p-5 border border-border">
+  <div class="bg-card rounded-2xl p-5 border border-border">
     <!--
       One header, holding everything. The title, the formatting buttons and the
       preview toggle were on two rows with a border between them, which read as
@@ -176,9 +176,9 @@ function discard(): void {
     -->
     <div class="flex items-center gap-3 mb-3">
       <div
-        class="w-8 h-8 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0"
+        class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0"
       >
-        <Icon icon="material-symbols:note-rounded" class="text-lg text-card" />
+        <Icon icon="material-symbols:note-rounded" class="text-lg text-accent-fg" />
       </div>
       <h2 class="font-semibold text-foreground shrink-0">Notes &amp; Annotations</h2>
 

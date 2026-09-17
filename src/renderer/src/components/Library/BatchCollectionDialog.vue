@@ -128,8 +128,8 @@ onMounted(async () => {
                 @click="handleSelectCollection(collection.id)"
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-linear-to-br from-accent to-accent-hover flex items-center justify-center">
-                    <Icon icon="material-symbols:folder" class="text-card text-xl" />
+                  <div class="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                    <Icon icon="material-symbols:folder" class="text-accent-fg text-xl" />
                   </div>
                   <div class="text-left">
                     <div class="font-medium text-foreground">{{ collection.name }}</div>

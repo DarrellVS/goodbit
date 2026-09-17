@@ -150,7 +150,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
             <button
               v-for="tag in suggestedTags"
               :key="tag"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-linear-to-r from-accent/10 to-warning/10 border border-accent/30 hover:border-accent hover:bg-accent/20 transition-all text-xs font-medium group scale-on-hover"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-accent/10 border border-accent/30 hover:border-accent hover:bg-accent/20 transition-all text-xs font-medium group scale-on-hover"
               :title="`Category: ${getCategoryForTag(tag)}`"
               @click="applySuggestedTag(tag)"
             >

@@ -265,8 +265,8 @@ function toggleTag(name: string): void {
             <div class="absolute inset-0 bg-linear-to-t from-video-bed/60 via-transparent to-video-bed/20" />
 
             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/40 backdrop-blur-sm">
-              <div class="bg-linear-to-r from-accent to-accent-hover rounded-full p-3 shadow-lg shadow-accent/30">
-                <Icon icon="material-symbols:add" class="text-2xl text-card" />
+              <div class="bg-accent rounded-full p-3">
+                <Icon icon="material-symbols:add" class="text-2xl text-accent-fg" />
               </div>
             </div>
           </div>

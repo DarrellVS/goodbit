@@ -238,7 +238,7 @@ async function saveNew(): Promise<void> {
       </select>
 
       <button
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent-hover text-card font-medium shadow-lg shadow-accent/20 transition-all"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-accent-fg font-medium shadow-lg shadow-accent/20 transition-all"
         @click="startAddNew"
       >
         <Icon icon="material-symbols:add" class="text-lg" />

@@ -25,7 +25,7 @@ defineProps<Props>();
       :class="{ 'pointer-events-none': isUploading }"
     >
       <div
-        class="bg-linear-to-br from-accent/20 to-accent-hover/20 border-4 border-dashed rounded-3xl px-16 py-20 text-center transition-all"
+        class="bg-accent/15 border-4 border-dashed rounded-3xl px-16 py-20 text-center transition-all"
         :class="{
           'border-accent scale-100': isDragging && !isUploading,
           'border-accent/50 scale-95': isUploading,
@@ -37,7 +37,7 @@ defineProps<Props>();
             icon="material-symbols:upload-file"
             class="text-9xl text-accent-ink mb-6 mx-auto animate-bounce"
           />
-          <h2 class="text-4xl font-bold text-card mb-3">
+          <h2 class="text-4xl font-bold text-on-video mb-3">
             Drop Files Here
           </h2>
           <p class="text-xl text-muted-300">
@@ -58,7 +58,7 @@ defineProps<Props>();
             it. One shape saying one thing beats two animations competing.
           -->
           <BaseSpinner class="text-8xl text-accent-ink mb-6 mx-auto" label="Importing files" />
-          <h2 class="text-4xl font-bold text-card mb-3">
+          <h2 class="text-4xl font-bold text-on-video mb-3">
             Importing Files...
           </h2>
           <p class="text-xl text-muted-300">
@@ -67,7 +67,7 @@ defineProps<Props>();
           <div v-if="uploadProgress !== undefined" class="mt-6">
             <div class="w-96 h-3 bg-muted-200 rounded-full overflow-hidden mx-auto">
               <div
-                class="h-full bg-linear-to-r from-accent to-accent-hover transition-all duration-300"
+                class="h-full bg-accent transition-all duration-300"
                 :style="{ width: `${uploadProgress}%` }"
               />
             </div>

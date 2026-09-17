@@ -201,8 +201,8 @@ onBeforeUnmount(stopPreview);
           @click="emit('add-to-timeline', track)"
         >
           <div class="flex items-start gap-2">
-            <div class="mt-0.5 w-7 h-7 rounded-md bg-linear-to-br from-accent to-accent-hover flex items-center justify-center shrink-0">
-              <Icon icon="material-symbols:add" class="text-card text-base" />
+            <div class="mt-0.5 w-7 h-7 rounded-md bg-accent flex items-center justify-center shrink-0">
+              <Icon icon="material-symbols:add" class="text-accent-fg text-base" />
             </div>
             <div class="min-w-0 flex-1">
               <div class="text-sm font-medium text-foreground line-clamp-2 leading-snug">

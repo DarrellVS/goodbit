@@ -42,7 +42,7 @@ function getBarHeight(count: number): string {
           :style="{ height: getBarHeight(day.count) }"
           :title="`${new Date(day.date).toLocaleDateString()}: ${day.count} clips`"
         >
-          <div v-if="day.count > 0" class="text-xs font-medium text-card text-center mt-2">
+          <div v-if="day.count > 0" class="text-xs font-medium text-accent-fg text-center mt-2">
             {{ day.count }}
           </div>
         </div>

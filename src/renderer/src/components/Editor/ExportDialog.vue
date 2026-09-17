@@ -315,7 +315,7 @@ watch(
             </div>
             <div class="h-2 rounded-full bg-accent/16 overflow-hidden">
               <div
-                class="h-full bg-linear-to-r from-accent to-accent-hover transition-[width] duration-300"
+                class="h-full bg-accent transition-[width] duration-300"
                 :style="{ width: `${Math.max(2, progress)}%` }"
               />
             </div>

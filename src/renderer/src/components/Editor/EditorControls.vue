@@ -80,13 +80,13 @@ const emit = defineEmits<Emits>();
       
       <!-- Nothing plays while a render is reading the same files. -->
       <button
-        class="p-2.5 rounded-lg bg-linear-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent-hover transition-all shadow-lg shadow-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="p-2.5 rounded-lg bg-accent hover:bg-accent-hover transition-all shadow-lg shadow-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="props.exporting"
         :title="props.exporting ? 'Playback is paused while the export runs' : playing ? 'Pause' : 'Play'"
         :aria-label="playing ? 'Pause' : 'Play'"
         @click="playing ? emit('pause') : emit('play')"
       >
-        <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-xl text-card" />
+        <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-xl text-accent-fg" />
       </button>
       
       <button
@@ -168,7 +168,7 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-6 bg-muted-300" />
 
       <button
-        class="px-4 py-2 rounded-lg bg-linear-to-r from-accent to-accent-hover hover:from-accent-hover hover:to-accent-hover transition-all font-medium shadow-lg shadow-accent/20 flex items-center gap-2 text-sm text-card disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+        class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover transition-all font-medium shadow-lg shadow-accent/20 flex items-center gap-2 text-sm text-accent-fg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
         :disabled="props.exporting"
         @click="emit('export')"
       >

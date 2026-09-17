@@ -202,7 +202,7 @@
         who wants the number.
       -->
       <button
-        class="relative overflow-hidden inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-linear-to-r from-accent to-accent-hover text-card shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
+        class="relative overflow-hidden inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium bg-accent text-accent-fg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
         :disabled="!isValid || isSaving"
         title="Cut the recording down to this range. This replaces the file, and cannot be undone."
         @click="$emit('save')"

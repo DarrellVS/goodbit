@@ -76,7 +76,7 @@ watch(() => props.open, (isOpen) => {
             @click.stop
           >
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-linear-to-r from-accent/8 to-warning/8">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border bg-muted-50">
               <h2 class="text-xl font-bold text-foreground">
                 {{ title }}
               </h2>
