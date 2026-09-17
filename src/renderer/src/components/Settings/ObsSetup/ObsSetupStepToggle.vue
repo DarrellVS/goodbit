@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import BaseToggle from '../../Base/BaseToggle.vue';
-import type { SetupStep } from '../../../composables/useObsSetup';
+import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
+import type { SetupStep } from '@renderer/composables/obs/useObsSetup';
 
 /**
  * One thing the setup would do, and whether to do it.

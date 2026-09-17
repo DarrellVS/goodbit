@@ -1,15 +1,15 @@
 import type { Router } from 'vue-router';
 import { toValue, type MaybeRefOrGetter, type Ref } from 'vue';
-import type { Clip } from '../types/clip';
-import { saveScrollPosition } from '../utils/scroll';
-import { useClipDetail } from '../composables/useClipDetail';
-import { prefetchFrameStrip } from '../utils/mediaUrl';
-import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer } from '../services/clips';
-import { useToastStore } from '../stores/toast';
-import { useConfiguration } from '../composables/useConfiguration';
-import { useGamesStore } from '../stores/games';
-import { useCollectionsStore } from '../stores/collections';
-import { useConfirm } from '../composables/useConfirm';
+import type { Clip } from '@renderer/types/clip';
+import { saveScrollPosition } from '@renderer/utils/scroll';
+import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
+import { prefetchFrameStrip } from '@renderer/utils/mediaUrl';
+import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer } from '@renderer/services/clips';
+import { useToastStore } from '@renderer/stores/toast';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useGamesStore } from '@renderer/stores/games';
+import { useCollectionsStore } from '@renderer/stores/collections';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();

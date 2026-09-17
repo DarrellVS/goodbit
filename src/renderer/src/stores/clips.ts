@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
-import axios from '../axios';
-import { useConfiguration } from '../composables/useConfiguration';
-import type { Clip } from '../types/clip';
+import axios from '@renderer/axios';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import type { Clip } from '@renderer/types/clip';
 
 interface ClipsState {
   items: Clip[];

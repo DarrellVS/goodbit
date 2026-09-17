@@ -1,4 +1,4 @@
-import type { TagPattern } from '../utils/tagSuggestions';
+import type { TagPattern } from '@renderer/utils/tagSuggestions';
 
 // The web app's store, read once so its rules can be lifted into the library
 // database. Nothing is written here any more, see `useTagPatterns`.

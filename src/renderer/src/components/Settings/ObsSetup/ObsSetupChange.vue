@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import type { PlannedChange } from '../../../services/obs';
+import type { PlannedChange } from '@renderer/services/obs';
 
 /**
  * One file the setup would write, in OBS's own vocabulary.

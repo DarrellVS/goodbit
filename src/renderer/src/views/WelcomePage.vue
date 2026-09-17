@@ -2,11 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import BaseToggle from '../components/Base/BaseToggle.vue';
-import AppMark from '../components/App/AppMark.vue';
-import ObsSetupDialog from '../components/Settings/ObsSetupDialog.vue';
-import { useAppSettings } from '../composables/useAppSettings';
-import { useObsSetup } from '../composables/useObsSetup';
+import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
+import Wordmark from '@renderer/components/Shell/Wordmark.vue';
+import ObsSetupDialog from '@renderer/components/Settings/ObsSetupDialog.vue';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
+import { useObsSetup } from '@renderer/composables/obs/useObsSetup';
 
 /**
  * First run, as the steps it actually takes.
@@ -131,7 +131,7 @@ async function finish(): Promise<void> {
   <div class="h-full overflow-auto flex items-center justify-center p-8">
     <div class="w-full max-w-lg space-y-7">
       <div class="text-center space-y-3">
-        <AppMark :size="56" class="mx-auto" />
+        <Wordmark :size="56" class="mx-auto" />
         <h1 class="text-2xl font-bold text-foreground">Welcome to GoodBit</h1>
       </div>
 

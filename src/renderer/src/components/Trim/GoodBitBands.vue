@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { assignLanes, bandPosition, goodBitLabel } from '../../utils/goodBits';
-import type { GoodBit } from '../../types/goodbit';
+import { assignLanes, bandPosition, goodBitLabel } from '@renderer/utils/goodBits';
+import type { GoodBit } from '@renderer/types/goodbit';
 
 /**
  * The GoodBits already marked on this clip, drawn along the frame strip.

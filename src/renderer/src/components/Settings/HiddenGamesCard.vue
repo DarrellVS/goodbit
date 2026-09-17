@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import BaseToggle from '../Base/BaseToggle.vue';
+import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { fetchGames } from '../../services/games';
-import { useGameVisibility } from '../../composables/useGameVisibility';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import type { Game } from '../../types/game';
-import AppLoading from '../App/AppLoading.vue';
+import { fetchGames } from '@renderer/services/games';
+import { useGameVisibility } from '@renderer/composables/library/useGameVisibility';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import type { Game } from '@renderer/types/game';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 const { setHidden } = useGameVisibility();
 /* The cards here carry their own name from `utils/settingsCatalog.ts`. */
@@ -93,7 +93,7 @@ onMounted(load);
       v-if="loading"
       class="flex items-center gap-2 text-sm text-muted-500 p-4"
     >
-      <AppLoading class="text-lg" />
+      <BaseSpinner class="text-lg" />
       Loading games...
     </div>
 

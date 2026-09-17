@@ -9,8 +9,8 @@ import {
   ToastTitle,
   ToastViewport,
 } from 'reka-ui';
-import { useToastStore } from '../../stores/toast';
-import type { Toast } from '../../stores/toast';
+import { useToastStore } from '@renderer/stores/toast';
+import type { Toast } from '@renderer/stores/toast';
 
 const toastStore = useToastStore();
 

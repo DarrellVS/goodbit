@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import type { AudioDevice } from '../../../services/obs';
+import type { AudioDevice } from '@renderer/services/obs';
 
 /**
  * One audio endpoint, and whether to record it.

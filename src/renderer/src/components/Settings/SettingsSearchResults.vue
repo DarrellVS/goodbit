@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import type { SettingEntry } from '../../utils/settingsCatalog';
-import { SETTING_SECTIONS, sectionLabel } from '../../utils/settingsSections';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import type { SettingEntry } from '@renderer/utils/settingsCatalog';
+import { SETTING_SECTIONS, sectionLabel } from '@renderer/utils/settingsSections';
 
 /**
  * What the search found, in place of the section that was on screen.

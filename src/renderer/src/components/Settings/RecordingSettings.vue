@@ -6,12 +6,12 @@ import ObsSetupDialog from './ObsSetupDialog.vue';
 import ClipsFolderCard from './ClipsFolderCard.vue';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
-import { useAppSettings } from '../../composables/useAppSettings';
-import { useObsSetup } from '../../composables/useObsSetup';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import { useToastStore } from '../../stores/toast';
-import AppLoading from '../App/AppLoading.vue';
-import { useConfirm } from '../../composables/useConfirm';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
+import { useObsSetup } from '@renderer/composables/obs/useObsSetup';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { useToastStore } from '@renderer/stores/toast';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -154,7 +154,7 @@ function openGuide(): void {
       :class="['p-4 bg-card rounded-lg border border-border space-y-4', settingRing('OBS setup')]"
     >
       <div class="flex items-start gap-3">
-        <AppLoading v-if="!status" class="text-xl shrink-0 mt-0.5 text-muted-400" />
+        <BaseSpinner v-if="!status" class="text-xl shrink-0 mt-0.5 text-muted-400" />
         <Icon
           v-else
           :icon="status.ready ? 'material-symbols:check-circle' : 'material-symbols:error-circle-rounded'"

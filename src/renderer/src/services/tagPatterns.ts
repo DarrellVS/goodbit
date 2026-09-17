@@ -1,5 +1,5 @@
-import axios from '../axios';
-import type { TagCategory } from '../utils/tagSuggestions';
+import axios from '@renderer/axios';
+import type { TagCategory } from '@renderer/utils/tagSuggestions';
 
 /**
  * Filename-matching rules, now kept by the server.

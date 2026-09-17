@@ -1,7 +1,7 @@
 import { LEAD_IN, TAIL_ROOM } from '@shared/constants/suggestionWindow';
 import { formatTimestamp } from './timestampParser';
-import type { GoodBit, NewGoodBit } from '../types/goodbit';
-import type { SuggestionEvent } from '../services/clips';
+import type { GoodBit, NewGoodBit } from '@renderer/types/goodbit';
+import type { SuggestionEvent } from '@renderer/services/clips';
 
 /**
  * What a GoodBit looks like on screen, and what a suggestion becomes if kept.

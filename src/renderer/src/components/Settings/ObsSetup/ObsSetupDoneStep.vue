@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import AppLoading from '../../App/AppLoading.vue';
-import { readableHotkey } from '../../../utils/obsSetupWizard';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { readableHotkey } from '@renderer/utils/obsSetupWizard';
 
 /**
  * Proof that it works.
@@ -57,7 +57,7 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
     </div>
 
     <div v-else-if="waiting" class="flex items-center gap-2 text-sm text-muted-500">
-      <AppLoading class="text-lg" />
+      <BaseSpinner class="text-lg" />
       <span>Waiting for your first clip…</span>
     </div>
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import BaseToggle from '../Base/BaseToggle.vue';
+import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useToastStore } from '../../stores/toast';
-import AppLoading from '../App/AppLoading.vue';
+import { useToastStore } from '@renderer/stores/toast';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import {
   fitSuggestionModel,
   forgetSuggestionModel,
@@ -11,7 +11,7 @@ import {
   getLabels,
   type FitReport,
   type LabelSummary,
-} from '../../services/clips';
+} from '@renderer/services/clips';
 
 const toastStore = useToastStore();
 
@@ -218,7 +218,7 @@ onMounted(refresh);
         :title="ready ? 'Fit the model to every decision so far' : 'Not enough decisions yet'"
         @click="fitNow"
       >
-        <AppLoading v-if="working" class="text-lg" />
+        <BaseSpinner v-if="working" class="text-lg" />
         <Icon v-else icon="material-symbols:model-training" class="text-lg" />
         {{ summary?.model ? 'Refit now' : 'Fit now' }}
       </button>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import { useLibraryRescan } from '../../composables/useLibraryRescan';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
+import { useLibraryRescan } from '@renderer/composables/library/useLibraryRescan';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 
 /**
  * Reread the clips folder, which used to be the biggest button in the app.

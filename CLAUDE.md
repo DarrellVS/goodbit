@@ -557,9 +557,60 @@ is untouched either way. `shareEncoderArgs` is the share preset both use.
 
 ### Client
 
+#### Where a file goes, and how to tell
+
+There used to be a `components/App/` holding forty two files, which is what a
+folder becomes when its name does not say what belongs in it: the window's
+title bar, a clip card, a batch toolbar, the OBS banner and a carousel slide
+all lived there together. It is gone. **A folder is a claim about what is
+inside it, so every folder here answers one question.**
+
+Components, and the one question each folder answers:
+
+| Folder | What belongs in it |
+|---|---|
+| `Base/` | Primitives with **no knowledge of this app**. No domain types, no stores, no services. Named `Base*` |
+| `Shell/` | The frame that is there on every screen: title bar, sidebar, page header, command palette, update banner |
+| `Library/` | Browsing many clips, and acting on the ones you picked: cards, grid, grouping, filters, batch |
+| `ClipDetail/` | One clip, opened |
+| `Trim/` | The trim and mark screen |
+| `Editor/` | The multi-clip timeline |
+| `Collection/`, `Game/`, `Obs/`, `Publish/`, `Settings/`, `Stats/` | That feature, and only it |
+
+The test for `Base/` is mechanical: **if it imports a store, a service or a
+type from `types/`, it is not a Base component.** A `BaseConfirmDialog` takes a
+title and a description; a dialog that knows what a clip is does not.
+
+**The folder gives the context, so the filename names the thing.** `Library/
+ClipCard.vue`, not `AppClipCard`. The `App` prefix said nothing and its absence
+said nothing either, which is why half the folder had it. `Base*` keeps its
+prefix, because those are referenced from everywhere and the prefix is the
+signal that it is safe to use anywhere.
+
+Composables are grouped the same way, by subject rather than by shape:
+`app/`, `ui/`, `clips/`, `library/`, `editor/`, `trim/`, `media/`, `obs/`,
+`settings/`. `ui/` is the composable equivalent of `Base/`: `useConfirm`,
+`useTheme`, `useFormat` know nothing about clips.
+
+**Imports across folders use the `@renderer/*` alias, never `../../..`.** A
+relative path encodes where the importer happens to sit, so moving either file
+breaks it; the alias survives both. Same-folder `./Sibling.vue` is fine and
+stays.
+
+#### The rest
+
 - `stores/` (Pinia): `clips`, `collections`, `games`, `tags`, `batchOperations`, `toast`.
   `clips` and `collections` use the abort-and-requestId pattern to drop stale responses; preserve it.
 - `composables/` hold most component logic; `services/` are thin one-function-per-endpoint wrappers.
+- **A confirmation is a dialog, never a toast.** `Base/BaseConfirmDialog.vue`,
+  asked through `composables/ui/useConfirm.ts`. This used to be
+  `toastStore.confirm` with `duration: 10000`, which put the question in the
+  corner on top of the button that had just been pressed, and then answered
+  "no" on the user's behalf when the timer ran out. A question waits for its
+  answer: Cancel takes focus so Enter is safe, the backdrop cancels and never
+  confirms, and `danger` is the default tone because nearly everything worth
+  asking about here deletes, replaces or overwrites. `confirm` no longer exists
+  on the toast store, so the old shape cannot come back by habit.
 - **One switch component.** `Base/BaseToggle.vue` is the only on/off control; `Settings/SettingToggle.vue`
   wraps it with a label and a description. Native checkboxes were mixed in with hand-rolled switches
   and read as two different controls for the same kind of decision.

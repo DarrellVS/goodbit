@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useShortcutCustomization } from '../../composables/useShortcutCustomization';
-import { useShortcutEditor } from '../../composables/useShortcutEditor';
-import { getKeyDisplayName, SHORTCUT_ACTIONS, type ShortcutKey } from '../../constants/shortcuts';
+import { useShortcutCustomization } from '@renderer/composables/settings/useShortcutCustomization';
+import { useShortcutEditor } from '@renderer/composables/settings/useShortcutEditor';
+import { getKeyDisplayName, SHORTCUT_ACTIONS, type ShortcutKey } from '@renderer/constants/shortcuts';
 
 const shortcuts = useShortcutCustomization();
 const editor = useShortcutEditor();

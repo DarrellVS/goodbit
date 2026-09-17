@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import type { ObsSetupRoute } from '../../../utils/obsSetupWizard';
+import type { ObsSetupRoute } from '@renderer/utils/obsSetupWizard';
 
 /**
  * The first question: how much of this do you want to be asked?

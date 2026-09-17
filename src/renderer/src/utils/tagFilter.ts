@@ -1,4 +1,4 @@
-import type { ComboBoxOption, ComboBoxValue } from '../components/Base/types';
+import type { ComboBoxOption, ComboBoxValue } from '@renderer/components/Base/types';
 
 /**
  * The library's tag filter, as values rather than as a control.

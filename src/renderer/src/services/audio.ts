@@ -1,5 +1,5 @@
-import axios from '../axios';
-import type { AudioTrack } from '../types/audio';
+import axios from '@renderer/axios';
+import type { AudioTrack } from '@renderer/types/audio';
 
 export interface UploadAudioResult {
   imported: number;

@@ -1,5 +1,5 @@
-import axios from '../axios';
-import type { Game } from '../types/game';
+import axios from '@renderer/axios';
+import type { Game } from '@renderer/types/game';
 
 export type GameRow = Game;
 

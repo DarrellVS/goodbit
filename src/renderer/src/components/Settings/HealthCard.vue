@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import { getEncoderInfo, type EncoderInfo } from '../../services/clips';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { getEncoderInfo, type EncoderInfo } from '@renderer/services/clips';
 
 /**
  * What this machine can actually do.

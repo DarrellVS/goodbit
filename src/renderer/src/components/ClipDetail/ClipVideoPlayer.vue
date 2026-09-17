@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '../../utils/mediaUrl';
-import { useConfiguration } from '../../composables/useConfiguration';
-import { useGoodBits } from '../../composables/useGoodBits';
-import { timecode } from '../../utils/time';
-import type { Clip } from '../../types/clip';
+import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '@renderer/utils/mediaUrl';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useGoodBits } from '@renderer/composables/clips/useGoodBits';
+import { timecode } from '@renderer/utils/time';
+import type { Clip } from '@renderer/types/clip';
 
 /**
  * The clip, with controls of our own rather than Chromium's.

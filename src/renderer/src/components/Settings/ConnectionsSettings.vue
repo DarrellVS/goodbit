@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import SettingToggle from './SettingToggle.vue';
 import PublisherCard from './PublisherCard.vue';
-import { useToastStore } from '../../stores/toast';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
+import { useToastStore } from '@renderer/stores/toast';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 
 /**
  * The two programs GoodBit talks to, and nothing else.

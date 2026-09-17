@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useAppSettings } from '../../composables/useAppSettings';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import { useToastStore } from '../../stores/toast';
-import { listJobs } from '../../services/clips';
-import { useConfirm } from '../../composables/useConfirm';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { useToastStore } from '@renderer/stores/toast';
+import { listJobs } from '@renderer/services/clips';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();

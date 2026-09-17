@@ -92,7 +92,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
-import { useClipsStore } from '../../stores/clips';
+import { useClipsStore } from '@renderer/stores/clips';
 import {
   getClip,
   getClipMeta,
@@ -103,29 +103,29 @@ import {
   updateClipName,
   type ClipSuggestions,
   type SuggestionEvent,
-} from '../../services/clips';
-import type { Clip } from '../../types/clip';
-import type { ClipMeta } from '../../services/clips';
-import { useToastStore } from '../../stores/toast';
-import { streamUrl, frameStripUrl } from '../../utils/mediaUrl';
-import { formatBytes } from '../../utils/formatters';
-import { useTrimRange } from '../../composables/useTrimRange';
-import { useVideoPlayer } from '../../composables/useVideoPlayer';
-import { useFrameStep, type ArmedHandle } from '../../composables/useFrameStep';
-import { TENTH_SEC } from '../../utils/frameRate';
-import { useGoodBits } from '../../composables/useGoodBits';
+} from '@renderer/services/clips';
+import type { Clip } from '@renderer/types/clip';
+import type { ClipMeta } from '@renderer/services/clips';
+import { useToastStore } from '@renderer/stores/toast';
+import { streamUrl, frameStripUrl } from '@renderer/utils/mediaUrl';
+import { formatBytes } from '@renderer/utils/formatters';
+import { useTrimRange } from '@renderer/composables/trim/useTrimRange';
+import { useVideoPlayer } from '@renderer/composables/media/useVideoPlayer';
+import { useFrameStep, type ArmedHandle } from '@renderer/composables/trim/useFrameStep';
+import { TENTH_SEC } from '@renderer/utils/frameRate';
+import { useGoodBits } from '@renderer/composables/clips/useGoodBits';
 import {
   anchorToGoodBit,
   goodBitLabel,
   goodBitsLostToTrim,
   overlapping,
-} from '../../utils/goodBits';
-import type { GoodBit } from '../../types/goodbit';
+} from '@renderer/utils/goodBits';
+import type { GoodBit } from '@renderer/types/goodbit';
 import VideoPreview from './VideoPreview.vue';
 import TimelineEditor from './TimelineEditor.vue';
 import SuggestionBanner from './SuggestionBanner.vue';
 import GoodBitMarkBar from './GoodBitMarkBar.vue';
-import { useConfirm } from '../../composables/useConfirm';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Clip } from '../types/clip';
+import type { Clip } from '@renderer/types/clip';
 
 export const useBatchOperationsStore = defineStore('batchOperations', () => {
   const selectedClipIds = ref<Set<number>>(new Set());

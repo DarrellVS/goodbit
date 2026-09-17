@@ -2,47 +2,47 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { useToastStore } from '../stores/toast';
-import { useGamesStore } from '../stores/games';
-import { useTagsStore } from '../stores/tags';
-import { useTimeline } from '../composables/useTimeline';
-import { useTimelineAudio } from '../composables/useTimelineAudio';
-import { useEditorHistory } from '../composables/useEditorHistory';
-import { snapTime } from '../composables/useEdgeSnap';
-import { useEditorVideoPlayback } from '../composables/useEditorVideoPlayback';
-import { useEditorAudioPlayback } from '../composables/useEditorAudioPlayback';
-import { useEditorClipLibrary } from '../composables/useEditorClipLibrary';
-import { useClipHighlights } from '../composables/useClipHighlights';
-import { useEditorDrafts } from '../composables/useEditorDrafts';
-import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import { loadVideoMetadata } from '../composables/useVideoMetadata';
-import { EDITOR_CONSTANTS } from '../constants/editor';
-import { audioUrl, videoUrl as videoUrlFor } from '../utils/mediaUrl';
-import { useClipExport } from '../composables/useClipExport';
-import { useEditorLayout } from '../composables/useEditorLayout';
-import { useClipHandlers } from '../composables/useClipHandlers';
-import { getClip, type ExportOptions } from '../services/clips';
-import { listAudioTracks } from '../services/audio';
-import { parseClipIds } from '../utils/clipIdQuery';
-import { pluralize } from '../utils/pluralize';
-import { formatTimeSimple } from '../utils/timeFormat';
-import { formatRelativeTime } from '../helpers/dateFormat';
-import type { Clip } from '../types/clip';
-import type { AudioTrack } from '../types/audio';
-import type { TimelineAudio, TimelineClip } from '../types/editor';
-import Timeline from '../components/Editor/Timeline.vue';
-import EditorControls from '../components/Editor/EditorControls.vue';
-import ClipProperties from '../components/Editor/ClipProperties.vue';
-import AudioProperties from '../components/Editor/AudioProperties.vue';
-import ClipLibrary from '../components/Editor/ClipLibrary.vue';
-import MusicLibrary from '../components/Editor/MusicLibrary.vue';
-import ExportDialog from '../components/Editor/ExportDialog.vue';
-import DraftsDialog from '../components/Editor/DraftsDialog.vue';
-import type { EditorDraft, ResumableDraft } from '../types/editor';
-import { draftAsResumable } from '../utils/draftResume';
-import type { DraftFilePayload } from '../utils/draftFile';
-import AppLoading from '../components/App/AppLoading.vue';
-import { useConfirm } from '../composables/useConfirm';
+import { useToastStore } from '@renderer/stores/toast';
+import { useGamesStore } from '@renderer/stores/games';
+import { useTagsStore } from '@renderer/stores/tags';
+import { useTimeline } from '@renderer/composables/editor/useTimeline';
+import { useTimelineAudio } from '@renderer/composables/editor/useTimelineAudio';
+import { useEditorHistory } from '@renderer/composables/editor/useEditorHistory';
+import { snapTime } from '@renderer/composables/editor/useEdgeSnap';
+import { useEditorVideoPlayback } from '@renderer/composables/editor/useEditorVideoPlayback';
+import { useEditorAudioPlayback } from '@renderer/composables/editor/useEditorAudioPlayback';
+import { useEditorClipLibrary } from '@renderer/composables/editor/useEditorClipLibrary';
+import { useClipHighlights } from '@renderer/composables/clips/useClipHighlights';
+import { useEditorDrafts } from '@renderer/composables/editor/useEditorDrafts';
+import { useKeyboardShortcuts } from '@renderer/composables/ui/useKeyboardShortcuts';
+import { loadVideoMetadata } from '@renderer/composables/media/useVideoMetadata';
+import { EDITOR_CONSTANTS } from '@renderer/constants/editor';
+import { audioUrl, videoUrl as videoUrlFor } from '@renderer/utils/mediaUrl';
+import { useClipExport } from '@renderer/composables/clips/useClipExport';
+import { useEditorLayout } from '@renderer/composables/editor/useEditorLayout';
+import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
+import { getClip, type ExportOptions } from '@renderer/services/clips';
+import { listAudioTracks } from '@renderer/services/audio';
+import { parseClipIds } from '@renderer/utils/clipIdQuery';
+import { pluralize } from '@renderer/utils/pluralize';
+import { formatTimeSimple } from '@renderer/utils/timeFormat';
+import { formatRelativeTime } from '@renderer/helpers/dateFormat';
+import type { Clip } from '@renderer/types/clip';
+import type { AudioTrack } from '@renderer/types/audio';
+import type { TimelineAudio, TimelineClip } from '@renderer/types/editor';
+import Timeline from '@renderer/components/Editor/Timeline.vue';
+import EditorControls from '@renderer/components/Editor/EditorControls.vue';
+import ClipProperties from '@renderer/components/Editor/ClipProperties.vue';
+import AudioProperties from '@renderer/components/Editor/AudioProperties.vue';
+import ClipLibrary from '@renderer/components/Editor/ClipLibrary.vue';
+import MusicLibrary from '@renderer/components/Editor/MusicLibrary.vue';
+import ExportDialog from '@renderer/components/Editor/ExportDialog.vue';
+import DraftsDialog from '@renderer/components/Editor/DraftsDialog.vue';
+import type { EditorDraft, ResumableDraft } from '@renderer/types/editor';
+import { draftAsResumable } from '@renderer/utils/draftResume';
+import type { DraftFilePayload } from '@renderer/utils/draftFile';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -904,7 +904,7 @@ watch(
             :disabled="restoring"
             @click="resumeFromBanner(resumable)"
           >
-            <AppLoading v-if="restoring" class="text-sm" />
+            <BaseSpinner v-if="restoring" class="text-sm" />
             <span>{{ restoring ? 'Restoring…' : 'Resume' }}</span>
           </button>
           <!--
@@ -949,7 +949,7 @@ watch(
                 class="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
                 <div class="bg-black/60 backdrop-blur-sm rounded-full p-3">
-                  <AppLoading class="text-2xl text-card" />
+                  <BaseSpinner class="text-2xl text-card" />
                 </div>
               </div>
             </div>

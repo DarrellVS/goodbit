@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useConfiguration } from '../../composables/useConfiguration';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import SettingToggle from './SettingToggle.vue';
 import SettingAnchor from './SettingAnchor.vue';
 import KeyboardShortcutCustomization from './KeyboardShortcutCustomization.vue';

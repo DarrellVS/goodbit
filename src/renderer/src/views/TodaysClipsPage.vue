@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { watch, nextTick } from 'vue';
 import emblaCarouselVue from 'embla-carousel-vue';
-import { updateClipName, deleteClip } from '../services/clips';
-import { useTodayClips } from '../composables/useTodayClips';
-import { useCarousel } from '../composables/useCarousel';
-import { useVideoPlayback } from '../composables/useVideoPlayback';
-import { useClipHandlers } from '../composables/useClipHandlers';
-import type { Clip } from '../types/clip';
-import CarouselSlide from '../components/App/CarouselSlide.vue';
-import CarouselNavigation from '../components/App/CarouselNavigation.vue';
-import ThumbnailStrip from '../components/App/ThumbnailStrip.vue';
-import BaseEmptyState from '../components/Base/BaseEmptyState.vue';
-import ObsNotReadyBanner from '../components/App/ObsNotReadyBanner.vue';
+import { updateClipName, deleteClip } from '@renderer/services/clips';
+import { useTodayClips } from '@renderer/composables/library/useTodayClips';
+import { useCarousel } from '@renderer/composables/ui/useCarousel';
+import { useVideoPlayback } from '@renderer/composables/media/useVideoPlayback';
+import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
+import type { Clip } from '@renderer/types/clip';
+import CarouselSlide from '@renderer/components/Library/CarouselSlide.vue';
+import CarouselNavigation from '@renderer/components/Library/CarouselNavigation.vue';
+import ThumbnailStrip from '@renderer/components/Library/ThumbnailStrip.vue';
+import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
+import ObsNotReadyBanner from '@renderer/components/Obs/ObsNotReadyBanner.vue';
 
 const { todayClips, clipsStore } = useTodayClips();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();

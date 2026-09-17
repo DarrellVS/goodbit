@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, h, nextTick, reactive, type App } from 'vue';
 import GoodBitBands from '../../../src/renderer/src/components/Trim/GoodBitBands.vue';
-import ClipGoodBitPips from '../../../src/renderer/src/components/App/ClipGoodBitPips.vue';
+import ClipGoodBitPips from '../../../src/renderer/src/components/Library/ClipGoodBitPips.vue';
 import type { GoodBit } from '../../../src/renderer/src/types/goodbit';
 
 /**

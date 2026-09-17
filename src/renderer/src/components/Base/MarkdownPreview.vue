@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { timestampTargetSeconds } from '../../utils/timestampParser';
+import { timestampTargetSeconds } from '@renderer/utils/timestampParser';
 
 /**
  * Rendered markdown, wherever a note is read: the pane beside the textarea

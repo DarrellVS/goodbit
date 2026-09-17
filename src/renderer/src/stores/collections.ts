@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { useConfiguration } from '../composables/useConfiguration';
-import type { Collection } from '../types/collection';
-import type { Clip } from '../types/clip';
-import * as collectionsService from '../services/collections';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import type { Collection } from '@renderer/types/collection';
+import type { Clip } from '@renderer/types/clip';
+import * as collectionsService from '@renderer/services/collections';
 import { useClipsStore } from './clips';
 
 interface CollectionClipsState {

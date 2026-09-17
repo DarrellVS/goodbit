@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useClipDetail } from '../../composables/useClipDetail';
-import { useGoodBits } from '../../composables/useGoodBits';
-import { durationLabel, goodBitLabel, rangeLabel } from '../../utils/goodBits';
-import type { Clip } from '../../types/clip';
-import type { GoodBit } from '../../types/goodbit';
+import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
+import { useGoodBits } from '@renderer/composables/clips/useGoodBits';
+import { durationLabel, goodBitLabel, rangeLabel } from '@renderer/utils/goodBits';
+import type { Clip } from '@renderer/types/clip';
+import type { GoodBit } from '@renderer/types/goodbit';
 
 /**
  * The bits of this clip worth watching, listed.

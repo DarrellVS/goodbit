@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import AppMark from '../App/AppMark.vue';
-import { momentCovered } from '../../utils/goodBits';
-import type { ClipSuggestions, SuggestionEvent } from '../../services/clips';
-import type { GoodBit } from '../../types/goodbit';
+import Wordmark from '@renderer/components/Shell/Wordmark.vue';
+import { momentCovered } from '@renderer/utils/goodBits';
+import type { ClipSuggestions, SuggestionEvent } from '@renderer/services/clips';
+import type { GoodBit } from '@renderer/types/goodbit';
 
 interface Props {
   suggestions: ClipSuggestions | null;
@@ -189,7 +189,7 @@ function reject(): void {
       all we did was listen. `material-symbols:crosshair` is not a real icon
       name, so this was a blank space.
     -->
-    <AppMark v-if="evidence" bare :size="20" class="text-orange-500" />
+    <Wordmark v-if="evidence" bare :size="20" class="text-orange-500" />
     <Icon v-else icon="material-symbols:graphic-eq" class="text-lg text-orange-500 shrink-0" />
 
     <div class="text-sm text-muted-800 min-w-0">

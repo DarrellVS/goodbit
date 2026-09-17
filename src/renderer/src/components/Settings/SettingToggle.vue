@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseToggle from '../Base/BaseToggle.vue';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
+import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 
 /**
  * One row of the settings screen: what the switch is, what it does, and the

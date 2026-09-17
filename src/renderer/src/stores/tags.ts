@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import { listAllTags } from '../services/clips';
-import type { Tag } from '../types/tag';
+import { listAllTags } from '@renderer/services/clips';
+import type { Tag } from '@renderer/types/tag';
 
 export const useTagsStore = defineStore('tags', {
   state: () => ({

@@ -1,7 +1,7 @@
-import axios from '../axios';
-import type { TimelineAudio, TimelineClip } from '../types/editor';
-import type { Clip } from '../types/clip';
-import type { Tag } from '../types/tag';
+import axios from '@renderer/axios';
+import type { TimelineAudio, TimelineClip } from '@renderer/types/editor';
+import type { Clip } from '@renderer/types/clip';
+import type { Tag } from '@renderer/types/tag';
 import type { ExportFormat } from '@shared/index';
 
 export type ClipMeta = {

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useFormat } from '../../composables/useFormat';
-import { useClipGrouping } from '../../composables/useClipGrouping';
-import type { Clip } from '../../types/clip';
-import type { Game } from '../../types/game';
-import type { Tag } from '../../types/tag';
-import AppLoading from '../App/AppLoading.vue';
+import { useFormat } from '@renderer/composables/ui/useFormat';
+import { useClipGrouping } from '@renderer/composables/library/useClipGrouping';
+import type { Clip } from '@renderer/types/clip';
+import type { Game } from '@renderer/types/game';
+import type { Tag } from '@renderer/types/tag';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   clips: Clip[];
@@ -168,7 +168,7 @@ function toggleTag(name: string): void {
     </div>
 
     <div v-if="loading && clips.length === 0" class="flex-1 flex items-center justify-center">
-      <AppLoading class="text-xl text-orange-400" />
+      <BaseSpinner class="text-xl text-orange-400" />
     </div>
 
     <div v-else-if="clips.length === 0" class="flex-1 flex items-center justify-center px-4">
@@ -288,7 +288,7 @@ function toggleTag(name: string): void {
         :disabled="loading"
         @click="emit('load-more')"
       >
-        <AppLoading v-if="loading" />
+        <BaseSpinner v-if="loading" />
         <Icon v-else icon="material-symbols:expand-more" />
         {{ loading ? 'Loading…' : 'Load more' }}
       </button>

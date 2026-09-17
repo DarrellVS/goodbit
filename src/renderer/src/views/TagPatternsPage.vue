@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useTagPatterns } from '../composables/useTagPatterns';
-import { useToastStore } from '../stores/toast';
-import type { TagCategory } from '../utils/tagSuggestions';
-import AppLoading from '../components/App/AppLoading.vue';
-import TagLibraryCard from '../components/App/TagLibraryCard.vue';
-import { useConfirm } from '../composables/useConfirm';
+import { useTagPatterns } from '@renderer/composables/library/useTagPatterns';
+import { useToastStore } from '@renderer/stores/toast';
+import type { TagCategory } from '@renderer/utils/tagSuggestions';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import TagLibraryCard from '@renderer/components/Library/TagLibraryCard.vue';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -247,7 +247,7 @@ async function saveNew(): Promise<void> {
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <AppLoading class="w-8 h-8 text-orange-500" />
+      <BaseSpinner class="w-8 h-8 text-orange-500" />
     </div>
 
     <div v-else-if="selectedCategory === 'All'" class="space-y-6">

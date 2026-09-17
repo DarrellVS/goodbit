@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useFormat } from '../../composables/useFormat';
-import { formatRelativeTime, formatExactDate } from '../../helpers/dateFormat';
-import { formatTimeSimple } from '../../utils/timeFormat';
-import type { ClipMeta } from '../../services/clips';
-import type { Clip } from '../../types/clip';
+import { useFormat } from '@renderer/composables/ui/useFormat';
+import { formatRelativeTime, formatExactDate } from '@renderer/helpers/dateFormat';
+import { formatTimeSimple } from '@renderer/utils/timeFormat';
+import type { ClipMeta } from '@renderer/services/clips';
+import type { Clip } from '@renderer/types/clip';
 
 /**
  * The file and the picture, as facts rather than as features.

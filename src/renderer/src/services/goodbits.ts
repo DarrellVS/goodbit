@@ -1,5 +1,5 @@
-import axios from '../axios';
-import type { GoodBit, NewGoodBit } from '../types/goodbit';
+import axios from '@renderer/axios';
+import type { GoodBit, NewGoodBit } from '@renderer/types/goodbit';
 import type { TrimMode } from './clips';
 
 /**

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseComboBox from '../../Base/BaseComboBox.vue';
+import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
 import ObsSetupStepToggle from './ObsSetupStepToggle.vue';
-import type { ComboBoxOption } from '../../Base/types';
-import type { SetupStep } from '../../../composables/useObsSetup';
-import { OBS_HOTKEYS, readableHotkey } from '../../../utils/obsSetupWizard';
+import type { ComboBoxOption } from '@renderer/components/Base/types';
+import type { SetupStep } from '@renderer/composables/obs/useObsSetup';
+import { OBS_HOTKEYS, readableHotkey } from '@renderer/utils/obsSetupWizard';
 
 /**
  * How much to keep, and which key writes it out.

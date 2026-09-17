@@ -212,7 +212,7 @@
           :style="{ width: `${Math.max(2, saveProgress)}%` }"
           aria-hidden="true"
         ></span>
-        <AppLoading v-if="isSaving" class="relative text-lg" />
+        <BaseSpinner v-if="isSaving" class="relative text-lg" />
         <Icon v-else icon="material-symbols:save" class="relative text-lg" />
         <!--
           Tabular figures, or the button shrinks and grows as the count goes
@@ -229,12 +229,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import BaseRangeSlider from '../Base/BaseRangeSlider.vue';
+import BaseRangeSlider from '@renderer/components/Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
 import GoodBitBands from './GoodBitBands.vue';
-import type { TimeRange } from '../../composables/useTrimRange';
-import type { GoodBit } from '../../types/goodbit';
-import AppLoading from '../App/AppLoading.vue';
+import type { TimeRange } from '@renderer/composables/trim/useTrimRange';
+import type { GoodBit } from '@renderer/types/goodbit';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   maxDuration: number;

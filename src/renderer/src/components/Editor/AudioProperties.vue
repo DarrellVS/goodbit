@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { formatTime } from '../../utils/timeFormat';
-import type { TimelineAudio } from '../../types/editor';
+import { formatTime } from '@renderer/utils/timeFormat';
+import type { TimelineAudio } from '@renderer/types/editor';
 
 interface Props {
   item: TimelineAudio;

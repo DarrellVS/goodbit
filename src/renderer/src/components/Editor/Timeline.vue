@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue';
 import { Icon } from '@iconify/vue';
-import { formatTimeSimple } from '../../utils/timeFormat';
-import { EDITOR_CONSTANTS, getRulerInterval } from '../../constants/editor';
-import type { TimelineAudio, TimelineClip, RulerMark } from '../../types/editor';
+import { formatTimeSimple } from '@renderer/utils/timeFormat';
+import { EDITOR_CONSTANTS, getRulerInterval } from '@renderer/constants/editor';
+import type { TimelineAudio, TimelineClip, RulerMark } from '@renderer/types/editor';
 import TimelineTrack from './TimelineTrack.vue';
 import AudioTrackItem from './AudioTrackItem.vue';
 

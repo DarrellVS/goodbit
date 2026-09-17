@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useFormat } from '../../composables/useFormat';
-import { formatTimeSimple } from '../../utils/timeFormat';
-import { audioUrl } from '../../utils/mediaUrl';
-import { useToastStore } from '../../stores/toast';
-import { deleteAudioTrack, importAudioTracks, pickAudioFiles, pathForFile } from '../../services/audio';
-import type { AudioTrack } from '../../types/audio';
-import AppLoading from '../App/AppLoading.vue';
-import { useConfirm } from '../../composables/useConfirm';
+import { useFormat } from '@renderer/composables/ui/useFormat';
+import { formatTimeSimple } from '@renderer/utils/timeFormat';
+import { audioUrl } from '@renderer/utils/mediaUrl';
+import { useToastStore } from '@renderer/stores/toast';
+import { deleteAudioTrack, importAudioTracks, pickAudioFiles, pathForFile } from '@renderer/services/audio';
+import type { AudioTrack } from '@renderer/types/audio';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -160,7 +160,7 @@ onBeforeUnmount(stopPreview);
         :disabled="uploading"
         @click="handleBrowse"
       >
-        <AppLoading v-if="uploading" class="text-xl text-orange-500" />
+        <BaseSpinner v-if="uploading" class="text-xl text-orange-500" />
         <Icon v-else icon="material-symbols:upload" class="text-xl text-orange-500" />
         <span class="text-sm font-medium text-muted-800">
           {{ uploading ? 'Adding…' : 'Add music' }}
@@ -175,7 +175,7 @@ onBeforeUnmount(stopPreview);
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center text-muted-500 text-xs">
-      <AppLoading class="text-xl text-orange-400" />
+      <BaseSpinner class="text-xl text-orange-400" />
     </div>
 
     <div v-else-if="tracks.length === 0" class="flex-1 flex items-center justify-center px-4">

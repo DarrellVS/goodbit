@@ -1,10 +1,10 @@
-import axios from '../axios';
+import axios from '@renderer/axios';
 import type {
   DraftAudio,
   DraftClip,
   DraftImportEntry,
   DraftImportSummary,
-} from '../types/editor';
+} from '@renderer/types/editor';
 
 /**
  * Saved timelines: the one store a named draft lives in.

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useToastStore } from '../../stores/toast';
-import { useFormat } from '../../composables/useFormat';
-import { formatDate } from '../../helpers/dateFormat';
-import AppLoading from '../App/AppLoading.vue';
-import { useConfirm } from '../../composables/useConfirm';
+import { useToastStore } from '@renderer/stores/toast';
+import { useFormat } from '@renderer/composables/ui/useFormat';
+import { formatDate } from '@renderer/helpers/dateFormat';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -139,7 +139,7 @@ onMounted(() => {
           :title="`Replace the current library with this copy and restart`"
           @click="restore(backup)"
         >
-          <AppLoading v-if="restoring === backup.path" class="text-sm" />
+          <BaseSpinner v-if="restoring === backup.path" class="text-sm" />
           <Icon v-else icon="material-symbols:history" class="text-base" />
           {{ restoring === backup.path ? 'Restoring…' : 'Restore' }}
         </button>
@@ -154,7 +154,7 @@ onMounted(() => {
         :disabled="working"
         @click="backUpNow"
       >
-        <AppLoading v-if="working" class="text-lg" />
+        <BaseSpinner v-if="working" class="text-lg" />
         <Icon v-else icon="material-symbols:backup" class="text-lg" />
         {{ working ? 'Copying…' : 'Back up now' }}
       </button>

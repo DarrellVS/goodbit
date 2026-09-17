@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { useMarkdown } from '../../../src/renderer/src/composables/useMarkdown';
+import { useMarkdown } from '../../../src/renderer/src/composables/ui/useMarkdown';
 
 /**
  * A note, from what was typed to what is read.

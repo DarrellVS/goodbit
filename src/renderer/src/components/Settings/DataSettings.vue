@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useConfiguration } from '../../composables/useConfiguration';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import BackupsCard from './BackupsCard.vue';
 import RescanCard from './RescanCard.vue';
 import SettingAnchor from './SettingAnchor.vue';

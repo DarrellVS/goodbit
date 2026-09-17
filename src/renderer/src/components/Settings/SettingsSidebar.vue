@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import type { SettingSection } from '../../utils/settingsSections';
+import type { SettingSection } from '@renderer/utils/settingsSections';
 
 interface Props {
   sections: readonly SettingSection[];

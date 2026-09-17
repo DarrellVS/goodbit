@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useObsSetup } from '../../composables/useObsSetup';
-import { useObsSetupWizard } from '../../composables/useObsSetupWizard';
-import { useToastStore } from '../../stores/toast';
+import { useObsSetup } from '@renderer/composables/obs/useObsSetup';
+import { useObsSetupWizard } from '@renderer/composables/obs/useObsSetupWizard';
+import { useToastStore } from '@renderer/stores/toast';
 import ObsSetupAudioStep from './ObsSetup/ObsSetupAudioStep.vue';
 import ObsSetupDoneStep from './ObsSetup/ObsSetupDoneStep.vue';
 import ObsSetupInstallStep from './ObsSetup/ObsSetupInstallStep.vue';
@@ -12,7 +12,7 @@ import ObsSetupReviewStep from './ObsSetup/ObsSetupReviewStep.vue';
 import ObsSetupRouteStep from './ObsSetup/ObsSetupRouteStep.vue';
 import ObsSetupScreenStep from './ObsSetup/ObsSetupScreenStep.vue';
 import ObsSetupSortingStep from './ObsSetup/ObsSetupSortingStep.vue';
-import { useConfirm } from '../../composables/useConfirm';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();

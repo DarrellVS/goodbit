@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useAppSettings } from '../../composables/useAppSettings';
-import { usePublisher } from '../../composables/usePublisher';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import { useToastStore } from '../../stores/toast';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
+import { usePublisher } from '@renderer/composables/clips/usePublisher';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { useToastStore } from '@renderer/stores/toast';
 import SettingToggle from './SettingToggle.vue';
 
 /**

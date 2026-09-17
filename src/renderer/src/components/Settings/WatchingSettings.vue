@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useConfiguration } from '../../composables/useConfiguration';
-import { useTheme, type ThemeChoice } from '../../composables/useTheme';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useTheme, type ThemeChoice } from '@renderer/composables/ui/useTheme';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
 import HiddenGamesCard from './HiddenGamesCard.vue';

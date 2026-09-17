@@ -12,7 +12,7 @@ import ObsSetupRouteStep from '../../../src/renderer/src/components/Settings/Obs
 import ObsSetupScreenStep from '../../../src/renderer/src/components/Settings/ObsSetup/ObsSetupScreenStep.vue';
 import ObsSetupSortingStep from '../../../src/renderer/src/components/Settings/ObsSetup/ObsSetupSortingStep.vue';
 import ObsSetupStepToggle from '../../../src/renderer/src/components/Settings/ObsSetup/ObsSetupStepToggle.vue';
-import type { SetupStep } from '../../../src/renderer/src/composables/useObsSetup';
+import type { SetupStep } from '../../../src/renderer/src/composables/obs/useObsSetup';
 import type { ObsSetupPlanResponse, PlannedChange } from '../../../src/renderer/src/services/obs';
 
 /**

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { isObsOpenBlocker } from '../../../utils/obsSetupWizard';
+import { isObsOpenBlocker } from '@renderer/utils/obsSetupWizard';
 
 /**
  * A reason the plan cannot be applied.

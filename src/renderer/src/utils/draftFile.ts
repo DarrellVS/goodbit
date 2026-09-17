@@ -1,4 +1,4 @@
-import type { DraftAudio, DraftClip, DraftTimeline } from '../types/editor';
+import type { DraftAudio, DraftClip, DraftTimeline } from '@renderer/types/editor';
 
 /**
  * Draft files: a draft on its way out of the browser and back in.

@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import ClipsPage from './views/ClipsPage.vue';
-import { useClipDetail } from './composables/useClipDetail';
-import { useCollectionDetail } from './composables/useCollectionDetail';
+import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
+import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';

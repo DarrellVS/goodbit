@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import type { ObsSetupTile } from '../../../utils/obsSetupWizard';
+import type { ObsSetupTile } from '@renderer/utils/obsSetupWizard';
 
 /**
  * The quick route's answer, at a glance.

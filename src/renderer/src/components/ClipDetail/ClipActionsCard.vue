@@ -2,12 +2,12 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { useToastStore } from '../../stores/toast';
-import { createClipActionHandlers } from '../../helpers/clipActionHandlers';
-import ClipStarButton from '../App/ClipStarButton.vue';
-import ClipActionsMenu from '../App/ClipActionsMenu.vue';
-import type { Clip } from '../../types/clip';
-import { prefetchFrameStrip } from '../../utils/mediaUrl';
+import { useToastStore } from '@renderer/stores/toast';
+import { createClipActionHandlers } from '@renderer/helpers/clipActionHandlers';
+import ClipStarButton from '@renderer/components/Library/ClipStarButton.vue';
+import ClipActionsMenu from '@renderer/components/Library/ClipActionsMenu.vue';
+import type { Clip } from '@renderer/types/clip';
+import { prefetchFrameStrip } from '@renderer/utils/mediaUrl';
 
 /**
  * What you can do with this clip, at the top of the sidebar where the actions

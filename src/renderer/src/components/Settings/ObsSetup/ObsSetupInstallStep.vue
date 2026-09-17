@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import AppLoading from '../../App/AppLoading.vue';
-import type { ObsInstallPlan } from '../../../services/obs';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import type { ObsInstallPlan } from '@renderer/services/obs';
 
 /**
  * No OBS, no clips.
@@ -70,7 +70,7 @@ const emit = defineEmits<Emits>();
   </p>
 
   <p v-if="!installed" class="text-xs text-muted-500 flex items-center gap-1.5">
-    <AppLoading class="text-sm" />
+    <BaseSpinner class="text-sm" />
     Watching for OBS to appear. This carries on by itself once it is installed.
   </p>
   <p v-else class="text-xs text-emerald-500 flex items-center gap-1.5">

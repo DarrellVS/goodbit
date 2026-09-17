@@ -1,5 +1,5 @@
-import axios from '../axios';
-import type { Clip } from '../types/clip';
+import axios from '@renderer/axios';
+import type { Clip } from '@renderer/types/clip';
 
 /**
  * One long-running job, watched.

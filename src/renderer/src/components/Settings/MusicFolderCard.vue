@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useAppSettings } from '../../composables/useAppSettings';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import { useToastStore } from '../../stores/toast';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import { useToastStore } from '@renderer/stores/toast';
 
 /**
  * Where the music comes from, under Editing because that is the only place it

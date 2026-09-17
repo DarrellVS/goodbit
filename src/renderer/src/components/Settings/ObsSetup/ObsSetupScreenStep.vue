@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseComboBox from '../../Base/BaseComboBox.vue';
+import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
 import ObsSetupStepToggle from './ObsSetupStepToggle.vue';
-import type { ComboBoxOption, ComboBoxValue } from '../../Base/types';
-import type { SetupStep } from '../../../composables/useObsSetup';
-import type { CaptureDisplay } from '../../../services/obs';
+import type { ComboBoxOption, ComboBoxValue } from '@renderer/components/Base/types';
+import type { SetupStep } from '@renderer/composables/obs/useObsSetup';
+import type { CaptureDisplay } from '@renderer/services/obs';
 
 /**
  * The screen, which decides resolution and colour.

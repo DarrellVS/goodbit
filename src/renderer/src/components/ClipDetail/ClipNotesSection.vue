@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useToastStore } from '../../stores/toast';
-import { useMarkdown } from '../../composables/useMarkdown';
-import { updateClipNotes } from '../../services/clips';
-import { formatTimestamp } from '../../utils/timestampParser';
-import MarkdownToolbar from '../Base/MarkdownToolbar.vue';
-import MarkdownTextarea from '../Base/MarkdownTextarea.vue';
-import MarkdownPreview from '../Base/MarkdownPreview.vue';
-import type { Clip } from '../../types/clip';
+import { useToastStore } from '@renderer/stores/toast';
+import { useMarkdown } from '@renderer/composables/ui/useMarkdown';
+import { updateClipNotes } from '@renderer/services/clips';
+import { formatTimestamp } from '@renderer/utils/timestampParser';
+import MarkdownToolbar from '@renderer/components/Base/MarkdownToolbar.vue';
+import MarkdownTextarea from '@renderer/components/Base/MarkdownTextarea.vue';
+import MarkdownPreview from '@renderer/components/Base/MarkdownPreview.vue';
+import type { Clip } from '@renderer/types/clip';
 
 /**
  * Notes, written where they are read, and read as a note rather than as source.

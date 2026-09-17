@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import { fetchGames as fetchGamesService } from '../services/games';
-import type { Game } from '../types/game';
+import { fetchGames as fetchGamesService } from '@renderer/services/games';
+import type { Game } from '@renderer/types/game';
 
 export type GameRow = Game;
 

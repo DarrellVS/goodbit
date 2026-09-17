@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import type { GameStats } from '../../composables/useStats';
-import { formatBytes } from '../../utils/formatters';
-import { useClipsStore } from '../../stores/clips';
+import type { GameStats } from '@renderer/composables/library/useStats';
+import { formatBytes } from '@renderer/utils/formatters';
+import { useClipsStore } from '@renderer/stores/clips';
 
 interface Props {
   games: GameStats[];

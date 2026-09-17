@@ -1,4 +1,4 @@
-import type { DraftAudio, DraftClip } from '../types/editor';
+import type { DraftAudio, DraftClip } from '@renderer/types/editor';
 
 /**
  * The editor's local scratch timeline, in IndexedDB.

@@ -9,25 +9,25 @@ import {
   DialogRoot,
   DialogTitle,
 } from 'reka-ui';
-import { useToastStore } from '../../stores/toast';
-import { useCollectionsStore } from '../../stores/collections';
-import { useClipLoader } from '../../composables/useClipLoader';
-import { useClipDetail } from '../../composables/useClipDetail';
-import { publishClip, recordClipOpened } from '../../services/clips';
-import { formatRelativeTime } from '../../helpers/dateFormat';
-import { forgetFrameStrip } from '../../utils/mediaUrl';
-import type { GoodBit } from '../../types/goodbit';
-import ClipNameInput from '../App/ClipNameInput.vue';
-import ClipTags from '../App/ClipTags.vue';
-import ClipCollections from '../App/ClipCollections.vue';
+import { useToastStore } from '@renderer/stores/toast';
+import { useCollectionsStore } from '@renderer/stores/collections';
+import { useClipLoader } from '@renderer/composables/library/useClipLoader';
+import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
+import { publishClip, recordClipOpened } from '@renderer/services/clips';
+import { formatRelativeTime } from '@renderer/helpers/dateFormat';
+import { forgetFrameStrip } from '@renderer/utils/mediaUrl';
+import type { GoodBit } from '@renderer/types/goodbit';
+import ClipNameInput from '@renderer/components/Library/ClipNameInput.vue';
+import ClipTags from '@renderer/components/Library/ClipTags.vue';
+import ClipCollections from '@renderer/components/Library/ClipCollections.vue';
 import ClipVideoPlayer from './ClipVideoPlayer.vue';
 import ClipActionsCard from './ClipActionsCard.vue';
 import ClipFacts from './ClipFacts.vue';
-import TrimPanel from '../Trim/TrimPanel.vue';
+import TrimPanel from '@renderer/components/Trim/TrimPanel.vue';
 import ClipGoodBitsSection from './ClipGoodBitsSection.vue';
 import ClipNotesSection from './ClipNotesSection.vue';
-import ShareSheet from '../App/ShareSheet.vue';
-import AppLoading from '../App/AppLoading.vue';
+import ShareSheet from '@renderer/components/Publish/ShareSheet.vue';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 /**
  * A clip, looked at closely, without leaving the library.
@@ -304,7 +304,7 @@ async function onTrimmed(): Promise<void> {
 
         <div v-if="loading" class="flex-1 flex items-center justify-center">
           <div class="text-center space-y-3">
-            <AppLoading
+            <BaseSpinner
               class="text-5xl text-orange-500" />
             <p class="text-muted-600">Loading clip…</p>
           </div>

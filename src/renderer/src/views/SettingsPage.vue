@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { computed, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useSettingsManagement } from '../composables/useSettingsManagement';
-import { useSettingsSearch } from '../composables/useSettingsSearch';
+import { useSettingsManagement } from '@renderer/composables/settings/useSettingsManagement';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import {
   DEFAULT_SECTION,
   resolveSection,
   SETTING_SECTIONS,
   type SettingSectionId,
-} from '../utils/settingsSections';
-import type { SettingEntry } from '../utils/settingsCatalog';
-import SettingsSidebar from '../components/Settings/SettingsSidebar.vue';
-import SettingsSearchField from '../components/Settings/SettingsSearchField.vue';
-import SettingsSearchResults from '../components/Settings/SettingsSearchResults.vue';
-import RecordingSettings from '../components/Settings/RecordingSettings.vue';
-import WatchingSettings from '../components/Settings/WatchingSettings.vue';
-import EditingSettings from '../components/Settings/EditingSettings.vue';
-import DataSettings from '../components/Settings/DataSettings.vue';
-import ConnectionsSettings from '../components/Settings/ConnectionsSettings.vue';
-import AdvancedSettings from '../components/Settings/AdvancedSettings.vue';
+} from '@renderer/utils/settingsSections';
+import type { SettingEntry } from '@renderer/utils/settingsCatalog';
+import SettingsSidebar from '@renderer/components/Settings/SettingsSidebar.vue';
+import SettingsSearchField from '@renderer/components/Settings/SettingsSearchField.vue';
+import SettingsSearchResults from '@renderer/components/Settings/SettingsSearchResults.vue';
+import RecordingSettings from '@renderer/components/Settings/RecordingSettings.vue';
+import WatchingSettings from '@renderer/components/Settings/WatchingSettings.vue';
+import EditingSettings from '@renderer/components/Settings/EditingSettings.vue';
+import DataSettings from '@renderer/components/Settings/DataSettings.vue';
+import ConnectionsSettings from '@renderer/components/Settings/ConnectionsSettings.vue';
+import AdvancedSettings from '@renderer/components/Settings/AdvancedSettings.vue';
 
 const route = useRoute();
 const router = useRouter();

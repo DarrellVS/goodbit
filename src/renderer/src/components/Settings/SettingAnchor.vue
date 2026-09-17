@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 
 /**
  * Marks a card as the thing a search result names.

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
-import type { SettingEntry } from '../../utils/settingsCatalog';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
+import type { SettingEntry } from '@renderer/utils/settingsCatalog';
 
 /**
  * The field, above the list of rooms it makes optional.

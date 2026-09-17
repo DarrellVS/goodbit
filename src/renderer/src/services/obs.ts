@@ -1,4 +1,4 @@
-import axios from '../axios';
+import axios from '@renderer/axios';
 
 /**
  * The OBS side of the app, as the window sees it.

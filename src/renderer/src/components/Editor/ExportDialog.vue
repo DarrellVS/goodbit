@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BaseToggle from '../Base/BaseToggle.vue';
+import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import {
@@ -11,7 +11,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from 'reka-ui';
-import { formatTime } from '../../utils/timeFormat';
+import { formatTime } from '@renderer/utils/timeFormat';
 import { outputSizeFor, targetKbpsFor } from '@shared/index';
 // Straight at the source rather than through the package root: `shared/dist` is
 // compiled to CommonJS, and Rollup cannot pick named runtime values out of a
@@ -22,8 +22,8 @@ import {
   PLATFORM_PRESETS,
   type ExportFormat,
 } from '@shared/constants/exportFormats';
-import type { ExportOptions } from '../../services/clips';
-import AppLoading from '../App/AppLoading.vue';
+import type { ExportOptions } from '@renderer/services/clips';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   open: boolean;
@@ -373,7 +373,7 @@ watch(
             :disabled="!isValid || exporting"
             @click="submit"
           >
-            <AppLoading v-if="exporting" class="text-lg" />
+            <BaseSpinner v-if="exporting" class="text-lg" />
             <Icon v-else icon="material-symbols:download" class="text-lg" />
             <!-- Tabular figures, or the button jitters as the count climbs. -->
             <span class="tabular-nums">

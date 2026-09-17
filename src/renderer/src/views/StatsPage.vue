@@ -2,15 +2,15 @@
 import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { useStats } from '../composables/useStats';
-import { useClipsStore } from '../stores/clips';
-import { formatBytes, formatDate, formatPercentage } from '../utils/formatters';
-import StatCard from '../components/Stats/StatCard.vue';
-import GamesList from '../components/Stats/GamesList.vue';
-import TagsList from '../components/Stats/TagsList.vue';
-import InfoPanel from '../components/Stats/InfoPanel.vue';
-import ActivityChart from '../components/Stats/ActivityChart.vue';
-import AppLoading from '../components/App/AppLoading.vue';
+import { useStats } from '@renderer/composables/library/useStats';
+import { useClipsStore } from '@renderer/stores/clips';
+import { formatBytes, formatDate, formatPercentage } from '@renderer/utils/formatters';
+import StatCard from '@renderer/components/Stats/StatCard.vue';
+import GamesList from '@renderer/components/Stats/GamesList.vue';
+import TagsList from '@renderer/components/Stats/TagsList.vue';
+import InfoPanel from '@renderer/components/Stats/InfoPanel.vue';
+import ActivityChart from '@renderer/components/Stats/ActivityChart.vue';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 const router = useRouter();
 const clipsStore = useClipsStore();
@@ -104,7 +104,7 @@ onMounted(() => {
 <template>
   <div class="p-6 space-y-6">
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <AppLoading class="w-12 h-12 text-orange-500" />
+      <BaseSpinner class="w-12 h-12 text-orange-500" />
     </div>
 
     <template v-else-if="stats">

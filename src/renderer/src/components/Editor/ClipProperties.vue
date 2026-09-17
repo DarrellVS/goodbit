@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import type { TimelineClip } from '../../types/editor';
-import AppLoading from '../App/AppLoading.vue';
+import type { TimelineClip } from '@renderer/types/editor';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   clip: TimelineClip | null;
@@ -78,7 +78,7 @@ function volumeToDecimal(percentage: number): number {
           v-if="highlightLoading"
           class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-card/80 border border-border text-xs text-muted-600"
         >
-          <AppLoading class="text-orange-400 text-base" />
+          <BaseSpinner class="text-orange-400 text-base" />
           Listening to this clip…
         </div>
 

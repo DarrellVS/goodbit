@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseComboBox from '../Base/BaseComboBox.vue';
-import type { ComboBoxOption, ComboBoxValue } from '../Base/types';
-import { useSettingsSearch } from '../../composables/useSettingsSearch';
+import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
+import type { ComboBoxOption, ComboBoxValue } from '@renderer/components/Base/types';
+import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 
 /**
  * One row of the settings screen: what the choice is, what it does, and the

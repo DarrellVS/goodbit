@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, onBeforeUnmount } from 'vue';
 import { Icon } from '@iconify/vue';
-import { formatTime } from '../../utils/timeFormat';
-import { frameStripUrl } from '../../utils/mediaUrl';
-import type { TimelineClip } from '../../types/editor';
+import { formatTime } from '@renderer/utils/timeFormat';
+import { frameStripUrl } from '@renderer/utils/mediaUrl';
+import type { TimelineClip } from '@renderer/types/editor';
 
 interface Props {
   clip: TimelineClip;

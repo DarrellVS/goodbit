@@ -1,6 +1,6 @@
-import axios from '../axios';
-import type { Collection } from '../types/collection';
-import type { Clip } from '../types/clip';
+import axios from '@renderer/axios';
+import type { Collection } from '@renderer/types/collection';
+import type { Clip } from '@renderer/types/clip';
 
 export async function getCollections(): Promise<Collection[]> {
   const { data } = await axios.get('/api/collections');

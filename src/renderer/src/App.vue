@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { RouterView, useRouter } from 'vue-router';
-import BaseToast from './components/Base/BaseToast.vue';
-import BaseConfirmDialog from './components/Base/BaseConfirmDialog.vue';
-import { useConfirm } from './composables/useConfirm';
-import TitleBar from './components/App/TitleBar.vue';
-import UpdateBanner from './components/App/UpdateBanner.vue';
-import PublisherInviteDialog from './components/App/PublisherInviteDialog.vue';
-import ObsSetupInviteListener from './components/App/ObsSetupInviteListener.vue';
+import BaseToast from '@renderer/components/Base/BaseToast.vue';
+import BaseConfirmDialog from '@renderer/components/Base/BaseConfirmDialog.vue';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import TitleBar from '@renderer/components/Shell/TitleBar.vue';
+import UpdateBanner from '@renderer/components/Shell/UpdateBanner.vue';
+import PublisherInviteDialog from '@renderer/components/Publish/PublisherInviteDialog.vue';
+import ObsSetupInviteListener from '@renderer/components/Obs/ObsSetupInviteListener.vue';
 
 // The tray menu opens screens, "trim the latest clip", and main only knows
 // paths, so the router is asked from here, the one place that always exists.

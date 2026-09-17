@@ -1,5 +1,5 @@
-import type { StoredDraftRecord } from '../services/editorDraftsDb';
-import type { DraftAudio, DraftClip, EditorDraft, ResumableDraft } from '../types/editor';
+import type { StoredDraftRecord } from '@renderer/services/editorDraftsDb';
+import type { DraftAudio, DraftClip, EditorDraft, ResumableDraft } from '@renderer/types/editor';
 
 /**
  * What the resume banner offers when the editor opens.

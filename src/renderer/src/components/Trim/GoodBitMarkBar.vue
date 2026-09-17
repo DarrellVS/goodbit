@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import { durationLabel, goodBitLabel, rangeLabel, sameRange } from '../../utils/goodBits';
-import type { GoodBit } from '../../types/goodbit';
+import { durationLabel, goodBitLabel, rangeLabel, sameRange } from '@renderer/utils/goodBits';
+import type { GoodBit } from '@renderer/types/goodbit';
 
 /**
  * Marking the range the handles are on, without cutting anything.

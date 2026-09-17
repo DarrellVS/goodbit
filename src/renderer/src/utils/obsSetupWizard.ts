@@ -1,4 +1,4 @@
-import type { AudioDevice, CaptureDisplay, ObsSetupPlan } from '../services/obs';
+import type { AudioDevice, CaptureDisplay, ObsSetupPlan } from '@renderer/services/obs';
 
 /**
  * The OBS wizard's decisions, as values in and values out.

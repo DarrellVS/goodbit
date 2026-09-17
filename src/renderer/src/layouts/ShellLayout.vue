@@ -6,14 +6,14 @@
     @dragover="fileImport.handleDragOver"
     @drop="fileImport.handleDrop"
   >
-    <AppSidebar 
+    <Sidebar 
       :active-game="selectedGame" 
       :disable-games-filter="disableGamesFilter" 
       @select-game="selectGame" 
     />
     
     <div class="flex flex-col h-full overflow-hidden">
-      <AppHeader
+      <PageHeader
         v-model:search="searchText"
         :title="(router.currentRoute.value.meta.title as string)"
         :subtitle="(router.currentRoute.value.meta.subtitle as string)"
@@ -45,22 +45,22 @@
 <script lang="ts" setup>
 import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import { RouterView, useRouter } from 'vue-router';
-import ClipDetailModal from '../components/ClipDetail/ClipDetailModal.vue';
-import CollectionDetailModal from '../components/Collection/CollectionDetailModal.vue';
-import { useCollectionDetail } from '../composables/useCollectionDetail';
-import { useClipsStore } from '../stores/clips';
-import { useGamesStore } from '../stores/games';
-import { useTagsStore } from '../stores/tags';
-import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts';
-import { useFileImport } from '../composables/useFileImport';
-import AppHeader from '../components/App/AppHeader.vue';
-import AppSidebar from '../components/App/AppSidebar.vue';
-import FileDropZone from '../components/App/FileDropZone.vue';
-import CommandPalette from '../components/App/CommandPalette.vue';
-import { useServiceEvents } from '../composables/useServiceEvents';
-import { usePublishProgress } from '../composables/usePublishProgress';
-import { useCollectionsStore } from '../stores/collections';
-import { rememberScrollFor, restoreScrollFor } from '../utils/scroll';
+import ClipDetailModal from '@renderer/components/ClipDetail/ClipDetailModal.vue';
+import CollectionDetailModal from '@renderer/components/Collection/CollectionDetailModal.vue';
+import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
+import { useClipsStore } from '@renderer/stores/clips';
+import { useGamesStore } from '@renderer/stores/games';
+import { useTagsStore } from '@renderer/stores/tags';
+import { useKeyboardShortcuts } from '@renderer/composables/ui/useKeyboardShortcuts';
+import { useFileImport } from '@renderer/composables/clips/useFileImport';
+import PageHeader from '@renderer/components/Shell/PageHeader.vue';
+import Sidebar from '@renderer/components/Shell/Sidebar.vue';
+import FileDropZone from '@renderer/components/Library/FileDropZone.vue';
+import CommandPalette from '@renderer/components/Shell/CommandPalette.vue';
+import { useServiceEvents } from '@renderer/composables/app/useServiceEvents';
+import { usePublishProgress } from '@renderer/composables/clips/usePublishProgress';
+import { useCollectionsStore } from '@renderer/stores/collections';
+import { rememberScrollFor, restoreScrollFor } from '@renderer/utils/scroll';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();

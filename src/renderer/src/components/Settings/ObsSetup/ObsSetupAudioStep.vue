@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ObsSetupAudioDevice from './ObsSetupAudioDevice.vue';
-import type { AudioDevice } from '../../../services/obs';
+import type { AudioDevice } from '@renderer/services/obs';
 
 /**
  * What to hear.

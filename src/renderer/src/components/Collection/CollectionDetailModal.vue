@@ -9,26 +9,26 @@ import {
   DialogRoot,
   DialogTitle,
 } from 'reka-ui';
-import { useCollectionsStore } from '../../stores/collections';
-import { useClipsStore } from '../../stores/clips';
-import { useGamesStore } from '../../stores/games';
-import { useCollectionDetail } from '../../composables/useCollectionDetail';
-import { useConfiguration } from '../../composables/useConfiguration';
-import { useClipHandlers } from '../../composables/useClipHandlers';
-import { useClipFilters } from '../../composables/useClipFilters';
-import { useBatchOperations } from '../../composables/useBatchOperations';
-import { useKeyboardShortcuts } from '../../composables/useKeyboardShortcuts';
-import { useClipListKeyboardShortcuts } from '../../composables/useClipListKeyboardShortcuts';
-import { useClipListHandlers } from '../../composables/useClipListHandlers';
-import { useSelectAllShortcut } from '../../composables/useSelectAllShortcut';
-import { scrollToTop } from '../../utils/scroll';
-import type { Clip } from '../../types/clip';
-import ClipFilters from '../App/ClipFilters.vue';
-import ClipsDisplay from '../App/ClipsDisplay.vue';
-import ClipsPaginationControls from '../App/ClipsPaginationControls.vue';
-import FloatingControlsBar from '../App/FloatingControlsBar.vue';
-import BatchTagDialog from '../App/BatchTagDialog.vue';
-import BatchCollectionDialog from '../App/BatchCollectionDialog.vue';
+import { useCollectionsStore } from '@renderer/stores/collections';
+import { useClipsStore } from '@renderer/stores/clips';
+import { useGamesStore } from '@renderer/stores/games';
+import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
+import { useClipFilters } from '@renderer/composables/library/useClipFilters';
+import { useBatchOperations } from '@renderer/composables/library/useBatchOperations';
+import { useKeyboardShortcuts } from '@renderer/composables/ui/useKeyboardShortcuts';
+import { useClipListKeyboardShortcuts } from '@renderer/composables/library/useClipListKeyboardShortcuts';
+import { useClipListHandlers } from '@renderer/composables/library/useClipListHandlers';
+import { useSelectAllShortcut } from '@renderer/composables/ui/useSelectAllShortcut';
+import { scrollToTop } from '@renderer/utils/scroll';
+import type { Clip } from '@renderer/types/clip';
+import ClipFilters from '@renderer/components/Library/ClipFilters.vue';
+import ClipsDisplay from '@renderer/components/Library/ClipsDisplay.vue';
+import ClipsPaginationControls from '@renderer/components/Library/ClipsPaginationControls.vue';
+import FloatingControlsBar from '@renderer/components/Library/FloatingControlsBar.vue';
+import BatchTagDialog from '@renderer/components/Library/BatchTagDialog.vue';
+import BatchCollectionDialog from '@renderer/components/Library/BatchCollectionDialog.vue';
 
 /**
  * A collection, as a layer over the library rather than a page.

@@ -7,7 +7,7 @@ import './styles.css';
 import './animations.css';
 import './tooltip.css';
 import { router } from './router';
-import { initTheme } from './composables/useTheme';
+import { initTheme } from '@renderer/composables/ui/useTheme';
 import { TITLEBAR_HEIGHT } from '@shared/index';
 
 // Before the first paint, or the wrong palette shows for a frame.

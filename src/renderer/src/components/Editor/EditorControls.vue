@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import { formatTime } from '../../utils/timeFormat';
-import AppLoading from '../App/AppLoading.vue';
+import { formatTime } from '@renderer/utils/timeFormat';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   playing: boolean;
@@ -121,7 +121,7 @@ const emit = defineEmits<Emits>();
         :disabled="props.trimmingHighlights || !props.clipCount"
         @click="emit('trim-to-highlights')"
       >
-        <AppLoading v-if="trimmingHighlights" class="text-lg" />
+        <BaseSpinner v-if="trimmingHighlights" class="text-lg" />
         <Icon v-else icon="material-symbols:auto-awesome" class="text-lg" />
         <span class="hidden xl:inline">
           {{ props.trimmingHighlights ? 'Listening…' : 'Trim to highlights' }}

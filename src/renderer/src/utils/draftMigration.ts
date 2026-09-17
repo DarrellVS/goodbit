@@ -1,5 +1,5 @@
-import { AUTOSAVE_ID, type StoredDraftRecord } from '../services/editorDraftsDb';
-import type { DraftAudio, DraftClip, DraftImportEntry, DraftImportResult } from '../types/editor';
+import { AUTOSAVE_ID, type StoredDraftRecord } from '@renderer/services/editorDraftsDb';
+import type { DraftAudio, DraftClip, DraftImportEntry, DraftImportResult } from '@renderer/types/editor';
 
 /**
  * The renderer's half of the 2.0 first-run draft migration.

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import AppLoading from '../../App/AppLoading.vue';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import ObsSetupBlocker from './ObsSetupBlocker.vue';
 import ObsSetupChange from './ObsSetupChange.vue';
 import ObsSetupQuickSummary from './ObsSetupQuickSummary.vue';
-import type { ObsSetupPlan } from '../../../services/obs';
-import type { ObsSetupRoute, ObsSetupTile } from '../../../utils/obsSetupWizard';
+import type { ObsSetupPlan } from '@renderer/services/obs';
+import type { ObsSetupRoute, ObsSetupTile } from '@renderer/utils/obsSetupWizard';
 
 /**
  * What changes, before anything changes.
@@ -83,7 +83,7 @@ const showDetail = computed(() => props.route !== 'quick' || props.showEverythin
   />
 
   <div v-if="!plan" class="flex items-center gap-2 text-sm text-muted-500 py-4">
-    <AppLoading class="text-lg" />
+    <BaseSpinner class="text-lg" />
     <span>Working out what would change…</span>
   </div>
 
@@ -98,7 +98,7 @@ const showDetail = computed(() => props.route !== 'quick' || props.showEverythin
   -->
   <div v-if="working" class="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5 space-y-2">
     <div class="flex items-center gap-2 text-sm text-foreground">
-      <AppLoading class="text-lg text-orange-500" />
+      <BaseSpinner class="text-lg text-orange-500" />
       <span>{{ progress?.message ?? 'Writing the settings' }}</span>
     </div>
     <div v-if="progress?.percent !== undefined" class="h-1 bg-muted-100 rounded-sm overflow-hidden">

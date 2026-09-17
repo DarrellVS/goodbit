@@ -10,11 +10,11 @@ import {
   DialogRoot,
   DialogTitle,
 } from 'reka-ui';
-import { formatRelativeTime } from '../../helpers/dateFormat';
-import { useToastStore } from '../../stores/toast';
-import { downloadDraft, parseDraftFile, type DraftFilePayload } from '../../utils/draftFile';
-import type { EditorDraft } from '../../types/editor';
-import AppLoading from '../App/AppLoading.vue';
+import { formatRelativeTime } from '@renderer/helpers/dateFormat';
+import { useToastStore } from '@renderer/stores/toast';
+import { downloadDraft, parseDraftFile, type DraftFilePayload } from '@renderer/utils/draftFile';
+import type { EditorDraft } from '@renderer/types/editor';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 interface Props {
   open: boolean;
@@ -194,7 +194,7 @@ watch(
               :disabled="!canSave || saving"
               @click="save"
             >
-              <AppLoading v-if="saving" class="text-lg" />
+              <BaseSpinner v-if="saving" class="text-lg" />
               <Icon v-else icon="material-symbols:bookmark-add" class="text-lg" />
               Save
             </button>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useAppSettings } from '../../composables/useAppSettings';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import SettingToggle from './SettingToggle.vue';
 import MusicFolderCard from './MusicFolderCard.vue';
 import SettingAnchor from './SettingAnchor.vue';
