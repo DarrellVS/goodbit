@@ -50,6 +50,18 @@ const batchStore = useBatchOperationsStore();
 const collectionsStore = useCollectionsStore();
 const toastStore = useToastStore();
 const gamesStore = useGamesStore();
+
+/**
+ * The game's own name where it has been given one, the folder's otherwise.
+ *
+ * The card drew `clip.game` raw, so a game renamed in the sidebar kept its
+ * folder name on every tile: `Headliners-Win64-Shipping` under a clip and
+ * `Headliners` beside it in the games list.
+ */
+const gameDisplayName = computed(() => {
+  const known = gamesStore.items.find((g) => g.game === props.clip.game);
+  return known?.displayName || props.clip.game;
+});
 const { startDrag, endDrag } = useDragAndDrop();
 const { open: openClip } = useClipDetail();
 
@@ -241,7 +253,7 @@ function handleCardClick(event: MouseEvent) {
 </script>
 
 <template>
-  <article 
+  <article
     draggable="true"
     :class="[
       'clip-card group relative rounded-md cursor-pointer outline-none',
@@ -257,8 +269,8 @@ function handleCardClick(event: MouseEvent) {
     @click="handleCardClick"
   >
     <!-- Selection Checkbox -->
-    <div 
-      v-if="isSelectionMode" 
+    <div
+      v-if="isSelectionMode"
       class="absolute top-3 left-3 z-20"
     >
       <button
@@ -267,23 +279,23 @@ function handleCardClick(event: MouseEvent) {
         :title="isSelected ? 'Selected. Click the clip to deselect it.' : 'Click anywhere on the clip to select it.'"
         class="w-8 h-8 rounded-lg flex items-center justify-center checkbox-animate"
         :class="[
-          isSelected 
-            ? 'bg-accent text-on-video hover:bg-accent-hover' 
+          isSelected
+            ? 'bg-accent text-on-video hover:bg-accent-hover'
             : 'bg-video-bed/60 backdrop-blur-sm border border-on-video/20 text-on-video hover:bg-video-bed/80'
         ]"
         @click="handleCheckboxClick"
       >
-        <Icon 
-          :icon="isSelected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'" 
+        <Icon
+          :icon="isSelected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'"
           class="size-5 shrink-0 block"
         />
       </button>
     </div>
 
     <ClipPublishedBadge :published="clip.published" />
-    
+
     <ClipStarButton v-if="!isSelectionMode" :clip="clip" @updated="emit('updated', $event)" />
-    
+
     <!--
       Drag this clip somewhere else.
 
@@ -307,8 +319,8 @@ function handleCardClick(event: MouseEvent) {
     >
       <Icon icon="material-symbols:drag-pan" class="text-lg" />
     </button>
-    
-    <div 
+
+    <div
       v-if="!isSelectionMode"
       class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 opacity-transition"
     >
@@ -320,7 +332,7 @@ function handleCardClick(event: MouseEvent) {
       />
     </div>
 
-    <div 
+    <div
       ref="previewEl"
       class="aspect-21/9 bg-video-bed relative rounded-md overflow-hidden"
       @mousemove="handleMouseMove"
@@ -387,7 +399,7 @@ function handleCardClick(event: MouseEvent) {
         :duration-sec="clip.durationSec"
       />
     </div>
-    
+
     <!--
       Where the preview has got to, drawn as the video's own bottom edge.
 
@@ -406,10 +418,11 @@ function handleCardClick(event: MouseEvent) {
       <div class="flex items-start justify-between gap-2 mb-1">
         <ClipNameInput :clip="clip" @updated="emit('updated', $event)" />
       </div>
-      
+
       <ClipMetadata
         :size-bytes="clip.sizeBytes"
         :duration-sec="clip.durationSec"
+        :game="gameDisplayName"
         :recorded-at="clip.recordedAt ?? clip.fileModifiedAt ?? clip.createdAt"
       />
 

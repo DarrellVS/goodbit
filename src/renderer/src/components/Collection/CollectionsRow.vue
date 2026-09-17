@@ -43,17 +43,25 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
 <template>
   <section aria-labelledby="collections-heading" class="space-y-2">
     <div class="flex items-center gap-2">
-      <h2 id="collections-heading" class="text-xs font-semibold text-muted-500">COLLECTIONS</h2>
+      <h2
+        id="collections-heading"
+        class="text-xs font-medium uppercase tracking-label text-muted-400"
+      >
+        Collections
+      </h2>
       <button
-        class="rounded-sm p-1 text-muted-500 transition-colors hover:bg-muted-100 hover:text-foreground"
+        type="button"
+        class="size-6 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-500 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
         title="New collection"
+        aria-label="New collection"
         @click="actions.startCreateCollection"
       >
-        <Icon icon="material-symbols:add" class="text-sm" />
+        <Icon icon="material-symbols:add" class="size-4 shrink-0 block" />
       </button>
       <button
         v-if="layout.toggleLabel"
-        class="ml-auto rounded-sm px-2 py-1 text-xs text-muted-400 transition-colors hover:bg-muted-100 hover:text-foreground"
+        type="button"
+        class="ml-auto h-7 inline-flex items-center rounded-sm px-1 text-sm text-muted-500 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
         @click="showAll = !showAll"
       >
         {{ layout.toggleLabel }}
@@ -82,13 +90,24 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
       Nothing to show and no sidebar to make one from any more, so the empty
       state is the create button rather than a sentence about one.
     -->
+    <!--
+      A tile the size of a collection, not a dashed bar the width of the page.
+
+      It is the `+` that sits at the end of a row of collections, standing in
+      for the row before there is one, so the empty state is the same shape as
+      the thing it is empty of. The sentence moves to the tooltip: a full-width
+      dashed box with a sentence in it was the loudest object on a screen whose
+      subject is the clips below it.
+    -->
     <button
       v-if="!collections.length && !showCreateInput"
-      class="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-500 transition-colors hover:border-muted-300 hover:text-foreground"
+      type="button"
+      class="flex h-20 w-44 items-center justify-center gap-2 rounded-md border border-dashed border-border text-sm text-muted-500 hover:border-line-strong hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+      title="Make a collection, then drag clips onto it"
       @click="actions.startCreateCollection"
     >
-      <Icon icon="material-symbols:create-new-folder" class="text-base" />
-      <span>Make a collection, then drag clips onto it</span>
+      <Icon icon="material-symbols:add" class="size-4 shrink-0 block" />
+      <span>New collection</span>
     </button>
 
     <div

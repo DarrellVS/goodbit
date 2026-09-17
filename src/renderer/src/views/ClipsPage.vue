@@ -14,7 +14,6 @@ import { useSelectAllShortcut } from '@renderer/composables/ui/useSelectAllShort
 import type { Clip } from '@renderer/types/clip';
 import ClipFilters from '@renderer/components/Library/ClipFilters.vue';
 import CollectionsRow from '@renderer/components/Collection/CollectionsRow.vue';
-import ObsNotReadyBanner from '@renderer/components/Obs/ObsNotReadyBanner.vue';
 import ClipsDisplay from '@renderer/components/Library/ClipsDisplay.vue';
 import ClipsPaginationControls from '@renderer/components/Library/ClipsPaginationControls.vue';
 import FloatingControlsBar from '@renderer/components/Library/FloatingControlsBar.vue';
@@ -230,13 +229,6 @@ onMounted(() => {
       @enter-selection="enterSelectionMode"
       @exit-selection="exitSelectionMode"
     />
-
-    <!--
-      Why the library is empty, said where the emptiness is. Settings has the
-      whole diagnostic, but nobody opens Settings to find out why nothing is
-      happening.
-    -->
-    <ObsNotReadyBanner />
 
     <!--
       No `pb-16` any more. It was there to keep the last row of clips out from

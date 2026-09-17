@@ -14,6 +14,16 @@
 
     <div class="flex flex-col h-full overflow-hidden">
       <!--
+        Why the library is empty, said above whatever screen you are on.
+
+        It used to sit inside the library, under the filter row, which put a
+        notice about the app's recording setup in the middle of a list of
+        clips. Settings has the whole diagnostic and is the one screen that
+        does not need it, since its Recording section is the diagnostic.
+      -->
+      <ObsNotReadyBanner v-if="router.currentRoute.value.name !== 'settings'" />
+
+      <!--
         A screen gets a header when it asks for one, by carrying a `title` in
         its route meta. Settings does not: it is two columns and the right one
         already says which section it is showing. The editor does not either,
@@ -62,6 +72,7 @@ import { useKeyboardShortcuts } from '@renderer/composables/ui/useKeyboardShortc
 import { useFileImport } from '@renderer/composables/clips/useFileImport';
 import PageHeader from '@renderer/components/Shell/PageHeader.vue';
 import Sidebar from '@renderer/components/Shell/Sidebar.vue';
+import ObsNotReadyBanner from '@renderer/components/Obs/ObsNotReadyBanner.vue';
 import FileDropZone from '@renderer/components/Library/FileDropZone.vue';
 import CommandPalette from '@renderer/components/Shell/CommandPalette.vue';
 import { useServiceEvents } from '@renderer/composables/app/useServiceEvents';

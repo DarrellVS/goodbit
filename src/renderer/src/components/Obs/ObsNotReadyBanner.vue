@@ -112,19 +112,25 @@ async function recheck(): Promise<void> {
 </script>
 
 <template>
-  <div
-    v-if="visible"
-    class="mx-6 mt-4 rounded-md border border-accent/40 bg-accent/5 p-4"
-  >
-    <div class="flex flex-wrap items-center gap-x-3 gap-y-3">
+  <!--
+    A line, not a panel.
+
+    It was an accent-tinted card with an accent border and a filled button,
+    which is the treatment the design keeps for the one primary action in a
+    region. Nothing about "OBS is not set up" is the primary action of the
+    library: it is a notice, so it is a line at the top of the content with a
+    hairline under it, and its two actions are words.
+  -->
+  <div v-if="visible" class="px-6 py-3 border-b border-border">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
       <Icon
         icon="material-symbols:error-circle-rounded"
-        class="text-xl text-muted-500 shrink-0"
+        class="size-4 shrink-0 block text-warning"
       />
 
-      <div class="min-w-0 flex-1">
-        <p class="font-medium text-foreground">{{ headline }}</p>
-        <p class="text-sm text-muted-500 mt-0.5">{{ summary }}</p>
+      <div class="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-2">
+        <p class="text-sm font-medium text-foreground">{{ headline }}</p>
+        <p class="text-sm text-muted-500">{{ summary }}</p>
       </div>
 
       <!--
@@ -132,17 +138,17 @@ async function recheck(): Promise<void> {
         action, and stacking the buttons underneath gave a four row block the
         height of a clip card.
       -->
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-4 shrink-0">
         <button
           type="button"
-          class="h-9 px-3.5 inline-flex items-center justify-center rounded-md border border-transparent bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium whitespace-nowrap outline-none focus-visible:focus-ring transition-colors duration-150"
+          class="h-8 inline-flex items-center rounded-sm text-sm font-medium text-accent-ink whitespace-nowrap border-b border-accent/50 hover:border-accent outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="showDialog = true"
         >
           Set up OBS for me
         </button>
         <button
           type="button"
-          class="h-9 px-3.5 inline-flex items-center justify-center rounded-md border border-border hover:bg-muted-50 text-sm font-medium text-foreground whitespace-nowrap outline-none focus-visible:focus-ring transition-colors duration-150"
+          class="h-8 inline-flex items-center rounded-sm text-sm text-muted-500 hover:text-foreground whitespace-nowrap outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="dismiss"
         >
           Not now

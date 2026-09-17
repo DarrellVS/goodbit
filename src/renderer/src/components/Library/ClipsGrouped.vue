@@ -83,20 +83,26 @@ function time(clip: Clip): number {
       class="group/day"
       :class="config.public.value.compactMode ? 'space-y-2' : 'space-y-3'"
     >
-      <div class="flex items-center gap-3 px-2">
-        <Icon icon="material-symbols:label" class="w-5 h-5 text-muted-500" />
-        <div class="flex-1">
-          <div class="flex items-center gap-2">
-            <h3 class="text-sm font-semibold text-foreground">
-              {{ getGameDisplayName(group.game) }}
-            </h3>
-            <span class="text-xs text-muted-500">•</span>
-            <span class="text-xs text-muted-500">{{ group.displayDate }}</span>
-            <span class="text-xs font-medium text-muted-400 bg-muted-100 px-2 py-0.5 rounded-full">
-              {{ group.clips.length }}
-            </span>
-          </div>
-        </div>
+      <!--
+        The date leads, because the grouping is by day.
+
+        It read `[icon] Battlefield 6 . Today (3)`: a label glyph in front of a
+        date, the game where the date belongs, and the count in a pill. The
+        game is the qualifier on the day and the count is a fact about it, so
+        both are quiet, and the hairline under the row is what separates one
+        day from the next.
+      -->
+      <div class="flex items-center gap-3 pb-2 border-b border-border">
+        <h3 class="text-xs font-medium uppercase tracking-label text-foreground shrink-0">
+          {{ group.displayDate }}
+        </h3>
+        <span class="text-sm text-muted-500 truncate">
+          {{ getGameDisplayName(group.game) }}
+        </span>
+        <span class="font-mono text-xs tabular-nums text-muted-400 shrink-0">
+          {{ group.clips.length }}
+        </span>
+        <span class="flex-1" aria-hidden="true"></span>
 
         <!--
           A day of one game is the unit a montage is usually made from, so it
@@ -111,12 +117,13 @@ function time(clip: Clip): number {
           costs nothing but the repetition.
         -->
         <button
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-600 hover:text-accent-ink hover:bg-accent/10 transition-colors shrink-0
-                 opacity-0 group-hover/day:opacity-100 focus-visible:opacity-100 transition-opacity"
+          type="button"
+          class="h-7 inline-flex items-center gap-2 px-2 rounded-sm text-xs font-medium text-muted-500 hover:text-foreground shrink-0
+                 opacity-0 group-hover/day:opacity-100 focus-visible:opacity-100 outline-none focus-visible:focus-ring transition-opacity duration-150"
           :title="`Open these ${group.clips.length} clips in the editor, oldest first`"
           @click="editDayInEditor(group)"
         >
-          <Icon icon="material-symbols:movie-edit" class="text-base" />
+          <Icon icon="material-symbols:movie-edit" class="size-4 shrink-0 block" />
           Open this day in the editor
         </button>
       </div>

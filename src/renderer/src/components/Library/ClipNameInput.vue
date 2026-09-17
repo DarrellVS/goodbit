@@ -85,9 +85,6 @@ async function handleNameChange(event: Event): Promise<void> {
         :class="large ? 'right-2 h-5 w-5' : 'right-1.5 h-4 w-4'"
       />
     </div>
-    <div class="text-xs text-muted-400 mt-1 line-clamp-1">
-      {{ clip.game }}
-    </div>
   </div>
 </template>
 
