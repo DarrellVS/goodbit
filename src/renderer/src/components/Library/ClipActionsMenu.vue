@@ -212,7 +212,24 @@ async function handleMoveToGame(targetGame: string) {
               @click="onPublish"
             >
               <Icon icon="material-symbols:cloud-upload" class="text-base" />
-              <span>{{ isPublishing ? 'Publishing…' : 'Publish' }}</span>
+              <!--
+                Say which one this is.
+
+                The menu held "Publish" and "Publish the original file" with
+                nothing to tell them apart, and a walkthrough user pressed both
+                and still could not say what differed. `compressesPublished` is
+                already known here, so the default can name itself and the
+                entry below it is plainly the other choice.
+              -->
+              <span>
+                {{
+                  isPublishing
+                    ? 'Publishing…'
+                    : compressesPublished
+                      ? 'Publish a compressed copy'
+                      : 'Publish the original file'
+                }}
+              </span>
             </MenubarItem>
             <!--
               The other choice, whichever way the setting is pointed. Either

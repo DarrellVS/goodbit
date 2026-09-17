@@ -109,31 +109,42 @@ function volumeToDecimal(percentage: number): number {
         </p>
       </div>
 
+      <!--
+        Volume and mute are one concern, so they are one block.
+
+        They were two headings, `VOLUME` and `AUDIO`, with `AUDIO` holding
+        nothing but the mute button under a crossed-speaker icon that was drawn
+        the same whether or not the clip was muted. Worse, a muted clip still
+        read `100%` with the slider hard right, so the two controls disagreed
+        on screen about whether you would hear anything.
+      -->
       <div class="space-y-2 pt-4 border-t border-border">
         <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center justify-between">
           <span class="flex items-center gap-1">
-            <Icon icon="material-symbols:volume-up" class="text-orange-500" />
+            <Icon
+              :icon="clip.muted ? 'material-symbols:volume-off' : 'material-symbols:volume-up'"
+              class="text-orange-500"
+            />
             Volume
           </span>
-          <span class="text-foreground font-mono text-sm">{{ getVolumePercentage(clip.volume) }}%</span>
+          <span class="font-mono text-sm" :class="clip.muted ? 'text-muted-400' : 'text-foreground'">
+            {{ clip.muted ? 'Muted' : `${getVolumePercentage(clip.volume)}%` }}
+          </span>
         </label>
         <input
           type="range"
           min="0"
           max="100"
           :value="getVolumePercentage(clip.volume)"
-          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb"
+          :disabled="clip.muted"
+          class="w-full h-2 bg-orange-500/16 rounded-lg appearance-none cursor-pointer slider-thumb disabled:opacity-40 disabled:cursor-not-allowed"
           @input="emit('update', { volume: volumeToDecimal(($event.target as HTMLInputElement).valueAsNumber) })"
         />
       </div>
 
-      <div class="space-y-2">
-        <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-          <Icon icon="material-symbols:volume-off" class="text-orange-500" />
-          Audio
-        </label>
+      <div class="space-y-2 -mt-1">
         <button
-          class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border"
+          class="w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border"
           :class="clip.muted 
             ? 'bg-red-500/20 hover:bg-red-500/30 text-red-600 border-red-500/40' 
             : 'bg-card/80 hover:bg-card text-muted-700 border-border'"
