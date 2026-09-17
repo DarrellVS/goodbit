@@ -28,6 +28,8 @@ import ClipGoodBitsSection from './ClipGoodBitsSection.vue';
 import ClipNotesSection from './ClipNotesSection.vue';
 import ShareSheet from '@renderer/components/Publish/ShareSheet.vue';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import BasePager from '@renderer/components/Base/BasePager.vue';
+import { useClipNeighbours } from '@renderer/composables/clips/useClipNeighbours';
 
 /**
  * A clip, looked at closely, without leaving the library.
@@ -56,13 +58,21 @@ import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
  *   with the video, which gave real weight to the one thing nobody opens a clip
  *   to find out. Still there, and now they read as a footnote.
  */
-const { openClipId, view, close, show, back } = useClipDetail();
+const { openClipId, view, close, show, back, open } = useClipDetail();
 const toastStore = useToastStore();
 const collectionsStore = useCollectionsStore();
 
 const showExactDate = ref(false);
 const showShareSheet = ref(false);
 const videoPlayerRef = ref<InstanceType<typeof ClipVideoPlayer> | null>(null);
+
+/**
+ * Moving to the clip beside this one, which is the one thing the modal could
+ * not do. `open` rather than assigning the id, so the view resets to the
+ * details panel: stepping to the next clip from inside the trimmer and landing
+ * in the trimmer on a clip you have not looked at would be a trap.
+ */
+const neighbours = useClipNeighbours(openClipId, (id) => open(id, 'details'));
 
 const clipId = computed(() => openClipId.value ?? 0);
 const { clip, metadata, loading, error, loadClip, handleClipUpdated } = useClipLoader(clipId);
@@ -258,7 +268,7 @@ async function onTrimmed(): Promise<void> {
       <Transition name="clip-modal" mode="out-in" appear>
         <DialogContent
           :key="view"
-          class="fixed inset-8 z-50 bg-card rounded-2xl shadow-2xl border border-border flex flex-col outline-hidden overflow-hidden"
+          class="fixed inset-8 z-50 bg-card rounded-lg shadow-pop border border-border flex flex-col outline-hidden overflow-hidden"
           @open-auto-focus="(event: Event) => event.preventDefault()"
         >
         <!--
@@ -266,7 +276,7 @@ async function onTrimmed(): Promise<void> {
           The name is editable in place, which is where anybody would try to
           rename it first.
         -->
-        <header class="flex items-start gap-4 px-6 py-4 border-b border-border shrink-0">
+        <header class="flex items-center gap-3 px-5 py-3 border-b border-border shrink-0">
           <!--
             Back out of the trimmer without closing the clip. Trimming is a face
             of this layer, so leaving it lands on the other face rather than on
@@ -274,12 +284,12 @@ async function onTrimmed(): Promise<void> {
           -->
           <button
             v-if="view === 'trim'"
-            class="shrink-0 w-9 h-9 mt-1 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
+            class="size-9 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 hover:text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
             aria-label="Back to the clip"
             title="Back to the clip"
             @click="back"
           >
-            <Icon icon="material-symbols:arrow-back-rounded" class="text-xl" />
+            <Icon icon="material-symbols:arrow-back-rounded" class="size-5 shrink-0 block" />
           </button>
 
           <div class="min-w-0 flex-1">
@@ -292,33 +302,54 @@ async function onTrimmed(): Promise<void> {
             </DialogDescription>
           </div>
 
+          <!--
+            Where you are in the run, and how to move along it.
+
+            Section 5.7 of the design contract, and the only thing added to the
+            app by this release. The audit found no way to move between clips:
+            you close, find the next tile and open it again, which is three
+            actions for the most common thing anybody does with a library.
+            Hidden when there is nothing to page through, because `1 of 1` is
+            a control that can only be pressed to no effect.
+          -->
+          <BasePager
+            v-if="view === 'details' && neighbours.total.value > 1"
+            class="shrink-0"
+            :position="neighbours.position.value"
+            :total="neighbours.total.value"
+            :has-previous="neighbours.hasPrevious.value"
+            :has-next="neighbours.hasNext.value"
+            @previous="neighbours.previous"
+            @next="neighbours.next"
+          />
+
           <button
-            class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
+            class="size-9 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 hover:text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
             aria-label="Close"
             title="Close (Esc)"
             @click="close"
           >
-            <Icon icon="material-symbols:close-rounded" class="text-xl" />
+            <Icon icon="material-symbols:close-rounded" class="size-5 shrink-0 block" />
           </button>
         </header>
 
         <div v-if="loading" class="flex-1 flex items-center justify-center">
           <div class="text-center space-y-3">
-            <BaseSpinner
-              class="text-5xl text-accent-ink" />
-            <p class="text-muted-600">Loading clip…</p>
+            <BaseSpinner class="size-8 block mx-auto text-muted-400" />
+            <p class="text-sm text-muted-500">Loading clip…</p>
           </div>
         </div>
 
         <div v-else-if="error || !clip" class="flex-1 flex items-center justify-center">
           <div class="text-center space-y-3 max-w-md px-6">
-            <Icon icon="material-symbols:error-outline" class="text-5xl text-danger-ink" />
-            <h2 class="text-xl font-bold text-foreground">Clip not found</h2>
-            <p class="text-muted-600">
+            <Icon icon="material-symbols:error-outline" class="size-8 block mx-auto text-danger-ink" />
+            <h2 class="font-display text-lg font-medium text-foreground">Clip not found</h2>
+            <p class="text-sm text-muted-500">
               {{ error || 'This clip does not exist any more.' }}
             </p>
             <button
-              class="px-5 py-2.5 rounded-lg bg-accent text-accent-fg hover:bg-accent-hover transition-colors"
+              type="button"
+              class="h-9 px-3.5 rounded-md bg-accent text-accent-fg hover:bg-accent-hover inline-flex items-center justify-center text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
               @click="close"
             >
               Close
@@ -390,24 +421,21 @@ async function onTrimmed(): Promise<void> {
                   @share="showShareSheet = true"
                 />
 
-                <div class="bg-background/40 rounded-2xl p-5 border border-border">
-                  <div class="flex items-center gap-2 mb-3">
-                    <Icon icon="material-symbols:label-rounded" class="text-lg text-muted-500" />
-                    <h2 class="font-semibold text-foreground">Tags</h2>
-                  </div>
+                <!--
+                  Sections divided by a hairline, not four bordered cards of
+                  equal weight stacked in a column. A box around each one said
+                  all four were the same size of decision, when the list above
+                  them replaces your recording and these two write a label.
+                -->
+                <section class="border-t border-border pt-4">
+                  <h2 class="text-sm font-medium text-muted-600 mb-2">Tags</h2>
                   <ClipTags :clip="clip" prominent @updated="clip = $event" />
-                </div>
+                </section>
 
-                <div class="bg-background/40 rounded-2xl p-5 border border-border">
-                  <div class="flex items-center gap-2 mb-3">
-                    <Icon
-                      icon="material-symbols:folder-special-rounded"
-                      class="text-lg text-muted-500"
-                    />
-                    <h2 class="font-semibold text-foreground">Collections</h2>
-                  </div>
+                <section class="border-t border-border pt-4">
+                  <h2 class="text-sm font-medium text-muted-600 mb-2">Collections</h2>
                   <ClipCollections :clip="clip" />
-                </div>
+                </section>
 
                 <!--
                   Everything nobody opened a clip to find out, at the bottom of
