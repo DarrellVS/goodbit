@@ -32,7 +32,7 @@ const emit = defineEmits<Emits>();
     @click="emit('choose', 'quick')"
   >
     <span class="flex items-center gap-2">
-      <Icon icon="material-symbols:bolt" class="text-lg text-accent-ink" />
+      <Icon icon="material-symbols:bolt" class="text-lg text-muted-500" />
       <span class="font-medium text-foreground">Quick setup</span>
     </span>
     <span class="block text-sm text-muted-500 mt-1">

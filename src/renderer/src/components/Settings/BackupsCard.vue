@@ -101,7 +101,7 @@ onMounted(() => {
   <div class="p-4 bg-card border border-border rounded-lg space-y-4">
     <div class="flex items-start gap-3">
       <div class="w-10 h-10 rounded-xl bg-accent/12 flex items-center justify-center shrink-0">
-        <Icon icon="material-symbols:database" class="text-xl text-accent-ink" />
+        <Icon icon="material-symbols:database" class="text-xl text-muted-500" />
       </div>
       <div class="min-w-0 flex-1">
         <h3 class="font-medium text-foreground">Library backups</h3>

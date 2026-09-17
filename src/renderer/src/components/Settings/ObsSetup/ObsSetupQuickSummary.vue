@@ -23,7 +23,7 @@ defineProps<Props>();
       :key="tile.label"
       class="p-3 rounded-xl border border-border flex items-start gap-2.5"
     >
-      <Icon :icon="tile.icon" class="text-base text-accent-ink shrink-0 mt-0.5" />
+      <Icon :icon="tile.icon" class="text-base text-muted-500 shrink-0 mt-0.5" />
       <div class="min-w-0">
         <p class="text-xs text-muted-500">{{ tile.label }}</p>
         <p class="text-sm text-foreground">

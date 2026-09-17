@@ -31,25 +31,47 @@ function selectSection(sectionId: string): void {
     -->
     <slot name="search" />
 
-    <nav class="flex-1 min-h-0 p-3 space-y-1 overflow-y-auto pt-3">
+    <nav class="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto">
+      <!--
+        The same active marker as the sidebar beside it: weight and a hairline
+        accent rule, absolutely positioned so the row does not move.
+
+        This column and the app's own sidebar sit side by side on this screen
+        and were two different materials, and this one carried three markers
+        for one state at once: a filled tint, accent ink and a glyph that also
+        turned accent. One is enough, and it is the one the other column uses.
+
+        A grid rather than a flex row of guesses, so the glyphs form a column
+        and both lines of every row share one left edge. The description used
+        to be indented by the glyph and the label was not.
+      -->
       <button
         v-for="section in sections"
         :key="section.id"
-        class="w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-colors text-left"
+        type="button"
+        :aria-current="activeSection === section.id ? 'true' : undefined"
+        class="relative w-full grid grid-cols-[1.25rem_1fr] items-start gap-3 pl-4 pr-3 py-2.5 rounded-md text-left outline-none focus-visible:focus-ring transition-colors duration-150"
         :class="activeSection === section.id
-          ? 'bg-accent/10 text-accent-ink'
-          : 'hover:bg-muted-100 text-muted-700'"
+          ? 'text-foreground'
+          : 'text-muted-600 hover:bg-muted-100 hover:text-foreground'"
         @click="selectSection(section.id)"
       >
-        <Icon :icon="section.icon" class="text-xl mt-0.5 shrink-0" />
-        <div class="min-w-0 flex-1">
-          <div class="font-medium">{{ section.label }}</div>
+        <span
+          v-if="activeSection === section.id"
+          aria-hidden="true"
+          class="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-accent"
+        />
+        <Icon :icon="section.icon" class="size-5 shrink-0 block mt-px" />
+        <div class="min-w-0">
+          <div class="text-sm" :class="activeSection === section.id ? 'font-medium' : ''">
+            {{ section.label }}
+          </div>
           <div class="text-xs text-muted-500 mt-0.5">{{ section.description }}</div>
         </div>
       </button>
     </nav>
 
-    <div class="p-3 border-t border-border space-y-2">
+    <div class="p-2 pb-3 border-t border-border space-y-0.5">
       <!--
         One grid, three rows, so the glyphs form a column and the labels share
         a left edge. They were flex rows with an inline icon sized by its own

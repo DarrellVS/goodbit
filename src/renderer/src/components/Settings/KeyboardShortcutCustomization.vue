@@ -38,7 +38,7 @@ function getActionLabel(actionId: string): string {
 
     <div v-if="Object.keys(conflicts).length > 0" class="p-4 bg-accent/8 border border-accent/40 rounded-lg">
       <div class="flex gap-3">
-        <Icon icon="material-symbols:warning" class="text-accent-ink text-xl shrink-0 mt-0.5" />
+        <Icon icon="material-symbols:warning" class="text-muted-500 text-xl shrink-0 mt-0.5" />
         <div class="flex-1">
           <h4 class="font-medium text-foreground mb-2">Shortcut Conflicts Detected</h4>
           <div class="space-y-1 text-sm text-muted-700">

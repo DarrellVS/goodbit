@@ -79,7 +79,7 @@ function isAdded(clip: Clip): boolean {
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
     <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:video-library" class="text-accent-ink" />
+        <Icon icon="material-symbols:video-library" class="text-muted-500" />
         Clip Library
       </h3>
       <!--
@@ -166,8 +166,8 @@ function isAdded(clip: Clip): boolean {
 
     <div v-else-if="clips.length === 0" class="flex-1 flex items-center justify-center px-4">
       <div class="text-center">
-        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-accent/16 flex items-center justify-center">
-          <Icon icon="material-symbols:search-off" class="text-2xl text-accent-ink" />
+        <div class="mb-3 flex items-center justify-center">
+          <Icon icon="material-symbols:search-off" class="size-8 shrink-0 block text-muted-300" />
         </div>
         <p class="text-sm font-medium text-muted-700">No clips found</p>
         <p class="text-xs mt-1 text-muted-500">
@@ -183,7 +183,7 @@ function isAdded(clip: Clip): boolean {
         class="space-y-2"
       >
         <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-card/85 backdrop-blur-sm py-1 -mx-0.5 rounded-sm">
-          <Icon icon="material-symbols:label" class="text-accent-ink text-base shrink-0" />
+          <Icon icon="material-symbols:label" class="text-muted-500 text-base shrink-0" />
           <span class="text-sm font-semibold text-foreground truncate">
             {{ getGameDisplayName(group.game) }}
           </span>
@@ -212,7 +212,7 @@ function isAdded(clip: Clip): boolean {
               class="w-full h-full object-cover opacity-60"
             />
             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/50">
-              <Icon icon="material-symbols:add" class="text-base text-accent-ink" />
+              <Icon icon="material-symbols:add" class="text-base text-muted-500" />
             </div>
           </div>
 

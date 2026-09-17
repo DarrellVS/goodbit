@@ -265,7 +265,7 @@ async function saveNew(): Promise<void> {
       <div v-for="category in categories" :key="category">
         <div v-if="patternsByCategory[category].length > 0">
           <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Icon icon="material-symbols:label" class="text-accent-ink" />
+            <Icon icon="material-symbols:label" class="text-muted-500" />
             {{ category }}
             <span class="text-sm font-normal text-muted-500">({{ patternsByCategory[category].length }})</span>
           </h2>
@@ -312,7 +312,7 @@ async function saveNew(): Promise<void> {
                       class="p-1.5 rounded-lg hover:bg-accent/16 transition-colors"
                       @click="startEdit(pattern.tag)"
                     >
-                      <Icon icon="material-symbols:edit" class="text-accent-ink" />
+                      <Icon icon="material-symbols:edit" class="text-muted-500" />
                     </button>
                     <button
                       class="p-1.5 rounded-lg hover:bg-danger/16 transition-colors"
@@ -385,7 +385,7 @@ async function saveNew(): Promise<void> {
                 class="p-1.5 rounded-lg hover:bg-accent/16 transition-colors"
                 @click="startEdit(pattern.tag)"
               >
-                <Icon icon="material-symbols:edit" class="text-accent-ink" />
+                <Icon icon="material-symbols:edit" class="text-muted-500" />
               </button>
               <button
                 class="p-1.5 rounded-lg hover:bg-danger/16 transition-colors"

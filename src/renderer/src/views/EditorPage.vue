@@ -954,7 +954,7 @@ watch(
           v-if="resumable"
           class="shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl border border-accent/40 bg-accent/6 backdrop-blur-sm"
         >
-          <Icon icon="material-symbols:history" class="text-xl text-accent-ink shrink-0" />
+          <Icon icon="material-symbols:history" class="text-xl text-muted-500 shrink-0" />
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-foreground">
               {{ resumable.projectId === null ? 'Continue where you left off?' : `Continue “${resumable.name}”?` }}
@@ -1029,8 +1029,8 @@ watch(
 
           <div v-else class="absolute inset-0 flex items-center justify-center">
             <div class="text-center">
-              <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-accent/16 flex items-center justify-center">
-                <Icon icon="material-symbols:movie" class="text-4xl text-accent-ink" />
+              <div class="mb-4 flex items-center justify-center">
+                <Icon icon="material-symbols:movie" class="size-8 shrink-0 block text-muted-300" />
               </div>
               <p class="text-lg font-semibold mb-2 text-foreground">No clips in timeline</p>
               <p class="text-sm text-muted-600">Click clips from the library to get started</p>

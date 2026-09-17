@@ -316,7 +316,7 @@ const LIST_Z_INDEX = 'z-300';
             -->
             <span class="mt-0.5 w-4 shrink-0">
               <ComboboxItemIndicator>
-                <Icon icon="material-symbols:check" class="text-base text-accent-ink" />
+                <Icon icon="material-symbols:check" class="text-base text-muted-500" />
               </ComboboxItemIndicator>
             </span>
           </ComboboxItem>

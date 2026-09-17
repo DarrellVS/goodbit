@@ -45,7 +45,7 @@ const encoderLabel = computed(() => {
     :class="['p-4 bg-card rounded-lg border border-border space-y-2', settingRing('Health')]"
   >
     <h3 class="font-medium text-foreground flex items-center gap-2">
-      <Icon icon="material-symbols:favorite-outline" class="text-accent-ink" />
+      <Icon icon="material-symbols:favorite-outline" class="text-muted-500" />
       Health
     </h3>
     <dl class="text-sm space-y-1">

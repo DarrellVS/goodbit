@@ -37,7 +37,7 @@ const emit = defineEmits<Emits>();
         <Icon :icon="icon" class="text-xl" :class="iconColor" />
       </div>
     </div>
-    <div class="text-3xl font-bold text-foreground">{{ value }}</div>
+    <div class="font-mono text-2xl font-medium text-foreground tabular-nums">{{ value }}</div>
     <div v-if="subtitle" class="text-xs text-muted-500 mt-1">{{ subtitle }}</div>
   </component>
 </template>

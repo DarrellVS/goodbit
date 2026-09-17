@@ -196,7 +196,7 @@ async function copy(): Promise<void> {
         </div>
 
         <div v-else class="p-6 flex flex-col items-center gap-3 text-center">
-          <Icon icon="material-symbols:wifi-tethering" class="text-4xl text-accent-ink" />
+          <Icon icon="material-symbols:wifi-tethering" class="text-4xl text-muted-500" />
           <p class="text-sm text-muted-600">
             Hand this clip to a phone on the same wifi, without uploading it anywhere.
           </p>

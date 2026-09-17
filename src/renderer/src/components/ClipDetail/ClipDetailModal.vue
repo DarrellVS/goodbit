@@ -392,7 +392,7 @@ async function onTrimmed(): Promise<void> {
 
                 <div class="bg-background/40 rounded-2xl p-5 border border-border">
                   <div class="flex items-center gap-2 mb-3">
-                    <Icon icon="material-symbols:label-rounded" class="text-lg text-accent-ink" />
+                    <Icon icon="material-symbols:label-rounded" class="text-lg text-muted-500" />
                     <h2 class="font-semibold text-foreground">Tags</h2>
                   </div>
                   <ClipTags :clip="clip" prominent @updated="clip = $event" />

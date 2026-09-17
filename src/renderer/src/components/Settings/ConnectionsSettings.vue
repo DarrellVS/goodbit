@@ -151,7 +151,7 @@ async function copyCommand(): Promise<void> {
 
     <div class="p-4 bg-card rounded-lg border border-border space-y-4">
       <div data-setting="Claude" :class="['flex items-start gap-3', settingRing('Claude')]">
-        <Icon icon="material-symbols:robot-2-outline" class="text-xl text-accent-ink mt-0.5" />
+        <Icon icon="material-symbols:robot-2-outline" class="text-xl text-muted-500 mt-0.5" />
         <div class="min-w-0">
           <p class="font-medium text-foreground">Claude</p>
           <p class="text-sm text-muted-500 mt-1">

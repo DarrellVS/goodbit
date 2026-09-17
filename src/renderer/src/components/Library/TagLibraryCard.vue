@@ -38,7 +38,7 @@ onMounted(() => {
       <div
         class="w-10 h-10 rounded-xl bg-accent/12 flex items-center justify-center shrink-0"
       >
-        <Icon icon="material-symbols:label" class="text-xl text-accent-ink" />
+        <Icon icon="material-symbols:label" class="text-xl text-muted-500" />
       </div>
       <div class="min-w-0 flex-1">
         <h2 class="text-lg font-semibold text-foreground">Tags in your library</h2>

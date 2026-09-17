@@ -23,7 +23,7 @@ import { Icon } from '@iconify/vue';
   <div class="p-4 rounded-xl border border-border flex items-start gap-3">
     <Icon
       icon="material-symbols:check-circle"
-      class="text-lg text-accent-ink shrink-0 mt-0.5"
+      class="text-lg text-muted-500 shrink-0 mt-0.5"
     />
     <div class="min-w-0">
       <p class="font-medium text-foreground text-sm">A folder per game</p>

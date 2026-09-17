@@ -43,7 +43,7 @@ async function handleToggleStar(): Promise<void> {
     <Icon
       icon="material-symbols:star"
       class="text-xl shrink-0"
-      :class="clip.starred ? 'text-accent-ink' : 'text-muted-400'"
+      :class="clip.starred ? 'text-accent' : 'text-muted-400'"
     />
     <span class="text-sm font-medium text-foreground">
       {{ clip.starred ? 'Starred' : 'Star this clip' }}

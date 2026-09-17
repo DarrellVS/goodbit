@@ -31,7 +31,7 @@ const emit = defineEmits<Emits>();
     <Icon
       :icon="chosen ? 'material-symbols:check-circle' : 'material-symbols:circle-outline'"
       class="text-lg shrink-0"
-      :class="chosen ? 'text-accent-ink' : 'text-muted-400'"
+      :class="chosen ? 'text-muted-500' : 'text-muted-400'"
     />
     <span class="min-w-0">
       <span class="block text-sm text-foreground truncate">{{ device.name }}</span>

@@ -51,15 +51,18 @@ const displayDate = computed(() => {
 </script>
 
 <template>
-  <div v-if="config.public.value.showMetadata" class="flex items-center justify-between gap-2 text-xs text-muted-500">
+  <div
+    v-if="config.public.value.showMetadata"
+    class="flex items-center justify-between gap-2 font-mono text-xs text-muted-400"
+  >
     <span class="flex items-center gap-2 min-w-0">
-      <span v-if="length" class="tabular-nums text-foreground/70">{{ length }}</span>
+      <span v-if="length">{{ length }}</span>
       <span v-if="length" aria-hidden="true">·</span>
       <span>{{ formatBytes(sizeBytes) }}</span>
     </span>
-    <time 
+    <time
       :datetime="recordedAt"
-      class="cursor-default transition-colors hover:text-accent-ink"
+      class="cursor-default transition-colors duration-150 hover:text-foreground"
       @mouseenter="showExactDate = true"
       @mouseleave="showExactDate = false"
     >

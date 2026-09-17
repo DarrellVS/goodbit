@@ -178,7 +178,7 @@ async function finish(): Promise<void> {
           <Icon
             :icon="settings.videosRoot ? 'material-symbols:check-circle' : 'material-symbols:folder-open'"
             class="text-2xl shrink-0"
-            :class="settings.videosRoot ? 'text-accent-ink' : 'text-muted-400'"
+            :class="settings.videosRoot ? 'text-muted-500' : 'text-muted-400'"
           />
           <span class="min-w-0 flex-1">
             <span class="block font-medium text-foreground">Your clips folder</span>

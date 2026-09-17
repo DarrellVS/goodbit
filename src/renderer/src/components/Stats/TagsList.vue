@@ -19,7 +19,7 @@ withDefaults(defineProps<Props>(), {
 <template>
   <div class="bg-card border border-border rounded-xl p-6">
     <div class="flex items-center gap-2 mb-4">
-      <Icon icon="material-symbols:label" class="text-xl text-accent-ink" />
+      <Icon icon="material-symbols:label" class="text-xl text-muted-500" />
       <h3 class="text-lg font-semibold">Top Tags</h3>
     </div>
     

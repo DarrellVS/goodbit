@@ -90,7 +90,7 @@ function onBackdrop(event: MouseEvent): void {
               <Icon
                 :icon="icon"
                 class="size-5 shrink-0 block mt-0.5"
-                :class="tone === 'danger' ? 'text-danger-ink' : 'text-accent-ink'"
+                :class="tone === 'danger' ? 'text-danger-ink' : 'text-muted-500'"
               />
               <div class="min-w-0">
                 <h2 class="font-display text-lg font-medium text-foreground">

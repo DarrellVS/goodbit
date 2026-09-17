@@ -54,15 +54,15 @@ function volumeToDecimal(percentage: number): number {
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
     <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:tune" class="text-accent-ink" />
+        <Icon icon="material-symbols:tune" class="text-muted-500" />
         Clip Properties
       </h3>
     </div>
 
     <div v-if="!clip" class="flex-1 flex items-center justify-center text-muted-500 text-sm">
       <div class="text-center">
-        <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-accent/16 flex items-center justify-center">
-          <Icon icon="material-symbols:info" class="text-2xl text-accent-ink" />
+        <div class="mb-3 flex items-center justify-center">
+          <Icon icon="material-symbols:info" class="text-2xl text-muted-500" />
         </div>
         <p class="font-medium text-muted-700">No clip selected</p>
         <p class="text-xs mt-1 text-muted-500">Click a clip to edit</p>
@@ -123,7 +123,7 @@ function volumeToDecimal(percentage: number): number {
           <span class="flex items-center gap-1">
             <Icon
               :icon="clip.muted ? 'material-symbols:volume-off' : 'material-symbols:volume-up'"
-              class="text-accent-ink"
+              class="text-muted-500"
             />
             Volume
           </span>
@@ -145,8 +145,8 @@ function volumeToDecimal(percentage: number): number {
       <div class="space-y-2 -mt-1">
         <button
           class="w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 border"
-          :class="clip.muted 
-            ? 'bg-danger/20 hover:bg-danger/30 text-danger-ink border-danger/40' 
+          :class="clip.muted
+            ? 'bg-danger/20 hover:bg-danger/30 text-danger-ink border-danger/40'
             : 'bg-card/80 hover:bg-card text-muted-700 border-border'"
           @click="emit('update', { muted: !clip.muted })"
         >
@@ -157,7 +157,7 @@ function volumeToDecimal(percentage: number): number {
 
       <!--
         Order and removal, where you can see them.
-        
+
         Reordering had no route at all: no grip, no hover state, no context
         menu, no keyboard, and nothing saying clips could be dragged. Removal
         worked on the Delete key and nowhere else, so it was found by guessing.
@@ -199,7 +199,7 @@ function volumeToDecimal(percentage: number): number {
 
       <div class="pt-4 border-t border-border space-y-2">
         <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-          <Icon icon="material-symbols:info" class="text-accent-ink" />
+          <Icon icon="material-symbols:info" class="text-muted-500" />
           Clip Info
         </div>
         <div class="space-y-1.5 text-xs bg-card/80 rounded-lg p-3 border border-border">

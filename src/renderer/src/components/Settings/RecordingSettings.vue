@@ -159,7 +159,7 @@ function openGuide(): void {
           v-else
           :icon="status.ready ? 'material-symbols:check-circle' : 'material-symbols:error-circle-rounded'"
           class="text-xl shrink-0 mt-0.5"
-          :class="status.ready ? 'text-success' : 'text-accent-ink'"
+          :class="status.ready ? 'text-success' : 'text-muted-500'"
         />
         <div class="min-w-0">
           <p class="font-medium text-foreground">{{ headline }}</p>

@@ -21,7 +21,7 @@ function getBarHeight(count: number): string {
 <template>
   <div class="bg-card border border-border rounded-xl p-6">
     <div class="flex items-center gap-2 mb-6">
-      <Icon icon="material-symbols:calendar-month" class="text-xl text-accent-ink" />
+      <Icon icon="material-symbols:calendar-month" class="text-xl text-muted-500" />
       <h3 class="text-lg font-semibold">Activity</h3>
       <span class="text-sm text-muted-500 ml-auto">Last 14 days</span>
     </div>

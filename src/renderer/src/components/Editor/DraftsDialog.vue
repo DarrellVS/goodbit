@@ -142,7 +142,7 @@ watch(
         <!-- A parsed file, named before it is kept. -->
         <div v-if="pendingImport" class="p-6 border-b border-border bg-accent/5 space-y-2">
           <div class="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Icon icon="material-symbols:upload-file" class="text-lg text-accent-ink" />
+            <Icon icon="material-symbols:upload-file" class="text-lg text-muted-500" />
             Import draft
           </div>
           <div class="text-xs text-muted-600">
@@ -209,8 +209,8 @@ watch(
 
         <div class="flex-1 overflow-y-auto p-6">
           <div v-if="drafts.length === 0" class="text-center py-6">
-            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-accent/16 flex items-center justify-center">
-              <Icon icon="material-symbols:bookmarks-outline" class="text-2xl text-accent-ink" />
+            <div class="mb-3 flex items-center justify-center">
+              <Icon icon="material-symbols:bookmarks-outline" class="size-8 shrink-0 block text-muted-300" />
             </div>
             <p class="text-sm font-medium text-muted-700">No saved drafts</p>
             <p class="text-xs mt-1 text-muted-500">

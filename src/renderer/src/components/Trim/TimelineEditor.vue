@@ -3,7 +3,7 @@
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-accent/10">
-          <Icon icon="material-symbols:timeline" class="text-accent-ink text-xl" />
+          <Icon icon="material-symbols:timeline" class="text-muted-500 text-xl" />
         </div>
         <div>
           <h2 class="font-semibold text-lg">Timeline</h2>
@@ -19,7 +19,7 @@
       </div>
       
       <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/5">
-        <Icon icon="material-symbols:timer" class="text-accent-ink" />
+        <Icon icon="material-symbols:timer" class="text-muted-500" />
         <span class="text-muted-400">Duration:</span>
         <!-- `duration` is already formatted, frames and all. -->
         <span class="font-mono font-semibold text-accent-ink tabular-nums">{{ duration }}</span>

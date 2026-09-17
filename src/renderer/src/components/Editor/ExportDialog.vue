@@ -326,13 +326,13 @@ watch(
 
           <div class="rounded-lg bg-muted-50 border border-border p-3 space-y-1.5 text-sm text-muted-700">
             <div class="flex items-center gap-2">
-              <Icon icon="material-symbols:movie" class="text-lg text-accent-ink" />
+              <Icon icon="material-symbols:movie" class="text-lg text-muted-500" />
               {{ clipCount }} clip{{ clipCount === 1 ? '' : 's' }}
               <span class="text-muted-400">·</span>
               <span class="font-mono">{{ formatTime(duration) }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <Icon icon="material-symbols:music-note" class="text-lg text-accent-ink" />
+              <Icon icon="material-symbols:music-note" class="text-lg text-muted-500" />
               {{ trackCount === 0 ? 'No music' : `${trackCount} music track${trackCount === 1 ? '' : 's'}` }}
             </div>
             <!--
@@ -342,7 +342,7 @@ watch(
               size was the only number missing.
             -->
             <div v-if="outputLabel" class="flex items-center gap-2">
-              <Icon icon="material-symbols:aspect-ratio" class="text-lg text-accent-ink" />
+              <Icon icon="material-symbols:aspect-ratio" class="text-lg text-muted-500" />
               <span class="font-mono">{{ outputLabel }}</span>
               <span v-if="sizeLabel" class="text-muted-400">·</span>
               <span v-if="sizeLabel" class="font-mono">{{ sizeLabel }}</span>

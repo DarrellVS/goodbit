@@ -170,7 +170,7 @@ const hiddenTagsCount = computed(() => Math.max(0, (props.clip.tags?.length || 0
               :title="`Category: ${getCategoryForTag(tag)}`"
               @click="applySuggestedTag(tag)"
             >
-              <Icon icon="material-symbols:add" class="text-accent-ink size-4 shrink-0 block" />
+              <Icon icon="material-symbols:add" class="text-muted-500 size-4 shrink-0 block" />
               <span class="text-foreground">#{{ tag }}</span>
             </button>
           </div>

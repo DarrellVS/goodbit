@@ -119,7 +119,7 @@ async function recheck(): Promise<void> {
     <div class="flex flex-wrap items-center gap-x-3 gap-y-3">
       <Icon
         icon="material-symbols:error-circle-rounded"
-        class="text-xl text-accent-ink shrink-0"
+        class="text-xl text-muted-500 shrink-0"
       />
 
       <div class="min-w-0 flex-1">

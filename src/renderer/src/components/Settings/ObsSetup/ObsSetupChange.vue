@@ -33,7 +33,7 @@ defineProps<Props>();
               ? 'material-symbols:download'
               : 'material-symbols:edit'
         "
-        class="text-base text-accent-ink shrink-0 mt-0.5"
+        class="text-base text-muted-500 shrink-0 mt-0.5"
       />
       <span class="text-sm font-medium text-foreground">{{ change.title }}</span>
     </div>

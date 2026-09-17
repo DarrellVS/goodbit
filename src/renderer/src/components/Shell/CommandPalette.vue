@@ -157,7 +157,7 @@ function runActive(): void {
               <Icon
                 :icon="row.command.icon ?? 'material-symbols:chevron-right'"
                 class="text-lg shrink-0"
-                :class="row.index === activeIndex ? 'text-accent-ink' : 'text-muted-400'"
+                :class="row.index === activeIndex ? 'text-muted-500' : 'text-muted-400'"
               />
               <span class="truncate">{{ row.command.label }}</span>
             </button>

@@ -52,7 +52,7 @@ function applyFadePreset(seconds: number): void {
   <div class="flex flex-col h-full bg-card/60 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
     <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border">
       <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:tune" class="text-accent-ink" />
+        <Icon icon="material-symbols:tune" class="text-muted-500" />
         Track Properties
       </h3>
     </div>
@@ -73,7 +73,7 @@ function applyFadePreset(seconds: number): void {
     <div class="space-y-2">
       <label class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center justify-between">
         <span class="flex items-center gap-1">
-          <Icon icon="material-symbols:volume-up" class="text-accent-ink" />
+          <Icon icon="material-symbols:volume-up" class="text-muted-500" />
           Level
         </span>
         <span class="text-foreground font-mono text-sm">{{ volumePercent }}% · {{ volumeDb }} dB</span>
@@ -103,7 +103,7 @@ function applyFadePreset(seconds: number): void {
 
     <div class="space-y-3">
       <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-        <Icon icon="material-symbols:gradient" class="text-accent-ink" />
+        <Icon icon="material-symbols:gradient" class="text-muted-500" />
         Fades
       </div>
 
@@ -166,7 +166,7 @@ function applyFadePreset(seconds: number): void {
 
     <div class="pt-4 border-t border-border space-y-2">
       <div class="text-xs font-semibold text-muted-700 uppercase tracking-wide flex items-center gap-1">
-        <Icon icon="material-symbols:info" class="text-accent-ink" />
+        <Icon icon="material-symbols:info" class="text-muted-500" />
         Track Info
       </div>
       <div class="space-y-1.5 text-xs bg-card/80 rounded-lg p-3 border border-border">

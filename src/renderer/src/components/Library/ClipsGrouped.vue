@@ -84,7 +84,7 @@ function time(clip: Clip): number {
       :class="config.public.value.compactMode ? 'space-y-2' : 'space-y-3'"
     >
       <div class="flex items-center gap-3 px-2">
-        <Icon icon="material-symbols:label" class="w-5 h-5 text-accent-ink" />
+        <Icon icon="material-symbols:label" class="w-5 h-5 text-muted-500" />
         <div class="flex-1">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-semibold text-foreground">

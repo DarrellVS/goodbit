@@ -92,7 +92,7 @@ async function copyPublicUrl(): Promise<void> {
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-accent/40 bg-accent/5 hover:bg-accent/10 transition-colors text-left"
         @click="onAdvancedEdit"
       >
-        <Icon icon="material-symbols:video-settings" class="text-xl text-accent-ink shrink-0" />
+        <Icon icon="material-symbols:video-settings" class="text-xl text-muted-500 shrink-0" />
         <span class="text-sm font-medium text-foreground">Open in the editor</span>
       </button>
     </div>
@@ -104,7 +104,7 @@ async function copyPublicUrl(): Promise<void> {
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:bg-muted-50 transition-colors text-left"
         @click="emit('share')"
       >
-        <Icon icon="material-symbols:qr-code-2" class="text-xl text-accent-ink shrink-0" />
+        <Icon icon="material-symbols:qr-code-2" class="text-xl text-muted-500 shrink-0" />
         <span class="text-sm font-medium text-foreground">Share on your wifi</span>
       </button>
 

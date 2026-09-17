@@ -35,7 +35,7 @@ defineProps<Props>();
         <template v-if="!isUploading">
           <Icon
             icon="material-symbols:upload-file"
-            class="text-9xl text-accent-ink mb-6 mx-auto animate-bounce"
+            class="text-9xl text-muted-500 mb-6 mx-auto animate-bounce"
           />
           <h2 class="text-4xl font-bold text-on-video mb-3">
             Drop Files Here
