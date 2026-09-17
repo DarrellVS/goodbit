@@ -143,6 +143,56 @@ describe('what a real library gets typed into it', () => {
     expect(planSearch('22.08.2026').terms).toEqual(['22', '08', '2026']);
   });
 
+  /*
+   * A date is one thing, and used to be three.
+   *
+   * `25-09-2026` became `"25" AND "09" AND "2026"*`, tokens that only had to
+   * appear somewhere, so it also matched `Ready Or Not_09.07.2026_11-25-25`:
+   * `09` from that month, `2026` from that year, `25` out of the seconds. A
+   * person typed the date printed on a card and got a different month back.
+   */
+  describe('dates', () => {
+    it('matches a full date as one phrase, in filename order', () => {
+      // `Battlefield 6_25.09.2026_15-15-15` tokenises to `... 25 09 2026 ...`.
+      expect(planSearch('25-09-2026').match).toBe('"25 09 2026"');
+      expect(planSearch('25.09.2026').match).toBe('"25 09 2026"');
+      expect(planSearch('25/09/2026').match).toBe('"25 09 2026"');
+    });
+
+    it('pads a single digit day or month to match the filename', () => {
+      expect(planSearch('5-9-2026').match).toBe('"05 09 2026"');
+    });
+
+    it('reads a month name, whichever side the number is on', () => {
+      expect(planSearch('Sep 22').match).toBe('"22 09"');
+      expect(planSearch('22 September').match).toBe('"22 09"');
+      expect(planSearch('September 2026').match).toBe('"09 2026"');
+    });
+
+    it('takes a day and month on their own', () => {
+      expect(planSearch('22 08').match).toBe('"22 08"');
+    });
+
+    /*
+     * `may` and `march` are words before they are months, and a clip called
+     * "March of the tanks" has to stay findable by typing `march`.
+     */
+    it('leaves a bare month name as an ordinary search', () => {
+      expect(planSearch('march').match).not.toContain(' ');
+      expect(planSearch('may tank').match).toBe('"may" AND "tank"*');
+    });
+
+    it('refuses numbers that cannot be a date', () => {
+      // 45 is not a day, 13 is not a month, 1200 is not a year here.
+      expect(planSearch('45-09-2026').match).toBe('"45" AND "09" AND "2026"*');
+      expect(planSearch('25-13-2026').match).toBe('"25" AND "13" AND "2026"*');
+    });
+
+    it('still keeps the terms it found, for anything that reports them', () => {
+      expect(planSearch('25-09-2026').terms).toEqual(['25', '09', '2026']);
+    });
+  });
+
   it('is not confused by a pasted filename', () => {
     const plan = planSearch('Battlefield 6_22.08.2026_15-41.mp4');
 

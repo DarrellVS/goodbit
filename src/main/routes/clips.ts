@@ -125,9 +125,34 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   const search = planSearch(q);
   if (search.match) {
     if (await searchIndexUsable()) {
+      /*
+       * The index, or a tag. Both, because the box says both.
+       *
+       * `clip_search` covers filename, displayName, notes and game, and tags
+       * are deliberately not in it: they are a join table, so indexing them
+       * would need triggers of their own, and a tag is a filter rather than
+       * prose. That reasoning still holds and the index is unchanged.
+       *
+       * What did not hold was the promise. The placeholder says "Search names,
+       * dates and tags" and the empty state says "and your tags", and typing a
+       * tag returned nothing on any install where FTS5 works, which is all of
+       * them. The only path that ever looked at `tag.name` was the fallback
+       * below, which runs when the index is missing. So the app searched tags
+       * exactly when it was least able to.
+       *
+       * A second subquery rather than a join: the tag table is already joined
+       * for the tag *filter*, and widening this clause to use it would multiply
+       * rows per tag and take the paging count with it. `IN (SELECT ...)`
+       * answers yes or no once per clip.
+       */
       qb = qb.andWhere(
-        'clip.id IN (SELECT rowid FROM clip_search WHERE clip_search MATCH :match)',
-        { match: search.match },
+        `(clip.id IN (SELECT rowid FROM clip_search WHERE clip_search MATCH :match)
+          OR clip.id IN (
+            SELECT ct."clipId" FROM clip_tags_tag ct
+            JOIN tag t ON t.id = ct."tagId"
+            WHERE t.name LIKE :tagLike
+          ))`,
+        { match: search.match, tagLike: `%${q}%` },
       );
     } else {
       qb = qb.andWhere(
