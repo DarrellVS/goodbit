@@ -18,15 +18,13 @@ const { stats, loading, fetchStats } = useStats();
 
 const statCards = computed(() => {
   if (!stats.value) return [];
-  
+
   return [
     {
       title: 'Total Clips',
       value: stats.value.totalClips.toLocaleString(),
       subtitle: `${stats.value.gamesCount} games`,
       icon: 'material-symbols:video-library',
-      iconColor: 'text-muted-500',
-      iconBg: 'bg-muted-100',
       clickable: false,
       onClick: undefined,
     },
@@ -35,8 +33,6 @@ const statCards = computed(() => {
       value: formatBytes(stats.value.totalSize),
       subtitle: `${formatBytes(stats.value.avgClipSize)} avg`,
       icon: 'material-symbols:storage',
-      iconColor: 'text-muted-500',
-      iconBg: 'bg-muted-100',
       clickable: false,
       onClick: undefined,
     },
@@ -45,8 +41,6 @@ const statCards = computed(() => {
       value: stats.value.publishedClips,
       subtitle: `${formatPercentage(stats.value.publishedClips, stats.value.totalClips)}%`,
       icon: 'material-symbols:cloud-upload',
-      iconColor: 'text-muted-500',
-      iconBg: 'bg-muted-100',
       clickable: true,
       onClick: handlePublishedClick,
     },
@@ -55,8 +49,6 @@ const statCards = computed(() => {
       value: stats.value.starredClips,
       subtitle: `${formatPercentage(stats.value.starredClips, stats.value.totalClips)}%`,
       icon: 'material-symbols:star',
-      iconColor: 'text-muted-500',
-      iconBg: 'bg-muted-100',
       clickable: true,
       onClick: handleStarredClick,
     },
@@ -77,9 +69,9 @@ function handleStarredClick(): void {
 
 const infoItems = computed(() => {
   if (!stats.value) return [];
-  
+
   const taggedPercent = formatPercentage(stats.value.taggedClips, stats.value.totalClips);
-  
+
   return [
     {
       label: 'Tagged',
@@ -102,13 +94,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="px-12 py-6 space-y-6">
+  <div class="px-12 py-6">
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <BaseSpinner class="w-12 h-12 text-accent-ink" />
+      <BaseSpinner class="size-8 block text-muted-400" />
     </div>
 
     <template v-else-if="stats">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!--
+        The rules between the tiles are a one pixel grid gap over a `border`
+        coloured ground, which is how the design draws them: no tile has a
+        border of its own, so the row reads as one band rather than as four
+        boxes with gutters.
+      -->
+      <div
+        class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border border-y border-border"
+      >
         <StatCard
           v-for="card in statCards"
           :key="card.title"
@@ -116,25 +116,27 @@ onMounted(() => {
           :value="card.value"
           :subtitle="card.subtitle"
           :icon="card.icon"
-          :icon-color="card.iconColor"
-          :icon-bg="card.iconBg"
           :clickable="card.clickable"
           @click="card.onClick?.()"
         />
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2">
+      <!--
+        Two columns, the wider one carrying the list you scan and the narrower
+        one the facts you glance at. 48px between them, which is the page's own
+        gutter: anything less and the two columns read as one table.
+      -->
+      <div class="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 pt-6">
+        <div class="space-y-10">
           <GamesList :games="stats.gameStats" />
+          <ActivityChart :days="stats.clipsByDay" />
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-10">
           <TagsList :tags="stats.mostUsedTags" />
           <InfoPanel :items="infoItems" />
         </div>
       </div>
-
-      <ActivityChart :days="stats.clipsByDay" />
     </template>
   </div>
 </template>

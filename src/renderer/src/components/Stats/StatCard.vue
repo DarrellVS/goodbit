@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
 
+/**
+ * One number, in a row of four divided by hairlines.
+ *
+ * The tile draws no border of its own. `.b-tiles` sets a one pixel grid gap
+ * over a `border` coloured background, so the rules between the tiles are the
+ * ground showing through, and the row reads as one band rather than as four
+ * boxes. That is also why this has the page colour behind it rather than a
+ * raised surface: it has to match what a gap of one pixel is cut out of.
+ */
 interface Props {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: string;
-  iconColor?: string;
-  iconBg?: string;
   clickable?: boolean;
 }
 
@@ -15,11 +22,7 @@ interface Emits {
   (e: 'click'): void;
 }
 
-withDefaults(defineProps<Props>(), {
-  iconColor: 'text-muted-400',
-  iconBg: '',
-  clickable: false,
-});
+withDefaults(defineProps<Props>(), { clickable: false });
 
 const emit = defineEmits<Emits>();
 </script>
@@ -27,23 +30,20 @@ const emit = defineEmits<Emits>();
 <template>
   <component
     :is="clickable ? 'button' : 'div'"
-    class="bg-muted-50 rounded-md p-5 text-left w-full outline-none focus-visible:focus-ring"
-    :class="{ 'hover:bg-muted-100 transition-colors duration-150 cursor-pointer': clickable }"
+    :type="clickable ? 'button' : undefined"
+    class="block w-full bg-background px-5 pt-6 pb-6 text-left outline-none focus-visible:focus-ring"
+    :class="{ 'hover:bg-muted-50 transition-colors duration-150 cursor-pointer': clickable }"
     @click="clickable && emit('click')"
   >
-    <!--
-      A tile is a tone step, and its glyph is a glyph.
+    <span class="flex items-center justify-between gap-2">
+      <span class="text-xs font-medium uppercase tracking-label text-muted-400">{{ title }}</span>
+      <Icon :icon="icon" class="size-4 shrink-0 block text-accent" />
+    </span>
 
-      It was a bordered card holding a 40px filled disc, so a row of four read
-      as four buttons rather than as four numbers, and the disc was the second
-      loudest thing in each one after the number it was supposed to label.
-    -->
-    <div class="flex items-center justify-between gap-2 mb-3">
-      <span class="text-sm text-muted-500">{{ title }}</span>
-      <Icon :icon="icon" class="size-4 shrink-0 block" :class="iconColor" />
-    </div>
-    <div class="font-mono text-2xl font-medium text-foreground tabular-nums">{{ value }}</div>
-    <div v-if="subtitle" class="text-xs text-muted-500 mt-1">{{ subtitle }}</div>
+    <span class="block font-display text-[34px] leading-[1.1] font-medium text-foreground mt-2.5 mb-1">
+      {{ value }}
+    </span>
+
+    <span v-if="subtitle" class="block text-sm text-muted-500">{{ subtitle }}</span>
   </component>
 </template>
-

@@ -1,44 +1,33 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
+import StatsColumnHead from './StatsColumnHead.vue';
 
-interface Tag {
+interface TagStat {
   tag: string;
   count: number;
 }
 
-interface Props {
-  tags: Tag[];
-  limit?: number;
-}
-
-withDefaults(defineProps<Props>(), {
-  limit: 5,
-});
+withDefaults(defineProps<{ tags: TagStat[]; limit?: number }>(), { limit: 5 });
 </script>
 
 <template>
-  <div class="bg-muted-50 rounded-md p-5">
-    <div class="flex items-center gap-2 mb-4">
-      <h3 class="text-sm font-medium text-muted-600">Top Tags</h3>
-    </div>
+  <section>
+    <StatsColumnHead title="Top Tags" />
 
-    <div v-if="tags.length === 0" class="text-center py-8 text-muted-400 text-sm">
-      No tags yet
-    </div>
+    <p v-if="tags.length === 0" class="py-8 text-sm text-muted-500">No tags yet</p>
 
-    <div v-else class="space-y-2">
-      <div
-        v-for="(tag, index) in tags.slice(0, limit)"
-        :key="tag.tag"
-        class="flex items-center justify-between py-2 px-3 rounded-lg bg-muted-50"
-      >
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-medium text-muted-400 w-5">{{ index + 1 }}</span>
-          <span class="text-sm font-medium text-foreground">#{{ tag.tag }}</span>
-        </div>
-        <span class="text-xs text-muted-500">{{ tag.count }}</span>
-      </div>
+    <!--
+      A rank, a name and a count, on one hairline-separated row. The rank and
+      the count are mono and tabular so the two numeric columns line up down
+      the list however long the names are.
+    -->
+    <div
+      v-for="(tag, index) in tags.slice(0, limit)"
+      :key="tag.tag"
+      class="flex items-center gap-3 py-3 px-0.5 border-t border-border text-sm"
+    >
+      <span class="font-mono text-xs tabular-nums text-muted-400 w-4">{{ index + 1 }}</span>
+      <span class="truncate text-foreground">#{{ tag.tag }}</span>
+      <span class="ml-auto font-mono text-xs tabular-nums text-muted-500">{{ tag.count }}</span>
     </div>
-  </div>
+  </section>
 </template>
-

@@ -1,53 +1,64 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import type { GameStats } from '@renderer/composables/library/useStats';
-import { formatBytes } from '@renderer/utils/formatters';
+import { useRouter } from 'vue-router';
 import { useClipsStore } from '@renderer/stores/clips';
+import { useFormat } from '@renderer/composables/ui/useFormat';
+import StatsColumnHead from './StatsColumnHead.vue';
 
-interface Props {
-  games: GameStats[];
+interface GameStat {
+  game: string;
+  count: number;
+  totalSize: number;
+  publishedCount: number;
+  starredCount: number;
 }
 
-defineProps<Props>();
+defineProps<{ games: GameStat[] }>();
 
 const router = useRouter();
 const clipsStore = useClipsStore();
+const { formatBytes } = useFormat();
 
-function handleGameClick(gameName: string): void {
-  clipsStore.setGame(gameName);
+function handleGameClick(game: string): void {
+  clipsStore.setGame(game);
   void router.push('/');
 }
 </script>
 
 <template>
-  <div class="bg-muted-50 rounded-md p-5">
-    <div class="flex items-center gap-2 mb-4">
-      <h3 class="text-sm font-medium text-muted-600">Games</h3>
-    </div>
+  <section>
+    <StatsColumnHead title="Games" />
 
-    <div v-if="games.length === 0" class="text-center py-12 text-muted-400">
-      No games yet
-    </div>
+    <p v-if="games.length === 0" class="py-8 text-sm text-muted-500">No games yet</p>
 
-    <div v-else class="space-y-2 max-h-96 overflow-y-auto">
-      <button
-        v-for="game in games"
-        :key="game.game"
-        class="w-full text-left p-3 rounded-lg bg-muted-100 hover:bg-muted-200 transition-colors cursor-pointer"
-        @click="handleGameClick(game.game)"
-      >
-        <div class="flex items-center justify-between mb-1">
-          <span class="font-medium text-foreground">{{ game.game }}</span>
-          <span class="text-sm text-muted-500">{{ game.count }} clips</span>
-        </div>
-        <div class="flex items-center gap-4 text-xs text-muted-500">
-          <span>{{ formatBytes(game.totalSize) }}</span>
-          <span>{{ game.publishedCount }} published</span>
-          <span>{{ game.starredCount }} starred</span>
-        </div>
-      </button>
-    </div>
-  </div>
+    <!--
+      Rows separated by a hairline above each, not filled boxes inside a
+      panel. `.b-list-row` is 12px of padding, a rule, and nothing else.
+    -->
+    <button
+      v-for="game in games"
+      :key="game.game"
+      type="button"
+      class="w-full flex items-center gap-3 py-3 px-0.5 border-t border-border text-left text-sm outline-none focus-visible:focus-ring hover:bg-muted-50 transition-colors duration-150"
+      :title="`Show every clip from ${game.game}`"
+      @click="handleGameClick(game.game)"
+    >
+      <span class="flex-1 min-w-0">
+        <span class="block truncate">
+          <b class="font-medium text-foreground">{{ game.game }}</b>
+          <!--
+            The space is written out. Vue strips the whitespace between two
+            elements on separate lines, so `TestGame` and `3 clips` ran
+            together into `TestGame3 clips`.
+          -->
+          <span class="text-muted-500">&nbsp;{{ game.count }} clips</span>
+        </span>
+        <span class="block font-mono text-xs text-muted-400 mt-0.5">
+          {{ formatBytes(game.totalSize) }} &middot; {{ game.publishedCount }} published &middot;
+          {{ game.starredCount }} starred
+        </span>
+      </span>
+      <Icon icon="material-symbols:chevron-right" class="size-4 shrink-0 block text-muted-400" />
+    </button>
+  </section>
 </template>
-

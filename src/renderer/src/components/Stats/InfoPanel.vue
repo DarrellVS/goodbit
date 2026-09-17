@@ -1,35 +1,33 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
+import StatsColumnHead from './StatsColumnHead.vue';
 
 interface InfoItem {
   label: string;
-  value: string | number;
+  value: string;
 }
 
-interface Props {
-  items: InfoItem[];
-}
-
-defineProps<Props>();
+defineProps<{ items: InfoItem[] }>();
 </script>
 
 <template>
-  <div class="bg-muted-50 rounded-md p-5">
-    <div class="flex items-center gap-2 mb-4">
-      <h3 class="text-sm font-medium text-muted-600">Info</h3>
-    </div>
+  <section>
+    <StatsColumnHead title="Info" />
 
-    <div class="space-y-2 text-sm">
-      <div
-        v-for="(item, index) in items"
-        :key="item.label"
-        class="flex justify-between py-2"
-        :class="{ 'border-t border-border': index > 0 }"
-      >
-        <span class="text-muted-600">{{ item.label }}</span>
-        <span class="font-medium text-foreground">{{ item.value }}</span>
-      </div>
-    </div>
-  </div>
+    <!--
+      A description list, which is what this is: a label and the fact it names.
+      `.b-dl` is a two column grid where every cell carries a hairline above
+      it, so the rules run the full width rather than stopping at each row's
+      own padding.
+    -->
+    <dl class="grid grid-cols-[auto_1fr]">
+      <template v-for="item in items" :key="item.label">
+        <dt class="py-2.5 pr-4 border-t border-border text-sm text-muted-500">
+          {{ item.label }}
+        </dt>
+        <dd class="py-2.5 border-t border-border text-sm text-foreground text-right font-mono tabular-nums">
+          {{ item.value }}
+        </dd>
+      </template>
+    </dl>
+  </section>
 </template>
-
