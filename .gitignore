@@ -189,3 +189,16 @@ design/library-mockups/shots/
 # and coming back cannot quietly re-add them.
 client/
 server/
+
+# UI redesign mockups, round 1.
+#
+# Three clickable directions for the 3.x redesign, built as standalone static
+# pages against a read-only inventory of the current UI. They are a reference
+# for the implementation and not a build input, so nothing in `src/` imports
+# from them and they are not shipped.
+#
+# The chosen direction, Minimalist Dark Studio, is handed off with its own copy
+# at `~/Downloads/goodbit-3.0-design-handoff/`, which is where the design
+# contract, the annotated defects and the audits live. This folder stays on
+# disk as the working reference.
+/design-prototypes/
