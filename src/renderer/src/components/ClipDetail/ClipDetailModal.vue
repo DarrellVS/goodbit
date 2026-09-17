@@ -392,25 +392,26 @@ async function onTrimmed(): Promise<void> {
                 <ClipVideoPlayer ref="videoPlayerRef" :clip="clip" />
 
                 <!--
-                  Directly under the picture, because every row in it points at
-                  the picture and pressing one moves it. Above the notes for the
-                  same reason: a note is about the clip, a GoodBit is a part of
-                  it.
-                -->
-                <ClipGoodBitsSection :clip="clip" @play="playGoodBit" />
+                  The marks and the writing, beside each other.
 
-                <!--
-                  Under the picture, at the picture's width. Spanning the whole
-                  modal made a one line empty state two thousand pixels wide on
-                  an ultrawide screen, and left the column beside it ending in
-                  dead space.
+                  Both are short and both are usually empty, so stacked they
+                  were two one-line empty states with a hairline between them,
+                  taking the full width of a 21:9 picture each and pushing the
+                  second one below the fold on a laptop. They are also the same
+                  kind of thing, which is the other half of the argument: what
+                  you noticed about this clip, once as a range and once as a
+                  sentence.
                 -->
-                <ClipNotesSection
-                  :clip="clip"
-                  :playhead="playheadSeconds"
-                  @updated="handleClipUpdated"
-                  @timestamp-click="handleTimestampClick"
-                />
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-6 items-start">
+                  <ClipGoodBitsSection :clip="clip" @play="playGoodBit" />
+
+                  <ClipNotesSection
+                    :clip="clip"
+                    :playhead="playheadSeconds"
+                    @updated="handleClipUpdated"
+                    @timestamp-click="handleTimestampClick"
+                  />
+                </div>
               </div>
 
               <div class="space-y-4">

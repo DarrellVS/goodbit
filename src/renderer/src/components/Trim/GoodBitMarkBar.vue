@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { durationLabel, goodBitLabel, rangeLabel, sameRange } from '@renderer/utils/goodBits';
 import type { GoodBit } from '@renderer/types/goodbit';
+import BaseField from '@renderer/components/Base/BaseField.vue';
 
 /**
  * Marking the range the handles are on, without cutting anything.
@@ -143,36 +144,46 @@ function submit(): void {
     Its own quiet band, which is what the design calls it. Marking a range
     leaves the recording whole, so it must not look like the control above it
     that replaces the file.
+
+    **Four stacked blocks became three, and none of them moves.** This was a
+    wrapping row of controls, a footnote, a standing note and then a wrapping
+    field of chips: on a clip with six GoodBits it stood five lines tall, and
+    it changed height as you marked, which in a modal means the picture above
+    it resizes while you are watching it. The chips are one row that scrolls
+    sideways now and the two sentences are one sentence.
   -->
-  <div class="border-t border-border pt-4 space-y-2">
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-2 shrink-0">
-        <Icon
-          icon="material-symbols:bookmark-add-outline-rounded"
-          class="size-4 shrink-0 block text-accent-ink"
-        />
-        <span class="text-sm font-medium text-foreground">
-          {{ selected ? 'Editing a GoodBit' : 'Mark a GoodBit' }}
-        </span>
-      </div>
+  <div class="border-t border-border pt-3.5 space-y-2">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <!--
+        The state, said the way every other label in this design is said. It
+        was an accent glyph beside sentence case text, which is the shape of a
+        banner rather than of a label on a control.
+      -->
+      <span class="shrink-0 text-xs font-medium uppercase tracking-label text-muted-400">
+        {{ selected ? 'Editing a GoodBit' : 'Mark a GoodBit' }}
+      </span>
 
       <!--
         The range, read off the handles. Tabular figures, or the row shifts
         sideways every tenth of a second while a handle is being dragged.
       -->
-      <span class="text-xs font-mono tabular-nums text-muted-500 shrink-0">
-        {{ rangeLabel(range[0], range[1]) }} · {{ durationLabel(length) }}
+      <span class="shrink-0 font-mono text-xs tabular-nums text-muted-500">
+        {{ rangeLabel(range[0], range[1]) }} &middot; {{ durationLabel(length) }}
       </span>
 
-      <input
-        v-model="name"
-        type="text"
-        maxlength="60"
-        class="min-w-0 flex-1 basis-40 h-9 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-accent focus-visible:focus-ring transition-colors duration-150"
-        :placeholder="selected ? goodBitLabel(selected) : 'Name it, or leave this blank'"
-        :aria-label="selected ? 'Name for this GoodBit' : 'Name for the GoodBit you are about to mark'"
-        @keydown.enter.prevent="submit"
-      />
+      <BaseField class="min-w-0 flex-1 basis-40">
+        <input
+          v-model="name"
+          type="text"
+          maxlength="60"
+          class="text-sm"
+          :placeholder="selected ? goodBitLabel(selected) : 'Name it, or leave this blank'"
+          :aria-label="
+            selected ? 'Name for this GoodBit' : 'Name for the GoodBit you are about to mark'
+          "
+          @keydown.enter.prevent="submit"
+        />
+      </BaseField>
 
       <template v-if="selected">
         <button
@@ -202,7 +213,10 @@ function submit(): void {
           title="Forget this GoodBit. The recording is not touched."
           @click="emit('forget', selected)"
         >
-          <Icon icon="material-symbols:bookmark-remove-outline-rounded" class="size-4 shrink-0 block" />
+          <Icon
+            icon="material-symbols:bookmark-remove-outline-rounded"
+            class="size-4 shrink-0 block"
+          />
           Forget
         </button>
       </template>
@@ -218,14 +232,14 @@ function submit(): void {
         screen, and they are right: a destructive action must not look like its
         safe neighbour.
 
-        The safe one gives up the fill. It is still obviously a button and
-        still the accent colour, so nothing is lost except the claim to be the
-        same kind of act as the one above it.
+        The safe one gives up the fill. It is still obviously a button, so
+        nothing is lost except the claim to be the same kind of act as the one
+        above it.
       -->
       <button
         v-else
         type="button"
-        class="shrink-0 inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-sm font-medium border border-border text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
+        class="shrink-0 inline-flex items-center gap-2 h-9 px-3.5 rounded-md text-sm font-medium border border-line-strong text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
         :disabled="saving || !valid || duplicate"
         :title="
           duplicate
@@ -240,7 +254,7 @@ function submit(): void {
     </div>
 
     <!--
-      One line of footnote, and it changes rather than stacking.
+      One line, and it changes rather than stacking.
 
       What it says depends on what is true: that this range is already marked,
       that it sits on top of one that is, or which one is being edited.
@@ -251,9 +265,8 @@ function submit(): void {
       the single most useful sentence in the app. It then disappeared the
       moment they made their first mark, which is exactly when they started
       needing to know that this button and the orange one above it do opposite
-      things to the file. A second-time user never saw it at all. It sits under
-      the line below now, in the muted ladder so it reads as a standing note
-      rather than as news.
+      things to the file. So it is always there, one rung quieter, at the end
+      of whatever else this line is saying rather than on a line of its own.
     -->
     <p class="text-xs text-muted-500">
       <template v-if="duplicate">
@@ -267,17 +280,14 @@ function submit(): void {
       <template v-else-if="selected">
         Drag the handles to move this one, or press another band on the strip.
       </template>
-      <template v-else-if="count === 0">
-        Nothing marked yet.
-      </template>
-      <template v-else>
+      <template v-else-if="count > 0">
         {{ count }} marked on this clip. Press one below, or a band on the strip,
         to change it.
       </template>
-    </p>
-    <p class="text-xs text-muted-400">
-      A GoodBit names a range and leaves the recording whole, unlike a trim,
-      which replaces it.
+      <span class="text-muted-400">
+        A GoodBit names a range and leaves the recording whole, unlike a trim, which
+        replaces it.
+      </span>
     </p>
 
     <!--
@@ -288,16 +298,22 @@ function submit(): void {
       a five minute clip is a few pixels wide and carries no name. So the same
       GoodBits are also chips here, in the order they happen, and pressing one
       does exactly what pressing its band does.
+
+      One row that scrolls sideways rather than a field that wraps. They are in
+      time order, so sideways is the direction they already run in.
     -->
-    <div v-if="goodBits.length > 0" class="flex flex-wrap items-center gap-1.5 pt-1">
+    <div
+      v-if="goodBits.length > 0"
+      class="flex items-center gap-1.5 overflow-x-auto scroll-p-1.5 p-1 -m-1 scrollbar-hide"
+    >
       <button
         v-for="goodBit in goodBits"
         :key="goodBit.id"
         type="button"
-        class="inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors"
+        class="h-7 shrink-0 inline-flex max-w-[16rem] items-center gap-1.5 rounded-full border px-2.5 text-xs outline-none focus-visible:focus-ring transition-colors duration-150"
         :class="goodBit.id === selected?.id
-          ? 'border-accent bg-accent/16 text-accent-ink'
-          : 'border-border bg-card text-muted-700 hover:border-muted-300 hover:bg-muted-50'"
+          ? 'border-accent bg-accent/12 text-foreground'
+          : 'border-border text-muted-600 hover:bg-muted-50 hover:text-foreground'"
         :title="`Put the handles on ${goodBitLabel(goodBit)}`"
         :aria-pressed="goodBit.id === selected?.id"
         @click="emit('select', goodBit)"
@@ -306,7 +322,7 @@ function submit(): void {
           :icon="goodBit.source === 'manual'
             ? 'material-symbols:bookmark-rounded'
             : 'material-symbols:auto-awesome-rounded'"
-          class="shrink-0 text-sm"
+          class="size-3.5 shrink-0 block"
         />
         <span class="truncate">{{ goodBitLabel(goodBit) }}</span>
         <span class="shrink-0 font-mono tabular-nums text-muted-400">

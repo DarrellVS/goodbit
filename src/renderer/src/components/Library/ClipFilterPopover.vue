@@ -12,6 +12,8 @@ import { useClipsStore } from '@renderer/stores/clips';
 import { useTagsStore } from '@renderer/stores/tags';
 import { useGamesStore } from '@renderer/stores/games';
 import { usePublisher } from '@renderer/composables/clips/usePublisher';
+import BaseComboBox from '@renderer/components/Base/BaseComboBox.vue';
+import type { ComboBoxOption } from '@renderer/components/Base/types';
 
 /**
  * Every way of narrowing the library, in one place.
@@ -41,10 +43,17 @@ import { usePublisher } from '@renderer/composables/clips/usePublisher';
  *
  * ## Three things that are deliberate
  *
- * **Every row in all three sections is the same grid**, `[tick, label,
- * count]`, so the ticks form a column, the labels form a column and the counts
- * form a column down the whole panel, across sections holding different kinds
- * of thing. That is `03-games-list-counts-not-aligned` not happening again.
+ * **A list you can read at a glance, or a dropdown and the answer.** State is
+ * four fixed options, so it is four rows on one grid, `[tick, label, count]`,
+ * with the ticks, the labels and the counts each in a column of their own.
+ * That is `03-games-list-counts-not-aligned` not happening again.
+ *
+ * Tags and games are not four of anything: this library has 54 games, and the
+ * panel was a 54 row scroll with two more sections hidden under it. Those two
+ * are dropdowns, and what you have chosen is a row of chips directly under the
+ * control, at most three of them and then `+2 more`. A chip is both the
+ * readback and the way to take one off, which is the thing a closed dropdown
+ * reading "3 tags" cannot be.
  *
  * **The tick has a column of its own and is never inserted into flow.** A tick
  * that appears beside a label shifts it by the tick's own width, which turns
@@ -67,14 +76,6 @@ const PUBLISH_STATES: Array<{ value: boolean | null; label: string }> = [
   { value: false, label: 'Not published' },
 ];
 
-const tagCounts = computed(() => {
-  const counts = new Map<string, number>();
-  for (const tag of tagsStore.items) counts.set(tag.name, tag.clipCount ?? 0);
-  return counts;
-});
-
-const selectedTags = computed(() => new Set(clipsStore.selectedTags));
-
 /** How many separate answers are in force, for the badge on the trigger. */
 const activeCount = computed(() => {
   let n = clipsStore.selectedTags.length;
@@ -91,6 +92,39 @@ function toggleTag(name: string): void {
   clipsStore.setTags([...next]);
 }
 
+/** At most this many chips before the rest becomes a number. */
+const CHIP_LIMIT = 3;
+
+const tagOptions = computed<ComboBoxOption[]>(() =>
+  tagsStore.items.map((tag) => ({
+    value: tag.name,
+    label: '#' + tag.name,
+    count: tag.clipCount ?? 0,
+  })),
+);
+
+const gameOptions = computed<ComboBoxOption[]>(() =>
+  gamesStore.items.map((game) => ({
+    value: game.game,
+    label: game.displayName || game.game,
+    count: game.clipCount,
+  })),
+);
+
+/** The chips under the tag dropdown: the first three, then how many are left. */
+const tagChips = computed(() => clipsStore.selectedTags.slice(0, CHIP_LIMIT));
+const tagsBeyondChips = computed(() =>
+  Math.max(0, clipsStore.selectedTags.length - CHIP_LIMIT),
+);
+
+/** A game is one, so this is one chip or none. */
+const gameChip = computed(() => {
+  const chosen = clipsStore.selectedGame;
+  if (!chosen) return null;
+  const game = gamesStore.items.find((item) => item.game === chosen);
+  return game?.displayName || game?.game || chosen;
+});
+
 function clearAll(): void {
   clipsStore.setTags([]);
   clipsStore.setGame('');
@@ -103,6 +137,11 @@ const ROW =
   'w-full h-8 grid grid-cols-[1rem_1fr_auto] items-center gap-2 px-2 rounded-md text-left ' +
   'text-sm outline-none focus-visible:focus-ring transition-colors duration-150 hover:bg-muted-100';
 const HEADING = 'h-8 px-2 flex items-center text-xs font-medium uppercase tracking-label text-muted-400';
+
+/** One chip, whatever it is a chip of. */
+const CHIP =
+  'h-7 pl-2.5 pr-1 inline-flex items-center gap-1 rounded-full border border-border ' +
+  'text-sm text-foreground';
 </script>
 
 <template>
@@ -134,66 +173,79 @@ const HEADING = 'h-8 px-2 flex items-center text-xs font-medium uppercase tracki
       <PopoverContent
         align="end"
         :side-offset="6"
-        class="z-50 w-72 max-h-[70vh] overflow-y-auto scroll-p-1.5 rounded-lg border border-border bg-card shadow-pop"
+        class="z-50 w-80 max-h-[70vh] overflow-y-auto scroll-p-1.5 rounded-lg border border-border bg-card shadow-pop"
       >
         <!-- Tags, any number of them at once. -->
         <section v-if="tagsStore.items.length" class="p-2">
           <h3 :class="HEADING">Filter by tag</h3>
-          <button
-            v-for="tag in tagsStore.items"
-            :key="tag.id"
-            type="button"
-            :class="[ROW, selectedTags.has(tag.name) ? 'text-foreground' : 'text-muted-600']"
-            :aria-pressed="selectedTags.has(tag.name)"
-            @click="toggleTag(tag.name)"
-          >
-            <Icon
-              v-if="selectedTags.has(tag.name)"
-              icon="material-symbols:check"
-              class="size-4 shrink-0 block text-accent-ink"
+          <div class="px-2 pb-1">
+            <BaseComboBox
+              variant="quiet"
+              label="Filter by tag"
+              placeholder="Any tag"
+              search-placeholder="Find a tag"
+              empty-message="No tags yet. Tag a clip and it turns up here."
+              multiple
+              :searchable="tagsStore.items.length > 8"
+              :model-value="clipsStore.selectedTags"
+              :options="tagOptions"
+              :summary="(chosen) => `${chosen.length} tags`"
+              @update:model-value="(value) => clipsStore.setTags((value as string[]) ?? [])"
             />
-            <span v-else aria-hidden="true" />
-            <span class="truncate">#{{ tag.name }}</span>
-            <span class="font-mono text-xs tabular-nums text-muted-400">
-              {{ tagCounts.get(tag.name) ?? 0 }}
-            </span>
-          </button>
+
+            <!--
+              What is in force, under the control that set it, and each chip is
+              how you take that one off again. Three, then a number: a filter
+              that wraps to four lines has stopped being a readback.
+            -->
+            <div v-if="tagChips.length" class="flex flex-wrap items-center gap-1.5 mt-2">
+              <span v-for="tag in tagChips" :key="tag" :class="CHIP">
+                <span class="truncate max-w-[9rem]">#{{ tag }}</span>
+                <button
+                  type="button"
+                  class="size-5 shrink-0 inline-flex items-center justify-center rounded-full text-muted-400 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+                  :aria-label="`Stop filtering by ${tag}`"
+                  @click="toggleTag(tag)"
+                >
+                  <Icon icon="material-symbols:close" class="size-3.5 shrink-0 block" />
+                </button>
+              </span>
+              <span v-if="tagsBeyondChips" class="text-sm text-muted-400">
+                +{{ tagsBeyondChips }} more
+              </span>
+            </div>
+          </div>
         </section>
 
         <!-- One game, because a clip lives in one folder. -->
         <section v-if="gamesStore.items.length" class="p-2 border-t border-border">
           <h3 :class="HEADING">Game</h3>
-          <button
-            type="button"
-            :class="[ROW, clipsStore.selectedGame ? 'text-muted-600' : 'text-foreground']"
-            @click="clipsStore.setGame('')"
-          >
-            <Icon
-              v-if="!clipsStore.selectedGame"
-              icon="material-symbols:check"
-              class="size-4 shrink-0 block text-accent-ink"
+          <div class="px-2 pb-1">
+            <BaseComboBox
+              variant="quiet"
+              label="Filter by game"
+              placeholder="Any game"
+              search-placeholder="Find a game"
+              :searchable="gamesStore.items.length > 8"
+              :model-value="clipsStore.selectedGame || null"
+              :options="gameOptions"
+              @update:model-value="(value) => clipsStore.setGame((value as string) ?? '')"
             />
-            <span v-else aria-hidden="true" />
-            <span class="truncate">Any game</span>
-            <span aria-hidden="true" />
-          </button>
-          <button
-            v-for="game in gamesStore.items"
-            :key="game.game"
-            type="button"
-            :class="[ROW, clipsStore.selectedGame === game.game ? 'text-foreground' : 'text-muted-600']"
-            :title="game.displayName || game.game"
-            @click="clipsStore.setGame(game.game)"
-          >
-            <Icon
-              v-if="clipsStore.selectedGame === game.game"
-              icon="material-symbols:check"
-              class="size-4 shrink-0 block text-accent-ink"
-            />
-            <span v-else aria-hidden="true" />
-            <span class="truncate">{{ game.displayName || game.game }}</span>
-            <span class="font-mono text-xs tabular-nums text-muted-400">{{ game.clipCount }}</span>
-          </button>
+
+            <div v-if="gameChip" class="flex flex-wrap items-center gap-1.5 mt-2">
+              <span :class="CHIP">
+                <span class="truncate max-w-[11rem]">{{ gameChip }}</span>
+                <button
+                  type="button"
+                  class="size-5 shrink-0 inline-flex items-center justify-center rounded-full text-muted-400 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+                  aria-label="Show every game again"
+                  @click="clipsStore.setGame('')"
+                >
+                  <Icon icon="material-symbols:close" class="size-3.5 shrink-0 block" />
+                </button>
+              </span>
+            </div>
+          </div>
         </section>
 
         <!--
