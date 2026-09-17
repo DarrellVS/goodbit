@@ -256,6 +256,64 @@ test.describe('GoodBits', () => {
     expect((await goodBits(clip.id)).map((m) => m.id)).not.toContain(marked.id);
   });
 
+  /**
+   * The test that was missing, and the reason it was missing.
+   *
+   * `planGoodBitsAfterTrim` had a unit test and passed it, because the planner
+   * was always correct. `TrimAndSwapClipAction.moveGoodBits` applied that plan
+   * and was also correct. Nothing called it: the method appeared exactly once
+   * in the repository, as its own definition, so every trim left a clip's
+   * marks holding times from the recording it used to be.
+   *
+   * A unit test on the planner cannot see that, and neither can typecheck with
+   * `noUnusedLocals` off. Only driving a real trim and reading the rows back
+   * catches a wire that was never connected, which is why this lives here and
+   * not beside the planner.
+   */
+  test('a trim carries the marks onto the file it just wrote', async () => {
+    const clip = await recording(1);
+
+    const mark = async (startSec: number, endSec: number, name: string): Promise<Marked> =>
+      (await call('POST', `/clips/${clip.id}/goodbits`, { startSec, endSec, name })).body as Marked;
+
+    // Three marks, one of each kind the plan has to tell apart.
+    const inside = await mark(3, 4, 'inside the cut');
+    const outside = await mark(0.2, 0.8, 'before the cut');
+    const straddling = await mark(1.5, 2.5, 'across the in point');
+
+    // Keep 2s to 5s, so the new file is three seconds long and everything
+    // shifts back by two.
+    const trimmed = await call('POST', `/clips/${clip.id}/trim`, { startSec: 2, endSec: 5 });
+    expect(trimmed.status, 'the trim itself should succeed').toBe(200);
+
+    const after = await goodBits(clip.id);
+    const byId = new Map(after.map((row) => [row.id, row]));
+
+    const moved = byId.get(inside.id);
+    expect(moved, 'a mark inside the cut should survive it').toBeTruthy();
+    expect(moved!.startSec).toBeCloseTo(1, 1);
+    expect(moved!.endSec).toBeCloseTo(2, 1);
+
+    expect(byId.has(outside.id), 'a mark outside the cut should be dropped').toBe(false);
+
+    const clamped = byId.get(straddling.id);
+    expect(clamped, 'a mark across the in point should be kept, not dropped').toBeTruthy();
+    expect(clamped!.startSec).toBeCloseTo(0, 1);
+    expect(clamped!.endSec).toBeCloseTo(0.5, 1);
+
+    /*
+     * The thing a user actually sees: no mark may name a moment the file no
+     * longer has. This is the assertion that fails loudest if the wire is ever
+     * cut again.
+     */
+    const length = ((await clips()).find((c) => c.id === clip.id)?.durationSec ?? 0) + 0.2;
+    for (const row of after) {
+      expect(row.startSec, `${row.name} starts inside the trimmed file`).toBeLessThanOrEqual(length);
+      expect(row.endSec, `${row.name} ends inside the trimmed file`).toBeLessThanOrEqual(length);
+      expect(row.endSec, `${row.name} is not inverted`).toBeGreaterThanOrEqual(row.startSec);
+    }
+  });
+
   test('a marked clip can still be deleted, and the render outlives it', async () => {
     const clip = await recording(0);
     const rendered = (await clips()).find((c) => c.filename.includes('the tank'))!;

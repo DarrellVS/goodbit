@@ -164,6 +164,22 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     clip.durationSec = (await probeDurationSec(clip.filePath)) ?? trimmed.actualEndSec - trimmed.actualStartSec;
     await repo.save(clip);
 
+    /*
+     * Move the marks onto the file that now exists.
+     *
+     * This call was missing. `moveGoodBits` was written, was correct, and was
+     * never invoked from anywhere, so every trim since GoodBits shipped left a
+     * clip's marks holding times from the recording it used to be. The band
+     * still drew, over a moment that was no longer there, which is exactly the
+     * failure the feature's own notes predicted would be invisible.
+     *
+     * The *actual* range, not the requested one. A cut lands on frame
+     * boundaries, so asking for 4.50s can produce 4.48s, and shifting the
+     * marks by the number that was asked for rather than the one that happened
+     * would leave every mark a fraction of a second out.
+     */
+    await this.moveGoodBits(clip.id, trimmed.actualStartSec, trimmed.actualEndSec);
+
     say('done', 100);
 
     // A person just answered the exact question the analysis is trying to
