@@ -4,6 +4,11 @@ import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import ObsSetupDialog from './ObsSetupDialog.vue';
 import ClipsFolderCard from './ClipsFolderCard.vue';
+import {
+  BUTTON,
+  BUTTON_STRONG,
+  ICON_BOX,
+} from '@renderer/components/Base/geometry';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
@@ -151,21 +156,24 @@ function openGuide(): void {
 
     <div
       data-setting="OBS setup"
-      :class="['setting-block space-y-4', settingRing('OBS setup')]"
+      :class="['setting-card', settingRing('OBS setup')]"
     >
-      <div class="flex items-start gap-3">
-        <BaseSpinner v-if="!status" class="text-xl shrink-0 mt-0.5 text-muted-400" />
-        <Icon
+      <!--
+        A dot and a sentence, which is how Connections says the same kind of
+        thing two pages along. It was a 20px glyph in the success green beside
+        a heading, so the loudest thing in the section was the news that
+        nothing needs doing.
+      -->
+      <div class="flex items-center gap-2">
+        <BaseSpinner v-if="!status" class="size-3.5 shrink-0 block text-muted-400" />
+        <span
           v-else
-          :icon="status.ready ? 'material-symbols:check-circle' : 'material-symbols:error-circle-rounded'"
-          class="text-xl shrink-0 mt-0.5"
-          :class="status.ready ? 'text-success' : 'text-muted-500'"
+          class="size-1.5 rounded-full shrink-0"
+          :class="status.ready ? 'bg-success' : 'bg-accent'"
         />
-        <div class="min-w-0">
-          <p class="font-medium text-foreground">{{ headline }}</p>
-          <p class="text-sm text-muted-500 mt-0.5">{{ subhead }}</p>
-        </div>
+        <h3>{{ headline }}</h3>
       </div>
+      <p>{{ subhead }}</p>
 
       <!--
         One way in, installed or not.
@@ -176,36 +184,35 @@ function openGuide(): void {
         the button is the same button either way.
       -->
       <template v-if="status">
-        <ul v-if="blockers.length || warnings.length" class="space-y-2">
+        <!--
+          What is wrong, as rows rather than as a stack of tinted boxes.
+
+          A blocker keeps a colour, because it is the one thing here that
+          stops the feature working at all; it is a dot and the ink, not a
+          filled panel. A warning is just a row: it is a remark, and a box
+          around a remark makes it look like a failure.
+        -->
+        <ul v-if="blockers.length || warnings.length" class="mt-4">
           <li
             v-for="finding in [...blockers, ...warnings]"
             :key="finding.id"
-            class="flex items-start gap-2.5 p-3 rounded-md border"
-            :class="
-              finding.level === 'blocker'
-                ? 'border-danger/30 bg-danger/5'
-                : 'border-border bg-muted-50'
-            "
+            class="flex items-start gap-2.5 py-3 border-t border-border"
           >
-            <Icon
-              :icon="
-                finding.level === 'blocker'
-                  ? 'material-symbols:block'
-                  : 'material-symbols:info-outline'
-              "
-              class="text-base shrink-0 mt-0.5"
-              :class="finding.level === 'blocker' ? 'text-danger-ink' : 'text-muted-400'"
+            <span
+              class="size-1.5 rounded-full shrink-0 mt-2"
+              :class="finding.level === 'blocker' ? 'bg-danger' : 'bg-muted-300'"
             />
             <div class="min-w-0">
               <p class="text-sm font-medium text-foreground">{{ finding.title }}</p>
-              <p class="text-xs text-muted-500 mt-0.5">{{ finding.detail }}</p>
+              <p class="text-sm text-muted-500 mt-0.5 max-w-[76ch]">{{ finding.detail }}</p>
             </div>
           </li>
         </ul>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 mt-4">
           <button
-            class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-accent-fg text-sm font-medium disabled:opacity-50"
+            type="button"
+            :class="BUTTON_STRONG"
             :disabled="loading || working"
             @click="openSetup"
           >
@@ -218,24 +225,21 @@ function openGuide(): void {
             }}
           </button>
 
-          <button
-            v-if="status.ready"
-            class="px-4 py-2 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-sm font-medium text-foreground"
-            @click="launch"
-          >
+          <button v-if="status.ready" type="button" :class="BUTTON" @click="launch">
             {{ status.running ? 'OBS is running' : 'Start OBS' }}
           </button>
 
           <button
-            class="inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-accent-ink ml-auto"
+            type="button"
+            class="ml-auto inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
             @click="openGuide"
           >
-            <Icon icon="material-symbols:open-in-new" class="text-base" />
+            <Icon icon="material-symbols:open-in-new" :class="ICON_BOX" />
             Rather do it by hand?
           </button>
         </div>
 
-        <p v-if="status.setupWrittenAt" class="text-xs text-muted-500">
+        <p v-if="status.setupWrittenAt" class="text-sm text-muted-400 mt-3 max-w-[76ch]">
           GoodBit last wrote to OBS on
           {{ new Date(status.setupWrittenAt).toLocaleDateString() }}. Your other profiles were not
           touched.
@@ -244,7 +248,11 @@ function openGuide(): void {
             restores the one key it changed in a file it did not, from the
             backup it took at the time.
           -->
-          <button class="text-accent-ink hover:text-accent-ink ml-1" @click="undo">
+          <button
+            type="button"
+            class="ml-1 text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
+            @click="undo"
+          >
             Undo that
           </button>
         </p>
@@ -253,24 +261,16 @@ function openGuide(): void {
 
     <div
       data-setting="Run the setup again"
-      :class="[
-        'setting-block flex items-start justify-between gap-4',
-        settingRing('Run the setup again'),
-      ]"
+      :class="['setting-card', settingRing('Run the setup again')]"
     >
-      <div class="min-w-0">
-        <p class="font-medium text-foreground">Run the setup again</p>
-        <p class="text-sm text-muted-500 mt-1">
-          The first run, from the start: your clips folder, OBS if it is missing, and the
-          recording setup. Nothing is reset, and every step shows what is already set.
-        </p>
+      <h3>Run the setup again</h3>
+      <p>
+        The first run, from the start: your clips folder, OBS if it is missing, and the recording
+        setup. Nothing is reset, and every step shows what is already set.
+      </p>
+      <div class="mt-4">
+        <button type="button" :class="BUTTON" @click="runOnboarding">Start it</button>
       </div>
-      <button
-        class="px-3 py-2 rounded-lg border border-accent/40 bg-accent/5 hover:bg-accent/10 text-sm font-medium text-foreground shrink-0"
-        @click="runOnboarding"
-      >
-        Start it
-      </button>
     </div>
 
     <ClipsFolderCard />
@@ -316,7 +316,7 @@ function openGuide(): void {
       of the card, everything it governs sits under a rule below it, and trying
       it out is separated again because it changes nothing.
     -->
-    <div class="bg-card rounded-lg border border-border p-4">
+    <div class="setting-card">
       <!--
         Pressing the replay key and getting nothing back is the most uncertain
         moment in using this app: OBS says nothing useful, its window is behind
@@ -333,7 +333,7 @@ function openGuide(): void {
       />
 
       <template v-if="settings.clipToast !== false">
-        <div class="h-px bg-border my-1" role="presentation"></div>
+        <div class="h-px bg-border" role="presentation"></div>
 
         <SettingToggle
           flat
@@ -355,8 +355,8 @@ function openGuide(): void {
           :class="['flex items-center justify-between gap-4 py-3', settingRing('How loud')]"
         >
           <div class="min-w-0">
-            <label class="font-medium text-foreground">How loud</label>
-            <p class="text-sm text-muted-500 mt-1">
+            <label class="text-sm font-medium text-foreground">How loud</label>
+            <p class="text-sm text-muted-500 mt-0.5">
               Press Show me after changing it, to hear where it lands
             </p>
           </div>
@@ -371,7 +371,7 @@ function openGuide(): void {
               aria-label="Chime volume"
               @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
             />
-            <span class="w-10 text-right text-sm text-muted-500 tabular-nums">
+            <span class="w-10 text-right font-mono text-xs tabular-nums text-muted-400">
               {{ settings.clipToastVolume ?? 75 }}%
             </span>
           </div>
@@ -386,7 +386,7 @@ function openGuide(): void {
           @update:model-value="saveSettings({ clipToastCorner: $event as never })"
         />
 
-        <div class="h-px bg-border my-1" role="presentation"></div>
+        <div class="h-px bg-border" role="presentation"></div>
 
         <!--
           A row like the rest, because it was a bare button with two sentences
@@ -397,27 +397,21 @@ function openGuide(): void {
           data-setting="Try it"
           :class="['flex items-center justify-between gap-4 py-3', settingRing('Try it')]"
         >
-          <div>
-            <label class="font-medium text-foreground">Try it</label>
-            <p class="text-sm text-muted-500 mt-1">
+          <div class="min-w-0">
+            <label class="text-sm font-medium text-foreground">Try it</label>
+            <p class="text-sm text-muted-500 mt-0.5">
               Shows the card and plays the chime, without recording anything
             </p>
           </div>
-          <button
-            class="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-700 hover:bg-muted-50 transition-colors shrink-0"
-            @click="previewToast"
-          >
+          <button type="button" :class="[BUTTON, 'shrink-0']" @click="previewToast">
             Show me
           </button>
         </div>
 
         <!-- The one thing that can make this look broken, said once and quietly. -->
-        <p class="flex items-start gap-2 pt-3 text-xs text-muted-500 border-t border-border">
-          <Icon icon="material-symbols:info-outline" class="shrink-0 mt-0.5 text-sm" />
-          <span>
-            Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
-            games default to, is fine.
-          </span>
+        <p class="pt-3 border-t border-border text-sm text-muted-400 max-w-[76ch]">
+          Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
+          games default to, is fine.
         </p>
       </template>
     </div>

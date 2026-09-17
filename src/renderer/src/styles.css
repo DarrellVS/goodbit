@@ -473,8 +473,12 @@ body {
 .setting-card:last-child {
   @apply border-b-0 pb-0;
 }
-.setting-card > h3,
-.setting-card > .setting-card-title {
+/*
+ * A descendant rather than a child, because a heading sometimes has a status
+ * dot beside it and is then one level down inside a flex row.
+ */
+.setting-card h3,
+.setting-card .setting-card-title {
   @apply font-display text-lg font-medium text-foreground;
 }
 .setting-card > p {
