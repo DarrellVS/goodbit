@@ -71,7 +71,7 @@ function isActive(to: string): boolean {
       No name or mark here. The title bar already carries both, a hand's width
       above, and saying it twice is one of them wasted.
     -->
-    <div class="h-4"></div>
+    <div class="h-3"></div>
 
     <!--
       min-h-0 and its own scroll: a flex child defaults to min-height:auto, so a
@@ -82,7 +82,7 @@ function isActive(to: string): boolean {
       above the clips now: a collection is a view of the library, the same kind
       of thing as Starred, and this column is navigation.
     -->
-    <nav class="flex-1 min-h-0 overflow-y-auto px-2 space-y-6">
+    <nav class="flex-1 min-h-0 overflow-y-auto scroll-p-1.5 px-2 py-1 space-y-6">
       <!--
         No heading over the first group.
 

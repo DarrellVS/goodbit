@@ -130,42 +130,47 @@ async function followMove(jobId: string): Promise<void> {
 </script>
 
 <template>
+  <!--
+    A heading, the path, what the buttons do, then the buttons.
+
+    This was `.b-setting` shaped: a title on the left with the two actions
+    floated right, so they sat level with the folder's name rather than with
+    the sentence that says what each of them does to it. `.b-card-quiet` is
+    the shape for a block that needs more than one line of explanation.
+  -->
   <div
     data-setting="Clips folder"
-    :class="[
-      'setting-block flex items-start justify-between gap-4',
-      settingRing('Clips folder'),
-    ]"
+    :class="['setting-card', settingRing('Clips folder')]"
   >
-    <div class="min-w-0">
-      <label class="font-medium text-foreground">Clips folder</label>
-      <p class="text-sm text-muted-500 mt-1 truncate">
-        {{ settings.videosRoot || 'Not set' }}
-      </p>
-      <!--
-        This used to explain that changing it moves nothing. It no longer
-        needs to: changing it now asks which of the two things you meant,
-        and OBS is pointed at the same folder either way rather than
-        being a second setting that can disagree with this one.
-      -->
-      <p class="text-xs text-muted-500 mt-1.5">
-        Your library, and where OBS records into. They are always the same folder.
-        <br />
-        <span class="text-muted-400">
-          Move clips takes everything with it, tags and dates included. Change only points
-          GoodBit somewhere else and leaves the files alone.
-        </span>
-      </p>
-    </div>
-    <div class="flex items-center gap-2 shrink-0">
+    <h3>Clips folder</h3>
+
+    <p class="font-mono !text-foreground !mt-2 truncate" :title="settings.videosRoot">
+      {{ settings.videosRoot || 'Not set' }}
+    </p>
+
+    <!--
+      This used to explain that changing it moves nothing. It no longer needs
+      to: changing it now asks which of the two things you meant, and OBS is
+      pointed at the same folder either way rather than being a second setting
+      that can disagree with this one.
+    -->
+    <p>Your library, and where OBS records into. They are always the same folder.</p>
+    <p class="!text-muted-400">
+      Move clips takes everything with it, tags and dates included. Change only points GoodBit
+      somewhere else and leaves the files alone.
+    </p>
+
+    <div class="flex items-center gap-2 mt-4">
       <button
-        class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+        type="button"
+        class="h-9 px-3.5 inline-flex items-center rounded-md border border-line-strong text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
         @click="moveClipsFolder"
       >
         Move clips
       </button>
       <button
-        class="px-3 py-2 rounded-lg border border-border hover:bg-muted-50 text-sm"
+        type="button"
+        class="h-9 px-3.5 inline-flex items-center rounded-md border border-line-strong text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
         @click="change"
       >
         Change

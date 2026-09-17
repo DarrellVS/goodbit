@@ -57,7 +57,7 @@ function applyFadePreset(seconds: number): void {
       </h3>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <div class="flex-1 overflow-y-auto scroll-p-1.5 p-4 space-y-4">
     <div class="flex items-start gap-2">
       <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
         <Icon icon="material-symbols:music-note" class="text-accent-fg" />

@@ -187,7 +187,7 @@ function handleRulerMouseUp(): void {
 
     <div
       ref="rulerRef"
-      class="shrink-0 h-6 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
+      class="shrink-0 h-6 border-b border-border relative overflow-x-auto scroll-p-1.5 overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
@@ -235,7 +235,7 @@ function handleRulerMouseUp(): void {
 
     <div
       ref="contentRef"
-      class="flex-1 relative overflow-x-auto overflow-y-hidden"
+      class="flex-1 relative overflow-x-auto scroll-p-1.5 overflow-y-hidden"
       @scroll="syncScroll"
     >
       <div

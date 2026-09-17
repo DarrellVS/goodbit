@@ -257,7 +257,7 @@ async function onTrimmed(): Promise<void> {
 <template>
   <DialogRoot v-model:open="isOpen">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
       <!--
         `:key` is what makes this two modals rather than one that changes its
         mind: Vue sees a different element, so the old panel runs its leave and
@@ -371,7 +371,7 @@ async function onTrimmed(): Promise<void> {
           @saved="onTrimmed"
         />
 
-        <div v-else class="flex-1 min-h-0 overflow-y-auto">
+        <div v-else class="flex-1 min-h-0 overflow-y-auto scroll-p-1.5">
             <div class="p-6 space-y-6">
             <!--
               Two columns, and the split is deliberate: the video is the reason

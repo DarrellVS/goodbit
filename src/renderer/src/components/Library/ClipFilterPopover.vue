@@ -134,7 +134,7 @@ const HEADING = 'h-8 px-2 flex items-center text-xs font-medium uppercase tracki
       <PopoverContent
         align="end"
         :side-offset="6"
-        class="z-50 w-72 max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-card shadow-pop"
+        class="z-50 w-72 max-h-[70vh] overflow-y-auto scroll-p-1.5 rounded-lg border border-border bg-card shadow-pop"
       >
         <!-- Tags, any number of them at once. -->
         <section v-if="tagsStore.items.length" class="p-2">

@@ -82,7 +82,12 @@ function isAdded(clip: Clip): boolean {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
+  <!--
+    No `overflow-hidden` here. The list below it scrolls and clips for itself,
+    so this only ever clipped the search field's focus ring, which sits 4px
+    outside the field on all four sides.
+  -->
+  <div class="flex flex-col h-full">
     <!--
       No heading over this list. The tab above it says `Clips`, which is the
       same word, one line higher, in a panel that holds nothing else.
@@ -179,7 +184,7 @@ function isAdded(clip: Clip): boolean {
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto p-3 space-y-5">
+    <div v-else class="flex-1 overflow-y-auto scroll-p-1.5 p-3 space-y-5">
       <section
         v-for="group in groupedClips"
         :key="`${group.date}-${group.game}`"

@@ -64,7 +64,7 @@ watch(() => props.open, (isOpen) => {
     <Transition name="modal-backdrop">
       <div
         v-if="open"
-        class="fixed inset-0 flex items-center justify-center bg-scrim backdrop-blur-sm p-4"
+        class="fixed inset-0 flex items-center justify-center bg-scrim-modal backdrop-blur-md p-4"
         :class="above ? 'z-60' : 'z-50'"
         @click="handleBackdropClick"
       >
@@ -95,7 +95,7 @@ watch(() => props.open, (isOpen) => {
             </div>
 
             <!-- Content -->
-            <div class="flex-1 overflow-y-auto">
+            <div class="flex-1 overflow-y-auto scroll-p-1.5">
               <slot />
             </div>
 

@@ -139,7 +139,8 @@ onBeforeUnmount(stopPreview);
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
+  <!-- No `overflow-hidden`: the list clips for itself, this only clipped rings. -->
+  <div class="flex flex-col h-full">
     <!--
       No heading. The tab above it says `Music`, in a panel that holds nothing
       else, and the dropzone under it says what the panel is for.
@@ -184,7 +185,7 @@ onBeforeUnmount(stopPreview);
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto pb-3 space-y-0.5">
+    <div v-else class="flex-1 overflow-y-auto scroll-p-1.5 pb-3 space-y-0.5">
       <div
         v-for="track in tracks"
         :key="track.id"

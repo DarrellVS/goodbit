@@ -45,16 +45,17 @@ const ring = computed(() => settingRing(props.label));
     :data-setting="label"
     :class="[
       flat
-        ? 'flex items-center justify-between gap-4 py-3'
-        : 'setting-block flex items-center justify-between gap-4',
+        ? 'flex items-start justify-between gap-6 py-3'
+        : 'setting-block flex items-start justify-between gap-6',
       ring,
     ]"
   >
-    <div>
-      <label class="font-medium text-foreground">{{ label }}</label>
-      <p class="text-sm text-muted-500 mt-1">{{ description }}</p>
+    <div class="flex-1 min-w-0">
+      <label class="text-sm font-medium text-foreground">{{ label }}</label>
+      <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">{{ description }}</p>
     </div>
     <BaseToggle
+      class="shrink-0 mt-0.5"
       :model-value="modelValue"
       :label="label"
       :disabled="disabled"

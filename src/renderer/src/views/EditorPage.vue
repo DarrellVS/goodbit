@@ -886,7 +886,14 @@ watch(
       </div>
     </header>
 
-    <div class="flex-1 flex gap-3 p-3 overflow-hidden">
+    <!--
+      16px at the sides rather than 12.
+
+      The library tabs carry `-ml-2.5` so their text lines up with the list
+      under them, which left the first tab 2px from this box's clipping edge
+      and took a bite out of its focus ring.
+    -->
+    <div class="flex-1 flex gap-3 px-4 py-3 overflow-hidden">
       <aside v-if="showLibrary" class="w-96 shrink-0 flex flex-col gap-2">
         <!--
           Text tabs with an accent rule, which is the control the library's

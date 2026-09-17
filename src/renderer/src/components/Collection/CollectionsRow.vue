@@ -112,7 +112,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
 
     <div
       v-else-if="collections.length"
-      class="gap-3 overflow-x-auto pb-1"
+      class="gap-3 overflow-x-auto scroll-p-1.5 p-1.5 -m-1.5"
       :class="layout.flow === 'strip'
         ? 'grid grid-flow-col auto-cols-[minmax(11rem,1fr)]'
         : 'grid grid-cols-[repeat(4,minmax(11rem,1fr))]'"

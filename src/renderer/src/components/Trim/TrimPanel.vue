@@ -10,7 +10,7 @@
     with two answers.
   -->
   <div class="h-full min-h-0 flex flex-col overflow-hidden">
-    <main class="flex-1 min-h-0 w-full px-6 py-5 flex flex-col gap-4 overflow-y-auto">
+    <main class="flex-1 min-h-0 w-full px-6 py-5 flex flex-col gap-4 overflow-y-auto scroll-p-1.5">
       <VideoPreview
         ref="videoPreviewRef"
         class="flex-1 min-h-[140px]"

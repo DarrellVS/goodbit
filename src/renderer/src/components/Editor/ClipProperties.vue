@@ -51,7 +51,8 @@ function volumeToDecimal(percentage: number): number {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden border-l border-border">
+  <!-- No `overflow-hidden`: the body scrolls and clips for itself. -->
+  <div class="flex flex-col h-full border-l border-border">
     <div class="shrink-0 h-11 px-4 flex items-center border-b border-border">
       <h3 class="text-sm font-medium text-muted-600">Clip Properties</h3>
     </div>
@@ -66,7 +67,7 @@ function volumeToDecimal(percentage: number): number {
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto p-4 space-y-4">
+    <div v-else class="flex-1 overflow-y-auto scroll-p-1.5 p-4 space-y-4">
       <!--
         The same listen the Trim page does, offered where a montage is actually
         assembled: one button puts the clip on its loudest ten seconds.

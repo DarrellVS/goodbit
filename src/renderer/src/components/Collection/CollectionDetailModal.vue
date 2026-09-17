@@ -204,7 +204,7 @@ watch(
 <template>
   <DialogRoot v-model:open="isOpen">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
       <Transition name="clip-modal" appear>
         <DialogContent
           class="fixed inset-8 z-50 bg-card rounded-lg shadow-pop border border-border flex flex-col outline-hidden overflow-hidden"
@@ -269,7 +269,7 @@ watch(
             </ClipFilters>
           </header>
 
-          <div ref="scroller" class="flex-1 overflow-y-auto">
+          <div ref="scroller" class="flex-1 overflow-y-auto scroll-p-1.5">
             <div class="p-6 space-y-6">
               <ClipsDisplay
                 :clips="clips"

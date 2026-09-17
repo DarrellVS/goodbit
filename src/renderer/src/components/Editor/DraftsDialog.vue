@@ -110,7 +110,7 @@ watch(
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-lg shadow-pop border border-border w-full max-w-xl flex flex-col outline-hidden modal-content-animate max-h-[85vh] px-9 pt-8 pb-9"
       >
@@ -222,7 +222,7 @@ watch(
           </p>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-y-auto border-t border-border pt-4">
+        <div class="flex-1 min-h-0 overflow-y-auto scroll-p-1.5 border-t border-border pt-4">
           <div v-if="drafts.length === 0" class="text-center py-6">
             <div class="mb-3 flex items-center justify-center">
               <Icon icon="material-symbols:bookmarks-outline" class="size-8 shrink-0 block text-muted-300" />

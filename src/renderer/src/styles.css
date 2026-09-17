@@ -124,6 +124,18 @@
    */
   --color-video-bed: #0d0c0b;
   --color-scrim: rgb(9 8 7 / 0.58);
+  /*
+   * The veil behind a modal, which is not the scrim over a frame.
+   *
+   * Those were one token, at the frame's own 58%, and 58% of black over the
+   * page is opaque enough that an 8px blur behind it cannot be seen: the
+   * screen reads as having been dimmed rather than pushed out of focus, which
+   * is what you said it looked like. This one is lighter, so the blur is the
+   * effect and the dimming only supports it, and it follows the palette,
+   * because the same veil that is right over a dark page is a bruise over a
+   * light one.
+   */
+  --color-scrim-modal: var(--scrim-modal);
   --color-scrim-soft: rgb(9 8 7 / 0.34);
   --color-scrim-strong: rgb(9 8 7 / 0.78);
 
@@ -362,6 +374,8 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
    * a surface of its own.
    */
   --line-strong: 35 15.4% 75.9%;  /* #cbc3b8 */
+
+  --scrim-modal: rgb(28 26 24 / 0.26);
 }
 
 .dark {
@@ -401,6 +415,8 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
   --border: 30 7.1% 16.5%;        /* #2d2a27 */
   /* See the note in `:root`. One rung up from `--border`, in this palette. */
   --line-strong: 30 8.2% 23.9%;   /* #423d38 */
+
+  --scrim-modal: rgb(8 7 6 / 0.46);
 }
 
 html, body, #app { height: 100%; }
@@ -432,6 +448,32 @@ body {
  * It used to mean a drop shadow and an 18px radius.
  */
 .card { @apply rounded-lg bg-card border border-border; }
+
+/*
+ * A quiet block on a settings page, and the inset inside it.
+ *
+ * `.b-card-quiet` in the design: a 17px display heading, a muted line under it
+ * at most 76 characters wide, and a hairline above the whole thing. No box.
+ * `.b-inset` is the one filled thing allowed inside one, for a path or a
+ * readback, at 6px radius on the surface a step up from the page.
+ *
+ * These are classes rather than a component because the eleven call sites are
+ * `<div>`s with their own contents and their own `data-setting` anchors, and
+ * swapping a class keeps every one of those.
+ */
+.setting-card {
+  @apply pt-5 pb-5.5 border-t border-border;
+}
+.setting-card > h3,
+.setting-card > .setting-card-title {
+  @apply font-display text-lg font-medium text-foreground;
+}
+.setting-card > p {
+  @apply text-sm text-muted-500 mt-1 max-w-[76ch];
+}
+.setting-inset {
+  @apply mt-3.5 px-4 py-3.5 rounded-sm bg-muted-100 text-sm text-muted-600;
+}
 
 /*
  * One setting, and the rule under it.

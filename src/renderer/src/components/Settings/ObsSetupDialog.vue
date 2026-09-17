@@ -159,7 +159,7 @@ function notNow(): void {
   <div
     v-if="open"
     data-testid="obs-setup"
-    class="fixed inset-0 z-100 flex items-center justify-center bg-scrim p-6"
+    class="fixed inset-0 z-100 flex items-center justify-center bg-scrim-modal backdrop-blur-md p-6"
     @click.self="close"
   >
     <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-lg border border-border shadow-pop">
@@ -194,7 +194,7 @@ function notNow(): void {
         below has a fragment root rather than a wrapper: a wrapper would be one
         child and the gaps between a step's cards would go.
       -->
-      <div class="px-5 pb-5 space-y-3 overflow-y-auto">
+      <div class="px-5 pb-5 space-y-3 overflow-y-auto scroll-p-1.5">
         <!-- 0. Which way -->
         <ObsSetupRouteStep v-if="page === 'route'" @choose="wizard.choose" />
 

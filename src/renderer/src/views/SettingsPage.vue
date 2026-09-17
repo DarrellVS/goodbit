@@ -101,7 +101,7 @@ const { resetToDefaults, exportSettings, importSettings } = useSettingsManagemen
       </template>
     </SettingsSidebar>
 
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto scroll-p-1.5">
       <div class="max-w-4xl mx-auto p-8">
         <!--
           The results take the panel rather than sitting over it in a popover.

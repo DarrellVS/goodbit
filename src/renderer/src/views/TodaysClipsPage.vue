@@ -21,12 +21,12 @@ const [emblaRef, emblaApi] = emblaCarouselVue(
 );
 
 const [thumbsRef, thumbsApi] = emblaCarouselVue(
-  { 
-    axis: 'x', 
-    align: 'start', 
-    containScroll: 'keepSnaps', 
-    dragFree: true, 
-    loop: false 
+  {
+    axis: 'x',
+    align: 'start',
+    containScroll: 'keepSnaps',
+    dragFree: true,
+    loop: false
   },
   []
 );
@@ -91,7 +91,7 @@ watch(todayClips, async () => {
     </div>
 
     <nav class="embla-thumbs mt-6" aria-label="Clip thumbnails">
-      <div class="embla-thumbs__viewport px-8 pt-2 -mx-8" ref="thumbsRef">
+      <div class="embla-thumbs__viewport px-8 py-2 -mx-8" ref="thumbsRef">
         <ThumbnailStrip
           :clips="todayClips"
           :selected-index="selectedIndex"
@@ -114,6 +114,16 @@ watch(todayClips, async () => {
 .embla__viewport {
   overflow: hidden;
   border-radius: 18px;
+
+  /*
+   * Room for a focus ring, taken straight back off again.
+   *
+   * The ring reaches 4px past its control and this viewport clips, so the
+   * buttons under the slide lost their bottom edge. The negative margin means
+   * the carousel sits exactly where it did.
+   */
+  padding: 6px;
+  margin: -6px;
 }
 
 .embla__container {

@@ -46,7 +46,7 @@
         :subtitle="(router.currentRoute.value.meta.subtitle as string)"
       />
 
-      <main class="flex-1 overflow-y-auto">
+      <main class="flex-1 overflow-y-auto scroll-p-1.5">
         <RouterView />
       </main>
     </div>

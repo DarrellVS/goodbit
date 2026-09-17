@@ -110,7 +110,7 @@ function runActive(): void {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
       <DialogContent
         class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-[92vw] max-w-xl flex flex-col outline-hidden overflow-hidden panel-drop-animate"
       >
@@ -133,7 +133,7 @@ function runActive(): void {
           </kbd>
         </div>
 
-        <div ref="listRef" class="max-h-[50vh] overflow-y-auto py-1.5">
+        <div ref="listRef" class="max-h-[50vh] overflow-y-auto scroll-p-1.5 py-1.5">
           <p v-if="results.length === 0" class="px-4 py-6 text-sm text-muted-500 text-center">
             Nothing matches “{{ query }}”
           </p>

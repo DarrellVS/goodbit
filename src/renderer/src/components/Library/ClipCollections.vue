@@ -124,7 +124,7 @@ async function createAndAddCollection() {
         </button>
       </template>
       
-      <div class="flex flex-col gap-2 min-w-[280px] max-h-[400px] overflow-auto">
+      <div class="flex flex-col gap-2 min-w-[280px] max-h-[400px] overflow-auto scroll-p-1.5">
         <div class="sticky top-0 bg-card pb-2 border-b border-border z-10">
           <h3 class="text-sm font-bold text-foreground mb-2">Add to Collection</h3>
           

@@ -128,7 +128,7 @@ async function finish(): Promise<void> {
 </script>
 
 <template>
-  <div class="h-full overflow-auto flex items-center justify-center p-8">
+  <div class="h-full overflow-auto scroll-p-1.5 flex items-center justify-center p-8">
     <div class="w-full max-w-lg space-y-7">
       <div class="text-center space-y-3">
         <Wordmark :size="56" class="mx-auto" />

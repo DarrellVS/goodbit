@@ -63,7 +63,7 @@ onMounted(async () => {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim z-50 backdrop-blur-sm modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >
@@ -76,7 +76,7 @@ onMounted(async () => {
           </DialogDescription>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6 space-y-4">
+        <div class="flex-1 overflow-y-auto scroll-p-1.5 p-6 space-y-4">
           <!-- Create New Collection -->
           <div v-if="showNewCollectionInput" class="space-y-2">
             <input

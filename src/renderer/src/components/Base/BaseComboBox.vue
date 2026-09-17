@@ -313,7 +313,7 @@ const LIST_Z_INDEX = 'z-300';
         -->
         <ComboboxInput v-else readonly :aria-label="label" class="sr-only" />
 
-        <ComboboxViewport class="max-h-64 overflow-y-auto">
+        <ComboboxViewport class="max-h-64 overflow-y-auto scroll-p-1.5">
           <ComboboxEmpty class="px-2.5 py-2 text-sm text-muted-500">
             {{ emptyMessage }}
           </ComboboxEmpty>
