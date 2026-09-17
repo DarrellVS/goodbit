@@ -2,6 +2,7 @@
 import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
+import BaseField from '@renderer/components/Base/BaseField.vue';
 import { fetchGames } from '@renderer/services/games';
 import { useGameVisibility } from '@renderer/composables/library/useGameVisibility';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
@@ -73,16 +74,9 @@ onMounted(load);
 
     <div class="flex items-center gap-3">
       <div class="relative flex-1">
-        <Icon
-          icon="material-symbols:search"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted-400"
-        />
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Search games"
-          class="w-full pl-10 pr-4 py-2.5 bg-muted-50 text-foreground placeholder:text-muted-400 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
-        />
+        <BaseField icon="material-symbols:search">
+          <input v-model="search" type="search" placeholder="Search games" class="text-sm" />
+        </BaseField>
       </div>
       <span class="text-sm text-muted-500 whitespace-nowrap">
         {{ hiddenCount }} hidden
@@ -132,7 +126,7 @@ onMounted(load);
 
         <!--
           `BaseToggle`, not a switch of its own.
-          
+
           This was a hand-rolled button with its own knob and its own
           translate, which CLAUDE.md's "one switch component" rule exists to
           prevent, and it is the most-seen switch on the screen because there

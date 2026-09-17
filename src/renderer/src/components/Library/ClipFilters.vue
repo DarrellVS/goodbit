@@ -153,6 +153,14 @@ function onSortChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
     </nav>
 
     <div class="ml-auto flex items-center gap-4">
+      <!--
+        A place for a search that belongs to this row rather than to the
+        screen. The library's own search is up in the page header, where there
+        is room for it beside a 34px title; the collection layer has no page
+        header, so its search sits here, directly left of Filter.
+      -->
+      <slot name="search" />
+
       <ClipFilterPopover />
 
       <!--

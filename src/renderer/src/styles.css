@@ -220,6 +220,68 @@
 }
 
 /*
+  One line and a dot.
+
+  Every range in the app painted a thick two-tone bar: accent to the left of
+  the handle, a pale rail to the right, and a large knob on top. The design
+  draws a 2px hairline and a 14px dot, with no filled portion, so the control
+  reads as a position rather than as a quantity. Written once here because a
+  range needs vendor pseudo-elements that a utility class cannot reach.
+*/
+input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 32px;
+  background: none;
+  cursor: pointer;
+}
+
+input[type='range']:focus-visible {
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 999px;
+  background: hsl(var(--line-strong));
+}
+
+input[type='range']::-moz-range-track {
+  height: 2px;
+  border-radius: 999px;
+  background: hsl(var(--line-strong));
+}
+
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 999px;
+  background: hsl(var(--accent));
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: hsl(var(--accent));
+}
+
+input[type='range']:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
+
+/*
   Motion is 120 to 180ms, opacity and transform, and it stops when the
   machine has been asked to stop it. Honouring the preference component by
   component is a rule nobody remembers on the fortieth component, so it is

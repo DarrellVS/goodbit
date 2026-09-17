@@ -175,10 +175,19 @@ function handleRulerMouseUp(): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden select-none">
+  <div class="flex flex-col h-full overflow-hidden select-none border-t border-border pt-3.5">
+    <!--
+      The section says what it is, once, in the label treatment every other
+      section header in the app uses. There was nothing here at all, so the
+      ruler was the top of the screen's last third with no name on it.
+    -->
+    <div class="shrink-0 h-6 flex items-center">
+      <span class="text-xs font-medium uppercase tracking-label text-muted-400">Timeline</span>
+    </div>
+
     <div
       ref="rulerRef"
-      class="shrink-0 h-7 bg-accent/4 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
+      class="shrink-0 h-6 border-b border-border relative overflow-x-auto overflow-y-hidden cursor-pointer scrollbar-hide"
       @mousedown="handleRulerMouseDown"
       @scroll="syncScroll"
     >
@@ -205,15 +214,20 @@ function handleRulerMouseUp(): void {
           `whitespace-nowrap` because its parent is zero pixels wide and would
           otherwise wrap it away to nothing.
         -->
+        <!--
+          A full-height rule with the label beside it, which is what the design
+          draws: the tick is the `border-left` of a zero width box and the time
+          reads 5px to its right. It was a 8px stub with the label underneath
+          in 9px, so the ruler had two rows of information in 24px of height.
+        -->
         <div
           v-for="mark in rulerMarks"
           :key="mark.position"
-          class="absolute top-0 bottom-0 w-0"
+          class="absolute top-0 bottom-0 w-0 border-l border-line-strong"
           :style="{ left: `${mark.position}px` }"
         >
-          <div class="h-2 w-px bg-muted-300" />
           <span
-            class="absolute top-2.5 left-1 text-[9px] font-mono text-muted-500 whitespace-nowrap"
+            class="absolute top-1 left-1.5 font-mono text-[10.5px] text-muted-400 whitespace-nowrap"
           >{{ mark.label }}</span>
         </div>
       </div>
@@ -263,7 +277,7 @@ function handleRulerMouseUp(): void {
           has now drifted apart twice. Changing the gutter should be changing
           one number.
         -->
-        <div data-lane="video" class="relative h-16 bg-surface-sunk rounded-md">
+        <div data-lane="video" class="relative h-18 bg-muted-50 rounded-sm">
           <TimelineTrack
             v-for="clip in clips"
             :key="clip.id"
@@ -287,7 +301,7 @@ function handleRulerMouseUp(): void {
           which only became visible when Tailwind 4 started rendering off-scale
           opacities that Tailwind 3 dropped on the floor. A lane is a lane.
         -->
-        <div data-lane="audio" class="relative h-12 bg-surface-sunk rounded-md">
+        <div data-lane="audio" class="relative h-15 bg-muted-50 rounded-sm">
           <!--
             Everything past the last frame of video is dropped on export, so the
             lane says so rather than letting a long track look like it survives.

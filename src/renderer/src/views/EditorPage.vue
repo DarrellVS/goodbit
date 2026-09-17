@@ -889,33 +889,30 @@ watch(
     <div class="flex-1 flex gap-3 p-3 overflow-hidden">
       <aside v-if="showLibrary" class="w-96 shrink-0 flex flex-col gap-2">
         <!--
-          A two-way switch, not two buttons one of which is the loudest thing
-          on the screen. The accent marks the good bit and the one primary
-          action in a region; which half of a side panel you are looking at is
-          neither.
+          Text tabs with an accent rule, which is the control the library's
+          `All` / `Starred` already is. It was a segmented box with one filled
+          half, so the same decision looked like two different kinds of control
+          depending on the screen.
         -->
-        <div class="shrink-0 grid grid-cols-2 gap-1 p-1 bg-muted-50 rounded-md border border-border" role="tablist">
+        <div class="shrink-0 flex items-center gap-2.5 -ml-2.5 border-b border-border" role="tablist">
           <button
+            v-for="tab in [{ id: 'clips', label: 'Clips' }, { id: 'music', label: 'Music' }]"
+            :key="tab.id"
             type="button"
             role="tab"
-            :aria-selected="libraryTab === 'clips'"
-            class="h-8 inline-flex items-center justify-center gap-2 rounded-sm text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
-            :class="libraryTab === 'clips' ? 'bg-card text-foreground' : 'text-muted-500 hover:text-foreground'"
-            @click="libraryTab = 'clips'"
+            :aria-selected="libraryTab === tab.id"
+            class="relative h-9 min-w-11 px-2.5 text-sm rounded-sm outline-none focus-visible:focus-ring transition-colors duration-150"
+            :class="libraryTab === tab.id
+              ? 'text-foreground font-medium'
+              : 'text-muted-500 hover:text-foreground'"
+            @click="libraryTab = (tab.id as 'clips' | 'music')"
           >
-            <Icon icon="material-symbols:video-library" class="size-4 shrink-0 block" />
-            Clips
-          </button>
-          <button
-            type="button"
-            role="tab"
-            :aria-selected="libraryTab === 'music'"
-            class="h-8 inline-flex items-center justify-center gap-2 rounded-sm text-sm font-medium outline-none focus-visible:focus-ring transition-colors duration-150"
-            :class="libraryTab === 'music' ? 'bg-card text-foreground' : 'text-muted-500 hover:text-foreground'"
-            @click="libraryTab = 'music'"
-          >
-            <Icon icon="material-symbols:library-music" class="size-4 shrink-0 block" />
-            Music
+            {{ tab.label }}
+            <span
+              v-if="libraryTab === tab.id"
+              aria-hidden="true"
+              class="absolute inset-x-2.5 -bottom-px h-0.5 bg-accent"
+            />
           </button>
         </div>
 

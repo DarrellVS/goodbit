@@ -37,22 +37,27 @@ function toggle(): void {
     :aria-checked="modelValue"
     :aria-label="label"
     :disabled="disabled"
-    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-    :class="modelValue ? 'bg-accent' : 'bg-muted-400'"
+    class="relative inline-flex h-8 w-[46px] shrink-0 items-center justify-start rounded-full outline-none focus-visible:focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
     @click="toggle"
   >
     <!--
-      The knob is the page colour, in both states and both palettes, so it
-      reads as a hole punched in the track rather than as a second fill that
-      has to be told apart from it. It was `bg-card`, which is near-white in
-      light mode and near-black in dark, so the same knob was a light disc on
-      one theme and a dark one on the other. The off track moved up a rung for
-      the same reason: `muted-300` is the decorative step and the knob on it
-      was 2.9:1, under the floor for a control's own edge.
+      An outlined pill, not a filled one.
+
+      A 44x24 track drawn inside a 46x32 target, so the thing you can hit is
+      bigger than the thing you can see and still clears the 24px minimum in
+      its smaller dimension. Off, the track is a raised surface with a hairline
+      and the knob is muted; on, the track is the accent's own wash with an
+      accent edge and the knob is the accent. So the switch says "on" by
+      filling with the accent's colour at the accent's weight rather than by
+      becoming a block of it.
     -->
     <span
-      class="inline-block h-4 w-4 transform rounded-full bg-background transition-transform duration-150"
-      :class="modelValue ? 'translate-x-6' : 'translate-x-1'"
+      class="absolute left-px h-6 w-11 rounded-full border transition-colors duration-150"
+      :class="modelValue ? 'bg-accent-sunk border-accent' : 'bg-muted-100 border-line-strong'"
+    />
+    <span
+      class="absolute left-[5px] size-4 rounded-full transition-[transform,background-color] duration-150"
+      :class="modelValue ? 'translate-x-5 bg-accent' : 'translate-x-0 bg-muted-400'"
     />
   </button>
 </template>

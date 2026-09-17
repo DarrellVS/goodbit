@@ -23,6 +23,7 @@ import { useSelectAllShortcut } from '@renderer/composables/ui/useSelectAllShort
 import { scrollToTop } from '@renderer/utils/scroll';
 import type { Clip } from '@renderer/types/clip';
 import ClipFilters from '@renderer/components/Library/ClipFilters.vue';
+import BaseField from '@renderer/components/Base/BaseField.vue';
 import ClipsDisplay from '@renderer/components/Library/ClipsDisplay.vue';
 import ClipsPaginationControls from '@renderer/components/Library/ClipsPaginationControls.vue';
 import FloatingControlsBar from '@renderer/components/Library/FloatingControlsBar.vue';
@@ -229,26 +230,6 @@ watch(
                 </DialogDescription>
               </div>
 
-              <!--
-                The shell's search field is behind this layer, and the list in
-                here answers to it, so without one here the only way to search
-                a collection would be to close it first. Same store, so what is
-                typed here is what the library shows underneath afterwards.
-              -->
-              <div class="relative shrink-0">
-                <Icon
-                  icon="material-symbols:search"
-                  class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400"
-                />
-                <input
-                  type="text"
-                  :value="clipsStore.searchText"
-                  placeholder="Search this collection"
-                  class="w-72 rounded-lg border border-border bg-card py-2 pl-10 pr-4 text-foreground placeholder:text-muted-400 outline-hidden transition focus:ring-2 focus:ring-accent/50"
-                  @input="clipsStore.setSearch(($event.target as HTMLInputElement).value)"
-                />
-              </div>
-
               <button
                 class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-muted-500 hover:text-foreground hover:bg-muted-50 transition-colors"
                 aria-label="Close"
@@ -266,7 +247,26 @@ watch(
               :sortable="false"
               @enter-selection="enterSelectionMode"
               @exit-selection="exitSelectionMode"
-            />
+            >
+              <template #search>
+                <!--
+                  The shell's search is behind this layer and the list in here
+                  answers to it, so without one the only way to search a collection
+                  would be to close it first. Same store, same underlined field as
+                  the library's, and directly beside the controls it belongs with
+                  rather than up in the title row.
+                -->
+                <BaseField icon="material-symbols:search" class="w-64">
+                  <input
+                    type="search"
+                    :value="clipsStore.searchText"
+                    placeholder="Search this collection"
+                    class="text-sm"
+                    @input="clipsStore.setSearch(($event.target as HTMLInputElement).value)"
+                  />
+                </BaseField>
+              </template>
+            </ClipFilters>
           </header>
 
           <div ref="scroller" class="flex-1 overflow-y-auto">

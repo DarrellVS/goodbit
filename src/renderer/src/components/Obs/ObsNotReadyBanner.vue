@@ -141,7 +141,7 @@ async function recheck(): Promise<void> {
       <div class="flex items-center gap-4 shrink-0">
         <button
           type="button"
-          class="h-8 inline-flex items-center rounded-sm text-sm font-medium text-accent-ink whitespace-nowrap border-b border-accent/50 hover:border-accent outline-none focus-visible:focus-ring transition-colors duration-150"
+          class="h-8 inline-flex items-center text-sm font-medium text-accent-ink whitespace-nowrap border-b border-accent/50 hover:border-accent outline-none focus-visible:focus-ring transition-colors duration-150"
           @click="showDialog = true"
         >
           Set up OBS for me

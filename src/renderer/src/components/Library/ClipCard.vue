@@ -51,6 +51,16 @@ const collectionsStore = useCollectionsStore();
 const toastStore = useToastStore();
 const gamesStore = useGamesStore();
 
+/** `M:SS`, for the chip on the picture. Empty when the scan has no length yet. */
+const durationLabel = computed(() => {
+  const seconds = props.clip.durationSec;
+  if (!seconds || seconds <= 0) return '';
+  const whole = Math.round(seconds);
+  const mins = Math.floor(whole / 60);
+  const secs = whole % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+});
+
 /**
  * The game's own name where it has been given one, the folder's otherwise.
  *
@@ -294,47 +304,9 @@ function handleCardClick(event: MouseEvent) {
 
     <ClipPublishedBadge :published="clip.published" />
 
-    <ClipStarButton v-if="!isSelectionMode" :clip="clip" @updated="emit('updated', $event)" />
-
-    <!--
-      Drag this clip somewhere else.
-
-      Beside the star, one button's width to its right: both are things you do
-      to the clip as a whole, so they read as a pair rather than as two controls
-      that happen to be on the same tile. `left-[52px]` is `left-3` plus the
-      star's own 32 pixels plus a gap.
-
-      `.stop` on the dragstart matters. Without it the card's own dragstart runs
-      too and the clip starts moving into a collection at the same time.
-    -->
-    <button
-      v-if="!isSelectionMode"
-      draggable="true"
-      type="button"
-      title="Drag this clip into another program"
-      aria-label="Drag this clip into another program"
-      class="absolute top-3 left-[52px] z-10 size-8 rounded-lg inline-flex items-center justify-center bg-video-bed/60 backdrop-blur-sm border border-on-video/20 text-on-video opacity-0 group-hover:opacity-100 opacity-transition hover:bg-video-bed/80 cursor-grab active:cursor-grabbing"
-      @dragstart.stop="handleDragOut"
-      @click.stop
-    >
-      <Icon icon="material-symbols:drag-pan" class="text-lg" />
-    </button>
-
-    <div
-      v-if="!isSelectionMode"
-      class="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 opacity-transition"
-    >
-      <ClipActionsMenu
-        :clip="clip"
-        :collection-id="collectionId"
-        @updated="emit('updated', $event)"
-        @deleted="emit('deleted')"
-      />
-    </div>
-
     <div
       ref="previewEl"
-      class="aspect-21/9 bg-video-bed relative rounded-md overflow-hidden"
+      class="aspect-21/9 bg-video-bed relative rounded-t-md overflow-hidden"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
     >
@@ -398,6 +370,62 @@ function handleCardClick(event: MouseEvent) {
         :ranges="goodBitRanges"
         :duration-sec="clip.durationSec"
       />
+
+      <!--
+        How long it is, on the picture.
+
+        The meta line under the card says it too, but that line is read once you
+        are already looking at one card; this is read while scanning a grid of
+        them, which is why the design puts it here as well.
+      -->
+      <span
+        v-if="durationLabel"
+        class="absolute left-2 bottom-2 z-10 rounded-sm bg-scrim px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-on-video pointer-events-none"
+      >
+        {{ durationLabel }}
+      </span>
+
+      <!--
+        The card's three tools, in one group.
+
+        They were in three places: the star top left, a drag grip beside it and
+        the menu top right, each a bordered circle. The design has one group at
+        the bottom right, flat squares on a scrim, fading in with the card's own
+        hover. The published badge keeps the top right corner to itself, so
+        nothing has to dodge anything.
+      -->
+      <div
+        v-if="!isSelectionMode"
+        class="absolute right-1.5 bottom-1.5 z-10 flex items-center gap-0.5"
+      >
+        <ClipStarButton :clip="clip" @updated="emit('updated', $event)" />
+
+        <!--
+          `.stop` on the dragstart matters. Without it the card's own dragstart
+          runs too and the clip starts moving into a collection at the same
+          time.
+        -->
+        <button
+          draggable="true"
+          type="button"
+          title="Drag this clip into another program"
+          aria-label="Drag this clip into another program"
+          class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm bg-scrim text-on-video hover:bg-scrim-strong opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 outline-none focus-visible:focus-ring transition-[opacity,background-color] duration-150 cursor-grab active:cursor-grabbing"
+          @dragstart.stop="handleDragOut"
+          @click.stop
+        >
+          <Icon icon="material-symbols:drag-pan" class="size-4 shrink-0 block" />
+        </button>
+
+        <div class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
+          <ClipActionsMenu
+            :clip="clip"
+            :collection-id="collectionId"
+            @updated="emit('updated', $event)"
+            @deleted="emit('deleted')"
+          />
+        </div>
+      </div>
     </div>
 
     <!--
@@ -407,7 +435,15 @@ function handleCardClick(event: MouseEvent) {
       two pixels tall, and takes no clicks. Scrubbing and playing both move it,
       so a tile always shows where it is without adding anything to look at.
     -->
-    <div class="h-0.5 bg-border/40 pointer-events-none overflow-hidden" aria-hidden="true">
+    <!--
+      Flush under the picture, and rounded on the bottom rather than the top.
+
+      The thumbnail was rounded on all four corners with this line sitting
+      squarely beneath it, so the page showed through two notches where the
+      curves left off. The picture rounds its top corners, this rounds its
+      bottom ones, and together they are one shape.
+    -->
+    <div class="h-0.5 rounded-b-md bg-border/40 pointer-events-none overflow-hidden" aria-hidden="true">
       <div
         class="h-full w-full bg-accent origin-left will-change-transform"
         :style="fillStyle"

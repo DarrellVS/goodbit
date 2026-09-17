@@ -140,17 +140,13 @@ onBeforeUnmount(stopPreview);
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <div class="shrink-0 px-4 py-3 bg-accent/4 border-b border-border flex items-center justify-between gap-2">
-      <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:library-music" class="text-muted-500" />
-        Music
-      </h3>
-      <span class="text-xs text-muted-500">{{ tracks.length }}</span>
-    </div>
-
+    <!--
+      No heading. The tab above it says `Music`, in a panel that holds nothing
+      else, and the dropzone under it says what the panel is for.
+    -->
     <div
-      class="shrink-0 m-3 rounded-lg border-2 border-dashed transition-colors"
-      :class="isDragOver ? 'border-accent bg-accent/8' : 'border-border bg-card/60'"
+      class="shrink-0 mt-3 rounded-md border border-dashed transition-colors duration-150"
+      :class="isDragOver ? 'border-accent bg-accent/8' : 'border-border'"
       @dragover.prevent="isDragOver = true"
       @dragleave="isDragOver = false"
       @drop.prevent="handleDrop"
@@ -160,9 +156,9 @@ onBeforeUnmount(stopPreview);
         :disabled="uploading"
         @click="handleBrowse"
       >
-        <BaseSpinner v-if="uploading" class="text-xl text-accent-ink" />
-        <Icon v-else icon="material-symbols:upload" class="text-xl text-muted-500" />
-        <span class="text-sm font-medium text-muted-800">
+        <BaseSpinner v-if="uploading" class="size-5 shrink-0 block text-muted-400" />
+        <Icon v-else icon="material-symbols:upload" class="size-5 shrink-0 block text-muted-400" />
+        <span class="text-sm font-medium text-foreground">
           {{ uploading ? 'Adding…' : 'Add music' }}
         </span>
         <span v-if="!uploading" class="text-xs text-muted-500">Drop files or click. mp3, wav, m4a, ogg, flac</span>
@@ -175,7 +171,7 @@ onBeforeUnmount(stopPreview);
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center text-muted-500 text-xs">
-      <BaseSpinner class="text-xl text-accent-ink" />
+      <BaseSpinner class="size-5 shrink-0 block text-muted-400" />
     </div>
 
     <div v-else-if="tracks.length === 0" class="flex-1 flex items-center justify-center px-4">
@@ -188,12 +184,12 @@ onBeforeUnmount(stopPreview);
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
+    <div v-else class="flex-1 overflow-y-auto pb-3 space-y-0.5">
       <div
         v-for="track in tracks"
         :key="track.id"
-        class="group rounded-lg border bg-card/80 hover:bg-card transition-all overflow-hidden"
-        :class="isAdded(track) ? 'border-accent/60' : 'border-border hover:border-accent/50'"
+        class="group rounded-sm overflow-hidden transition-colors duration-150"
+        :class="isAdded(track) ? 'bg-muted-100' : 'hover:bg-muted-50'"
       >
         <button
           class="w-full text-left px-2.5 pt-2.5 pb-1.5"

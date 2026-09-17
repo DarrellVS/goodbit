@@ -103,13 +103,13 @@ async function handleMoveToGame(targetGame: string) {
       <MenubarTrigger
         v-else
         title="More actions"
-        class="rounded-lg inline-flex items-center justify-center bg-video-bed/60 backdrop-blur-sm border border-on-video/30 px-2 py-2 outline-hidden size-8 hover:bg-video-bed/80 transition cursor-pointer"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm bg-scrim text-on-video hover:bg-scrim-strong outline-none focus-visible:focus-ring transition-[opacity,background-color] duration-150 cursor-pointer"
       >
-        <Icon icon="material-symbols:more-vert" class="text-on-video" />
+        <Icon icon="material-symbols:more-vert" class="size-4 shrink-0 block" />
       </MenubarTrigger>
       <MenubarPortal>
         <MenubarContent
-          class="min-w-[200px] bg-card rounded-lg p-1 shadow-pop border border-border outline-hidden z-50"
+          class="min-w-[232px] bg-card rounded-md p-1.5 shadow-pop border border-border outline-hidden z-50"
           align="end"
           :side-offset="8"
         >
@@ -122,75 +122,75 @@ async function handleMoveToGame(targetGame: string) {
               is for, so it is the first item in its own menu.
             -->
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               @click="onTrim"
             >
-              <Icon icon="material-symbols:content-cut" class="text-base" />
+              <Icon icon="material-symbols:content-cut" class="size-4 shrink-0 block text-muted-400" />
               <span>Trim to the good bit</span>
             </MenubarItem>
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               @click="onAdvancedEdit"
             >
-              <Icon icon="material-symbols:video-settings" class="text-base" />
+              <Icon icon="material-symbols:video-settings" class="size-4 shrink-0 block text-muted-400" />
               <span>Open in the editor</span>
             </MenubarItem>
 
-            <MenubarSeparator class="h-px bg-muted-200 my-1" />
+            <MenubarSeparator class="h-px bg-border my-1.5 mx-2" />
           </template>
 
           <!-- Reveal in Explorer -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="onReveal"
           >
-            <Icon icon="material-symbols:folder-open" class="text-base" />
+            <Icon icon="material-symbols:folder-open" class="size-4 shrink-0 block text-muted-400" />
             <span>Reveal in Explorer</span>
           </MenubarItem>
 
           <!-- Export Audio -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             :class="{ 'opacity-50 pointer-events-none': isExportingAudio }"
             @click="onExportAudio"
           >
             <BaseSpinner v-if="isExportingAudio" class="text-base" />
-            <Icon v-else icon="material-symbols:audio-file" class="text-base" />
+            <Icon v-else icon="material-symbols:audio-file" class="size-4 shrink-0 block text-muted-400" />
             <span>{{ isExportingAudio ? 'Exporting Audio...' : 'Export Audio' }}</span>
           </MenubarItem>
 
           <!-- Move to Game -->
           <MenubarItem
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="showMoveDialog = true"
           >
-            <Icon icon="material-symbols:drive-file-move" class="text-base" />
+            <Icon icon="material-symbols:drive-file-move" class="size-4 shrink-0 block text-muted-400" />
             <span>Move to Game</span>
           </MenubarItem>
 
           <!-- Copy URL (conditional) -->
           <MenubarItem
             v-if="clip.published && clip.publishedUrl"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="onCopyUrl"
           >
-            <Icon icon="material-symbols:link" class="text-base" />
+            <Icon icon="material-symbols:link" class="size-4 shrink-0 block text-muted-400" />
             <span>Copy URL</span>
           </MenubarItem>
 
-          <MenubarSeparator v-if="collectionId" class="h-px bg-muted-200 my-1" />
+          <MenubarSeparator v-if="collectionId" class="h-px bg-border my-1.5 mx-2" />
 
           <!-- Remove from Collection -->
           <MenubarItem
             v-if="collectionId"
-            class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent/8 text-accent-ink outline-hidden cursor-pointer select-none"
+            class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-accent-ink hover:bg-muted-100 outline-hidden cursor-pointer select-none"
             @click="onRemoveFromCollection"
           >
-            <Icon icon="material-symbols:folder-delete" class="text-base" />
+            <Icon icon="material-symbols:folder-delete" class="size-4 shrink-0 block text-muted-400" />
             <span>Remove from Collection</span>
           </MenubarItem>
 
-          <MenubarSeparator class="h-px bg-muted-200 my-1" />
+          <MenubarSeparator class="h-px bg-border my-1.5 mx-2" />
 
           <!-- Publish/Unpublish -->
           <MenubarItem
@@ -199,16 +199,16 @@ async function handleMoveToGame(targetGame: string) {
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onUnpublish"
           >
-            <Icon icon="material-symbols:cloud-off" class="text-base" />
+            <Icon icon="material-symbols:cloud-off" class="size-4 shrink-0 block text-muted-400" />
             <span>{{ isPublishing ? 'Unpublishing…' : 'Unpublish' }}</span>
           </MenubarItem>
           <template v-else>
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               :class="{ 'opacity-50 pointer-events-none': isPublishing }"
               @click="onPublish"
             >
-              <Icon icon="material-symbols:cloud-upload" class="text-base" />
+              <Icon icon="material-symbols:cloud-upload" class="size-4 shrink-0 block text-muted-400" />
               <!--
                 Say which one this is.
 
@@ -235,13 +235,13 @@ async function handleMoveToGame(targetGame: string) {
               is the file.
             -->
             <MenubarItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               :class="{ 'opacity-50 pointer-events-none': isPublishing }"
               @click="compressesPublished ? onPublishOriginal() : onPublishCompressed()"
             >
               <Icon
                 :icon="compressesPublished ? 'material-symbols:hd' : 'material-symbols:compress'"
-                class="text-base"
+                class="size-4 shrink-0 block text-muted-400"
               />
               <span>
                 {{ compressesPublished ? 'Publish the original file' : 'Publish a compressed copy' }}
@@ -249,7 +249,7 @@ async function handleMoveToGame(targetGame: string) {
             </MenubarItem>
           </template>
 
-          <MenubarSeparator class="h-px bg-muted-200 my-1" />
+          <MenubarSeparator class="h-px bg-border my-1.5 mx-2" />
 
           <!-- Delete -->
           <MenubarItem
@@ -257,7 +257,7 @@ async function handleMoveToGame(targetGame: string) {
             :class="{ 'opacity-50 pointer-events-none': isPublishing }"
             @click="onDelete"
           >
-            <Icon icon="material-symbols:delete" class="text-base" />
+            <Icon icon="material-symbols:delete" class="size-4 shrink-0 block text-muted-400" />
             <span>Delete</span>
           </MenubarItem>
         </MenubarContent>

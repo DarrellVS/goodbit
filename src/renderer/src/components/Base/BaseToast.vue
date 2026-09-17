@@ -56,7 +56,7 @@ function getIconName(toast: Toast): string {
       @update:open="(open) => !open && toastStore.dismiss(toast.id)"
     >
       <Icon :icon="getIconName(toast)" class="w-5 h-5 shrink-0 mt-0.5" />
-      
+
       <div class="flex-1 space-y-1">
         <ToastTitle v-if="toast.title" class="font-semibold text-sm">
           {{ toast.title }}
@@ -115,7 +115,17 @@ function getIconName(toast: Toast): string {
       the bottom right would swallow clicks meant for whatever is under it even
       with no toast on screen.
     -->
-    <ToastViewport class="pointer-events-none fixed bottom-0 right-0 flex flex-col p-6 gap-3 w-[420px] max-w-[100vw] z-2147483647 outline-hidden" />
+    <!--
+      Centred, not in a corner.
+
+      A notice about what just happened belongs near where you were looking,
+      and on a 3440 wide screen the bottom right corner is a different postcode
+      from whatever you pressed. Horizontally centred and low enough not to
+      cover a dialog's own buttons.
+    -->
+    <ToastViewport
+      class="pointer-events-none fixed bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-[420px] max-w-[100vw] z-2147483647 outline-hidden"
+    />
   </ToastProvider>
 </template>
 

@@ -143,8 +143,8 @@ function openGuide(): void {
 <template>
   <section>
     <div class="pb-2">
-      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Recording</h2>
-      <p class="text-sm text-muted-500">
+      <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Recording</h2>
+      <p class="mt-2 text-muted-500">
         OBS, your clips folder, and what happens when you press the key
       </p>
     </div>

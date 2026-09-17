@@ -52,9 +52,12 @@ function isActive(to: string): boolean {
     Type-led, and quiet. The column is navigation for a screen whose subject is
     somewhere else, so nothing in here is the loudest thing on the page.
 
-    The panel is one tone step above the page (`--muted-50`), a row under the
-    pointer is one more (`--muted-100`), and the row you are on is marked by
-    weight and a hairline accent rule. That used to be a filled accent tint,
+    No ground of its own. The column is the page, and a hairline is what says
+    where it ends. It was `--muted-50`, which put two surfaces side by side
+    before any content was drawn.
+
+    A row under the pointer is `--muted-100`, and the row you are on is marked
+    by weight and a hairline accent rule. That used to be a filled accent tint,
     which is a lot of colour for "you are here", and before that it was
     `bg-card/10` for both hover and active at once: in dark that lands about a
     third of a percent above the sidebar, and in light both were pure white, so
@@ -63,7 +66,7 @@ function isActive(to: string): boolean {
     232px, which is the measurement the design fixes rather than a number that
     happened to look right.
   -->
-  <aside class="w-58 bg-muted-50 border-r border-border flex flex-col h-full">
+  <aside class="w-58 border-r border-border flex flex-col h-full">
     <!--
       No name or mark here. The title bar already carries both, a hand's width
       above, and saying it twice is one of them wasted.

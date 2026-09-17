@@ -24,8 +24,8 @@ onMounted(load);
 <template>
   <section>
     <div class="pb-2">
-      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Editing</h2>
-      <p class="text-sm text-muted-500">
+      <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Editing</h2>
+      <p class="mt-2 text-muted-500">
         Trimming, your music, and what the suggestions have learned
       </p>
     </div>

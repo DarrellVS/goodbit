@@ -25,8 +25,8 @@ const config = useConfiguration();
 <template>
   <section>
     <div class="pb-2">
-      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Your data</h2>
-      <p class="text-sm text-muted-500">
+      <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Your data</h2>
+      <p class="mt-2 text-muted-500">
         Your clips are files on disk and GoodBit never touches them. Everything on this page is
         about the other half: the names, tags, notes and collections that only exist here.
       </p>

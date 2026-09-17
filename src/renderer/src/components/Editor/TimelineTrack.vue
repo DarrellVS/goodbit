@@ -128,10 +128,18 @@ onBeforeUnmount(stopDrag);
 </script>
 
 <template>
+  <!--
+    Inset from the lane, and selected by its own edge.
+
+    It sat flush to the top of the lane with a card's border *and* a 2px accent
+    ring, so a selected clip was three concentric outlines. The design insets
+    the block 6px inside the lane and marks the selected one by turning its own
+    hairline accent, which costs no layout and cannot stack.
+  -->
   <div
-    class="absolute top-0 h-16 rounded-lg overflow-hidden group select-none"
+    class="absolute top-1.5 bottom-1.5 rounded-sm overflow-hidden group select-none border"
     :class="[
-      selected ? 'ring-2 ring-accent' : 'hover:ring-2 hover:ring-accent/50',
+      selected ? 'border-accent' : 'border-line-strong hover:border-muted-300',
       cursorClass,
       // Follow the cursor 1:1 while dragging; glide when the timeline reflows on release.
       isDragging ? '' : 'transition-[left,width] duration-150 ease-out'
@@ -140,7 +148,7 @@ onBeforeUnmount(stopDrag);
     @mousedown="handleMouseDown"
     @click.stop="emit('select', clip.id)"
   >
-    <div class="relative w-full h-full bg-card border border-border overflow-hidden">
+    <div class="relative w-full h-full bg-muted-100 overflow-hidden">
       <!--
         The frame strip covers the whole source clip, so the block shows only
         the slice between the trim handles, scroll it by trimStart and stretch
@@ -156,41 +164,52 @@ onBeforeUnmount(stopDrag);
         v-else
         :src="clip.thumbnailUrl"
         :alt="`Clip ${clip.clipId}`"
-        class="w-full h-full object-cover opacity-30"
+        class="w-full h-full object-cover opacity-45"
       />
 
-      <div class="absolute inset-0 bg-linear-to-t from-video-bed/40 via-transparent to-video-bed/10" />
-      
-      <div class="absolute top-1.5 left-2 right-2 flex items-start justify-between">
-        <div class="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-card/80 px-1.5 py-0.5 rounded-sm">
-          <Icon icon="material-symbols:video-library" class="text-xs" />
-          {{ clip.name }}
-        </div>
-        
-        <button
-          class="opacity-0 group-hover:opacity-100 transition-opacity bg-danger hover:bg-danger rounded-sm p-0.5"
-          @click.stop="emit('remove', clip.id)"
-        >
-          <Icon icon="material-symbols:close" class="text-accent-fg text-xs" />
-        </button>
-      </div>
-      
-      <div class="absolute bottom-1.5 left-2 right-2 flex items-end justify-between">
-        <div class="text-[10px] font-mono font-medium text-foreground bg-card/80 px-1.5 py-0.5 rounded-sm">
-          {{ formatTime(clip.duration) }}
-        </div>
-        
-        <div v-if="clip.muted" class="bg-card/80 px-1.5 py-0.5 rounded-sm">
-          <Icon icon="material-symbols:volume-off" class="text-danger-ink text-xs" />
-        </div>
-      </div>
+      <!--
+        The name and the duration sit straight on the still, which is already
+        at 45%. They each had a pill of their own behind them, plus a gradient
+        over the whole block, which is three grounds for two short strings.
+      -->
+      <span
+        class="absolute top-0 left-0 right-6 px-2 py-1 text-[11.5px] text-foreground truncate pointer-events-none"
+      >
+        {{ clip.name }}
+      </span>
 
-      <div 
-        class="trim-handle absolute left-0 top-0 bottom-0 w-1 bg-accent opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
+      <span
+        class="absolute left-2 bottom-1 font-mono text-[10.5px] text-muted-600 pointer-events-none"
+      >
+        {{ formatTime(clip.duration) }}
+      </span>
+
+      <Icon
+        v-if="clip.muted"
+        icon="material-symbols:volume-off"
+        class="absolute right-2 bottom-1 size-3.5 block text-muted-500 pointer-events-none"
+      />
+
+      <button
+        type="button"
+        class="absolute right-0.5 top-0.5 size-6 inline-flex items-center justify-center rounded-sm text-muted-500 hover:text-foreground hover:bg-muted-200 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 outline-none focus-visible:focus-ring transition-opacity duration-150"
+        :title="`Remove ${clip.name} from the timeline`"
+        :aria-label="`Remove ${clip.name} from the timeline`"
+        @click.stop="emit('remove', clip.id)"
+      >
+        <Icon icon="material-symbols:close" class="size-3.5 block" />
+      </button>
+
+      <!--
+        14px of grab either side, per the design, and no width change on hover:
+        a handle that grows moves its own edge out from under the pointer.
+      -->
+      <div
+        class="trim-handle absolute left-0 top-0 bottom-0 w-3.5 cursor-ew-resize z-10"
         @mousedown="startDrag(DragMode.TrimLeft, clip.trimStart, $event)"
       />
-      <div 
-        class="trim-handle absolute right-0 top-0 bottom-0 w-1 bg-accent opacity-60 cursor-ew-resize hover:w-1.5 hover:opacity-100 transition-all z-10"
+      <div
+        class="trim-handle absolute right-0 top-0 bottom-0 w-3.5 cursor-ew-resize z-10"
         @mousedown="startDrag(DragMode.TrimRight, clip.trimEnd, $event)"
       />
     </div>

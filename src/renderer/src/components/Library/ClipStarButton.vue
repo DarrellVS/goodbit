@@ -51,17 +51,26 @@ async function handleToggleStar(): Promise<void> {
     </span>
   </button>
 
+  <!--
+    One of the card's three tools, in the group at the bottom right.
+
+    It was a bordered circle in the top left corner, on its own, so the card
+    had tools in three places. A starred clip keeps its button visible when
+    the rest fade out, because that is the one that is carrying state.
+  -->
   <button
     v-else
-    class="absolute top-3 left-3 z-10 rounded-lg inline-flex items-center justify-center bg-video-bed/60 backdrop-blur-sm border border-on-video/20 px-2 py-2 outline-hidden size-8 hover:bg-video-bed/80 star-button"
-    :class="{ 'opacity-100': clip.starred, 'opacity-0 group-hover:opacity-100 opacity-transition': !clip.starred }"
+    type="button"
+    class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm bg-scrim text-on-video hover:bg-scrim-strong outline-none focus-visible:focus-ring transition-[opacity,background-color] duration-150"
+    :class="clip.starred ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'"
     :title="clip.starred ? 'Unstar' : 'Star'"
+    :aria-label="clip.starred ? 'Unstar this clip' : 'Star this clip'"
     @click.stop="handleToggleStar"
   >
     <Icon
       icon="material-symbols:star"
       class="size-4 shrink-0 block"
-      :class="clip.starred ? 'text-accent' : 'text-on-video'"
+      :class="clip.starred ? 'text-accent-hover' : 'text-on-video'"
     />
   </button>
 </template>

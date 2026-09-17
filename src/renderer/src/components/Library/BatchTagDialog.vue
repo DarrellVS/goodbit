@@ -31,7 +31,7 @@ const selectedTags = ref<Set<string>>(new Set());
 
 const availableTags = computed(() => {
   if (!inputValue.value) return tagsStore.tagNames;
-  
+
   const search = inputValue.value.toLowerCase();
   return tagsStore.tagNames.filter(tag => tag.toLowerCase().includes(search));
 });
@@ -105,7 +105,7 @@ onMounted(async () => {
             <input
               v-model="inputValue"
               type="text"
-              placeholder="Search or create tags..."
+              placeholder="Search or create tags"
               class="w-full px-4 py-2 pr-10 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent"
               @keydown="handleKeydown"
             />

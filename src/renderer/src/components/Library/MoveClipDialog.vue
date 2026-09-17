@@ -38,10 +38,10 @@ const currentGameDisplayName = computed(() => {
 
 const availableGames = computed(() => {
   if (!props.clip) return gamesStore.items;
-  
+
   // Exclude current game
   let games = gamesStore.items.filter((game) => game.game !== props.clip?.game);
-  
+
   // Filter by search query
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim();
@@ -50,13 +50,13 @@ const availableGames = computed(() => {
       return displayName.toLowerCase().includes(query) || game.game.toLowerCase().includes(query);
     });
   }
-  
+
   return games;
 });
 
 const isNewGame = computed(() => {
   if (!searchQuery.value.trim()) return false;
-  
+
   // Check if the search query matches any existing game exactly
   const query = searchQuery.value.trim();
   return !gamesStore.items.some((game) => game.game.toLowerCase() === query.toLowerCase());
@@ -120,22 +120,22 @@ onMounted(() => {
 
             <!-- Search / Create Input -->
             <div class="relative">
-              <Icon 
-                icon="material-symbols:search" 
+              <Icon
+                icon="material-symbols:search"
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-400 text-lg pointer-events-none"
               />
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search or create new game..."
+                placeholder="Search or create a game"
                 class="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent focus:border-transparent"
                 @keydown.enter="selectFromSearch"
               />
             </div>
 
             <!-- New Game Badge -->
-            <div 
-              v-if="isNewGame" 
+            <div
+              v-if="isNewGame"
               class="px-3 py-2 bg-success/8 border border-success rounded-lg flex items-center gap-2"
             >
               <Icon icon="material-symbols:add-circle" class="text-success text-lg" />
@@ -143,7 +143,7 @@ onMounted(() => {
                 Press <kbd class="px-1.5 py-0.5 bg-card border border-success rounded-sm text-xs font-mono">Enter</kbd> to create "<strong>{{ searchQuery.trim() }}</strong>"
               </span>
             </div>
-            
+
             <!-- Game List -->
             <div v-if="availableGames.length === 0 && !searchQuery.trim()" class="text-sm text-muted-500 py-4 text-center">
               No other games available
@@ -165,14 +165,14 @@ onMounted(() => {
                 @click="selectedGame = game.game"
               >
                 <div class="flex items-center gap-3 min-w-0 flex-1">
-                  <div 
+                  <div
                     class="w-2 h-2 rounded-full shrink-0"
                     :class="{
                       'bg-accent': selectedGame === game.game,
                       'bg-muted-300': selectedGame !== game.game,
                     }"
                   />
-                  <span 
+                  <span
                     class="font-medium truncate"
                     :class="{
                       'text-accent-ink': selectedGame === game.game,
@@ -183,7 +183,7 @@ onMounted(() => {
                     {{ game.displayName || game.game }}
                   </span>
                 </div>
-                <span 
+                <span
                   class="text-xs shrink-0 ml-2"
                   :class="{
                     'text-accent-ink': selectedGame === game.game,

@@ -147,16 +147,23 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
 
         <template #trailing>
           <!--
-            The count and the row's menu occupy one slot, so swapping them on
-            hover cannot change the row's width. The menu has to stay visible
-            while it is open or the popover loses the thing it is anchored to.
+            The count and the row's menu are stacked in one cell and cross-fade.
+
+            They used to swap `hidden` for `inline-flex`, which cannot animate
+            and made the menu appear instantly, and `display` is also the one
+            property that would let them change the row's width. Both are
+            absolutely positioned over the same 24px square now, so only their
+            opacity moves. The menu stays visible while it is open or the
+            popover loses the thing it is anchored to.
           -->
-          <span
-            class="font-mono text-xs tabular-nums text-muted-400"
-            :class="{ 'group-hover:hidden': !props.disabled, 'hidden': openMenuGame === game.game }"
-          >
-            {{ game.clipCount }}
-          </span>
+          <span class="relative inline-flex size-6 items-center justify-end">
+            <span
+              class="absolute inset-0 inline-flex items-center justify-end font-mono text-xs tabular-nums text-muted-400 transition-opacity duration-150"
+              :class="!props.disabled && openMenuGame !== game.game ? 'group-hover:opacity-0' : ''"
+              :style="openMenuGame === game.game ? 'opacity:0' : ''"
+            >
+              {{ game.clipCount }}
+            </span>
 
           <DropdownMenuRoot
             v-if="!props.disabled"
@@ -164,8 +171,10 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             @update:open="openMenuGame = $event ? game.game : null"
           >
             <DropdownMenuTrigger
-              class="size-6 inline-flex items-center justify-center rounded-sm text-muted-500 hover:text-foreground hover:bg-muted-200 outline-none focus-visible:focus-ring"
-              :class="openMenuGame === game.game ? 'flex bg-muted-200' : 'hidden group-hover:inline-flex'"
+              class="absolute inset-0 inline-flex items-center justify-center rounded-sm text-muted-500 hover:text-foreground outline-none focus-visible:focus-ring transition-opacity duration-150"
+              :class="openMenuGame === game.game
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'"
               :title="`More actions for ${game.displayName || game.game}`"
               @click.stop
             >
@@ -173,7 +182,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
             </DropdownMenuTrigger>
             <DropdownMenuPortal>
               <DropdownMenuContent
-                class="min-w-[180px] bg-card rounded-lg p-1 shadow-pop border border-border outline-hidden z-50"
+                class="min-w-[232px] bg-card rounded-md p-1.5 shadow-pop border border-border outline-hidden z-50"
                 align="end"
                 :side-offset="4"
               >
@@ -206,6 +215,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
               </DropdownMenuContent>
             </DropdownMenuPortal>
           </DropdownMenuRoot>
+          </span>
         </template>
       </SidebarRow>
 
@@ -217,7 +227,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         @toggle="!props.disabled && toggleShowAll()"
       />
     </div>
-    
+
     <GameRenameDialog
       v-model:open="renameDialogOpen"
       :game="gameToRename"

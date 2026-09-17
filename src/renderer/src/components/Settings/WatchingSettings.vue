@@ -80,8 +80,8 @@ const dateFormatOptions = [
 <template>
   <section>
     <div class="pb-2">
-      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Watching</h2>
-      <p class="text-sm text-muted-500">
+      <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Watching</h2>
+      <p class="mt-2 text-muted-500">
         How your library looks, how clips play, and which games you see
       </p>
     </div>

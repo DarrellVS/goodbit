@@ -104,27 +104,27 @@ const someStarred = computed(() =>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuContent
-            class="min-w-[200px] bg-card rounded-lg p-1 shadow-pop border border-border outline-hidden z-50"
+            class="min-w-[232px] bg-card rounded-md p-1.5 shadow-pop border border-border outline-hidden z-50"
             :side-offset="8"
           >
             <!-- Open in Advanced Editor -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
               @click="emit('open-in-editor')"
             >
-              <Icon icon="material-symbols:movie-edit" class="text-base" />
+              <Icon icon="material-symbols:movie-edit" class="size-4 shrink-0 block text-muted-400" />
               <span>Open in the editor</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-muted-200 my-1" />
+            <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />
 
             <!-- Publish/Unpublish -->
             <DropdownMenuItem
               v-if="!allPublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
               @click="emit('publish')"
             >
-              <Icon icon="material-symbols:cloud-upload" class="text-base" />
+              <Icon icon="material-symbols:cloud-upload" class="size-4 shrink-0 block text-muted-400" />
               <span>Publish</span>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -132,39 +132,39 @@ const someStarred = computed(() =>
               class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
               @click="emit('unpublish')"
             >
-              <Icon icon="material-symbols:cloud-off" class="text-base" />
+              <Icon icon="material-symbols:cloud-off" class="size-4 shrink-0 block text-muted-400" />
               <span>Unpublish</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-muted-200 my-1" />
+            <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />
 
             <!-- Add to Collection -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
               @click="emit('add-to-collection')"
             >
-              <Icon icon="material-symbols:create-new-folder" class="text-base" />
+              <Icon icon="material-symbols:create-new-folder" class="size-4 shrink-0 block text-muted-400" />
               <span>Add to Collection</span>
             </DropdownMenuItem>
 
             <!-- Remove from Collection (if in collection view) -->
             <DropdownMenuItem
               v-if="collectionId"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent/8 text-accent-ink outline-hidden cursor-pointer select-none"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-accent-ink hover:bg-muted-100 outline-hidden cursor-pointer select-none"
               @click="emit('remove-from-collection')"
             >
-              <Icon icon="material-symbols:folder-delete" class="text-base" />
+              <Icon icon="material-symbols:folder-delete" class="size-4 shrink-0 block text-muted-400" />
               <span>Remove from Collection</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-muted-200 my-1" />
+            <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />
 
             <!-- Delete -->
             <DropdownMenuItem
               class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
               @click="emit('delete')"
             >
-              <Icon icon="material-symbols:delete" class="text-base" />
+              <Icon icon="material-symbols:delete" class="size-4 shrink-0 block text-muted-400" />
               <span>Delete</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

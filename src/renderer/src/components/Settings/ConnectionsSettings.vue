@@ -142,8 +142,8 @@ async function copyCommand(): Promise<void> {
 <template>
   <section>
     <div class="pb-2">
-      <h2 class="font-display text-2xl font-medium text-foreground mb-1">Connections</h2>
-      <p class="text-sm text-muted-500">
+      <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Connections</h2>
+      <p class="mt-2 text-muted-500">
         Claude, and the server that hosts your public links. Both optional, both off until you set
         them up.
       </p>

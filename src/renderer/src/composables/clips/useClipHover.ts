@@ -1,5 +1,6 @@
 import { ref, watch } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useBatchOperationsStore } from '@renderer/stores/batchOperations';
 
 /**
  * When the pointer last actually moved.
@@ -31,9 +32,19 @@ const DELIBERATE_HOVER_MS = 500;
 export function useClipHover() {
   const hoveredClipId = ref<number | null>(null);
   const config = useConfiguration();
+  const batchStore = useBatchOperationsStore();
 
   watch(hoveredClipId, (currentId) => {
     if (!config.public.value.autoPlayOnHover) return;
+    /*
+     * Nothing plays while clips are being picked.
+     *
+     * Select mode turns the whole card into a checkbox, so the pointer crosses
+     * tiles on its way to the ones being chosen, and every one it passed
+     * started playing. A grid of video moving under a pointer that is trying
+     * to tick boxes is the opposite of what the mode is for.
+     */
+    if (batchStore.isSelectionMode) return;
 
     const targetVideo = document.getElementById(`preview-video-${currentId}`) as HTMLVideoElement;
     const otherVideos = document.querySelectorAll(`video:not(#preview-video-${currentId})`) as NodeListOf<HTMLVideoElement>;

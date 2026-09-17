@@ -41,6 +41,12 @@ const selectedTags = defineModel<string[]>('selectedTags', { required: true });
 const { formatBytes } = useFormat();
 const { groupedClips, getGameDisplayName } = useClipGrouping(computed(() => props.clips));
 
+/** One row for every clip in this list, whether or not it is on the timeline. */
+const ROW =
+  'w-full group flex items-center gap-2.5 p-1.5 rounded-sm text-left ' +
+  'hover:bg-muted-50 outline-none focus-visible:focus-ring ' +
+  'transition-colors duration-150 cursor-pointer';
+
 const addedIds = computed(() => new Set(props.addedClipIds));
 
 const hasFilters = computed(
@@ -77,23 +83,11 @@ function isAdded(clip: Clip): boolean {
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <div class="shrink-0 h-11 flex items-center justify-between gap-2 border-b border-border">
-      <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:video-library" class="text-muted-500" />
-        Clip Library
-      </h3>
-      <!--
-        `40` beside a library that says "41 clips" reads as a contradiction.
-        It was never a total: the list pages, so it is what has loaded, and
-        there is a "Load more" at the bottom saying so. The `+` is the smallest
-        thing that stops it claiming to be the whole number.
-      -->
-      <span class="text-xs text-muted-500" :title="hasMore ? 'Loaded so far' : 'All of them'">
-        {{ clips.length }}{{ hasMore ? '+' : '' }}
-      </span>
-    </div>
-
-    <div class="shrink-0 p-3 space-y-2 border-b border-border">
+    <!--
+      No heading over this list. The tab above it says `Clips`, which is the
+      same word, one line higher, in a panel that holds nothing else.
+    -->
+    <div class="shrink-0 pb-3 space-y-3">
       <div class="relative">
         <Icon
           icon="material-symbols:search"
@@ -127,28 +121,37 @@ function isAdded(clip: Clip): boolean {
         Both reserve a leading icon so their labels start at the same x, which
         is the other half of that example.
       -->
-      <BaseComboBox
-        label="Filter by game"
-        placeholder="All games"
-        :model-value="selectedGame"
-        :options="gameOptions"
-        :searchable="games.length > 8"
-        search-placeholder="Find a game"
-        @update:model-value="(value) => (selectedGame = (value as string) ?? '')"
-      />
+      <!--
+        One row, because they are one question asked twice and the panel is
+        300px wide: stacked, they were two thirds of the space above the list
+        they narrow.
+      -->
+      <div class="flex items-center gap-3">
+        <BaseComboBox
+          variant="quiet"
+          label="Filter by game"
+          placeholder="All games"
+          :model-value="selectedGame"
+          :options="gameOptions"
+          :searchable="games.length > 8"
+          search-placeholder="Find a game"
+          @update:model-value="(value) => (selectedGame = (value as string) ?? '')"
+        />
 
-      <BaseComboBox
-        label="Filter by tag"
-        placeholder="Filter by tag"
-        search-placeholder="Find a tag"
-        empty-message="No tags yet. Tag a clip and it turns up here."
-        multiple
-        searchable
-        :model-value="selectedTags"
-        :options="tagOptions"
-        :summary="tagSummary"
-        @update:model-value="(value) => (selectedTags = (value as string[]) ?? [])"
-      />
+        <BaseComboBox
+          variant="quiet"
+          label="Filter by tag"
+          placeholder="Filter by tag"
+          search-placeholder="Find a tag"
+          empty-message="No tags yet. Tag a clip and it turns up here."
+          multiple
+          searchable
+          :model-value="selectedTags"
+          :options="tagOptions"
+          :summary="tagSummary"
+          @update:model-value="(value) => (selectedTags = (value as string[]) ?? [])"
+        />
+      </div>
 
       <button
         v-if="hasFilters"
@@ -182,13 +185,14 @@ function isAdded(clip: Clip): boolean {
         :key="`${group.date}-${group.game}`"
         class="space-y-2"
       >
-        <header class="flex items-center gap-1.5 px-0.5 sticky top-0 z-10 bg-card/85 py-1 -mx-0.5 rounded-sm">
-          <Icon icon="material-symbols:label" class="text-muted-500 text-base shrink-0" />
-          <span class="text-sm font-semibold text-foreground truncate">
+        <header class="flex items-center gap-2 sticky top-0 z-10 bg-background py-1.5">
+          <span class="text-xs font-medium uppercase tracking-label text-foreground shrink-0">
+            {{ group.displayDate }}
+          </span>
+          <span class="text-sm text-muted-500 truncate">
             {{ getGameDisplayName(group.game) }}
           </span>
-          <span class="text-xs text-muted-500 shrink-0">{{ group.displayDate }}</span>
-          <span class="ml-auto text-xs font-medium text-muted-500 bg-muted-100 px-2 py-0.5 rounded-full shrink-0">
+          <span class="ml-auto font-mono text-xs tabular-nums text-muted-400 shrink-0">
             {{ group.clips.length }}
           </span>
         </header>
@@ -201,7 +205,7 @@ function isAdded(clip: Clip): boolean {
         <template v-for="entry in group.clips" :key="entry.clip.id">
         <button
           v-if="isAdded(entry.clip)"
-          class="w-full group flex items-center gap-2 p-1.5 rounded-lg bg-accent/5 hover:bg-card transition-all border border-accent/40 hover:border-accent/60 cursor-pointer"
+          :class="ROW"
           title="Already in the timeline. Click to add another copy"
           @click="emit('add-to-timeline', entry.clip)"
         >
@@ -216,7 +220,7 @@ function isAdded(clip: Clip): boolean {
             </div>
           </div>
 
-          <span class="min-w-0 flex-1 text-xs text-muted-600 truncate text-left">
+          <span class="min-w-0 flex-1 text-sm text-muted-500 truncate text-left">
             {{ entry.clip.displayName || entry.clip.filename }}
           </span>
 
@@ -230,57 +234,49 @@ function isAdded(clip: Clip): boolean {
             orange things competing on this screen, and the one with the least
             claim to the colour.
           -->
-          <span class="flex items-center gap-1 text-[10px] font-medium text-muted-500 shrink-0 pr-1">
-            <Icon icon="material-symbols:check-circle-outline" class="text-sm" />
+          <span class="flex items-center gap-1 text-xs text-muted-400 shrink-0 pr-1">
+            <Icon icon="material-symbols:check" class="size-3.5 shrink-0 block" />
             In timeline
           </span>
         </button>
 
+        <!--
+          A row, not a card.
+
+          This was a 16:9 still the full width of the panel, a two-line title,
+          a row of tag pills, a file size and a filled accent circle on hover:
+          about four times the height of the row beside it for a clip that is
+          already on the timeline, so the same list drew two completely
+          different objects depending on state. One row, one still, one line
+          about it.
+        -->
         <button
           v-else
-          class="w-full group relative rounded-md overflow-hidden hover:bg-muted-50 transition-colors duration-150 cursor-pointer text-left"
+          :class="ROW"
+          :title="`Add ${entry.clip.displayName || entry.clip.filename} to the timeline`"
           @click="emit('add-to-timeline', entry.clip)"
         >
-          <div class="aspect-video relative">
+          <div class="relative w-14 h-8 rounded-sm overflow-hidden shrink-0 bg-video-bed">
             <img
               :src="getThumbUrl(entry.clip)"
               :alt="entry.clip.displayName || entry.clip.filename"
               class="w-full h-full object-cover"
             />
-            <div class="absolute inset-0 bg-linear-to-t from-video-bed/60 via-transparent to-video-bed/20" />
-
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-card/40">
-              <div class="bg-accent rounded-full p-3">
-                <Icon icon="material-symbols:add" class="text-2xl text-accent-fg" />
-              </div>
+            <div
+              class="absolute inset-0 flex items-center justify-center bg-scrim opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+            >
+              <Icon icon="material-symbols:add" class="size-4 shrink-0 block text-on-video" />
             </div>
           </div>
 
-          <div class="p-2.5 space-y-1.5">
-            <div class="text-sm font-medium text-foreground line-clamp-2 text-left leading-snug">
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm text-foreground truncate">
               {{ entry.clip.displayName || entry.clip.filename }}
-            </div>
-
-            <div v-if="entry.clip.tags?.length" class="flex flex-wrap gap-1">
-              <span
-                v-for="tag in entry.clip.tags.slice(0, 3)"
-                :key="tag"
-                class="px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent-ink border border-accent/20"
-              >
-                {{ tag }}
-              </span>
-              <span
-                v-if="entry.clip.tags.length > 3"
-                class="px-2 py-0.5 rounded-full text-xs font-medium bg-muted-100 text-muted-600"
-              >
-                +{{ entry.clip.tags.length - 3 }}
-              </span>
-            </div>
-
-            <div class="text-xs text-muted-600 text-left">
+            </span>
+            <span class="block font-mono text-xs text-muted-400">
               {{ formatBytes(entry.clip.sizeBytes) }}
-            </div>
-          </div>
+            </span>
+          </span>
         </button>
         </template>
       </section>

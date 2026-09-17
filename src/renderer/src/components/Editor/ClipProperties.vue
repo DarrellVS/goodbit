@@ -53,10 +53,7 @@ function volumeToDecimal(percentage: number): number {
 <template>
   <div class="flex flex-col h-full overflow-hidden border-l border-border">
     <div class="shrink-0 h-11 px-4 flex items-center border-b border-border">
-      <h3 class="text-sm font-semibold flex items-center gap-2 text-foreground">
-        <Icon icon="material-symbols:tune" class="text-muted-500" />
-        Clip Properties
-      </h3>
+      <h3 class="text-sm font-medium text-muted-600">Clip Properties</h3>
     </div>
 
     <div v-if="!clip" class="flex-1 flex items-center justify-center text-muted-500 text-sm">
