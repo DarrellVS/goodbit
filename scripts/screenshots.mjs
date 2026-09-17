@@ -49,6 +49,18 @@ const IMG = join(ROOT, 'site', 'assets', 'img');
  * every card, none of which the app has had for a long time.
  */
 const OG_CARD = { width: 1200, height: 630 };
+
+/**
+ * Shot at this size, then scaled down to `OG_CARD`.
+ *
+ * Same 1.905 aspect ratio, so nothing is stretched, but 840 logical pixels of
+ * height instead of 630. At 630 the app had less room than it needs: the
+ * sidebar grew its own scrollbar and scrolled `Phasmophobia` out of sight, so
+ * the card showed three game rows adding to eleven beside a header reading
+ * `12 clips`, and the only clip card was sliced in half by the bottom edge
+ * with no border under it. A scrollbar in a social card is a tell by itself.
+ */
+const OG_SHOT = { width: 1600, height: 840 };
 const FFMPEG = ffmpegPath;
 
 const KEEP_PNG = process.argv.includes('--keep-png');
@@ -204,7 +216,11 @@ function pick(from, take) {
     const seconds = probeSeconds(join(from, candidate.name));
     probed.push({ ...candidate, seconds });
     if (seconds >= MIN_SEC) kept.push(candidate);
-    if (kept.length === take) return kept;
+    // Through `dropLonelyNewestDay` on the way out, like the fallback path
+    // below. Returning `kept` raw here skipped it, which is most of the time:
+    // this library has plenty of long clips, so the early return is the normal
+    // exit and the lonely-day rule never ran.
+    if (kept.length === take) return dropLonelyNewestDay(kept);
   }
 
   // Not enough long ones. Fill the rest with the longest that were read, still
@@ -215,7 +231,49 @@ function pick(from, take) {
     .slice(0, take - kept.length)
     .sort((a, b) => b.at - a.at);
 
-  return [...kept, ...filler];
+  return dropLonelyNewestDay([...kept, ...filler]);
+}
+
+/**
+ * Drop the newest day if it holds a single clip and a fuller day follows.
+ *
+ * The library groups by game and day, so one clip recorded on its own becomes
+ * a heading with one card under it and the rest of that row empty. Newest
+ * first put exactly that at the top of the library screenshot: a single card
+ * beside about eleven hundred pixels of nothing, directly under the header,
+ * as the first thing anybody saw of a screen called My Library.
+ *
+ * It was also the worst thumbnail in the set, a near-black frame you could not
+ * read, and it was the one the clip and card shots were nearest to.
+ *
+ * This is a choice about what to photograph, not about how the app groups. A
+ * day with one clip in it is real and the app is right to show it that way;
+ * it is just a poor thing to lead a picture with. Nothing is backfilled,
+ * because the point is to start on a full row rather than to hit a count.
+ */
+function dropLonelyNewestDay(picked) {
+  if (picked.length < 3) return picked;
+
+  const dayOf = (row) => {
+    const when = dateFromName(row.name.replace(VIDEO, ''));
+    return when ? when.toDateString() : String(row.at);
+  };
+
+  const byDay = new Map();
+  for (const row of picked) {
+    const key = dayOf(row);
+    byDay.set(key, (byDay.get(key) ?? 0) + 1);
+  }
+  if (byDay.size < 2) return picked;
+
+  const newest = [...picked].sort((a, b) => b.at - a.at)[0];
+  const newestDay = dayOf(newest);
+  if (byDay.get(newestDay) !== 1) return picked;
+
+  const fullest = Math.max(...[...byDay.entries()].filter(([k]) => k !== newestDay).map(([, n]) => n));
+  if (fullest < 3) return picked;
+
+  return picked.filter((row) => row.name !== newest.name);
 }
 
 function seed(videosRoot) {
@@ -673,9 +731,19 @@ function dateFromName(name) {
   return new Date(y, mo - 1, d, h, mi, s);
 }
 
-/** The social card is a jpg, because that is the name every unfurler is given. */
-function toJpeg(png, target) {
-  execFileSync(FFMPEG, ['-hide_banner', '-v', 'error', '-i', png, '-q:v', '3', '-y', target]);
+/**
+ * The social card is a jpg, because that is the name every unfurler is given.
+ *
+ * `size` scales it on the way out, so the page can be photographed with more
+ * room than the card has and still land on the exact dimensions the meta tags
+ * promise. `lanczos` because this is a downscale of text.
+ */
+function toJpeg(png, target, size) {
+  const filter = size ? ['-vf', `scale=${size.width}:${size.height}:flags=lanczos`] : [];
+  execFileSync(FFMPEG, [
+    '-hide_banner', '-v', 'error', '-i', png,
+    ...filter, '-q:v', '3', '-y', target,
+  ]);
   if (!KEEP_PNG) unlinkSync(png);
   return target;
 }
@@ -813,12 +881,12 @@ async function main() {
      * state to undo and no modal to race.
      */
     if (palette === 'dark') {
-      await page.setViewportSize(OG_CARD);
-      await page.waitForTimeout(1500);
+      await page.setViewportSize(OG_SHOT);
+      await page.waitForTimeout(2000);
 
       const png = join(IMG, 'og-card.png');
       await page.screenshot({ path: png });
-      console.log(`  ${toJpeg(png, join(IMG, 'og-card.jpg'))}`);
+      console.log(`  ${toJpeg(png, join(IMG, 'og-card.jpg'), OG_CARD)}`);
 
       await page.setViewportSize({ width: SHOT_WIDTH, height: SHOT_HEIGHT });
       await page.waitForTimeout(1500);
@@ -915,6 +983,27 @@ async function main() {
     // And the suggestion takes a moment of its own on a game whose HUD is read,
     // which is the whole reason this clip was chosen.
     await waitForSuggestion(page);
+
+    /*
+     * Take the suggestion, so the trim screen shows a trim.
+     *
+     * Shot without this it read `Start: 0:00:00`, `End: 0:27:00`,
+     * `Length: 0:27:00`, with both handles pinned at the ends: the one screen
+     * whose job is to demonstrate trimming, demonstrating an untrimmed clip,
+     * under a header saying "Drag the handles to keep the good bit" and beside
+     * a banner offering 0:16 to 0:25. Saving that would have written an
+     * identical copy. The GoodBit row under it said `0:00 - 0:27 . 27s`, which
+     * is marking the whole clip and equally meaningless.
+     *
+     * Pressing the app's own "Use it" is what a person does with a suggestion
+     * they agree with, so the picture is of the feature working rather than of
+     * the feature waiting.
+     */
+    await page
+      .getByRole('button', { name: 'Use it', exact: true })
+      .click({ timeout: 4000 })
+      .catch(() => {});
+    await page.waitForTimeout(2000);
     await shoot('trim');
 
     await go('#/editor', 4000);
@@ -943,11 +1032,6 @@ async function main() {
       await thumbs.nth(i).click();
       await page.waitForTimeout(1200);
     }
-    // Select the first block, so the properties panel shows the highlight the
-    // analysis found rather than "no clip selected".
-    await page.locator('.cursor-grab').first().click({ timeout: 3000 }).catch(() => {});
-    await page.waitForTimeout(2000);
-
     /*
      * Zoom out until the whole movie is on screen.
      *
@@ -963,9 +1047,54 @@ async function main() {
     }
     await page.waitForTimeout(1500);
 
-    // The strip behind a timeline block is a CSS background, generated on demand
-    // from the source clip, which for a real 3440x1440 recording takes several
-    // seconds. Shooting before it arrives gives a picture of an empty block.
+    /*
+     * Select a block whose highlight the analysis actually found, and apply it,
+     * so Clip Properties says something.
+     *
+     * Unpressed, that panel reads `Original: 27.65s`, `Current: 27.65s`,
+     * `Trim Start: 0.00s`, `Trim End: 27.65s`: four values restating one
+     * untrimmed clip, which is the standard look of a panel nobody has used.
+     *
+     * The footer's "Trim to highlights" is the wrong button for a photograph.
+     * It starts the analysis for every clip at once, so the shot caught
+     * `Listening...` in the footer, and on a clip whose sound never changes it
+     * resolves to "The sound of this clip never really changes, so there is
+     * nothing to point at", which is a true sentence and a poor advertisement.
+     *
+     * So: walk the blocks, and take the first one whose own panel offers a
+     * `Trim to <a>s-<b>s`. That button only exists when there is a highlight
+     * to trim to, which makes this self-checking: no button, no click, and the
+     * panel is left honest rather than mid-analysis.
+     */
+    const blocks = page.locator('.cursor-grab');
+    const blockCount = await blocks.count().catch(() => 0);
+
+    for (let i = 0; i < blockCount; i += 1) {
+      await blocks.nth(i).click({ timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(1200);
+
+      const applyHighlight = page.getByRole('button', { name: /^Trim to [\d.]+s/ });
+      if ((await applyHighlight.count().catch(() => 0)) > 0) {
+        await applyHighlight.first().click({ timeout: 3000 }).catch(() => {});
+        await page.waitForTimeout(2500);
+        break;
+      }
+    }
+
+    // And let any analysis the selection kicked off settle, so the footer is
+    // not photographed saying `Listening...`.
+    for (let i = 0; i < 20; i += 1) {
+      const busy = await page
+        .getByText(/Listening/)
+        .count()
+        .catch(() => 0);
+      if (busy === 0) break;
+      await page.waitForTimeout(1000);
+    }
+
+    // The strip behind a timeline block is a CSS background, generated on
+    // demand from the source clip, which for a real 3440x1440 recording takes
+    // several seconds. Shooting before it arrives gives an empty block.
     await waitForStrips(page);
     await settleTimeline(page);
     await shoot('editor');
