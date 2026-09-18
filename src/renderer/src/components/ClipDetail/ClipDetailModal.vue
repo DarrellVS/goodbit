@@ -369,6 +369,7 @@ async function onTrimmed(): Promise<void> {
           :metadata="metadata"
           class="flex-1 min-h-0"
           @saved="onTrimmed"
+          @deleted="handleClipDeleted"
         />
 
         <div v-else class="flex-1 min-h-0 overflow-y-auto scroll-p-1.5">

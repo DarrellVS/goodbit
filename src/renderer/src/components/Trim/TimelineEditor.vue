@@ -176,12 +176,19 @@
     </div>
 
     <!--
-      The numbers, and the one act that replaces the recording.
+      The numbers, and the two acts that end the recording as it is.
 
       Nothing else on this screen is filled with the accent. Marking a GoodBit
       is in the column beside the picture now, in the details screen's own
       styling, so the bottom of the trimmer reads as one decision rather than
       as two of similar weight a hand's width apart.
+
+      Deleting sits beside the cut because it is the same question asked the
+      other way: you are looking at the whole recording and deciding what part
+      of it is worth keeping, and sometimes the answer is none of it. Reaching
+      that conclusion in the trimmer meant backing out to the library, finding
+      the tile again and opening its menu, which is three actions and a lost
+      place in a list to say something you already knew.
     -->
     <footer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-4 border-t border-border">
       <div class="flex items-center gap-6 text-sm">
@@ -207,37 +214,64 @@
         <TimeIndicator label="Length" :time="length" :sub="lengthSub" variant="primary" />
       </div>
 
-      <!--
-        The button fills as the cut runs.
-
-        An exact trim re-encodes, which on a 3440 wide recording is tens of
-        seconds, and a spinner with no number gives no idea whether to wait or
-        walk away. The fill is the progress; the percentage is there for anyone
-        who wants the number.
-      -->
-      <button
-        type="button"
-        class="relative overflow-hidden inline-flex items-center justify-center gap-2 h-9 px-4 rounded-md text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
-        :disabled="!isValid || isSaving"
-        title="Cut the recording down to this range. This replaces the file, and cannot be undone."
-        @click="$emit('save')"
-      >
-        <span
-          v-if="isSaving"
-          class="absolute inset-y-0 left-0 bg-on-video/25 transition-[width] duration-200 ease-linear"
-          :style="{ width: `${Math.max(2, saveProgress)}%` }"
-          aria-hidden="true"
-        ></span>
-        <BaseSpinner v-if="isSaving" class="relative size-4 shrink-0 block" />
-        <Icon v-else icon="material-symbols:save" class="relative size-4 shrink-0 block" />
+      <div class="flex items-center gap-3">
         <!--
-          Tabular figures, or the button shrinks and grows as the count goes
-          from 9 to 10 to 100 and the whole label jitters under the pointer.
+          Written here rather than taken from `geometry.ts`, which deliberately
+          carries no danger tone: a destructive button belongs next to the
+          sentence saying what it destroys, and one that is easy to reach for
+          from anywhere is how it ends up under the wrong finger.
+
+          Outlined rather than filled, and it is not a near miss of the button
+          beside it. Two filled buttons a hand's width apart, one accent and one
+          red, are the same weight and the same shape, and the trimmer's whole
+          layout rests on there being exactly one filled button on the screen.
+          The outline says this is available without saying it is the thing to
+          press.
         -->
-        <span class="relative tabular-nums">
-          {{ isSaving ? `Trimming ${saveProgress}%` : 'Save Trimmed Clip' }}
-        </span>
-      </button>
+        <button
+          type="button"
+          class="h-9 px-3.5 inline-flex items-center justify-center gap-2 rounded-md border border-danger text-sm font-medium text-danger-ink hover:bg-danger/10 outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
+          :disabled="isSaving || isDeleting"
+          title="Move this whole recording to the Recycle Bin. The file leaves the library, and its tags, notes and marks go with it."
+          @click="$emit('delete')"
+        >
+          <BaseSpinner v-if="isDeleting" class="size-4 shrink-0 block" />
+          <Icon v-else icon="material-symbols:delete-outline-rounded" class="size-4 shrink-0 block" />
+          <span>{{ isDeleting ? 'Deleting' : 'Delete Clip' }}</span>
+        </button>
+
+        <!--
+          The button fills as the cut runs.
+
+          An exact trim re-encodes, which on a 3440 wide recording is tens of
+          seconds, and a spinner with no number gives no idea whether to wait
+          or walk away. The fill is the progress; the percentage is there for
+          anyone who wants the number.
+        -->
+        <button
+          type="button"
+          class="relative overflow-hidden inline-flex items-center justify-center gap-2 h-9 px-4 rounded-md text-sm font-medium bg-accent text-accent-fg hover:bg-accent-hover outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
+          :disabled="!isValid || isSaving || isDeleting"
+          title="Cut the recording down to this range. This replaces the file, and cannot be undone."
+          @click="$emit('save')"
+        >
+          <span
+            v-if="isSaving"
+            class="absolute inset-y-0 left-0 bg-on-video/25 transition-[width] duration-200 ease-linear"
+            :style="{ width: `${Math.max(2, saveProgress)}%` }"
+            aria-hidden="true"
+          ></span>
+          <BaseSpinner v-if="isSaving" class="relative size-4 shrink-0 block" />
+          <Icon v-else icon="material-symbols:save" class="relative size-4 shrink-0 block" />
+          <!--
+            Tabular figures, or the button shrinks and grows as the count goes
+            from 9 to 10 to 100 and the whole label jitters under the pointer.
+          -->
+          <span class="relative tabular-nums">
+            {{ isSaving ? `Trimming ${saveProgress}%` : 'Save Trimmed Clip' }}
+          </span>
+        </button>
+      </div>
     </footer>
   </section>
 </template>
@@ -263,6 +297,14 @@ interface Props {
   frameStripSource: string;
   isValid: boolean;
   isSaving: boolean;
+  /**
+   * The delete is in flight.
+   *
+   * Separate from `isSaving` rather than one busy flag, because the two say
+   * different things on the same row: the cut reports a percentage inside its
+   * own button, and a delete is one call that either happened or did not.
+   */
+  isDeleting?: boolean;
   /** 0-100 through the cut, reported by the action doing it. */
   saveProgress?: number;
   /** Where the preview is, as a percentage of the whole clip. */
@@ -304,6 +346,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  isDeleting: false,
   saveProgress: 0,
   goodBits: () => [],
   selectedGoodBitId: null,
@@ -317,6 +360,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 interface Emits {
   (e: 'save'): void;
+  /**
+   * The whole recording goes, rather than part of it.
+   *
+   * The question and the call belong to `TrimPanel`, which knows the clip, the
+   * setting that decides whether to ask, and what closing the panel afterwards
+   * means. This strip knows a button was pressed and nothing else.
+   */
+  (e: 'delete'): void;
   (e: 'toggle-playback'): void;
   (e: 'seek', time: number): void;
   /** A band was pressed: put the handles on it. */

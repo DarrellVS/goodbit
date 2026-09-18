@@ -57,6 +57,7 @@
         :frame-strip-source="frameStripSource"
         :is-valid="isValidRange"
         :is-saving="isSaving"
+        :is-deleting="isDeleting"
         :save-progress="saveProgress"
         :playhead-percentage="timeToPercentage(currentTime)"
         :playhead="timecode(currentTime)"
@@ -70,6 +71,7 @@
         :length-sub="frameSpan(trimmedLength)"
         :handle-format="timecode"
         @save="handleSave"
+        @delete="handleDelete"
         @toggle-playback="togglePlayback"
         @seek="scrubTo"
         @select-goodbit="selectGoodBit"
@@ -115,6 +117,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useClipsStore } from '@renderer/stores/clips';
 import {
+  deleteClip,
   getClip,
   getClipMeta,
   getClipSuggestions,
@@ -150,6 +153,8 @@ import SuggestionBanner from './SuggestionBanner.vue';
 import type { SuggestedBand } from './GoodBitBands.vue';
 import ClipGoodBitsSection from '@renderer/components/ClipDetail/ClipGoodBitsSection.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { clipDeleteQuestion, clipTitle } from '@renderer/utils/clipDeleteQuestion';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -173,7 +178,17 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ (e: 'saved'): void }>();
+const emit = defineEmits<{ (e: 'saved'): void; (e: 'deleted'): void }>();
+
+/*
+ * Whether a delete asks first.
+ *
+ * `confirmBeforeDelete` in Settings, Data, which is the same switch the
+ * library's own delete reads. One setting, so somebody who turned the question
+ * off because they delete in batches does not meet it again here, and somebody
+ * who left it on is not surprised by a trimmer that deletes on one press.
+ */
+const config = useConfiguration();
 
 const clipsStore = useClipsStore();
 
@@ -188,6 +203,7 @@ const {
 
 const videoPreviewRef = ref<InstanceType<typeof VideoPreview> | null>(null);
 const isSaving = ref(false);
+const isDeleting = ref(false);
 
 /**
  * How far the cut has got, straight from the action doing it.
@@ -221,12 +237,19 @@ const videoElement = computed(() =>
   videoPreviewRef.value?.videoElement ?? null
 );
 
+/**
+ * The file is about to be claimed, so the preview lets go of it.
+ *
+ * The cut replaces this exact file, by renaming over it, and a delete moves it
+ * to the Recycle Bin. Holding it open until then is how either one fails, so
+ * both count, and the lock is the pair rather than the trim alone.
+ */
+const fileIsClaimed = computed(() => isSaving.value || isDeleting.value);
+
 const { currentTime, isPlaying, togglePlayback, seek, scrubTo } = useVideoPlayer({
   videoElement,
   range,
-  // The cut replaces this exact file, by renaming over it. Holding it open
-  // until then is how that rename fails.
-  locked: isSaving,
+  locked: fileIsClaimed,
 });
 
 /*
@@ -650,6 +673,90 @@ async function runTrim(): Promise<void> {
     toastStore.error((error as Error).message || 'Could not trim this clip');
   } finally {
     isSaving.value = false;
+  }
+}
+
+/**
+ * What the question says about this clip, from `clipDeleteQuestion`.
+ *
+ * The wording rules live in a pure function so `tests/unit` owns them; this is
+ * only the reading of what the panel currently has in hand.
+ */
+const deleteQuestion = computed(() =>
+  clipDeleteQuestion({
+    markCount: goodBits.value.length,
+    notes: clip.value?.notes,
+    tagCount: clip.value?.tags?.length,
+    displayName: clip.value?.displayName,
+  }),
+);
+
+/** What to call this clip in the question's title. */
+const clipName = computed(() => clipTitle(clip.value));
+
+/**
+ * The whole recording goes, from the screen that exists to keep part of it.
+ *
+ * Reaching that conclusion here is ordinary: the trimmer is where somebody
+ * watches a clip end to end deciding what is worth cutting, and "none of it"
+ * is one of the answers that inspection produces. Before this it was the one
+ * answer the screen could not act on, so it cost backing out to the library,
+ * finding the tile again and opening its menu.
+ *
+ * The question, and whether there is one, are decided here rather than in the
+ * timeline strip: this is what knows the clip, what it carries and what the
+ * setting says.
+ */
+function handleDelete(): void {
+  if (isSaving.value || isDeleting.value) return;
+
+  if (!config.public.value.confirmBeforeDelete) {
+    void runDelete();
+    return;
+  }
+
+  confirmAction(
+    deleteQuestion.value,
+    () => void runDelete(),
+    `Delete ${clipName.value}?`,
+    { confirmLabel: 'Delete', icon: 'material-symbols:delete-outline-rounded' },
+  );
+}
+
+async function runDelete(): Promise<void> {
+  if (isSaving.value || isDeleting.value) return;
+
+  isDeleting.value = true;
+
+  try {
+    /*
+     * The preview is already off the file: `isDeleting` is part of
+     * `fileIsClaimed`, which pauses the `<video>` and stops the loop putting it
+     * straight back. Setting the flag before the call rather than after is what
+     * makes that true, and is the same order the cut uses.
+     */
+    await deleteClip(Number(props.id));
+
+    toastStore.success('Clip moved to Recycle Bin');
+
+    /*
+     * Close first, then refresh.
+     *
+     * The panel is showing a clip that no longer exists, so every moment it
+     * stays up is a moment its buttons can be pressed against a missing row.
+     * The library underneath is refreshed after, and would have been anyway:
+     * the watcher sees the file leave and fires `clip-removed`. Doing it here
+     * as well makes it immediate rather than dependent on a filesystem event.
+     */
+    emit('deleted');
+
+    clipsStore.resetPagination();
+    await clipsStore.fetchClips(false);
+  } catch (error) {
+    console.error('Failed to delete clip:', error);
+    toastStore.error((error as Error).message || 'Could not delete this clip');
+  } finally {
+    isDeleting.value = false;
   }
 }
 

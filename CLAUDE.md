@@ -706,6 +706,21 @@ stays.
   Trimmed Clip* and in the same corner of the eye. A GoodBit is named on its
   own row now, the way it always was on the clip panel, and **the only filled
   accent button left on that screen is the one that replaces the recording**.
+- **The trimmer can also throw the recording away**, beside the cut, because
+  they are the same question asked the other way: the trimmer is where a clip
+  is watched end to end deciding what part of it is worth keeping, and "none of
+  it" is one of the answers that produces. It was the only one the screen could
+  not act on, so reaching it cost backing out to the library, finding the tile
+  again and opening its menu. Outlined in `danger` rather than filled: two
+  filled buttons a hand's width apart are the same weight, and the layout rests
+  on there being exactly one filled button on that screen. It reads
+  `confirmBeforeDelete`, the same switch the library's own delete reads, and
+  `utils/clipDeleteQuestion.ts` builds what the question says, which is the
+  half worth getting right. The **file** goes to the Recycle Bin and can be
+  fetched back; the **row** cannot, so the name, the tags, the notes and the
+  marks are named in the sentence when the clip has them, and only when it has
+  them. A warning about notes on a clip with no notes is what teaches somebody
+  to press Confirm without reading.
 - **A section header has a floor on its height** (`SECTION_HEADER` in
   `Base/geometry.ts`). Two sections side by side must line up whether or not
   either has a button in its header, and the notes header grows one the moment
@@ -720,15 +735,25 @@ stays.
   confirms, and `danger` is the default tone because nearly everything worth
   asking about here deletes, replaces or overwrites. `confirm` no longer exists
   on the toast store, so the old shape cannot come back by habit.
-  **Two things about it are load-bearing and invisible in a screenshot.** It
-  teleports to `body`, and a Reka dialog that is already open, a clip panel or
-  the trimmer inside it, sets `pointer-events: none` there so nothing outside
-  itself can be clicked: without `pointer-events-auto` the question painted
-  perfectly and passed every click straight through, so pressing *Confirm* over
-  the trimmer played the video and left the question standing. And Escape is
-  caught on `window` in the capture phase, because those panels close
+  **Three things about it are load-bearing and invisible in a screenshot**, and
+  all three come from the same fact: it teleports to `body`, so it is *outside*
+  whatever it was asked over. A Reka dialog that is already open, a clip panel
+  or the trimmer inside it, sets `pointer-events: none` there so nothing
+  outside itself can be clicked: without `pointer-events-auto` the question
+  painted perfectly and passed every click straight through, so pressing
+  *Confirm* over the trimmer played the video and left the question standing.
+  Escape is caught on `window` in the capture phase, because those panels close
   themselves from a listener on `document`: one press cancelled the question
-  *and* shut the panel somebody was working in.
+  *and* shut the panel somebody was working in. And **the overlay stops
+  `pointerdown`**, because a modal Reka dialog also dismisses itself on a
+  pointer down outside its own content, and every press inside the question is
+  one: *either* button shut the panel underneath, about two tenths of a second
+  later, so cancelling, the answer that is supposed to change nothing, closed
+  the clip you were working on. Late enough that a `toBeVisible` taken straight
+  after the click passes and sees nothing wrong, which is why the e2e
+  assertion waits before it looks. Bubble phase on the overlay rather than
+  capture on `window` like Escape: capture runs before the target, so stopping
+  it there would stop the buttons being pressed at all.
 - **One switch component.** `Base/BaseToggle.vue` is the only on/off control; `Settings/SettingToggle.vue`
   wraps it with a label and a description. Native checkboxes were mixed in with hand-rolled switches
   and read as two different controls for the same kind of decision.
