@@ -61,10 +61,18 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
       wraps at narrow widths and its height is not known in advance.
     -->
     <div
-      class="grid transition-[grid-template-rows] duration-200 ease-out"
+      class="grid transition-[grid-template-rows] duration-200 ease-out -mt-1"
       :class="compact ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
     >
-      <div class="overflow-hidden min-h-0">
+      <!--
+        `pt-1` here and `-mt-1` above, which is not spacing: a focus ring is a
+        box-shadow painted *outside* the element, and `overflow-hidden` is what
+        makes a height animatable, so the ring on the `+` button was cut off
+        four pixels from the top. The padding gives the ring somewhere to land
+        inside the clipped box and the negative margin puts the row back where
+        it was. `focus.spec.ts` measures this.
+      -->
+      <div class="overflow-hidden min-h-0 pt-1">
         <div class="flex items-center gap-2 pb-2">
           <h2
             id="collections-heading"

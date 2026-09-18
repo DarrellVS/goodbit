@@ -287,14 +287,25 @@ onMounted(() => {
       and the collections lose their heading and their second line, which is
       about ninety pixels of chrome returned to the clips.
 
-      One band rather than two sticky elements, because the second would need
-      to know the first's height to offset itself, and the first's height is
-      the thing that changes. One `border-b` at the bottom of the whole band,
-      so `ClipFilters` goes in `flush` and the band supplies the padding it
-      would have brought.
+      One band rather than two, because a second would need to know the first's
+      height to offset itself, and the first's height is the thing that
+      changes. One `border-b` at the bottom of the whole band, so `ClipFilters`
+      goes in `flush` and the band supplies the padding it would have brought.
+
+      Teleported above the scrollport rather than made `sticky` inside it. See
+      `ShellLayout`: a sticky child costs the scroller its position every time
+      a panel opens over it, and this sits in exactly the same place without
+      one.
     -->
+    <!--
+      `defer`, because the target is rendered by the shell in this same tick.
+      Without it Vue looks for `#library-band` before the shell has put it in
+      the document, and the patch that follows crashes inside the renderer
+      rather than failing to find it.
+    -->
+    <Teleport defer to="#library-band">
     <div
-      class="sticky top-0 z-30 bg-background border-b border-border transition-[padding] duration-200 ease-out"
+      class="bg-background border-b border-border transition-[padding] duration-200 ease-out"
       :class="scrolled ? 'pt-2' : 'pt-7'"
     >
       <ClipFilters
@@ -313,6 +324,7 @@ onMounted(() => {
       -->
       <CollectionsRow class="px-12 pb-4" :compact="scrolled" />
     </div>
+    </Teleport>
 
     <!--
       No `pb-16` any more. It was there to keep the last row of clips out from

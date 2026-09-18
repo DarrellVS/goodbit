@@ -86,10 +86,23 @@ test.describe('keys behind an open clip', () => {
   test('and stop scrolling it the moment a clip is open over it', async () => {
     await focusNothing();
     await parkAt(300);
-    const behind = await offset();
 
     await ctx.page.locator('article.clip-card').first().click();
     await expect(ctx.page.getByRole('dialog').first()).toBeVisible({ timeout: 15_000 });
+
+    /*
+     * The reading is taken *after* the panel is up, which is what makes this
+     * about the keys.
+     *
+     * Opening one moves the library on its own: clicking a card focuses it and
+     * the browser brings a focused element fully into view. That is not the
+     * library answering a key, it is a click doing what a click does, and how
+     * far it moves depends on where the card happened to sit. Measuring from
+     * before the click folded that into the number and left the test asserting
+     * two things at once, one of which it does not care about.
+     */
+    await ctx.page.waitForTimeout(400);
+    const behind = await offset();
 
     // Several presses, because one could be swallowed by something focused.
     for (let i = 0; i < 3; i++) {
@@ -97,22 +110,21 @@ test.describe('keys behind an open clip', () => {
       await ctx.page.waitForTimeout(250);
     }
 
+    /*
+     * Still open, which is the only moment that answers the question.
+     *
+     * It used to close the panel first and compare across that as well, and
+     * closing is the same confound in the other direction: focus goes back to
+     * the card, the browser scrolls it into view, and the number said nothing
+     * about whether a key had been heard. A scroll step is 300px, so anything
+     * under a third of one is not the key.
+     */
+    const after = await offset();
+    console.log(`behind the dialog: ${behind} -> ${after} with it still open`);
+    expect(Math.abs(after - behind)).toBeLessThan(100);
+
     await ctx.page.keyboard.press('Escape');
     await expect(ctx.page.getByRole('dialog').first()).toBeHidden({ timeout: 10_000 });
-    await ctx.page.waitForTimeout(800);
-
-    const after = await offset();
-    console.log(`behind the dialog: ${behind} -> ${after} after closing`);
-
-    /*
-     * A scroll step is 300px, so anything under a third of one is not the key.
-     *
-     * Closing the panel puts focus back on the card that opened it, and the
-     * browser brings a focused element fully into view, which moved the list
-     * by 22px in measurement. That is the panel handing focus back, not the
-     * library answering a key it should not have heard.
-     */
-    expect(Math.abs(after - behind)).toBeLessThan(100);
   });
 
   test('and take them back once it closes', async () => {

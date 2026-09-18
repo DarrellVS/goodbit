@@ -48,6 +48,24 @@
       />
 
       <!--
+        Where a screen puts the row that describes its list.
+
+        The library's filter row and its collections belong at the top of the
+        window whatever the list underneath is doing, and the obvious way to
+        get that is `position: sticky` inside the scrollport. It works and it
+        costs the scroll position: measured frame by frame, the instant a clip
+        panel mounts, Chromium resets a scroller that holds a sticky child to
+        zero, before any resize and with nothing in the app touching it. The
+        library silently went back to the top behind every panel that opened
+        over it.
+
+        Above the scrollport instead. A sticky element at `top-0` sits exactly
+        where this does at every scroll position, so nothing looks different,
+        and the scroller no longer holds anything sticky.
+      -->
+      <div id="library-band"></div>
+
+      <!--
         The one thing that scrolls, which is why the header above it can shrink
         as it does: `useScrolledPage` follows this element and every screen
         inside it reads the same flag.
