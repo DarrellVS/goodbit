@@ -107,6 +107,26 @@
             @save="saveSelected"
             @deselect="selectedGoodBitId = null"
           />
+
+          <!--
+            Under the marks, because it is about the same clip and answers a
+            later question: what to keep comes before what it should sound
+            like. Both are the column's own sections, with the column's own
+            rule between them.
+          -->
+          <ClipAudioSection
+            class="mt-5"
+            :tracks="audioTracks"
+            :loading="audioLoading"
+            :changed="audioChanged"
+            :is-muted="audioIsMuted"
+            :volume-of="audioVolumeOf"
+            :disabled="fileIsClaimed"
+            @toggle-mute="toggleAudioMute"
+            @set-volume="setAudioVolume"
+            @solo="soloAudio"
+            @reset="resetAudio"
+          />
         </div>
       </div>
     </main>
@@ -152,6 +172,8 @@ import TimelineEditor from './TimelineEditor.vue';
 import SuggestionBanner from './SuggestionBanner.vue';
 import type { SuggestedBand } from './GoodBitBands.vue';
 import ClipGoodBitsSection from '@renderer/components/ClipDetail/ClipGoodBitsSection.vue';
+import ClipAudioSection from '@renderer/components/ClipDetail/ClipAudioSection.vue';
+import { useClipAudio } from '@renderer/composables/clips/useClipAudio';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { clipDeleteQuestion, clipTitle } from '@renderer/utils/clipDeleteQuestion';
@@ -331,6 +353,28 @@ async function loadClip(): Promise<void> {
   }
 }
 
+
+/**
+ * The clip's own audio tracks, and what has been decided about them.
+ *
+ * Almost always one track, in which case the section is a mute and a level for
+ * the whole soundtrack. A recording made through GoodBit's multi-track OBS
+ * setup carries one per source, and then this is where a loud voice chat stops
+ * being the whole clip.
+ */
+const {
+  tracks: audioTracks,
+  loading: audioLoading,
+  changed: audioChanged,
+  selection: audioSelection,
+  isMuted: audioIsMuted,
+  volumeOf: audioVolumeOf,
+  toggleMute: toggleAudioMute,
+  setVolume: setAudioVolume,
+  solo: soloAudio,
+  reset: resetAudio,
+  reload: reloadAudio,
+} = useClipAudio(computed(() => props.id));
 
 const suggestions = ref<ClipSuggestions | null>(null);
 const suggestionsLoading = ref(false);
@@ -650,7 +694,20 @@ async function runTrim(): Promise<void> {
   
   try {
     const [startTime, endTime] = range.value;
-    const result = await trimClip(Number(props.id), startTime, endTime);
+    /*
+     * The mode is still the setting's to choose, so it is left out.
+     *
+     * The selection is not: leaving it out means "nobody looked", which is a
+     * different command from "every track as recorded" and is the one that
+     * copies rather than rebuilds.
+     */
+    const result = await trimClip(
+      Number(props.id),
+      startTime,
+      endTime,
+      undefined,
+      audioSelection.value,
+    );
     // Say what happened to the file: a compressed trim is the whole reason a
     // hundred megabyte clip became fifteen, and a lossless one explains why
     // it did not.
@@ -666,6 +723,11 @@ async function runTrim(): Promise<void> {
     );
     clipsStore.resetPagination();
     await clipsStore.fetchClips(false);
+    // The cut rewrote the file, and a selection is written into it: a muted
+    // track is not in there any more, so the list this screen is showing is a
+    // description of a file that no longer exists.
+    resetAudio();
+    await reloadAudio();
     // The cut rewrote the file, so the details behind this need re-reading.
     emit('saved');
   } catch (error) {

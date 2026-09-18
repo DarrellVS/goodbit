@@ -9,6 +9,7 @@ export * from './dtos/BaseDTO.js';
 // Clip DTOs
 export * from './dtos/clip/ClipDTO.js';
 export * from './dtos/clip/UpdateClipRequestDTO.js';
+export * from './dtos/clip/ClipAudioDTO.js';
 
 // Tag DTOs
 export * from './dtos/tag/TagDTO.js';
@@ -52,3 +53,7 @@ export * from './dtos/goodbit/GoodBitDTO.js';
 // What an OBS setup looks like, agreed once rather than written out in both
 // processes and allowed to drift
 export * from './dtos/obs/ObsDTO.js';
+
+// Which sound lands on which OBS track, agreed once so the preview in the
+// window and the bitmask written into the scene collection cannot disagree
+export * from './constants/obsAudioTracks.js';

@@ -9,6 +9,8 @@ import { Clip } from '../entity/Clip.js';
 import { BaseAction } from './BaseAction.js';
 import { ffmpegConfigured } from '../services/ffmpeg.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
+import { GetClipAudioTracksAction } from './GetClipAudioTracksAction.js';
+import type { ClipAudioSelection, ClipAudioTrack } from '@shared/index.js';
 import { setJobProgress } from '../services/jobs.js';
 import { runFfmpeg } from '../services/ffmpegRun.js';
 import { detectEncoders, decodeArgs, probeVideo } from '../services/encoders.js';
@@ -45,6 +47,15 @@ interface TimelineClipData {
   trimEnd: number;
   volume: number;
   muted: boolean;
+  /**
+   * Mutes and levels for this clip's own audio tracks.
+   *
+   * A clip's fader (`volume`) turns all of its sound down together; this is
+   * the level of one source inside it, which only exists on a recording made
+   * through GoodBit's multi-track OBS setup. Absent on every other clip and on
+   * every timeline saved before this existed.
+   */
+  audio?: ClipAudioSelection[];
 }
 
 interface TimelineAudioData {
@@ -174,6 +185,25 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
       // What to render, worked out before any of it runs, so the progress bar
       // knows the size of the job and a dissolve that will not fit is reported
       // once rather than discovered by ffmpeg.
+      /*
+       * The track list, once per clip that has a decision on it.
+       *
+       * An ffprobe each, and only for the clips that need one: a timeline of
+       * forty clips where nobody touched the sound does no extra work at all.
+       * Read here rather than taken from the timeline, so the indices the
+       * render acts on come off the file as it is now.
+       */
+      const trackLists = new Map<number, ClipAudioTrack[]>();
+      for (const timelineClip of clips) {
+        if (!timelineClip.audio?.length || trackLists.has(timelineClip.clipId)) continue;
+        trackLists.set(
+          timelineClip.clipId,
+          await new GetClipAudioTracksAction()
+            .execute({ clipId: timelineClip.clipId })
+            .catch(() => []),
+        );
+      }
+
       const timeline: ExportClip[] = clips.map((timelineClip) => {
         const dbClip = clipMap.get(timelineClip.clipId);
         if (!dbClip) throw new Error(`Clip ${timelineClip.clipId} not found`);
@@ -184,6 +214,8 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
           trimEnd: timelineClip.trimEnd,
           volume: timelineClip.volume,
           muted: timelineClip.muted,
+          audio: timelineClip.audio,
+          audioTracks: trackLists.get(timelineClip.clipId),
         };
       });
 

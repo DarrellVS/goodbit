@@ -3,6 +3,16 @@ import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import type { TimelineClip } from '@renderer/types/editor';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import ClipAudioSection from '@renderer/components/ClipDetail/ClipAudioSection.vue';
+import { useClipAudio } from '@renderer/composables/clips/useClipAudio';
+import {
+  hasSelection,
+  isMutedIn,
+  soloed,
+  volumeIn,
+  withMuteToggled,
+  withVolume,
+} from '@renderer/utils/clipAudioSelection';
 
 interface Props {
   clip: TimelineClip | null;
@@ -39,6 +49,39 @@ const onHighlight = computed(() => {
 
 function formatDuration(seconds: number): string {
   return seconds.toFixed(2) + 's';
+}
+
+/**
+ * The clip's own tracks, for the block below the fader.
+ *
+ * Only the list is borrowed from the composable. The decisions live on the
+ * timeline clip, so that they are saved with the draft and survive the panel
+ * being closed, which is the difference between this and the trimmer: there a
+ * selection lasts as long as the screen, here it is part of the edit.
+ */
+const { tracks: audioTracks, loading: audioLoading } = useClipAudio(
+  computed(() => props.clip?.clipId ?? 0),
+);
+
+const audioChanged = computed(() => hasSelection(props.clip?.audio));
+
+const audioIsMuted = (index: number): boolean => isMutedIn(props.clip?.audio, index);
+const audioVolumeOf = (index: number): number => volumeIn(props.clip?.audio, index);
+
+function toggleAudioMute(index: number): void {
+  emit('update', { audio: withMuteToggled(props.clip?.audio, index) });
+}
+
+function setAudioVolume(index: number, volume: number): void {
+  emit('update', { audio: withVolume(props.clip?.audio, index, volume) });
+}
+
+function soloAudio(index: number): void {
+  emit('update', { audio: soloed(props.clip?.audio, audioTracks.value, index) });
+}
+
+function resetAudio(): void {
+  emit('update', { audio: [] });
 }
 
 function getVolumePercentage(volume: number): number {
@@ -152,6 +195,27 @@ function volumeToDecimal(percentage: number): number {
           {{ clip.muted ? 'Unmute Clip' : 'Mute Clip' }}
         </button>
       </div>
+
+      <!--
+        The tracks inside the clip, under the fader that turns all of them down
+        together. Only a recording made through GoodBit's multi-track OBS setup
+        has more than one, so on most clips this is one row.
+      -->
+      <ClipAudioSection
+        v-if="audioTracks.length > 1"
+        class="pt-4 border-t border-border"
+        flush
+        :tracks="audioTracks"
+        :loading="audioLoading"
+        :changed="audioChanged"
+        :is-muted="audioIsMuted"
+        :volume-of="audioVolumeOf"
+        :disabled="clip.muted"
+        @toggle-mute="toggleAudioMute"
+        @set-volume="setAudioVolume"
+        @solo="soloAudio"
+        @reset="resetAudio"
+      />
 
       <!--
         Order and removal, where you can see them.

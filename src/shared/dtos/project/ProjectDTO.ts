@@ -1,3 +1,5 @@
+import type { ClipAudioSelection } from '../clip/ClipAudioDTO.js';
+
 import { BaseDTO } from '../BaseDTO.js';
 import type { ExportFormat } from '../../constants/exportFormats.js';
 
@@ -10,6 +12,16 @@ export interface ProjectTimelineClip {
   originalDuration: number;
   volume: number;
   muted: boolean;
+  /**
+   * Mutes and levels for this clip's own audio tracks.
+   *
+   * `volume` turns the whole clip down; this turns one source inside it down,
+   * which only exists on a recording made through GoodBit's multi-track OBS
+   * setup. Absent on every draft written before it existed, which a reader has
+   * to keep working with: a timeline saved last month is a timeline of clips
+   * whose sound nobody had a way to take apart.
+   */
+  audio?: ClipAudioSelection[];
 }
 
 export interface ProjectTimelineAudio {

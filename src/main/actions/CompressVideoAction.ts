@@ -9,6 +9,8 @@ import {
   shareEncoderArgs,
   TONEMAP_FILTER,
 } from '../services/encoders.js';
+import { planMixedAudio } from '../services/clipAudio.js';
+import type { ClipAudioSelection, ClipAudioTrack } from '@shared/index.js';
 
 export type CompressVideoInput = {
   inputPath: string;
@@ -16,6 +18,16 @@ export type CompressVideoInput = {
   /** Cut while compressing. Both or neither; the whole file when absent. */
   startSec?: number;
   endSec?: number;
+  /**
+   * The clip's audio tracks and what was decided about them.
+   *
+   * Flattened rather than carried: the share preset writes one aac stream by
+   * definition, so a selection here is a question of what goes into that one
+   * stream. See `planMixedAudio`, and why the mix is rebuilt from the parts
+   * instead of being taken from track 1.
+   */
+  audioTracks?: ClipAudioTrack[];
+  audio?: ClipAudioSelection[];
   signal?: AbortSignal;
   onProgress?: (fraction: number) => void;
 };
@@ -50,16 +62,37 @@ export class CompressVideoAction extends BaseAction<CompressVideoInput, Compress
         .inputOptions([`-ss ${startSec.toFixed(3)}`])
         .outputOptions([`-t ${duration.toFixed(3)}`]);
     }
-    // An HDR source read as if it were sRGB is what made exports look grey.
-    if (info.isHdr) command = command.outputOptions([`-vf ${TONEMAP_FILTER}`]);
+    const audioPlan = planMixedAudio(input.audioTracks ?? [], input.audio ?? []);
+
+    /*
+     * One graph or two, and never both for one stream.
+     *
+     * ffmpeg will not have `-vf` beside `-filter_complex` where they meet, so
+     * as soon as the sound needs a graph the tone map moves into it.
+     */
+    let videoMap = '-map 0:v:0';
+    if (audioPlan.filterComplex && info.isHdr) {
+      command = command.outputOptions([
+        '-filter_complex',
+        `[0:v:0]${TONEMAP_FILTER}[v];${audioPlan.filterComplex}`,
+      ]);
+      videoMap = '-map [v]';
+    } else if (audioPlan.filterComplex) {
+      command = command.outputOptions(['-filter_complex', audioPlan.filterComplex]);
+    } else if (info.isHdr) {
+      // An HDR source read as if it were sRGB is what made exports look grey.
+      command = command.outputOptions([`-vf ${TONEMAP_FILTER}`]);
+    }
 
     await runFfmpeg(
       command
         .outputOptions([
           ...shareEncoderArgs(encoders, info),
-          '-map 0:v:0',
-          // First audio track only: OBS writes six identical copies.
-          '-map 0:a:0?',
+          videoMap,
+          // One track out of however many: OBS used to write six identical
+          // copies, and now writes one per source, so this is a mixdown rather
+          // than a pick either way.
+          `-map ${audioPlan.map}`,
           '-c:a aac',
           '-b:a 192k',
           '-ac 2',

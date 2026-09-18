@@ -228,7 +228,9 @@ describe('the command a cut comes out as', () => {
     ]);
     expect(command.outputOptions).toContain('-t 5.000');
     expect(command.outputOptions).toContain('-map 0:v:0');
-    expect(command.outputOptions).toContain('-map 0:a:0');
+    // Optional, because a recording with no sound at all is a recording, and
+    // a hard map on one fails the segment rather than silencing it.
+    expect(command.outputOptions).toContain('-map 0:a:0?');
     expect(command.outputOptions).toContain('-r 60');
     expect(command.outputOptions).toContain('-video_track_timescale 60000');
     expect(command.outputOptions.find((o) => o.startsWith('-vf '))).toContain('tonemap=hable');
@@ -364,7 +366,11 @@ describe('the command a dissolve comes out as', () => {
       options,
     );
 
-    expect(command.complexFilter).toContain('[0:a:0]volume=0.400,asetpts=PTS-STARTPTS[aa]');
+    // The fader is applied where a per-track selection would be, so the two
+    // cannot end up as two filters fighting over one output label.
+    expect(command.complexFilter).toContain('[0:a:0]volume=0.400[mixa0]');
+    expect(command.complexFilter).toContain('[mixa0]asetpts=PTS-STARTPTS[aa]');
+    // The side nobody touched is still read straight from the input.
     expect(command.complexFilter).toContain('[1:a:0]asetpts=PTS-STARTPTS[ab]');
   });
 });

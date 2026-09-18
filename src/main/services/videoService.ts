@@ -8,6 +8,7 @@ import { EnsureThumbnailAction } from '../actions/EnsureThumbnailAction.js';
 import { EnsureFrameStripAction } from '../actions/EnsureFrameStripAction.js';
 import { TrimAndSwapClipAction, type TrimAndSwapOutput } from '../actions/TrimAndSwapClipAction.js';
 import type { TrimMode } from '../actions/TrimVideoAction.js';
+import type { ClipAudioSelection } from '@shared/index.js';
 import { ScanAndSyncClipsAction, type ScanResult } from '../actions/ScanAndSyncClipsAction.js';
 import { GetClipMetaAction, type ClipMeta } from '../actions/GetClipMetaAction.js';
 import { OpenClipAction } from '../actions/OpenClipAction.js';
@@ -23,8 +24,15 @@ class VideoService {
     startSec: number,
     endSec: number,
     mode?: TrimMode,
+    audio?: ClipAudioSelection[],
   ): Promise<TrimAndSwapOutput> {
-    const result = await new TrimAndSwapClipAction().execute({ clipId: id, startSec, endSec, mode });
+    const result = await new TrimAndSwapClipAction().execute({
+      clipId: id,
+      startSec,
+      endSec,
+      mode,
+      audio,
+    });
     // After swapping, invalidate caches so they regenerate on next request
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id });

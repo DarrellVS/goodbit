@@ -2,10 +2,13 @@ import {
   cropFilterFor,
   outputSizeFor,
   targetKbpsFor,
+  type ClipAudioSelection,
+  type ClipAudioTrack,
   type ExportFormat,
   type ProjectTimelineTransition,
 } from '@shared/index.js';
 import { encoderArgs, TONEMAP_FILTER, type EncoderInfo, type ProbeInfo } from './encoders.js';
+import { planMixedAudio } from './clipAudio.js';
 
 /**
  * What an export has to render, worked out before any of it runs.
@@ -67,8 +70,20 @@ const SEGMENT_TIMESCALE = 60000;
 /** The picture quality an export's segments are encoded at. Unchanged. */
 const EXPORT_QUALITY = 21;
 
+/**
+ * What a clip's own audio tracks are, and what was decided about them.
+ *
+ * Carried on the source rather than looked up here, because this module is
+ * pure and a track list comes off an ffprobe. Both absent is the ordinary
+ * case: one stream, taken as recorded.
+ */
+export interface SourceAudio {
+  audioTracks?: ClipAudioTrack[];
+  audio?: ClipAudioSelection[];
+}
+
 /** One clip on the video lane, with its file already resolved. */
-export interface ExportClip {
+export interface ExportClip extends SourceAudio {
   clipId: number;
   filePath: string;
   trimStart: number;
@@ -78,7 +93,7 @@ export interface ExportClip {
 }
 
 /** One piece of one source file that a step reads. */
-export interface SegmentSource {
+export interface SegmentSource extends SourceAudio {
   clipId: number;
   filePath: string;
   /** Where in the source this piece begins, in seconds. */
@@ -228,6 +243,8 @@ export function buildRenderPlan(
         startSec: ms(clip.trimStart + head),
         volume: clip.volume,
         muted: clip.muted,
+        audioTracks: clip.audioTracks,
+        audio: clip.audio,
       },
       durationSec: Math.max(MIN_SEGMENT_SEC, bodySec),
       label: `Cutting clip ${i + 1} of ${clips.length}`,
@@ -245,6 +262,8 @@ export function buildRenderPlan(
           startSec: ms(clip.trimStart + lengths[i] - tail),
           volume: clip.volume,
           muted: clip.muted,
+          audioTracks: clip.audioTracks,
+          audio: clip.audio,
         },
         to: {
           clipId: next.clipId,
@@ -252,6 +271,8 @@ export function buildRenderPlan(
           startSec: ms(next.trimStart),
           volume: next.volume,
           muted: next.muted,
+          audioTracks: next.audioTracks,
+          audio: next.audio,
         },
         durationSec: tail,
         label: `Blending clip ${i + 1} into clip ${i + 2}`,
@@ -347,22 +368,55 @@ export function buildCutCommand(
   const filters = pictureFilters(info, opts);
   const targetKbps = targetKbpsFor(opts.format, info.width, info.height, info.kbps);
 
+  const audible = isAudible(step.source, info);
+  /*
+   * The sound, which is a mixdown rather than a pick as soon as a track was
+   * touched. `volume` on the timeline used to be a `-af` of its own; it is
+   * folded into the same chain now, because two filters cannot both claim one
+   * output.
+   */
+  const audioPlan = audible
+    ? planMixedAudio(
+        step.source.audioTracks ?? [],
+        step.source.audio ?? [],
+        step.source.volume,
+        0,
+      )
+    : null;
+
   const outputOptions = [`-t ${step.durationSec.toFixed(3)}`];
-  if (filters.length) outputOptions.push(`-vf ${filters.join(',')}`);
+  const complexFilter: string[] = [];
+  let videoMap = '-map 0:v:0';
+
+  /*
+   * One graph or two, and never both for one stream.
+   *
+   * ffmpeg refuses `-vf` beside `-filter_complex` where they meet, so a source
+   * whose sound has to be rebuilt brings its picture into the same graph. The
+   * filters themselves are unchanged, and so is their order: crop before tone
+   * map, which is the difference between 2.8 seconds and 5.8.
+   */
+  if (audioPlan?.filterComplex) {
+    if (filters.length) {
+      complexFilter.push(`[0:v:0]${filters.join(',')}[v]`);
+      videoMap = '-map [v]';
+    }
+    complexFilter.push(audioPlan.filterComplex);
+  } else if (filters.length) {
+    outputOptions.push(`-vf ${filters.join(',')}`);
+  }
 
   outputOptions.push(
     ...encoderArgs(opts.encoders, { quality: EXPORT_QUALITY, targetKbps }),
-    '-map 0:v:0',
+    videoMap,
     // Every segment needs the same stream layout or the concat demuxer
     // refuses to join them.
     `-r ${SEGMENT_FPS}`,
     `-video_track_timescale ${SEGMENT_TIMESCALE}`,
   );
 
-  if (isAudible(step.source, info)) {
-    outputOptions.push('-map 0:a:0');
-    if (step.source.volume !== 1) outputOptions.push(`-af volume=${step.source.volume.toFixed(3)}`);
-    outputOptions.push(...SEGMENT_AUDIO);
+  if (audioPlan) {
+    outputOptions.push(`-map ${audioPlan.map}`, ...SEGMENT_AUDIO);
   } else {
     outputOptions.push('-an');
   }
@@ -371,7 +425,7 @@ export function buildCutCommand(
 
   return {
     inputs: [{ path: step.source.filePath, options: [...decode, `-ss ${step.source.startSec.toFixed(3)}`] }],
-    complexFilter: null,
+    complexFilter: complexFilter.length ? complexFilter : null,
     outputOptions,
   };
 }
@@ -437,12 +491,37 @@ export function buildDissolveCommand(
 
   const audible = isAudible(step.from, from.info) && isAudible(step.to, to.info);
   if (audible) {
-    const level = (source: SegmentSource): string[] =>
-      source.volume !== 1 ? [`volume=${source.volume.toFixed(3)}`] : [];
+    /*
+     * Each side mixed on its own before they are blended.
+     *
+     * Asked twice for the same reason the tone map and the decode arguments
+     * are: a transition reads two files, and the answers differ. One side can
+     * have a muted voice chat while the other is a single-track import.
+     */
+    const fromPlan = planMixedAudio(
+      step.from.audioTracks ?? [],
+      step.from.audio ?? [],
+      step.from.volume,
+      0,
+    );
+    const toPlan = planMixedAudio(
+      step.to.audioTracks ?? [],
+      step.to.audio ?? [],
+      step.to.volume,
+      1,
+    );
+    if (fromPlan.filterComplex) complexFilter.push(fromPlan.filterComplex);
+    if (toPlan.filterComplex) complexFilter.push(toPlan.filterComplex);
+
+    // A plan with nothing to do hands back a stream specifier rather than a
+    // label, and a specifier cannot be read twice inside a graph. The one that
+    // needed nothing is read straight from the input instead.
+    const fromLabel = fromPlan.filterComplex ? fromPlan.map : '[0:a:0]';
+    const toLabel = toPlan.filterComplex ? toPlan.map : '[1:a:0]';
 
     complexFilter.push(
-      `[0:a:0]${[...level(step.from), 'asetpts=PTS-STARTPTS'].join(',')}[aa]`,
-      `[1:a:0]${[...level(step.to), 'asetpts=PTS-STARTPTS'].join(',')}[ab]`,
+      `${fromLabel}asetpts=PTS-STARTPTS[aa]`,
+      `${toLabel}asetpts=PTS-STARTPTS[ab]`,
       // Triangular on both sides, which is the linear cross fade the picture is
       // doing. A constant power curve would lift the middle of the blend above
       // either clip on its own, which on game audio reads as a swell.

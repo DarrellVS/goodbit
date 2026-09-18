@@ -1,4 +1,4 @@
-import type { ProjectTimelineAudio, ProjectTimelineClip } from '@shared/index';
+import type { ClipAudioSelection, ProjectTimelineAudio, ProjectTimelineClip } from '@shared/index';
 
 /**
  * What a stored timeline holds: ids, filenames and the edits made to them.
@@ -76,6 +76,8 @@ export interface TimelineClip {
   trimEnd: number;
   volume: number;
   muted: boolean;
+  /** Mutes and levels for this clip's own tracks. See `ProjectTimelineClip`. */
+  audio?: readonly ClipAudioSelection[];
   videoUrl: string;
   thumbnailUrl: string;
   originalDuration: number;

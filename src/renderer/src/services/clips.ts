@@ -2,7 +2,9 @@ import axios from '@renderer/axios';
 import type { TimelineAudio, TimelineClip } from '@renderer/types/editor';
 import type { Clip } from '@renderer/types/clip';
 import type { Tag } from '@renderer/types/tag';
-import type { ExportFormat } from '@shared/index';
+import type { ClipAudioSelection, ClipAudioTrack, ExportFormat } from '@shared/index';
+
+export type { ClipAudioSelection, ClipAudioTrack };
 
 export type ClipMeta = {
   durationSec: number;
@@ -20,6 +22,7 @@ interface ExportTimelineRequest {
     trimEnd: number;
     volume: number;
     muted: boolean;
+    audio?: readonly ClipAudioSelection[];
   }>;
   audio: Array<{
     trackId: string;
@@ -101,6 +104,9 @@ export async function startExport(
       trimEnd: clip.trimEnd,
       volume: clip.volume,
       muted: clip.muted,
+      // Left out when nobody touched a track: an empty list and an absent one
+      // mean different things to the render, and only the absent one is free.
+      ...(clip.audio?.length ? { audio: clip.audio } : {}),
     })),
     audio: audio.map(item => ({
       trackId: item.trackId,
@@ -200,17 +206,32 @@ export interface TrimResult {
   sizeBytes: number;
 }
 
+/**
+ * What sound this clip holds, one stream at a time.
+ *
+ * Almost always one track, and then this is a list of one and the trimmer
+ * shows nothing. A recording made through GoodBit's own OBS setup carries a
+ * track per source, and the names come from the setup that wrote it.
+ */
+export async function getClipAudioTracks(id: number): Promise<ClipAudioTrack[]> {
+  const { data } = await axios.get<ClipAudioTrack[]>(`/api/clips/${id}/audio-tracks`);
+  return data;
+}
+
 /** Trim a clip in place. Leave `mode` out to let the compress-trims setting decide. */
 export async function trimClip(
   id: number,
   startSec: number,
   endSec: number,
   mode?: TrimMode,
+  /** Mutes and levels. Absent, and every track is carried across as recorded. */
+  audio?: ClipAudioSelection[],
 ): Promise<TrimResult> {
   const { data } = await axios.post<TrimResult>(`/api/clips/${id}/trim`, {
     startSec,
     endSec,
     ...(mode ? { mode } : {}),
+    ...(audio?.length ? { audio } : {}),
   });
   return data;
 }

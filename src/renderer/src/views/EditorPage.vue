@@ -466,7 +466,7 @@ function handleSelectAudio(audioId: string): void {
   selectedClipId.value = null;
 }
 
-function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>): void {
+function handleUpdateClip(updates: Partial<Pick<TimelineClip, 'volume' | 'muted' | 'audio'>>): void {
   if (!selectedClipId.value) return;
   record();
   updateClipProperties(selectedClipId.value, updates);

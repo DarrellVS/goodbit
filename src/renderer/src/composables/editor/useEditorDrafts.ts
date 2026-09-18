@@ -52,6 +52,9 @@ function toDraftClips(clips: readonly TimelineClip[]): DraftClip[] {
     originalDuration: clip.originalDuration,
     volume: clip.volume,
     muted: clip.muted,
+    // Copied rather than passed through: a draft is a plain stored record and
+    // the timeline hands these over deeply readonly.
+    ...(clip.audio?.length ? { audio: clip.audio.map((entry) => ({ ...entry })) } : {}),
   }));
 }
 

@@ -70,9 +70,19 @@ export function useTimeline() {
     clipMap.delete(clipId);
   }
 
+  /**
+   * Change what a clip sounds like, and only that.
+   *
+   * Named keys rather than a spread, so a caller cannot accidentally move a
+   * clip's start time through the properties panel. The cost is that a key
+   * missing from this list is **dropped in silence**: the panel emits it, the
+   * timeline ignores it, and the control springs back to where it was with
+   * nothing logged. That is what happened to `audio` when the per-track
+   * section was added.
+   */
   function updateClipProperties(
     clipId: string,
-    updates: Partial<Pick<TimelineClip, 'volume' | 'muted'>>
+    updates: Partial<Pick<TimelineClip, 'volume' | 'muted' | 'audio'>>
   ): void {
     const clip = clipMap.get(clipId);
     if (!clip) return;
@@ -80,6 +90,9 @@ export function useTimeline() {
     const updated = { ...clip };
     if (updates.volume !== undefined) updated.volume = Math.max(0, Math.min(1, updates.volume));
     if (updates.muted !== undefined) updated.muted = updates.muted;
+    // An empty list is a real value here: it is what *Reset* sends, and it has
+    // to replace the selection rather than read as "nothing was passed".
+    if (updates.audio !== undefined) updated.audio = updates.audio;
     
     const index = clips.value.indexOf(clip);
     const newClips = [...clips.value];

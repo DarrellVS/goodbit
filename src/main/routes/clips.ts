@@ -25,6 +25,8 @@ import { UpdateGoodBitAction } from '../actions/UpdateGoodBitAction.js';
 import { DeleteGoodBitAction } from '../actions/DeleteGoodBitAction.js';
 import { ListGoodBitsAction } from '../actions/ListGoodBitsAction.js';
 import { RenderGoodBitAction } from '../actions/RenderGoodBitAction.js';
+import { GetClipAudioTracksAction } from '../actions/GetClipAudioTracksAction.js';
+import type { ClipAudioSelection } from '@shared/index.js';
 import { GoodBitRangeError } from '../services/goodBits.js';
 import {
   cancelJob,
@@ -444,13 +446,27 @@ clipsRouter.delete('/:id', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+/**
+ * What sound this clip holds, one stream at a time.
+ *
+ * Read rather than stored. The names come from the OBS setup's own manifest
+ * and a clip outlives a setup, so this is worked out against the file in front
+ * of it every time and never written down anywhere it could go stale.
+ */
+clipsRouter.get('/:id/audio-tracks', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  res.json(await new GetClipAudioTracksAction().execute({ clipId: id }));
+}));
+
 clipsRouter.post('/:id/trim', asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { startSec, endSec, mode } = req.body as {
+  const { startSec, endSec, mode, audio } = req.body as {
     startSec: number;
     endSec: number;
     /** Absent lets the compress-trims setting decide. */
     mode?: TrimMode;
+    /** Mutes and levels, by audio track index. Absent keeps every track. */
+    audio?: ClipAudioSelection[];
   };
   if (!(startSec >= 0) || !(endSec > startSec)) {
     return res.status(400).json({ error: 'Invalid range' });
@@ -458,7 +474,10 @@ clipsRouter.post('/:id/trim', asyncHandler(async (req, res) => {
   if (mode !== undefined && !['lossless', 'exact', 'compressed'].includes(mode)) {
     return res.status(400).json({ error: 'Unknown trim mode' });
   }
-  const result = await videoService.trimAndSwapClip(id, startSec, endSec, mode);
+  if (audio !== undefined && !Array.isArray(audio)) {
+    return res.status(400).json({ error: 'Audio selection must be a list' });
+  }
+  const result = await videoService.trimAndSwapClip(id, startSec, endSec, mode, audio);
   // The actual range matters: a lossless cut snaps to a keyframe, so what
   // landed on disk can differ from what was asked for.
   res.json({ ok: true, ...result });

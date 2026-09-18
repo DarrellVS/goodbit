@@ -13,6 +13,8 @@ import { EnsureClipSuggestionsAction } from './EnsureClipSuggestionsAction.js';
 import { compressTrims } from '../settings.js';
 import { probeDurationSec } from '../services/encoders.js';
 import { announce } from '../startup.js';
+import { GetClipAudioTracksAction } from './GetClipAudioTracksAction.js';
+import type { ClipAudioSelection } from '@shared/index.js';
 
 export type TrimAndSwapInput = {
   clipId: number;
@@ -25,6 +27,15 @@ export type TrimAndSwapInput = {
    * to share size, `exact` keeps the picture close to the recording.
    */
   mode?: TrimMode;
+  /**
+   * Mutes and levels, by audio track index.
+   *
+   * Absent is not the same as "everything at zero": absent means nobody looked
+   * at the sound, and the cut then carries the tracks across as they are.
+   * Present means somebody decided, and a trim replaces the recording, so the
+   * decision goes into the file.
+   */
+  audio?: ClipAudioSelection[];
 };
 
 export interface TrimAndSwapOutput {
@@ -50,6 +61,7 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
     // that started at 0. The cut now lands exactly where it was asked to, and
     // the setting only chooses how hard the result is squeezed.
     mode = compressTrims() ? 'compressed' : 'exact',
+    audio,
   }: TrimAndSwapInput): Promise<TrimAndSwapOutput> {
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id: clipId });
@@ -112,6 +124,18 @@ export class TrimAndSwapClipAction extends BaseAction<TrimAndSwapInput, TrimAndS
         endSec,
         outputPath: tmpPath,
         mode,
+        /*
+         * Read every time, and only when it can matter.
+         *
+         * One ffprobe, against the file about to be replaced, so the track
+         * numbers the cut acts on are the ones in front of it rather than the
+         * ones the page was shown some minutes ago. A clip with nothing to
+         * decide skips it entirely and gets the command this always wrote.
+         */
+        audioTracks: audio?.length
+          ? await new GetClipAudioTracksAction().execute({ clipId }).catch(() => [])
+          : undefined,
+        audio,
         onProgress: (fraction) => say('cutting', Math.round(fraction * 100)),
       });
     } catch (error) {

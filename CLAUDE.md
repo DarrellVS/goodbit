@@ -46,9 +46,11 @@ node scripts/restore-check.mjs    # prove a backup can be put back, and that a b
 node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
 node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
 node scripts/obs-apply-check.mjs  # apply the setup against a throw-away OBS directory
+node scripts/obs-audio-check.mjs  # which sound the setup routes to which OBS track
 node scripts/visual-deaths.mjs   # what the two death cues score across a real library
 node scripts/foreground-track-check.mjs  # prove the helper tells a running process from a closed one
 node scripts/trim-check.mjs  # run the shipped trim on a real clip and check where it landed
+node scripts/clip-audio-check.mjs  # prove muting a track mutes it, through the real ffmpeg
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -328,6 +330,29 @@ none of it is from documentation, because OBS documents its plugin API and not i
   video settings, and nothing else; an unknown token silently loses its `%`. So OBS records into
   `<videosRoot>/.goodbit-incoming/` and **GoodBit files the clip itself**, from the program that was
   in front while it was recording. See `services/capture/`. Nothing runs inside OBS.
+- **One track is a decision that cannot be taken back.** OBS mixes every source
+  into one stream unless two bitmasks say otherwise, and a friend chewing on
+  voice chat is then in the same samples as the gunfire for ever. The setup
+  writes both: `[SimpleOutput] RecTracks`, which is which tracks reach the file,
+  and `mixers` on each source, which is which tracks that source feeds.
+  **Track 1 stays the full mix**, so anything that reads one track still hears
+  everything, and tracks 2 upward carry one source each. `mixers: 255` on every
+  source, which is what this wrote before, reads as generous and is the
+  opposite: every source feeding every track means every track holds the same
+  mix, which is how a six stream recording is six copies of one decision.
+  Refused, or with one device, it writes exactly what it wrote before.
+  `planAudioTracks` lives in `src/shared` because the wizard draws the routing
+  live while somebody ticks devices and the setup writes it, and two copies of
+  one `1 << (index + 1)` is how a preview names a different track from the one
+  that gets written. Game capture gets the mix and nothing else, or game audio
+  would land on the voice chat track.
+- **Simple output mode can do this, and that was checked rather than read.**
+  OBS 32.2.2's own binary carries `simpleOutRecTrack1` through
+  `simpleOutRecTrack6`, so the six checkboxes exist in Simple mode and no
+  switch to Advanced is needed; and a real recording off this library holds six
+  aac streams in an mp4, so the container is not the limit either. OBS's own
+  warning about MP4 and multiple tracks is about a recording that cannot be
+  finalised after a crash, not about capability.
 - **The hotkey is the output's, not the frontend's.** `[Hotkeys] OBSBasic.SaveReplayBuffer` with a
   `bindings` array is the documented shape and binds nothing on OBS 31: what works, and what the
   hotkey list shows, is `ReplayBuffer={"ReplayBuffer.Save":[…]}`.
@@ -573,6 +598,51 @@ exception, and **its position in the filter chain is the whole cost**.
 - **A thumbnail is 1280 wide, and the width is in its cache key.** It used to be the recording's own
   size: 181 KB on disk, and **18.9 MB once the renderer decoded it**, so forty cards carried three
   quarters of a gigabyte of bitmaps.
+
+### The sound in a clip, once it is more than one thing
+
+`services/clipAudio.ts`, and the section beside the trimmer and the editor's
+clip panel. A recording made through GoodBit's own OBS setup carries a track per
+source, which is only worth having because of what can be done with it: the
+clutch is fine, the friend chewing on voice chat is not, and one press fixes it.
+
+- **Track 1 is not a peer of the tracks below it.** It is every source summed,
+  so it already holds the sound being muted: keeping it and dropping track 4
+  mutes nothing at all, and the clip plays perfectly while the feature has
+  silently done nothing. So whenever a selection changes one of the isolated
+  tracks, **the mix is rebuilt out of what survived**, which is the one place
+  this re-encodes audio nobody asked it to touch. Muting every part drops the
+  mix as well, rather than carrying across a sum of things that are gone.
+- **A trim carries the selection into the file**, because a trim replaces the
+  recording. Everywhere else it is an export-time decision, like a crop.
+- **The default changed, carefully.** A cut used to keep the first audio track
+  and drop the rest, which was right for a library whose six tracks were six
+  copies of one mix. It keeps every track now **only when something knows what
+  they hold**, which is exactly when GoodBit wrote the OBS setup that recorded
+  the clip. Told apart by whether the manifest's mapping fits the file: a
+  mapping that does not is refused outright rather than applied to half the
+  tracks, because naming stream 3 voice chat after voice chat has moved is how
+  somebody mutes the game.
+- **A level is a multiplier, shown as a percentage**, not decibels. The timeline
+  fader, `ProjectTimelineClip.volume` and the `volume=` filter the export
+  already writes are all linear, and a track reading `-6 dB` beside a clip
+  reading `50%` is two units for one idea.
+- **An export flattens, a trim does not.** A movie has one soundtrack, so
+  `planMixedAudio` mixes the surviving parts down; `planTrimAudio` keeps them as
+  tracks so the clip can be remixed tomorrow. Both refuse to claim every stream
+  with one `-c:a`, since the streams beside a rebuilt one are being copied.
+- **Nothing can preview one track.** Chromium does not implement
+  `HTMLMediaElement.audioTracks`, so the `<video>` plays whatever the container
+  calls first and no control in the renderer can reach it. *Only this* therefore
+  mutes the others, which the cut and the export both understand, and the
+  section says out loud that the preview is unaffected.
+- `tests/unit` owns the arguments; `scripts/clip-audio-check.mjs` owns whether
+  ffmpeg accepts them and whether the file that lands is the one that was asked
+  for. It builds its own source, because a real recording's six identical tracks
+  cannot show that the right one was dropped, and **the track it mutes is the
+  loud one**: built the other way round the sum and the survivor differ by a
+  tenth of a decibel, and a mix copied across unchanged reads exactly like a mix
+  correctly rebuilt.
 
 ### Keeping ffmpeg under control
 
