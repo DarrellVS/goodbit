@@ -3,6 +3,8 @@ import { computed, reactive } from 'vue';
 import type { ShortcutKey } from '@renderer/constants/shortcuts';
 import { carryOverKey } from '@renderer/utils/storageKey';
 
+import { DEFAULT_SIDEBAR_WIDTH } from '@renderer/components/Base/geometry';
+
 export interface PublicConfig {
   viewMode: 'grid' | 'grouped';
   pageSize: number;
@@ -25,6 +27,8 @@ export interface PublicConfig {
   clipVolume: number;
   preferLocalNetwork: boolean;
   customShortcuts?: Record<string, ShortcutKey>;
+  /** The width of the navigation sidebar in pixels, remembered across restarts. */
+  sidebarWidth?: number;
 }
 
 const CONFIG_KEY = 'goodbit-public-config';
@@ -47,6 +51,7 @@ const publicConfig = useLocalStorage<PublicConfig>(CONFIG_KEY, {
   // On by default: falls back to the internet on its own when the PC is not
   // reachable, so there is nothing to strand you when away from home.
   preferLocalNetwork: true,
+  sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
   // mergeDefaults so a setting added after a browser already has a stored blob
   // gets its default instead of undefined.
 }, { mergeDefaults: true });

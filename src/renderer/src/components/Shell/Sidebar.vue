@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router';
 import SidebarGames from './SidebarGames.vue';
 import SidebarRow from './SidebarRow.vue';
+import { useSidebarResize } from '@renderer/composables/ui/useSidebarResize';
 
 interface Props {
   /** Every game the library is filtered to. Several of them light up at once. */
@@ -20,6 +21,15 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const route = useRoute();
+const {
+  sidebarWidth,
+  isDragging,
+  startResize,
+  resetWidth,
+  onKeyDown,
+  MIN_SIDEBAR_WIDTH,
+  MAX_SIDEBAR_WIDTH,
+} = useSidebarResize();
 
 /**
  * The top three and the bottom three, as data rather than as six copies of
@@ -65,10 +75,16 @@ function isActive(to: string): boolean {
     third of a percent above the sidebar, and in light both were pure white, so
     the active row did not exist at all.
 
-    232px, which is the measurement the design fixes rather than a number that
-    happened to look right.
+    232px by default, which is the measurement the design fixes rather than a
+    number that happened to look right. It is a default rather than the width
+    now: the hairline on the right is draggable, and a library whose game names
+    run long is the reason.
   -->
-  <aside class="w-58 border-r border-border flex flex-col h-full">
+  <aside
+    class="relative border-r flex flex-col h-full shrink-0"
+    :class="isDragging ? 'border-line-strong select-none' : 'border-border'"
+    :style="{ width: `${sidebarWidth}px` }"
+  >
     <!--
       No name or mark here. The title bar already carries both, a hand's width
       above, and saying it twice is one of them wasted.
@@ -125,6 +141,38 @@ function isActive(to: string): boolean {
         :icon="item.icon"
         :label="item.label"
         :active="isActive(item.to)"
+      />
+    </div>
+
+    <!--
+      Hairline border resize handle.
+      Centered over the 1px right border with an 8px hit area so it is
+      comfortable to grab, with keyboard support and visual feedback using the
+      line-strong token on hover and drag.
+
+      `inset-y-1` rather than `top-0 h-full`: the focus ring is a box shadow
+      reaching 4px past the control, the shell's grid is `overflow-hidden`, and
+      a handle flush with the top and bottom of the window had that ring sliced
+      off at both ends on every route. The visual line takes the 8px back with
+      `-inset-y-1`, so what is drawn still runs the full height and only the
+      box the ring hangs off is inset.
+    -->
+    <div
+      role="separator"
+      tabindex="0"
+      aria-orientation="vertical"
+      aria-label="Resize sidebar"
+      :aria-valuenow="sidebarWidth"
+      :aria-valuemin="MIN_SIDEBAR_WIDTH"
+      :aria-valuemax="MAX_SIDEBAR_WIDTH"
+      class="absolute inset-y-1 -right-1 w-2 cursor-col-resize z-20 group outline-none focus-visible:focus-ring"
+      @pointerdown="startResize"
+      @dblclick="resetWidth"
+      @keydown="onKeyDown"
+    >
+      <div
+        class="absolute -inset-y-1 left-1/2 -translate-x-1/2 w-px pointer-events-none transition-colors duration-150"
+        :class="isDragging ? 'bg-line-strong' : 'group-hover:bg-line-strong group-focus-visible:bg-accent'"
       />
     </div>
   </aside>

@@ -163,3 +163,13 @@ export const BUTTON_SMALL =
   `${QUIET_CONTROL_HEIGHT} px-3 inline-flex items-center justify-center ${ICON_GAP} ` +
   `rounded-md border border-line-strong text-sm font-medium text-foreground hover:bg-muted-50 ` +
   `${FOCUS_RING} ${MOTION} disabled:opacity-50 disabled:pointer-events-none`;
+
+/**
+ * 232px. The default sidebar width fixed by the design.
+ *
+ * Can be resized by dragging the hairline border between the minimum and
+ * maximum bounds.
+ */
+export const DEFAULT_SIDEBAR_WIDTH = 232;
+export const MIN_SIDEBAR_WIDTH = 180;
+export const MAX_SIDEBAR_WIDTH = 480;

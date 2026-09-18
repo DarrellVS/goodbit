@@ -1,6 +1,6 @@
 <template>
   <!--
-    232px of sidebar, then everything else.
+    Resizable sidebar column, then everything else. Defaults to 232px.
 
     The design also fixes a 1240px cap on the content column, and that one is
     deliberately not taken. A reading measure is a typographic decision about
@@ -10,7 +10,8 @@
     have. The 48px gutters that go with it are taken.
   -->
   <div
-    class="h-full min-h-0 overflow-hidden grid grid-cols-[232px_1fr] grid-rows-1"
+    class="h-full min-h-0 overflow-hidden grid grid-rows-1"
+    :style="{ gridTemplateColumns: `${sidebarWidth}px 1fr` }"
     @dragenter="fileImport.handleDragEnter"
     @dragleave="fileImport.handleDragLeave"
     @dragover="fileImport.handleDragOver"
@@ -122,6 +123,9 @@ import { usePublishProgress } from '@renderer/composables/clips/usePublishProgre
 import { useCollectionsStore } from '@renderer/stores/collections';
 import { rememberScrollFor, restoreScrollFor } from '@renderer/utils/scroll';
 import { useScrolledPage } from '@renderer/composables/ui/useScrolledPage';
+import { useSidebarResize } from '@renderer/composables/ui/useSidebarResize';
+
+const { sidebarWidth } = useSidebarResize();
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
