@@ -149,6 +149,16 @@ async function copyCommand(): Promise<void> {
       </p>
     </div>
 
+    <!--
+      The publisher first, Claude after it.
+
+      Claude was at the top because it was the only thing on this page when the
+      page was called Claude. Publishing is what somebody comes here to get
+      working, and it is the half that has an address, a token and something
+      that can be unreachable; Claude is a switch and a config file.
+    -->
+    <PublisherCard />
+
     <div class="setting-card">
       <!--
         No glyph beside the heading. Nothing else on these pages has one, and a
@@ -269,6 +279,5 @@ async function copyCommand(): Promise<void> {
       </template>
     </div>
 
-    <PublisherCard />
   </section>
 </template>

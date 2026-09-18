@@ -39,29 +39,27 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
       <p class="mt-2 text-muted-500">Keyboard shortcuts, and what this machine can do</p>
     </div>
 
-    <div>
-      <SettingToggle
-        v-model="config.public.value.enableKeyboardShortcuts"
-        label="Keyboard shortcuts"
-        description="Move around and act on a clip without the mouse"
-      />
+    <SettingToggle
+      v-model="config.public.value.enableKeyboardShortcuts"
+      label="Keyboard shortcuts"
+      description="Move around and act on a clip without the mouse"
+    />
 
-      <SettingAnchor v-if="showShortcuts" label="Change a shortcut">
-        <KeyboardShortcutCustomization />
-      </SettingAnchor>
+    <SettingAnchor v-if="showShortcuts" label="Change a shortcut">
+      <KeyboardShortcutCustomization />
+    </SettingAnchor>
 
-      <HealthCard />
+    <HealthCard />
 
-      <div
-        data-setting="Where settings are kept"
-        :class="['setting-card', settingRing('Where settings are kept')]"
-      >
-        <h3>Where settings are kept</h3>
-        <p>
-          These preferences live on this computer and stay put between sessions. Export, Import
-          and Reset, at the foot of the list on the left, work on all of them at once.
-        </p>
-      </div>
+    <div
+      data-setting="Where settings are kept"
+      :class="['setting-card', settingRing('Where settings are kept')]"
+    >
+      <h3>Where settings are kept</h3>
+      <p>
+        These preferences live on this computer and stay put between sessions. Export, Import
+        and Reset, at the foot of the list on the left, work on all of them at once.
+      </p>
     </div>
   </section>
 </template>

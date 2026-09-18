@@ -182,7 +182,7 @@ watch(
 <template>
   <DialogRoot :open="open" @update:open="handleOpenChange">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-lg shadow-pop border border-border w-full max-w-xl max-h-[90vh] flex flex-col outline-hidden modal-content-animate px-9 pt-8 pb-9"
       >

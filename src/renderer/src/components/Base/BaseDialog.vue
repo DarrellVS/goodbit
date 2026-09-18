@@ -64,7 +64,7 @@ watch(() => props.open, (isOpen) => {
     <Transition name="modal-backdrop">
       <div
         v-if="open"
-        class="fixed inset-0 flex items-center justify-center bg-scrim-modal backdrop-blur-md p-4"
+        class="fixed inset-0 flex items-center justify-center bg-scrim-modal p-4"
         :class="above ? 'z-60' : 'z-50'"
         @click="handleBackdropClick"
       >

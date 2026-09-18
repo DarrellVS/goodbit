@@ -85,7 +85,7 @@ async function apply(): Promise<void> {
 <template>
   <div
     v-if="invite"
-    class="fixed inset-0 z-200 flex items-center justify-center bg-scrim-modal backdrop-blur-md p-6"
+    class="fixed inset-0 z-200 flex items-center justify-center bg-scrim-modal p-6"
     role="dialog"
     aria-modal="true"
     aria-label="Set up publishing"

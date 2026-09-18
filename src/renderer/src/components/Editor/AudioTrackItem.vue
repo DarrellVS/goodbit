@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue';
+import { EDITOR_CONSTANTS } from '@renderer/constants/editor';
 import { Icon } from '@iconify/vue';
 import { formatTime } from '@renderer/utils/timeFormat';
 import { loadWaveformPeaks } from '@renderer/composables/editor/useAudioWaveform';
@@ -40,7 +41,8 @@ const dragInitialValue = ref(0);
 const width = computed(() => props.item.duration * props.pixelsPerSecond);
 
 const style = computed(() => ({
-  left: `${props.item.startTime * props.pixelsPerSecond}px`,
+  // The same inset the clips above carry, or the two lanes read out of step.
+  left: `${EDITOR_CONSTANTS.TIMELINE_LANE_INSET_PX + props.item.startTime * props.pixelsPerSecond}px`,
   width: `${width.value}px`,
 }));
 

@@ -72,7 +72,7 @@ function onBackdrop(event: MouseEvent): void {
     <Transition name="modal-backdrop">
       <div
         v-if="open"
-        class="fixed inset-0 z-70 flex items-center justify-center bg-scrim-modal backdrop-blur-md p-4"
+        class="fixed inset-0 z-70 flex items-center justify-center bg-scrim-modal p-4"
         @click="onBackdrop"
         @keydown.esc="emit('cancel')"
       >

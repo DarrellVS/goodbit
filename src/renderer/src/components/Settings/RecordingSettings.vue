@@ -308,113 +308,107 @@ function openGuide(): void {
     />
 
     <!--
-      One feature, one card.
+      One feature, one heading.
 
-      This was five bordered boxes stacked in a row, one per control, which made
-      four settings that only exist because the first one is on look like four
-      unrelated choices. The switch that turns the whole thing on keeps the top
-      of the card, everything it governs sits under a rule below it, and trying
-      it out is separated again because it changes nothing.
+      This was five bordered boxes stacked in a row, then a card with the rows
+      flush inside it and hand-cut dividers between them, which made a group of
+      five dependent settings a frame of its own inside a page that has no other
+      frames. It is a heading and five ordinary rows now, so the hairlines line
+      up with everything above and below, and the `v-if`s already say which ones
+      depend on which.
     -->
-    <div class="setting-card">
-      <!--
-        Pressing the replay key and getting nothing back is the most uncertain
-        moment in using this app: OBS says nothing useful, its window is behind
-        a game, and the clip takes a few seconds to reach the library. This is
-        the receipt, and it appears only once the clip is actually indexed, so
-        it cannot say "saved" about a buffer that was not running.
-      -->
+    <h3 class="setting-subhead">Saying a clip was saved</h3>
+
+    <!--
+      Pressing the replay key and getting nothing back is the most uncertain
+      moment in using this app: OBS says nothing useful, its window is behind
+      a game, and the clip takes a few seconds to reach the library. This is
+      the receipt, and it appears only once the clip is actually indexed, so
+      it cannot say "saved" about a buffer that was not running.
+    -->
+    <SettingToggle
+      label="Say when a clip is saved"
+      description="A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it."
+      :model-value="settings.clipToast !== false"
+      @update:model-value="saveSettings({ clipToast: $event })"
+    />
+
+    <template v-if="settings.clipToast !== false">
       <SettingToggle
-        flat
-        label="Say when a clip is saved"
-        description="A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it."
-        :model-value="settings.clipToast !== false"
-        @update:model-value="saveSettings({ clipToast: $event })"
+        label="Play a sound with it"
+        description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
+        :model-value="settings.clipToastSound !== false"
+        @update:model-value="saveSettings({ clipToastSound: $event })"
       />
 
-      <template v-if="settings.clipToast !== false">
-        <div class="h-px bg-border" role="presentation"></div>
-
-        <SettingToggle
-          flat
-          label="Play a sound with it"
-          description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
-          :model-value="settings.clipToastSound !== false"
-          @update:model-value="saveSettings({ clipToastSound: $event })"
-        />
-
-        <!--
-          Loudness is the one thing the app cannot work out for itself: the
-          chime plays over a game, so the right level depends on how loud that
-          game is and how the machine is mixed. Fixed, it was too quiet to hear
-          over anything.
-        -->
-        <div
-          v-if="settings.clipToastSound !== false"
-          data-setting="How loud"
-          :class="['flex items-center justify-between gap-4 py-3', settingRing('How loud')]"
-        >
-          <div class="min-w-0">
-            <label class="text-sm font-medium text-foreground">How loud</label>
-            <p class="text-sm text-muted-500 mt-0.5">
-              Press Show me after changing it, to hear where it lands
-            </p>
-          </div>
-          <div class="flex items-center gap-3 shrink-0">
-            <input
-              :value="settings.clipToastVolume ?? 75"
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              class="w-40 accent-accent"
-              aria-label="Chime volume"
-              @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
-            />
-            <span class="w-10 text-right font-mono text-xs tabular-nums text-muted-400">
-              {{ settings.clipToastVolume ?? 75 }}%
-            </span>
-          </div>
+      <!--
+        Loudness is the one thing the app cannot work out for itself: the
+        chime plays over a game, so the right level depends on how loud that
+        game is and how the machine is mixed. Fixed, it was too quiet to hear
+        over anything.
+      -->
+      <div
+        v-if="settings.clipToastSound !== false"
+        data-setting="How loud"
+        :class="['setting-block flex items-start justify-between gap-6', settingRing('How loud')]"
+      >
+        <div class="min-w-0 flex-1">
+          <label class="text-sm font-medium text-foreground">How loud</label>
+          <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+            Press Show me after changing it, to hear where it lands
+          </p>
         </div>
-
-        <SettingSelect
-          flat
-          label="Where it appears"
-          description="On whichever screen your pointer is on, which is the one you are playing on."
-          :model-value="settings.clipToastCorner ?? 'top-right'"
-          :options="CORNERS"
-          @update:model-value="saveSettings({ clipToastCorner: $event as never })"
-        />
-
-        <div class="h-px bg-border" role="presentation"></div>
-
-        <!--
-          A row like the rest, because it was a bare button with two sentences
-          of prose wrapped around it, which read as a paragraph that happened to
-          contain a button.
-        -->
-        <div
-          data-setting="Try it"
-          :class="['flex items-center justify-between gap-4 py-3', settingRing('Try it')]"
-        >
-          <div class="min-w-0">
-            <label class="text-sm font-medium text-foreground">Try it</label>
-            <p class="text-sm text-muted-500 mt-0.5">
-              Shows the card and plays the chime, without recording anything
-            </p>
-          </div>
-          <button type="button" :class="[BUTTON, 'shrink-0']" @click="previewToast">
-            Show me
-          </button>
+        <div class="flex items-center gap-3 shrink-0 mt-0.5">
+          <input
+            :value="settings.clipToastVolume ?? 75"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            class="w-40"
+            aria-label="Chime volume"
+            @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
+          />
+          <span class="w-10 text-right font-mono text-xs tabular-nums text-muted-400">
+            {{ settings.clipToastVolume ?? 75 }}%
+          </span>
         </div>
+      </div>
 
-        <!-- The one thing that can make this look broken, said once and quietly. -->
-        <p class="pt-3 border-t border-border text-sm text-muted-400 max-w-[76ch]">
-          Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
-          games default to, is fine.
-        </p>
-      </template>
-    </div>
+      <SettingSelect
+        label="Where it appears"
+        description="On whichever screen your pointer is on, which is the one you are playing on."
+        :model-value="settings.clipToastCorner ?? 'top-right'"
+        :options="CORNERS"
+        @update:model-value="saveSettings({ clipToastCorner: $event as never })"
+      />
+
+      <!--
+        A row like the rest, because it was a bare button with two sentences
+        of prose wrapped around it, which read as a paragraph that happened to
+        contain a button.
+      -->
+      <div
+        data-setting="Try it"
+        :class="['setting-block flex items-start justify-between gap-6', settingRing('Try it')]"
+      >
+        <div class="min-w-0 flex-1">
+          <label class="text-sm font-medium text-foreground">Try it</label>
+          <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+            Shows the card and plays the chime, without recording anything
+          </p>
+        </div>
+        <button type="button" :class="[BUTTON, 'shrink-0']" @click="previewToast">
+          Show me
+        </button>
+      </div>
+
+      <!-- The one thing that can make this look broken, said once and quietly. -->
+      <p class="setting-block !border-b-0 text-sm text-muted-400 max-w-[76ch]">
+        Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
+        games default to, is fine.
+      </p>
+    </template>
 
     <ObsSetupDialog
       v-model:open="showDialog"

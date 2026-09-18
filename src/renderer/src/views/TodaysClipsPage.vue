@@ -66,7 +66,7 @@ watch(todayClips, async () => {
     <!-- Same reason as the library: this is where the waiting happens. -->
 
     <div class="embla relative group">
-      <div class="embla__viewport" ref="emblaRef">
+      <div class="embla__viewport" data-overflow="intended" ref="emblaRef">
         <div class="embla__container">
           <CarouselSlide
             v-for="(clip, index) in todayClips"
@@ -91,7 +91,11 @@ watch(todayClips, async () => {
     </div>
 
     <nav class="embla-thumbs mt-6" aria-label="Clip thumbnails">
-      <div class="embla-thumbs__viewport px-8 py-2 -mx-8" ref="thumbsRef">
+      <div
+        class="embla-thumbs__viewport px-8 py-2 -mx-8"
+        data-overflow="intended"
+        ref="thumbsRef"
+      >
         <ThumbnailStrip
           :clips="todayClips"
           :selected-index="selectedIndex"

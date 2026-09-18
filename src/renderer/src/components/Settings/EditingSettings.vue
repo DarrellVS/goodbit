@@ -30,25 +30,23 @@ onMounted(load);
       </p>
     </div>
 
-    <div>
-      <!--
-        The other half of this decision, compressing a published copy, is under
-        Connections with the publisher. They read like one setting and are two:
-        a trim replaces the only copy of that moment, and a published copy is a
-        copy. Off here, on there, and the reason is in each description.
-      -->
-      <SettingToggle
-        label="Compress clips when trimming"
-        description="A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size."
-        :model-value="settings.compressTrims === true"
-        @update:model-value="save({ compressTrims: $event })"
-      />
+    <!--
+      The other half of this decision, compressing a published copy, is under
+      Connections with the publisher. They read like one setting and are two:
+      a trim replaces the only copy of that moment, and a published copy is a
+      copy. Off here, on there, and the reason is in each description.
+    -->
+    <SettingToggle
+      label="Compress clips when trimming"
+      description="A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size."
+      :model-value="settings.compressTrims === true"
+      @update:model-value="save({ compressTrims: $event })"
+    />
 
-      <MusicFolderCard />
+    <MusicFolderCard />
 
-      <SettingAnchor label="Suggestions learn from your trims">
-        <SuggestionsCard />
-      </SettingAnchor>
-    </div>
+    <SettingAnchor label="Suggestions learn from your trims">
+      <SuggestionsCard />
+    </SettingAnchor>
   </section>
 </template>

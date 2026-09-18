@@ -2,7 +2,11 @@
 import { computed, shallowRef, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { formatTimeSimple } from '@renderer/utils/timeFormat';
-import { EDITOR_CONSTANTS, getRulerInterval } from '@renderer/constants/editor';
+import {
+  EDITOR_CONSTANTS,
+  getRulerInterval,
+  TIMELINE_ZERO_PX,
+} from '@renderer/constants/editor';
 import type { TimelineAudio, TimelineClip, RulerMark } from '@renderer/types/editor';
 import TimelineTrack from './TimelineTrack.vue';
 import AudioTrackItem from './AudioTrackItem.vue';
@@ -45,10 +49,14 @@ const contentRef = shallowRef<HTMLElement | null>(null);
 const isDraggingRuler = shallowRef(false);
 
 const pixelsPerSecond = computed(() => EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE * props.zoom);
-/** Time zero, in pixels from the scroller's edge. The lanes are inset by it. */
+/** The gutter either side of the lanes, which is where the playhead handle hangs. */
 const offsetPx = EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
-/** The lane itself: exactly as wide as the clips it holds. */
-const laneWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value, 1000));
+/** Room inside a lane, before its first block and after its last. */
+const insetPx = EDITOR_CONSTANTS.TIMELINE_LANE_INSET_PX;
+/** The lane: as wide as the clips it holds, plus that room at both ends. */
+const laneWidth = computed(
+  () => Math.max(props.duration * pixelsPerSecond.value, 1000) + insetPx * 2,
+);
 
 /**
  * The scrolling container, which also has to cover the gutter either side.
@@ -56,13 +64,17 @@ const laneWidth = computed(() => Math.max(props.duration * pixelsPerSecond.value
  * The lanes sit inside this with a 12px margin, so a container sized to the
  * lane left the last clip hanging 24px past its track.
  */
-const timelineWidth = computed(() => laneWidth.value + EDITOR_CONSTANTS.TIMELINE_OFFSET_PX * 2);
+const timelineWidth = computed(() => laneWidth.value + offsetPx * 2);
 const playheadPosition = computed(
-  () => EDITOR_CONSTANTS.TIMELINE_OFFSET_PX + props.currentTime * pixelsPerSecond.value
+  () => TIMELINE_ZERO_PX + props.currentTime * pixelsPerSecond.value,
 );
 
-/** Where the picture ends, in lane pixels, music beyond it is hatched. */
-const videoEndPosition = computed(() => props.videoDuration * pixelsPerSecond.value);
+/**
+ * Where the picture ends, in lane pixels, music beyond it is hatched.
+ *
+ * Inside the lane, so it carries the lane's inset and not the gutter.
+ */
+const videoEndPosition = computed(() => insetPx + props.videoDuration * pixelsPerSecond.value);
 const showOverrunHatch = computed(
   () => props.videoDuration > 0 && props.duration > props.videoDuration + 0.05
 );
@@ -81,7 +93,7 @@ function zoomToFit(): number {
   const scroller = contentRef.value;
   if (!scroller || props.duration <= 0) return props.zoom;
 
-  const usable = scroller.clientWidth - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX * 2;
+  const usable = scroller.clientWidth - TIMELINE_ZERO_PX * 2;
   if (usable <= 0) return props.zoom;
 
   const wanted = usable / props.duration / EDITOR_CONSTANTS.PIXELS_PER_SECOND_BASE;
@@ -132,7 +144,7 @@ function seekFromMousePosition(event: MouseEvent): void {
   if (!ruler) return;
 
   const rect = ruler.getBoundingClientRect();
-  const x = event.clientX - rect.left + ruler.scrollLeft - EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
+  const x = event.clientX - rect.left + ruler.scrollLeft - TIMELINE_ZERO_PX;
   const time = x / pixelsPerSecond.value;
 
   emit('seek', Math.max(0, Math.min(time, props.duration)));
@@ -142,11 +154,9 @@ const rulerMarks = computed((): RulerMark[] => {
   const marks: RulerMark[] = [];
   const interval = getRulerInterval(props.zoom);
   const pps = pixelsPerSecond.value;
-  const offset = EDITOR_CONSTANTS.TIMELINE_OFFSET_PX;
-
   for (let i = 0; i <= Math.ceil(props.duration); i += interval) {
     marks.push({
-      position: offset + i * pps,
+      position: TIMELINE_ZERO_PX + i * pps,
       label: formatTimeSimple(i),
     });
   }
@@ -223,6 +233,7 @@ function handleRulerMouseUp(): void {
         <div
           v-for="mark in rulerMarks"
           :key="mark.position"
+          data-ruler-mark
           class="absolute top-0 bottom-0 w-0 border-l border-line-strong"
           :style="{ left: `${mark.position}px` }"
         >

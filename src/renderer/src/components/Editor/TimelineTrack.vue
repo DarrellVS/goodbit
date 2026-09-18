@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onBeforeUnmount } from 'vue';
+import { EDITOR_CONSTANTS } from '@renderer/constants/editor';
 import { Icon } from '@iconify/vue';
 import { formatTime } from '@renderer/utils/timeFormat';
 import { frameStripUrl } from '@renderer/utils/mediaUrl';
@@ -36,7 +37,8 @@ const dragStartX = ref(0);
 const dragInitialValue = ref(0);
 
 const style = computed(() => ({
-  left: `${props.clip.startTime * props.pixelsPerSecond}px`,
+  // The lane's own inset, so a clip at 0:00 does not sit on its corner.
+  left: `${EDITOR_CONSTANTS.TIMELINE_LANE_INSET_PX + props.clip.startTime * props.pixelsPerSecond}px`,
   width: `${props.clip.duration * props.pixelsPerSecond}px`,
 }));
 

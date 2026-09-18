@@ -91,7 +91,7 @@ onMounted(() => {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 modal-overlay-animate" />
       <DialogContent
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-full max-w-md max-h-[80vh] flex flex-col outline-hidden modal-content-animate"
       >

@@ -254,42 +254,14 @@ function submit(): void {
     </div>
 
     <!--
-      One line, and it changes rather than stacking.
+      Nothing under the row.
 
-      What it says depends on what is true: that this range is already marked,
-      that it sits on top of one that is, or which one is being edited.
-
-      **The sentence that defines the feature is not conditional any more.**
-      "A GoodBit names a range and leaves the recording whole, unlike a trim,
-      which replaces it" was the empty state, and a walkthrough user called it
-      the single most useful sentence in the app. It then disappeared the
-      moment they made their first mark, which is exactly when they started
-      needing to know that this button and the orange one above it do opposite
-      things to the file. So it is always there, one rung quieter, at the end
-      of whatever else this line is saying rather than on a line of its own.
+      There were two paragraphs here: a conditional footnote about overlaps and
+      a standing sentence explaining what a GoodBit is. Both are gone on your
+      instruction. What they were covering is covered anyway: the button is
+      disabled with a title when the range is already marked, and the two
+      buttons say which one keeps the recording.
     -->
-    <p class="text-xs text-muted-500">
-      <template v-if="duplicate">
-        This exact range is already marked. Move a handle, or edit the one that is
-        there.
-      </template>
-      <template v-else-if="clashes.length > 0">
-        Overlaps {{ clashes.map(goodBitLabel).join(', ') }}. That is allowed: a
-        long moment and the best second of it are both worth keeping.
-      </template>
-      <template v-else-if="selected">
-        Drag the handles to move this one, or press another band on the strip.
-      </template>
-      <template v-else-if="count > 0">
-        {{ count }} marked on this clip. Press one below, or a band on the strip,
-        to change it.
-      </template>
-      <span class="text-muted-400">
-        A GoodBit names a range and leaves the recording whole, unlike a trim, which
-        replaces it.
-      </span>
-    </p>
-
     <!--
       What is already marked, listed where it was made.
 
@@ -324,8 +296,15 @@ function submit(): void {
             : 'material-symbols:auto-awesome-rounded'"
           class="size-3.5 shrink-0 block"
         />
-        <span class="truncate">{{ goodBitLabel(goodBit) }}</span>
-        <span class="shrink-0 font-mono tabular-nums text-muted-400">
+        <span class="truncate" :class="goodBit.name ? '' : 'font-mono tabular-nums'">
+          {{ goodBitLabel(goodBit) }}
+        </span>
+        <!--
+          Only when it adds something. `goodBitLabel` already falls back to the
+          range for a GoodBit with no name, which is the normal case, so this
+          read `0:04 – 0:06 0:04 – 0:06`.
+        -->
+        <span v-if="goodBit.name" class="shrink-0 font-mono text-xs tabular-nums text-muted-400">
           {{ rangeLabel(goodBit.startSec, goodBit.endSec) }}
         </span>
       </button>

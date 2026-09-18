@@ -110,7 +110,7 @@ function runActive(): void {
 <template>
   <DialogRoot :open="open" @update:open="emit('update:open', $event)">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 modal-overlay-animate" />
       <DialogContent
         class="fixed top-[15%] left-1/2 -translate-x-1/2 z-50 bg-card rounded-md shadow-pop border border-border w-[92vw] max-w-xl flex flex-col outline-hidden overflow-hidden panel-drop-animate"
       >

@@ -32,18 +32,16 @@ const config = useConfiguration();
       </p>
     </div>
 
-    <div>
-      <SettingAnchor label="Library backups">
-        <BackupsCard />
-      </SettingAnchor>
+    <SettingAnchor label="Library backups">
+      <BackupsCard />
+    </SettingAnchor>
 
-      <RescanCard />
+    <RescanCard />
 
-      <SettingToggle
-        v-model="config.public.value.confirmBeforeDelete"
-        label="Confirm Before Delete"
-        description="Ask for confirmation when deleting clips"
-      />
-    </div>
+    <SettingToggle
+      v-model="config.public.value.confirmBeforeDelete"
+      label="Confirm Before Delete"
+      description="Ask for confirmation when deleting clips"
+    />
   </section>
 </template>

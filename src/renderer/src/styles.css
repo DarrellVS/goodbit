@@ -127,13 +127,16 @@
   /*
    * The veil behind a modal, which is not the scrim over a frame.
    *
-   * Those were one token, at the frame's own 58%, and 58% of black over the
-   * page is opaque enough that an 8px blur behind it cannot be seen: the
-   * screen reads as having been dimmed rather than pushed out of focus, which
-   * is what you said it looked like. This one is lighter, so the blur is the
-   * effect and the dimming only supports it, and it follows the palette,
+   * Those were one token at the frame's own 58%, which is neither weight:
+   * a modal wants more in the dark palette and much less in the light one,
    * because the same veil that is right over a dark page is a bruise over a
    * light one.
+   *
+   * **Nothing behind a modal is blurred.** There is no `backdrop-filter` in
+   * the design at all: `.b-scrim` is an inset box with a background and that
+   * is the whole of it. So the dimming is the only separation there is, and it
+   * carries the design's own numbers rather than a lighter value chosen to let
+   * a blur show through.
    */
   --color-scrim-modal: var(--scrim-modal);
   --color-scrim-soft: rgb(9 8 7 / 0.34);
@@ -389,7 +392,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
    */
   --line-strong: 35 15.4% 75.9%;  /* #cbc3b8 */
 
-  --scrim-modal: rgb(28 26 24 / 0.26);
+  --scrim-modal: rgb(28 26 24 / 0.32);
 }
 
 .dark {
@@ -430,7 +433,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
   /* See the note in `:root`. One rung up from `--border`, in this palette. */
   --line-strong: 30 8.2% 23.9%;   /* #423d38 */
 
-  --scrim-modal: rgb(8 7 6 / 0.46);
+  --scrim-modal: rgb(8 7 6 / 0.72);
 }
 
 html, body, #app { height: 100%; }
@@ -498,6 +501,27 @@ body {
 .setting-card > p {
   @apply text-sm text-muted-500 mt-1 max-w-[76ch];
 }
+/*
+ * A subheading inside a settings section, and the row directly under it.
+ *
+ * Small caps in the muted ladder, like every other label in this design that
+ * names a group rather than a thing. It was `font-medium text-foreground` at
+ * body size, which is the same weight as the row labels it was meant to be
+ * heading, with its own padding chosen by hand in each of the two places that
+ * had one.
+ *
+ * The row under it gives up most of its top padding, because a label belongs
+ * to what it labels: the full 20px put the heading nearer the row above it
+ * than the one it names.
+ */
+.setting-subhead {
+  @apply pt-7 pb-1 text-xs font-medium uppercase tracking-label text-muted-400;
+}
+.setting-subhead + .setting-block,
+.setting-subhead + .setting-card {
+  @apply pt-2;
+}
+
 .setting-inset {
   @apply mt-3.5 px-4 py-3.5 rounded-sm bg-muted-100 text-sm text-muted-600;
 }

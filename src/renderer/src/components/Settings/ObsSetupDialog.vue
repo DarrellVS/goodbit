@@ -159,7 +159,7 @@ function notNow(): void {
   <div
     v-if="open"
     data-testid="obs-setup"
-    class="fixed inset-0 z-100 flex items-center justify-center bg-scrim-modal backdrop-blur-md p-6"
+    class="fixed inset-0 z-100 flex items-center justify-center bg-scrim-modal p-6"
     @click.self="close"
   >
     <div class="w-full max-w-2xl max-h-full flex flex-col bg-card rounded-lg border border-border shadow-pop">

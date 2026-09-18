@@ -257,7 +257,7 @@ async function onTrimmed(): Promise<void> {
 <template>
   <DialogRoot v-model:open="isOpen">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 backdrop-blur-md modal-overlay-animate" />
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 modal-overlay-animate" />
       <!--
         `:key` is what makes this two modals rather than one that changes its
         mind: Vue sees a different element, so the old panel runs its leave and

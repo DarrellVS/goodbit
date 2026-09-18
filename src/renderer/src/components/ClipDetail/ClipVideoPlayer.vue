@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { videoUrl as videoUrlFor, thumbUrl as thumbUrlFor } from '@renderer/utils/mediaUrl';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useGoodBits } from '@renderer/composables/clips/useGoodBits';
+import { useSpaceToToggle } from '@renderer/composables/media/useSpaceToToggle';
 import { timecode } from '@renderer/utils/time';
 import type { Clip } from '@renderer/types/clip';
 
@@ -242,6 +243,15 @@ watch(videoUrl, () => {
   duration.value = 0;
   buffered.value = 0;
 });
+
+/*
+ * Space, from anywhere in the panel.
+ *
+ * The button under the picture had it and nothing else did, so the way to
+ * pause was to find a 36px target. It is scoped to this panel and skipped
+ * whenever space already belongs to something focused: see the composable.
+ */
+useSpaceToToggle(togglePlay, stage);
 
 defineExpose({
   videoElement,

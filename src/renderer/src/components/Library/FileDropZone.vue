@@ -21,7 +21,7 @@ defineProps<Props>();
   >
     <div
       v-if="isDragging || isUploading"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim-modal backdrop-blur-md"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-scrim-modal"
       :class="{ 'pointer-events-none': isUploading }"
     >
       <div

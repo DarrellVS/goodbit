@@ -130,17 +130,24 @@ test.describe('the editor', () => {
       const lane = document.querySelector('[data-lane="video"]');
       const playhead = document.querySelector('[data-playhead]');
 
-      // Each ruler mark is a zero width box holding a 1px tick and a label.
-      const marks = Array.from(document.querySelectorAll('div')).filter(
-        (node) => node.querySelector(':scope > .w-px') && node.querySelector(':scope > span'),
-      );
+      /*
+       * Each ruler mark is a zero width box whose left border *is* the tick.
+       *
+       * This used to be "a div with a `.w-px` child and a `span` child", which
+       * is the second time a test in this file has been blinded by a style
+       * change: the tick became a `border-left` and the query stopped matching
+       * anything. The only thing between that and a silently green test was
+       * the assertion below that a tick is measurable at all. It has a name
+       * now, like the playhead and the lanes.
+       */
+      const marks = Array.from(document.querySelectorAll('[data-ruler-mark]'));
 
       return {
         lane: left(lane),
         block: left(lane?.querySelector('[class*="absolute"]')),
         playhead: left(playhead),
-        firstTick: left(marks[0]?.querySelector('.w-px')),
-        secondTick: left(marks[1]?.querySelector('.w-px')),
+        firstTick: left(marks[0]),
+        secondTick: left(marks[1]),
       };
     });
 
@@ -151,10 +158,19 @@ test.describe('the editor', () => {
 
     const zero = at.playhead as number;
 
-    expect(
-      Math.abs((at.lane as number) - zero),
-      'the lane should start where the playhead sits at time zero',
-    ).toBeLessThanOrEqual(1);
+    /*
+     * The lane starts *before* time zero, by its own inset.
+     *
+     * `TIMELINE_LANE_INSET_PX` is the room inside a lane so a clip at 0:00 does
+     * not sit against the lane's rounded corner. It cannot be padding, because
+     * an absolutely positioned block resolves `left` against the padding box
+     * and would move with it, so the origin moves instead and the lane grows by
+     * it at both ends. Which means the number has to be added in six places,
+     * and this is the check that all six agree.
+     */
+    const inset = zero - (at.lane as number);
+    expect(inset, 'the lane should start a little before time zero').toBeGreaterThanOrEqual(4);
+    expect(inset, 'the lane should not start a long way before time zero').toBeLessThanOrEqual(16);
 
     expect(
       Math.abs((at.firstTick as number) - zero),
