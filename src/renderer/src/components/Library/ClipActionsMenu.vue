@@ -103,7 +103,7 @@ async function handleMoveToGame(targetGame: string) {
       <MenubarTrigger
         v-else
         title="More actions"
-        class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm bg-scrim text-on-video hover:bg-scrim-strong outline-none focus-visible:focus-ring transition-[opacity,background-color] duration-150 cursor-pointer"
+        class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-500 hover:text-foreground hover:bg-muted-100 outline-none focus-visible:focus-ring transition-[opacity,color,background-color] duration-150 cursor-pointer"
       >
         <Icon icon="material-symbols:more-vert" class="size-4 shrink-0 block" />
       </MenubarTrigger>

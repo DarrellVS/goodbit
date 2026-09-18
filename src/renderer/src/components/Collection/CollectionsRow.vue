@@ -103,7 +103,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
       v-if="!collections.length && !showCreateInput"
       type="button"
       class="flex h-20 w-44 items-center justify-center gap-2 rounded-md border border-dashed border-border text-sm text-muted-500 hover:border-line-strong hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
-      title="Make a collection, then drag clips onto it"
+      title="Make a collection, then add clips to it from a clip's own menu"
       @click="actions.startCreateCollection"
     >
       <Icon icon="material-symbols:add" class="size-4 shrink-0 block" />

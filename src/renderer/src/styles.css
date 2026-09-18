@@ -554,6 +554,22 @@ body {
 
 .input { @apply w-full rounded-md border border-border bg-card px-3 h-9 outline-hidden focus:ring-2 focus:ring-ring/70 transition-colors; }
 
+/*
+ * `content-visibility: auto` was tried here and is deliberately not kept.
+ *
+ * It is the obvious answer to a long list and it bought nothing measurable:
+ * a thousand cards went from 912 MB to 875 MB of renderer, inside the run to
+ * run spread, because the cost is not layout and paint. It also made the
+ * page's height an estimate that firms up as cards render, so the footer
+ * moved under the pointer while it was being aimed at.
+ *
+ * What the memory actually is, measured through the protocol rather than
+ * `performance.memory`, which reports a quantised cached value: 237 MB of JS
+ * heap and 27,556 event listeners at a thousand clips, against 49 MB and 3,911
+ * at fifty. That is about 27 listeners and 0.19 MB of heap per card, and the
+ * card's own components are what hold them. So the fix is to not mount them
+ * for a card nobody can see: see `useNearViewport`.
+ */
 .clip-card { @apply transition-opacity duration-150; }
 
 /* Subtle custom scrollbar */

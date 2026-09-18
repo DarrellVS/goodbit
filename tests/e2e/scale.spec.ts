@@ -23,25 +23,51 @@ import { launchApp, makeVideo, type TestApp } from './app';
  * `npx playwright test tests/e2e/scale.spec.ts` with `GOODBIT_SCALE=1`.
  */
 
-const HOW_MANY = 300;
+/**
+ * How many clips to copy in. `GOODBIT_SCALE_COUNT` overrides it.
+ *
+ * Three hundred was the number in the issue. A thousand is the number the
+ * person who uses this said his library might genuinely reach, which is the
+ * one that decides whether the DOM has to be virtualised, so it is a knob
+ * rather than a constant.
+ */
+const HOW_MANY = Number(process.env.GOODBIT_SCALE_COUNT ?? 300);
 const RUN = process.env.GOODBIT_SCALE === '1';
 
 interface Sample {
   loaded: number;
+  /** Media elements alive, against cards on the page. */
+  videos: number;
   nodes: number;
   heapMb: number;
+  /** The real JS heap, read through the protocol rather than from the page. */
+  cdpHeapMb: number;
+  listeners: number;
   rendererMb: number;
+  gpuMb: number;
+  totalMb: number;
   /** The worst frame during a scroll of one window, in ms. */
   worstFrameMs: number;
 }
 
-test.describe(RUN ? 'the cost of a library that does not page' : 'scale (set GOODBIT_SCALE=1)', () => {
-  test.skip(!RUN, 'A measurement, not a gate. GOODBIT_SCALE=1 to run it.');
+/*
+ * Declared only when asked for, rather than declared and skipped.
+ *
+ * `RELEASING.md` requires the gate to show zero skips and means it: a skip that
+ * is really a wrong path looks exactly like a skip that is really missing data,
+ * and both read as success. This is a bench rather than a guard, so when it is
+ * switched off it contributes no tests at all.
+ */
+if (RUN) {
+  scaleBench();
+}
 
+function scaleBench(): void {
+  test.describe('the cost of a library that does not page', () => {
   let ctx: TestApp;
 
   test.beforeAll(async () => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_800_000);
     ctx = await launchApp();
 
     /*
@@ -66,7 +92,7 @@ test.describe(RUN ? 'the cost of a library that does not page' : 'scale (set GOO
      * the folder, and a sleep long enough to be safe is a sleep wasted on
      * every run after that.
      */
-    for (let attempt = 0; attempt < 120; attempt++) {
+    for (let attempt = 0; attempt < 600; attempt++) {
       const total = await ctx.page.evaluate(async () => {
         const answer = await window.goodbit!.apiRequest({
           method: 'GET',
@@ -85,7 +111,7 @@ test.describe(RUN ? 'the cost of a library that does not page' : 'scale (set GOO
   });
 
   test('scrolling to the bottom, a page at a time', async () => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_800_000);
 
     /*
      * Away and back, so the list is fetched after the scan rather than during
@@ -101,12 +127,55 @@ test.describe(RUN ? 'the cost of a library that does not page' : 'scale (set GOO
     });
     await ctx.page.waitForTimeout(3500);
 
-    const rendererMb = async (): Promise<number> => {
+    /*
+     * Every process, not only the renderer.
+     *
+     * The first version of this reported the tab alone and said 942 MB at a
+     * thousand clips, while Task Manager on a real library showed 1424 MB
+     * across the group at 266. The missing third is the GPU process, which
+     * holds the textures for everything that has been painted, so it belongs
+     * in the number this decides on.
+     */
+    /*
+     * The heap and the DOM counters, through the protocol.
+     *
+     * `performance.memory` reported 57.5 MB at fifty clips and 57.5 MB at a
+     * thousand, which is not a measurement, it is a quantised cached value.
+     * `Runtime.getHeapUsage` and `Memory.getDOMCounters` are the real ones,
+     * and between them they say whether a card's cost is JavaScript or DOM.
+     */
+    const cdp = await ctx.app.context().newCDPSession(ctx.page);
+
+    const inspect = async (): Promise<{ cdpHeapMb: number; listeners: number }> => {
+      const heap = (await cdp.send('Runtime.getHeapUsage')) as { usedSize: number };
+      const counters = (await cdp.send('Memory.getDOMCounters')) as {
+        nodes: number;
+        jsEventListeners: number;
+      };
+      return {
+        cdpHeapMb: Math.round((heap.usedSize / 1024 / 1024) * 10) / 10,
+        listeners: counters.jsEventListeners,
+      };
+    };
+
+    const memory = async (): Promise<{ rendererMb: number; gpuMb: number; totalMb: number }> => {
       const metrics = await ctx.app.evaluate(async ({ app }) => app.getAppMetrics());
-      const renderer = metrics
-        .filter((entry) => entry.type === 'Tab')
-        .sort((a, b) => (b.memory?.workingSetSize ?? 0) - (a.memory?.workingSetSize ?? 0))[0];
-      return Math.round(((renderer?.memory?.workingSetSize ?? 0) / 1024) * 10) / 10;
+      const mb = (kb: number): number => Math.round((kb / 1024) * 10) / 10;
+      const biggest = (type: string): number =>
+        Math.max(
+          0,
+          ...metrics
+            .filter((entry) => entry.type === type)
+            .map((entry) => entry.memory?.workingSetSize ?? 0),
+        );
+
+      return {
+        rendererMb: mb(biggest('Tab')),
+        gpuMb: mb(biggest('GPU')),
+        totalMb: mb(
+          metrics.reduce((sum, entry) => sum + (entry.memory?.workingSetSize ?? 0), 0),
+        ),
+      };
     };
 
     const sample = async (): Promise<Sample> => {
@@ -140,7 +209,17 @@ test.describe(RUN ? 'the cost of a library that does not page' : 'scale (set GOO
 
         return {
           nodes: document.querySelectorAll('*').length,
-          cards: document.querySelectorAll('article.clip-card').length,
+          /*
+            * Slots, not cards.
+            *
+            * A slot is one clip's place in the grid and is always there; the
+            * card inside it is mounted only while it is near the window, which
+            * is the whole point of the change this measures. Counting cards
+            * would report the size of the window rather than the length of the
+            * list.
+            */
+          cards: document.querySelectorAll('[data-clip-slot]').length,
+          videos: document.querySelectorAll('[data-clip-slot] video').length,
           heapMb: Math.round(((heap?.usedJSHeapSize ?? 0) / 1024 / 1024) * 10) / 10,
           // The first gap is the delay before the loop starts, not a frame.
           worstFrameMs: Math.round(Math.max(...gaps.slice(1)) * 10) / 10,
@@ -149,47 +228,102 @@ test.describe(RUN ? 'the cost of a library that does not page' : 'scale (set GOO
 
       return {
         loaded: inPage.cards,
+        videos: inPage.videos,
         nodes: inPage.nodes,
         heapMb: inPage.heapMb,
-        rendererMb: await rendererMb(),
+        ...(await memory()),
+        ...(await inspect()),
         worstFrameMs: inPage.worstFrameMs,
       };
     };
 
     const samples: Sample[] = [await sample()];
 
-    // Down to the bottom, letting each page arrive before measuring the next.
-    for (let page = 0; page < 12; page++) {
-      const more = ctx.page.getByRole('button', { name: /^Load more$/ });
-      if (!(await more.count())) break;
-      await more.click();
-      await ctx.page.waitForTimeout(2500);
-      samples.push(await sample());
+    /*
+     * Down to the bottom by scrolling, not by pressing.
+     *
+     * Pressing Load more is what a keyboard user does and it is covered by
+     * `infiniteScroll.spec.ts`. Here it was the wrong instrument: with
+     * `content-visibility` the page's height is an estimate that firms up as
+     * cards render, so the button moves while Playwright is aiming at it and
+     * the click lands on the container instead. Scrolling is also what the
+     * thing being measured actually costs.
+     */
+    for (let step = 0; step < Math.ceil(HOW_MANY / 10) + 10; step++) {
+      await ctx.page.evaluate(() => {
+        const main = document.querySelector('main');
+        if (main) main.scrollTop = main.scrollHeight;
+      });
+      await ctx.page.waitForTimeout(1200);
+
+      const next = await sample();
+      const grew = next.loaded > samples[samples.length - 1].loaded;
+      samples.push(next);
+
+      if (next.loaded >= HOW_MANY) break;
+      // Two samples at the same length means the list has stopped growing.
+      if (!grew) break;
     }
 
+    /*
+     * And one more once it has settled.
+     *
+     * Every row above is taken while the list is still being scrolled through,
+     * so hundreds of cards have just been mounted and unmounted and the
+     * collector is behind. The question this bench answers is what it costs to
+     * *be* at the bottom of a long library, not what it costs to arrive there
+     * at speed, and those differ by a couple of hundred megabytes of garbage.
+     */
+    await cdp.send('HeapProfiler.collectGarbage');
+    await ctx.page.waitForTimeout(3000);
+    const settled = await sample();
+
     console.log('');
-    console.log('clips  nodes   heap MB  renderer MB  worst frame ms');
-    for (const row of samples) {
+    console.log(
+      'clips  videos  nodes   heap MB  cdp heap  listeners  renderer MB  gpu MB  all MB  worst ms',
+    );
+    const every = samples.length > 12 ? Math.ceil(samples.length / 10) : 1;
+    for (const [index, row] of samples.entries()) {
+      if (index % every !== 0 && index !== samples.length - 1) continue;
       console.log(
-        `${String(row.loaded).padStart(5)}  ${String(row.nodes).padStart(5)}  ` +
-          `${String(row.heapMb).padStart(7)}  ${String(row.rendererMb).padStart(11)}  ` +
+        `${String(row.loaded).padStart(5)}  ${String(row.videos).padStart(6)}  ` +
+          `${String(row.nodes).padStart(5)}  ` +
+          `${String(row.heapMb).padStart(7)}  ${String(row.cdpHeapMb).padStart(8)}  ` +
+          `${String(row.listeners).padStart(9)}  ${String(row.rendererMb).padStart(11)}  ` +
+          `${String(row.gpuMb).padStart(6)}  ${String(row.totalMb).padStart(6)}  ` +
           `${String(row.worstFrameMs).padStart(14)}`,
       );
     }
     console.log('');
 
-    const last = samples[samples.length - 1];
+    console.log(
+      `settled: ${settled.loaded} clips, ${settled.nodes} nodes, ` +
+        `${settled.cdpHeapMb} MB heap, ${settled.listeners} listeners, ` +
+        `${settled.rendererMb} MB renderer, ${settled.totalMb} MB across every process`,
+    );
+    console.log('');
+
+    const last = settled;
     expect(samples.length, 'the list should have grown at least once').toBeGreaterThan(1);
     expect(last.loaded, 'the list should hold more than one page by the end').toBeGreaterThan(50);
 
     /*
-     * The bar the issue sets, in both directions.
+     * The bar, in both directions, and on the renderer rather than the total.
      *
-     * A worst frame over 50ms is a visible stutter, and a renderer over a
-     * gigabyte is the case that would make virtualisation worth its own
-     * complexity. Failing here is the answer "yes, virtualise", not a defect.
+     * The total across every process starts at 876 MB with fifty clips on
+     * screen: the GPU process alone is 180 MB before anything is scrolled and
+     * the browser process and four utilities make up most of the rest. None of
+     * that moves with the length of the list, so asserting on it is asserting
+     * on Electron.
+     *
+     * What moves is the renderer, and what it is allowed to cost is a judgement
+     * rather than a law: 600 MB at a thousand clips is roughly twice what fifty
+     * cost, on a machine where the app is one window. Failing either of these is
+     * the answer "the DOM has to be windowed harder", not a defect.
      */
     expect(last.worstFrameMs, `worst frame at ${last.loaded} clips`).toBeLessThan(50);
-    expect(last.rendererMb, `renderer working set at ${last.loaded} clips`).toBeLessThan(1024);
+    expect(last.rendererMb, `the renderer at ${last.loaded} clips`).toBeLessThan(600);
+    expect(last.nodes, `DOM nodes at ${last.loaded} clips`).toBeLessThan(4000);
   });
-});
+  });
+}

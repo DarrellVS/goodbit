@@ -174,7 +174,14 @@ function discard(): void {
       preview toggle were on two rows with a border between them, which read as
       a panel inside a panel rather than as one thing.
     -->
-    <div class="flex items-center gap-3 mb-3">
+    <!--
+      It wraps. The row holds a title, six formatting buttons, a preview
+      toggle, Discard and Save, and in half the width of the picture column
+      that is wider than the column: everything is `shrink-0`, so it did not
+      shrink, it overflowed, and the Save button ended up painted underneath
+      the column beside it where nothing could press it.
+    -->
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
       <h2 class="text-sm font-medium text-muted-600 shrink-0">Notes &amp; Annotations</h2>
 
       <!--

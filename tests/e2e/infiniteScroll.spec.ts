@@ -78,7 +78,14 @@ test.describe('the library loads as you scroll', () => {
     await ctx?.close();
   });
 
-  const cards = () => ctx.page.locator('article.clip-card');
+  /**
+   * One per clip in the list.
+   *
+   * `[data-clip-slot]` rather than `article.clip-card`: a slot is a clip's
+   * place in the grid and is always there, while the card inside it is only
+   * mounted near the window. Counting cards would count the window.
+   */
+  const cards = () => ctx.page.locator('[data-clip-slot]');
   const loadMore = () => ctx.page.getByRole('button', { name: /^Load more$/ });
 
   /**
@@ -131,12 +138,18 @@ test.describe('the library loads as you scroll', () => {
     await expect(loadMore()).toHaveCount(1);
     await expect(ctx.page.getByText(`${settled} of ${TOTAL}`)).toBeVisible();
 
-    // What is on screen now has to still be on screen, in the same order.
-    const before = await cards().first().textContent();
+    /*
+     * What is on screen now has to still be on screen, in the same order.
+     *
+     * By the slot's clip id rather than by its text: a slot holds a card only
+     * while it is near the window, so reading the first one's text after the
+     * page has moved compares a rendered card against an empty box.
+     */
+    const before = await cards().first().getAttribute('data-clip-slot');
 
     await loadMore().click();
     await expect.poll(async () => cards().count(), { timeout: 10_000 }).toBeGreaterThan(settled);
-    expect(await cards().first().textContent()).toBe(before);
+    expect(await cards().first().getAttribute('data-clip-slot')).toBe(before);
   });
 
   test('the end of the list says so', async () => {

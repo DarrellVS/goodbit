@@ -6,7 +6,7 @@ import type { Clip } from '@renderer/types/clip';
 import { useClipHover } from '@renderer/composables/clips/useClipHover';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useClipGrouping } from '@renderer/composables/library/useClipGrouping';
-import ClipCard from './ClipCard.vue';
+import ClipCardSlot from './ClipCardSlot.vue';
 
 /** Structural shape of one grouped day, as `useClipGrouping` builds it. */
 interface DayGroup {
@@ -129,11 +129,11 @@ function time(clip: Clip): number {
       </div>
 
       <div class="relative">
-        <div 
+        <div
           class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
           :class="config.public.value.compactMode ? 'gap-2' : 'gap-4'"
         >
-          <ClipCard
+          <ClipCardSlot
             v-for="clipWithIndex in group.clips"
             :key="clipWithIndex.clip.id"
             :clip="clipWithIndex.clip"

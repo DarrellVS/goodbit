@@ -59,7 +59,9 @@ test.describe('the window keeps up with the watcher', () => {
 
     // And the clips themselves, not just the game in the sidebar.
     const shown = await ctx.page.evaluate(() =>
-      document.querySelectorAll('[data-clip-id], .clip-card, img[src^="goodbit://media/thumb"]').length,
+      document.querySelectorAll(
+        '[data-clip-id], [data-clip-slot], img[src^="goodbit://media/thumb"]',
+      ).length,
     );
     expect(shown).toBeGreaterThan(0);
   });

@@ -402,7 +402,17 @@ async function onTrimmed(): Promise<void> {
                   you noticed about this clip, once as a range and once as a
                   sentence.
                 -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-6 items-start">
+                <!--
+                  Side by side only when there is room for both.
+
+                  `lg` is 1024px of *window*, and what matters is the width of
+                  this column: the picture column loses 336px to the actions
+                  column beside it and 48px to the modal's own padding, so at
+                  `lg` each of these two gets about 300px, which is narrower
+                  than the notes toolbar. `xl` is where the split is an
+                  improvement rather than a squeeze.
+                -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-6 items-start">
                   <ClipGoodBitsSection :clip="clip" @play="playGoodBit" />
 
                   <ClipNotesSection

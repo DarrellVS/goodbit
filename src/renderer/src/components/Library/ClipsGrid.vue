@@ -2,7 +2,7 @@
 import type { Clip } from '@renderer/types/clip';
 import { useClipHover } from '@renderer/composables/clips/useClipHover';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
-import ClipCard from './ClipCard.vue';
+import ClipCardSlot from './ClipCardSlot.vue';
 
 interface Props {
   clips: Clip[];
@@ -27,12 +27,12 @@ const { handleClipHover } = useClipHover();
 </script>
 
 <template>
-  <section 
+  <section
     class="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))]"
     :class="config.public.value.compactMode ? 'gap-2' : 'gap-4'"
     aria-label="Video clips grid"
   >
-    <ClipCard
+    <ClipCardSlot
       v-for="(clip, index) in clips"
       :key="clip.id"
       :clip="clip"

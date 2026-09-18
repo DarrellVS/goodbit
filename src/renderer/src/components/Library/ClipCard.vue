@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { sharedCardHeight } from '@renderer/composables/media/useNearViewport';
 import { Icon } from '@iconify/vue';
 import { useDragAndDrop } from '@renderer/composables/editor/useDragAndDrop';
 import { beginOsDrag } from '@renderer/composables/clips/useOsDrag';
@@ -51,16 +52,6 @@ const collectionsStore = useCollectionsStore();
 const toastStore = useToastStore();
 const gamesStore = useGamesStore();
 
-/** `M:SS`, for the chip on the picture. Empty when the scan has no length yet. */
-const durationLabel = computed(() => {
-  const seconds = props.clip.durationSec;
-  if (!seconds || seconds <= 0) return '';
-  const whole = Math.round(seconds);
-  const mins = Math.floor(whole / 60);
-  const secs = whole % 60;
-  return `${mins}:${String(secs).padStart(2, '0')}`;
-});
-
 /**
  * The game's own name where it has been given one, the folder's otherwise.
  *
@@ -72,7 +63,7 @@ const gameDisplayName = computed(() => {
   const known = gamesStore.items.find((g) => g.game === props.clip.game);
   return known?.displayName || props.clip.game;
 });
-const { startDrag, endDrag } = useDragAndDrop();
+const { endDrag } = useDragAndDrop();
 const { open: openClip } = useClipDetail();
 
 const isSelected = computed(() => batchStore.isSelected(props.clip.id));
@@ -118,6 +109,22 @@ const scrubLabelLeft = computed(() => `${Math.min(92, Math.max(8, scrubProgress.
  * height is whatever the grid gave it.
  */
 const previewEl = ref<HTMLElement | null>(null);
+
+/**
+ * The card's own box, measured so that an empty slot can stand in for it.
+ *
+ * `ClipCardSlot` only mounts this component while the clip is near the window,
+ * and the slot it leaves behind has to be exactly as tall or the scrollbar
+ * moves under the pointer. Every card in a view is the same height by
+ * construction, so whichever ones are rendered keep the shared number honest.
+ */
+const cardEl = ref<HTMLElement | null>(null);
+const cardHeight = sharedCardHeight();
+
+onMounted(() => {
+  const height = cardEl.value?.offsetHeight ?? 0;
+  if (height > 0 && Math.abs(height - cardHeight.value) > 1) cardHeight.value = height;
+});
 const scrubStripStyle = computed(() => {
   const band = scrubBand(previewEl.value?.clientHeight ?? 0);
   return { bottom: `${band.bottomPx}px`, height: `${band.heightPx}px` };
@@ -212,21 +219,24 @@ onBeforeUnmount(() => {
   video.removeEventListener('seeked', readPlayhead);
 });
 
-function handleDragStart(event: DragEvent) {
-  startDrag({ type: 'clip', clipId: props.clip.id }, event);
-}
-
 /**
  * Drag the file itself out of the window, into Discord, Explorer, anything.
  *
- * Its own grip rather than the card body, because the card body already drags:
- * `handleDragStart` moves a clip into a collection, and `webContents.startDrag`
- * takes the drag over completely. One element cannot do both, so the two live
- * next to each other and the pointer says which is which.
+ * **The whole card, which is a trade rather than a free win.**
+ * `webContents.startDrag` takes the drag over completely: it cancels the web
+ * drag and runs a nested message loop in the shell, so one element cannot be
+ * both a file source and an HTML5 drag source. The card body used to be the
+ * second of those, carrying a clip onto a collection tile, and it cannot be
+ * both either.
+ *
+ * Dragging a clip out is the thing people reach for without being told, and it
+ * was behind a 32px grip that had to be found first. Adding one to a
+ * collection is in the card's own menu, where it is findable rather than
+ * discoverable, so the tile no longer offers to be dropped on.
  *
  * `preventDefault` first, then hand off. The web drag has to be cancelled or
- * the shell ends up running two at once and neither finishes; this is the shape
- * Electron documents.
+ * the shell ends up running two at once and neither finishes; this is the
+ * shape Electron documents.
  */
 function handleDragOut(event: DragEvent) {
   event.preventDefault();
@@ -264,6 +274,7 @@ function handleCardClick(event: MouseEvent) {
 
 <template>
   <article
+    ref="cardEl"
     draggable="true"
     :class="[
       'clip-card group relative rounded-md cursor-pointer outline-none',
@@ -274,7 +285,7 @@ function handleCardClick(event: MouseEvent) {
     ]"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
-    @dragstart="handleDragStart"
+    @dragstart="handleDragOut"
     @dragend="endDrag"
     @click="handleCardClick"
   >
@@ -372,60 +383,14 @@ function handleCardClick(event: MouseEvent) {
       />
 
       <!--
-        How long it is, on the picture.
+        The length used to be printed here as well, over the picture.
 
-        The meta line under the card says it too, but that line is read once you
-        are already looking at one card; this is read while scanning a grid of
-        them, which is why the design puts it here as well.
+        It is in the meta line under the card, next to the game, and the
+        argument for saying it twice was that the line under a card is read
+        once you are already looking at one while the chip is read while
+        scanning. On a grid of 21:9 thumbnails that turned out to be one label
+        too many: the same number, four lines apart.
       -->
-      <span
-        v-if="durationLabel"
-        class="absolute left-2 bottom-2 z-10 rounded-sm bg-scrim px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-on-video pointer-events-none"
-      >
-        {{ durationLabel }}
-      </span>
-
-      <!--
-        The card's three tools, in one group.
-
-        They were in three places: the star top left, a drag grip beside it and
-        the menu top right, each a bordered circle. The design has one group at
-        the bottom right, flat squares on a scrim, fading in with the card's own
-        hover. The published badge keeps the top right corner to itself, so
-        nothing has to dodge anything.
-      -->
-      <div
-        v-if="!isSelectionMode"
-        class="absolute right-1.5 bottom-1.5 z-10 flex items-center gap-0.5"
-      >
-        <ClipStarButton :clip="clip" @updated="emit('updated', $event)" />
-
-        <!--
-          `.stop` on the dragstart matters. Without it the card's own dragstart
-          runs too and the clip starts moving into a collection at the same
-          time.
-        -->
-        <button
-          draggable="true"
-          type="button"
-          title="Drag this clip into another program"
-          aria-label="Drag this clip into another program"
-          class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm bg-scrim text-on-video hover:bg-scrim-strong opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 outline-none focus-visible:focus-ring transition-[opacity,background-color] duration-150 cursor-grab active:cursor-grabbing"
-          @dragstart.stop="handleDragOut"
-          @click.stop
-        >
-          <Icon icon="material-symbols:drag-pan" class="size-4 shrink-0 block" />
-        </button>
-
-        <div class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
-          <ClipActionsMenu
-            :clip="clip"
-            :collection-id="collectionId"
-            @updated="emit('updated', $event)"
-            @deleted="emit('deleted')"
-          />
-        </div>
-      </div>
     </div>
 
     <!--
@@ -451,8 +416,32 @@ function handleCardClick(event: MouseEvent) {
     </div>
 
     <div :class="config.public.value.compactMode ? 'pt-2' : 'pt-3'">
+      <!--
+        The name, and the two tools on the right of it.
+
+        They have been in three places now. Over the picture's bottom right,
+        where a 21:9 thumbnail ends a third of the way up the card, so they sat
+        in the middle of it. Then the card's own bottom right, absolutely
+        positioned over the tag row. Now in flow, in the row that already had
+        `justify-between` and one child in it, which is where a name and its
+        actions belong: nothing overlaps, nothing has to dodge, and the group
+        keeps a fixed column whatever the name does.
+      -->
       <div class="flex items-start justify-between gap-2 mb-1">
         <ClipNameInput :clip="clip" @updated="emit('updated', $event)" />
+
+        <div v-if="!isSelectionMode" class="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
+          <ClipStarButton :clip="clip" @updated="emit('updated', $event)" />
+
+          <div class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
+            <ClipActionsMenu
+              :clip="clip"
+              :collection-id="collectionId"
+              @updated="emit('updated', $event)"
+              @deleted="emit('deleted')"
+            />
+          </div>
+        </div>
       </div>
 
       <ClipMetadata

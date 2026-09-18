@@ -217,10 +217,25 @@ watch(
 <template>
   <DialogRoot v-model:open="isOpen">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-50 modal-overlay-animate" />
+      <!--
+        A rung below the clip panel, which opens on top of this one.
+
+        Both layers were at `z-50`, so which one you could see came down to
+        which portal happened to be later in the document, and it was this one:
+        clicking a clip inside an open collection opened its panel underneath
+        the collection, where it could neither be read nor dismissed. They are
+        the same kind of thing at different depths, so they get different
+        depths: a collection is a view of the library, and a clip is a closer
+        look at one thing in that view.
+
+        `z-40` on a positioned element also makes this a stacking context, so
+        the batch bar inside it stays inside it rather than floating over the
+        panel above.
+      -->
+      <DialogOverlay class="fixed inset-0 bg-scrim-modal z-40 modal-overlay-animate" />
       <Transition name="clip-modal" appear>
         <DialogContent
-          class="fixed inset-8 z-50 bg-card rounded-lg shadow-pop border border-border flex flex-col outline-hidden overflow-hidden"
+          class="fixed inset-8 z-40 bg-card rounded-lg shadow-pop border border-border flex flex-col outline-hidden overflow-hidden"
           @open-auto-focus="(event: Event) => event.preventDefault()"
         >
           <!--

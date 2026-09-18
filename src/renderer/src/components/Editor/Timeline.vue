@@ -195,13 +195,27 @@ function handleRulerMouseUp(): void {
       <span class="text-xs font-medium uppercase tracking-label text-muted-400">Timeline</span>
     </div>
 
-    <div
-      ref="rulerRef"
-      class="shrink-0 h-6 border-b border-border relative overflow-x-auto scroll-p-1.5 overflow-y-hidden cursor-pointer scrollbar-hide"
-      @mousedown="handleRulerMouseDown"
-      @scroll="syncScroll"
-    >
-      <div class="relative h-full" :style="{ width: `${timelineWidth}px` }">
+    <!--
+      The rule stays at the column's width; the scroller inside it reaches past.
+
+      Everything in the editor column is one width: the resume banner, the
+      picture, and the lanes. The lanes were 12px narrower than all of it,
+      because time zero is 12px in from the scroller's edge so the playhead
+      handle has somewhere to hang without being cut in half. Pulling the
+      scroller 12px wider at each end puts that gutter in the column's own
+      padding and the lanes exactly where the picture is.
+
+      The border lives on this wrapper rather than on the scroller, or the one
+      rule in the timeline would be the 24px that the scroller is wider by.
+    -->
+    <div class="shrink-0 border-b border-border">
+      <div
+        ref="rulerRef"
+        class="h-6 -mx-3 relative overflow-x-auto scroll-p-1.5 overflow-y-hidden cursor-pointer scrollbar-hide"
+        @mousedown="handleRulerMouseDown"
+        @scroll="syncScroll"
+      >
+        <div class="relative h-full" :style="{ width: `${timelineWidth}px` }">
         <!--
           The tick sits on its own timestamp, and the label hangs off it.
 
@@ -241,12 +255,13 @@ function handleRulerMouseUp(): void {
             class="absolute top-1 left-1.5 font-mono text-[10.5px] text-muted-400 whitespace-nowrap"
           >{{ mark.label }}</span>
         </div>
+        </div>
       </div>
     </div>
 
     <div
       ref="contentRef"
-      class="flex-1 relative overflow-x-auto scroll-p-1.5 overflow-y-hidden"
+      class="flex-1 -mx-3 relative overflow-x-auto scroll-p-1.5 overflow-y-hidden"
       @scroll="syncScroll"
     >
       <div

@@ -52,16 +52,21 @@ async function handleToggleStar(): Promise<void> {
   </button>
 
   <!--
-    One of the card's three tools, in the group at the bottom right.
+    One of the card's two tools, in the group at its bottom right.
 
     It was a bordered circle in the top left corner, on its own, so the card
-    had tools in three places. A starred clip keeps its button visible when
-    the rest fade out, because that is the one that is carrying state.
+    had tools in three places. A starred clip keeps its button visible when the
+    other fades out, because that is the one carrying state.
+
+    No scrim behind it any more. The group moved out of the picture and into
+    the card's own corner, so it is over a surface that follows the palette
+    rather than over a frame that does not, and `on-video` white on it would be
+    the one literal colour in the app sitting on the wrong ground.
   -->
   <button
     v-else
     type="button"
-    class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm bg-scrim text-on-video hover:bg-scrim-strong outline-none focus-visible:focus-ring transition-[opacity,background-color] duration-150"
+    class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-500 hover:text-foreground hover:bg-muted-100 outline-none focus-visible:focus-ring transition-[opacity,color,background-color] duration-150"
     :class="clip.starred ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'"
     :title="clip.starred ? 'Unstar' : 'Star'"
     :aria-label="clip.starred ? 'Unstar this clip' : 'Star this clip'"
@@ -70,7 +75,7 @@ async function handleToggleStar(): Promise<void> {
     <Icon
       icon="material-symbols:star"
       class="size-4 shrink-0 block"
-      :class="clip.starred ? 'text-accent-hover' : 'text-on-video'"
+      :class="clip.starred ? 'text-accent' : ''"
     />
   </button>
 </template>

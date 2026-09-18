@@ -998,23 +998,33 @@ watch(
         </div>
 
         <div class="flex-1 relative overflow-hidden">
-          <div v-if="timelineClips.length" class="absolute inset-0 flex items-center justify-center p-6">
+          <div v-if="timelineClips.length" class="absolute inset-0">
             <!--
-              Two stacked players: one is on screen while the other preloads and
-              pre-seeks the next clip, so switching clips does not blank the
-              frame. Black backdrop so any residual gap reads as black, not white.
+              The frame is the column's width, and the picture sits inside it.
+
+              It used to be the other way round: the frame shrank to whatever
+              the video's own aspect made of the space, so a 21:9 recording in
+              a tall column drew a box narrower than the banner above it and
+              the timeline below it, and the three things that are the same
+              column were three different widths. The bed is black either way,
+              so the letterboxing is where it was, it is just inside the frame
+              now rather than around it.
+
+              Two stacked players: one is on screen while the other preloads
+              and pre-seeks the next clip, so switching clips does not blank
+              the frame.
             -->
-            <div class="relative max-w-full max-h-full bg-video-bed rounded-lg border border-border overflow-hidden">
+            <div class="absolute inset-0 bg-video-bed rounded-lg border border-border overflow-hidden">
               <video
                 ref="videoA"
-                class="max-w-full max-h-full block"
+                class="w-full h-full object-contain block"
                 :class="activeSlot === 0 ? 'relative opacity-100' : 'absolute inset-0 opacity-0 pointer-events-none'"
                 preload="auto"
                 playsinline
               />
               <video
                 ref="videoB"
-                class="max-w-full max-h-full block"
+                class="w-full h-full object-contain block"
                 :class="activeSlot === 1 ? 'relative opacity-100' : 'absolute inset-0 opacity-0 pointer-events-none'"
                 preload="auto"
                 playsinline
