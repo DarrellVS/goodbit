@@ -185,7 +185,17 @@ function handleRulerMouseUp(): void {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden select-none border-t border-border pt-3.5">
+  <!--
+    No `overflow-hidden` on this root, and it cannot have one.
+
+    The two scrollers inside reach 12px past it at each end, so the lanes line
+    up with the picture above while the playhead handle's gutter falls into the
+    editor column's own padding. A root that clips turns that overhang into a
+    horizontal scrollbar on itself and takes a bite out of the focus ring of
+    anything at the left edge of a lane. The scrollers clip for themselves and
+    the column outside has 16px of padding to receive the 12.
+  -->
+  <div class="flex flex-col h-full select-none border-t border-border pt-3.5">
     <!--
       The section says what it is, once, in the label treatment every other
       section header in the app uses. There was nothing here at all, so the

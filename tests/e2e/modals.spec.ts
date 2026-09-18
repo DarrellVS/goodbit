@@ -73,6 +73,18 @@ test.describe('the clip layer, in both palettes', () => {
         const runs = await ctx.page.evaluate(collectTextRuns);
         assertParserWorks(runs);
 
+        /*
+         * Per view, because the floor is across both and a shortfall in one of
+         * them is invisible in the total. `over-video:` is the rule that
+         * excuses most of what is in here: a run counts as over video when any
+         * ancestor's subtree holds a `video`, `canvas` or `img`, which in a
+         * layer built around a player is nearly everything.
+         */
+        const excusedHere = runs.filter((run) => excused(run)).length;
+        console.log(
+          `${theme} ${view.name}: ${runs.length} runs, ${excusedHere} excused`,
+        );
+
         for (const run of runs) {
           if (excused(run)) continue;
           measured++;

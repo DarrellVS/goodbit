@@ -109,13 +109,11 @@ export function collectTextRuns(): TextRun[] {
    * that as opaque terracotta claims every label on it is unreadable, when
    * what is actually painted is a pale wash over whatever is underneath.
    */
-  const backgroundOf = (el: Element): { rgb: number[]; overVideo: boolean } => {
+  const backgroundOf = (el: Element): { rgb: number[] } => {
     const layers: number[][] = [];
-    let overVideo = false;
     let node: Element | null = el;
 
     while (node) {
-      if (node.querySelector('video, canvas, img')) overVideo = true;
       const parsed = parse(getComputedStyle(node).backgroundColor);
       if (parsed) {
         layers.push(parsed);
@@ -134,7 +132,39 @@ export function collectTextRuns(): TextRun[] {
       g = lg * la + g * (1 - la);
       b = lb * la + b * (1 - la);
     }
-    return { rgb: [r, g, b], overVideo };
+    return { rgb: [r, g, b] };
+  };
+
+  /**
+   * Is there a frame behind this text, before anything opaque hides one.
+   *
+   * The old test was "does any ancestor's subtree contain a `video`, `canvas`
+   * or `img`", which is true of the whole clip layer the moment it holds a
+   * player, and 3.x took the backgrounds off the panels inside it so the walk
+   * no longer stopped before reaching the modal. 60 of 66 runs were excused on
+   * a screen where six of them are actually over the picture.
+   *
+   * This asks the compositor instead: at the middle of the text, what is
+   * painted behind it. Anything past the first opaque background is hidden, so
+   * the search stops there, which is the same rule the colour walk above uses.
+   */
+  const overVideo = (el: Element, box: DOMRect): boolean => {
+    const x = Math.min(window.innerWidth - 1, Math.max(0, box.left + box.width / 2));
+    const y = Math.min(window.innerHeight - 1, Math.max(0, box.top + box.height / 2));
+
+    const stack = document.elementsFromPoint(x, y);
+    const start = stack.indexOf(el);
+    if (start < 0) return false;
+
+    for (let i = start + 1; i < stack.length; i++) {
+      const behind = stack[i];
+      const tag = behind.tagName.toLowerCase();
+      if (tag === 'video' || tag === 'canvas' || tag === 'img') return true;
+
+      const bg = parse(getComputedStyle(behind).backgroundColor);
+      if (bg && bg[3] >= 1) return false;
+    }
+    return false;
   };
 
   const label = (el: Element): string => {
@@ -171,7 +201,8 @@ export function collectTextRuns(): TextRun[] {
     const weight = parseInt(style.fontWeight, 10) || 400;
     const large = size >= 24 || (size >= 18.66 && weight >= 700);
 
-    const { rgb, overVideo } = backgroundOf(el);
+    const { rgb } = backgroundOf(el);
+    const onFrame = overVideo(el, box);
 
     // A colour the author set with an alpha is a colour over the ground, not
     // a colour on its own.
@@ -180,7 +211,7 @@ export function collectTextRuns(): TextRun[] {
       fg = fg.map((c, i) => c * fgRaw[3] + rgb[i] * (1 - fgRaw[3]));
     }
 
-    const prefix = overVideo ? 'over-video:' : '';
+    const prefix = onFrame ? 'over-video:' : '';
     runs.push({
       text: text.slice(0, 40),
       fg,
