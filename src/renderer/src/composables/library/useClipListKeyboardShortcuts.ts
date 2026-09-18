@@ -7,10 +7,6 @@ import { scrollDown, scrollUp } from '@renderer/utils/scroll';
 
 interface UseClipListKeyboardShortcutsOptions {
   toggleViewMode: () => void;
-  onPageNext?: (event: KeyboardEvent) => void;
-  onPagePrevious?: (event: KeyboardEvent) => void;
-  canGoNext?: Ref<boolean> | (() => boolean);
-  canGoPrevious?: Ref<boolean> | (() => boolean);
   isLoading?: Ref<boolean> | (() => boolean);
   isSelectionMode?: Ref<boolean> | (() => boolean);
   /**
@@ -37,20 +33,6 @@ interface UseClipListKeyboardShortcutsOptions {
 export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcutsOptions): void {
   const config = useConfiguration();
 
-  const canGoNext = computed(() => {
-    if (typeof options.canGoNext === 'function') {
-      return options.canGoNext();
-    }
-    return options.canGoNext?.value ?? true;
-  });
-
-  const canGoPrevious = computed(() => {
-    if (typeof options.canGoPrevious === 'function') {
-      return options.canGoPrevious();
-    }
-    return options.canGoPrevious?.value ?? true;
-  });
-
   const isLoading = computed(() => {
     if (typeof options.isLoading === 'function') {
       return options.isLoading();
@@ -73,11 +55,11 @@ export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcu
    * A list behind an open layer is not the list somebody is using.
    *
    * The clip panel opens *over* the library, and the library stays mounted
-   * behind it with `ArrowLeft` and `ArrowRight` still bound to paging. So
-   * arrow keys inside an open clip were also turning the page underneath it,
-   * and the scroll keys were scrolling a list nobody could see. Found while
-   * adding frame stepping to the trimmer, which wanted the same two keys and
-   * had to take them in the capture phase to get them.
+   * behind it with the scroll keys still bound. So the arrows inside an open
+   * clip were scrolling a list nobody could see, and while the library still
+   * paged they were turning its page as well. Found while adding frame
+   * stepping to the trimmer, which wanted the same two keys and had to take
+   * them in the capture phase to get them.
    *
    * Guarding here rather than there fixes it for every view of an open clip
    * and for every list, rather than for the one screen that happened to
@@ -101,23 +83,11 @@ export function useClipListKeyboardShortcuts(options: UseClipListKeyboardShortcu
       'toggle-view-mode': () => {
         if (!coveredUp.value) options.toggleViewMode();
       },
-      'page-next': (event: KeyboardEvent) => {
-        if (listHasTheKeys.value && canGoNext.value) {
-          event.preventDefault();
-          options.onPageNext?.(event);
-        }
-      },
-      'page-previous': (event: KeyboardEvent) => {
-        if (listHasTheKeys.value && canGoPrevious.value) {
-          event.preventDefault();
-          options.onPagePrevious?.(event);
-        }
-      },
       'scroll-down': () => {
-        if (!coveredUp.value) scrollDown(options.scrollTarget?.value);
+        if (listHasTheKeys.value) scrollDown(options.scrollTarget?.value);
       },
       'scroll-up': () => {
-        if (!coveredUp.value) scrollUp(options.scrollTarget?.value);
+        if (listHasTheKeys.value) scrollUp(options.scrollTarget?.value);
       },
     },
   });

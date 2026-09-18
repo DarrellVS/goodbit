@@ -18,6 +18,14 @@ interface ClipsState {
   loading: boolean;
   abortController: AbortController | null;
   requestId: number;
+  /**
+   * The filter signature the loaded list belongs to.
+   *
+   * `items` is a concatenation now, so "is this response still wanted" is no
+   * longer the same question as "does this response belong to what is already
+   * in the list". The request id answers the first; this answers the second.
+   */
+  loadedKey: string;
 }
 
 /**
@@ -59,6 +67,7 @@ export const useClipsStore = defineStore('clips', {
     loading: false,
     abortController: null,
     requestId: 0,
+    loadedKey: '',
   }),
 
   getters: {
@@ -71,10 +80,41 @@ export const useClipsStore = defineStore('clips', {
       return state.page < Math.ceil(state.total / config.public.value.pageSize);
     },
     hasPreviousPage: (state) => state.page > 1,
+    /**
+     * Everything that decides *which* clips, and nothing that decides how many.
+     *
+     * The page is deliberately not in here: a second page of the same question
+     * belongs on the end of the first. A different game, tag, search, state or
+     * order is a different question and its answers may not be mixed in.
+     */
+    listKey: (state) =>
+      JSON.stringify([
+        state.selectedGame,
+        state.searchText,
+        [...state.selectedTags].sort(),
+        state.publishedFilter,
+        state.starredFilter,
+        state.sort,
+      ]),
+    /** How many are on screen, against how many there are. */
+    hasMore: (state): boolean => state.items.length < state.total,
   },
 
   actions: {
     async fetchClips(append = false): Promise<void> {
+      /*
+       * A fetch that replaces the list starts the list again.
+       *
+       * `page` used to survive, which was right while the library paged:
+       * leaving and coming back put you on page three where you left off. With
+       * a list that grows, `page` is the tail pointer of a concatenation, so a
+       * stale one asks for the middle of the library, gets five clips from the
+       * middle of it, and then `loadMore` walks off the end asking for pages
+       * that are not there. Which is exactly what it did: ten clips of fifteen
+       * and a Load more button that fetched nothing, for ever.
+       */
+      if (!append) this.page = 1;
+
       if (this.abortController) {
         this.abortController.abort();
       }
@@ -82,16 +122,17 @@ export const useClipsStore = defineStore('clips', {
       this.abortController = new AbortController();
       this.requestId++;
       const currentRequestId = this.requestId;
+      const askedFor = this.listKey;
       this.loading = true;
 
       const config = useConfiguration();
 
       try {
-        const params: Record<string, string | number> = { 
+        const params: Record<string, string | number> = {
           page: this.page,
-          pageSize: config.public.value.pageSize 
+          pageSize: config.public.value.pageSize
         };
-        
+
         if (this.selectedGame) params.game = this.selectedGame;
         if (this.searchText) params.q = this.searchText;
         if (this.selectedTags.length) params.tags = this.selectedTags.join(',');
@@ -99,25 +140,42 @@ export const useClipsStore = defineStore('clips', {
         if (this.starredFilter) params.starred = 'true';
         if (this.sort !== 'newest') params.sort = this.sort;
 
-        const { data } = await axios.get<ClipsResponse>('/api/clips', { 
+        const { data } = await axios.get<ClipsResponse>('/api/clips', {
           params,
           signal: this.abortController.signal
         });
 
         if (currentRequestId === this.requestId) {
-          if (append) {
-            this.items = [...this.items, ...data.items];
-          } else {
-            this.items = data.items;
-          }
-          this.total = data.total;
+          /*
+           * Concatenate only onto the list this page belongs to.
+           *
+           * The request id says this response is the newest one asked for. It
+           * does not say the list underneath is still the same list: a filter
+           * change resets the page and starts its own fetch, and if a second
+           * page was already in flight for the old filter the newest id can
+           * belong to either. Appending on the strength of the id alone put
+           * page two of one question under page one of another.
+           */
+          const ontoSameList = append && this.loadedKey === askedFor;
+          this.items = ontoSameList ? [...this.items, ...data.items] : data.items;
+          this.loadedKey = askedFor;
+
+          /*
+           * An empty page is the end, whatever the count says.
+           *
+           * `hasMore` compares what is loaded against the total, and those two
+           * come from different moments: rows deleted between page one and
+           * page three leave a total that promises clips the server no longer
+           * has. Without this, the button sits there fetching nothing.
+           */
+          this.total = ontoSameList && data.items.length === 0 ? this.items.length : data.total;
           this.abortController = null;
         }
       } catch (error) {
         if (axios.isCancel(error)) {
           return;
         }
-        
+
         if (currentRequestId === this.requestId) {
           this.abortController = null;
           throw error;
@@ -172,7 +230,7 @@ export const useClipsStore = defineStore('clips', {
 
     setPublishedFilter(published: boolean | null): void {
       if (this.publishedFilter === published) return;
-      
+
       this.publishedFilter = published;
       this.page = 1;
       void this.fetchClips(false);
@@ -180,7 +238,7 @@ export const useClipsStore = defineStore('clips', {
 
     setStarredFilter(starred: boolean): void {
       if (this.starredFilter === starred) return;
-      
+
       this.starredFilter = starred;
       this.page = 1;
       void this.fetchClips(false);
@@ -198,6 +256,25 @@ export const useClipsStore = defineStore('clips', {
 
     resetPagination(): void {
       this.page = 1;
+    },
+
+    /**
+     * The next page, on the end of what is already there.
+     *
+     * The page number is bumped here rather than at the call site, and put
+     * back if the request fails, because a page number ahead of the list is a
+     * page of clips that is silently skipped the next time somebody scrolls.
+     */
+    async loadMore(): Promise<void> {
+      if (this.loading || !this.hasMore) return;
+
+      this.page++;
+      try {
+        await this.fetchClips(true);
+      } catch (error) {
+        this.page--;
+        throw error;
+      }
     },
 
     goto(page: number): void {

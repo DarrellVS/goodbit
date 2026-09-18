@@ -15,13 +15,15 @@ interface CollectionClipsState {
   loading: boolean;
   abortController: AbortController | null;
   requestId: number;
+  /** The filter signature the loaded list belongs to. See `stores/clips.ts`. */
+  loadedKey: string;
 }
 
 export const useCollectionsStore = defineStore('collections', () => {
   const items = ref<Collection[]>([]);
   const clipsStore = useClipsStore();
   const config = useConfiguration();
-  
+
   const clipsState = ref<CollectionClipsState>({
     currentCollectionId: null,
     items: [],
@@ -31,6 +33,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     loading: false,
     abortController: null,
     requestId: 0,
+    loadedKey: '',
   });
 
   async function fetchCollections(): Promise<void> {
@@ -74,6 +77,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     clipsState.value.abortController = new AbortController();
     clipsState.value.requestId++;
     const currentRequestId = clipsState.value.requestId;
+    const askedFor = collectionListKey(collectionId);
     clipsState.value.loading = true;
 
     try {
@@ -91,11 +95,18 @@ export const useCollectionsStore = defineStore('collections', () => {
       const result = await collectionsService.getCollectionClips(collectionId, params);
 
       if (currentRequestId === clipsState.value.requestId) {
-        if (append) {
-          clipsState.value.items = [...clipsState.value.items, ...result.items];
-        } else {
-          clipsState.value.items = result.items;
-        }
+        /*
+         * Concatenate only onto the list this page belongs to.
+         *
+         * The request id says this is the newest response asked for; it does
+         * not say the list underneath is still the same list. See the same
+         * guard in `stores/clips.ts` for the sequence that gets it wrong.
+         */
+        const ontoSameList = append && clipsState.value.loadedKey === askedFor;
+        clipsState.value.items = ontoSameList
+          ? [...clipsState.value.items, ...result.items]
+          : result.items;
+        clipsState.value.loadedKey = askedFor;
         clipsState.value.total = result.total;
         clipsState.value.abortController = null;
       }
@@ -103,7 +114,7 @@ export const useCollectionsStore = defineStore('collections', () => {
       if (error?.code === 'ERR_CANCELED') {
         return;
       }
-      
+
       if (currentRequestId === clipsState.value.requestId) {
         clipsState.value.abortController = null;
         throw error;
@@ -120,6 +131,42 @@ export const useCollectionsStore = defineStore('collections', () => {
     clipsState.value.page = 1;
     clipsState.value.items = [];
     clipsState.value.total = 0;
+  }
+
+  /** Everything that decides which clips, including which collection. */
+  function collectionListKey(collectionId: number): string {
+    return JSON.stringify([
+      collectionId,
+      clipsStore.selectedGame,
+      clipsStore.searchText,
+      [...clipsStore.selectedTags].sort(),
+      clipsStore.publishedFilter,
+      clipsStore.starredFilter,
+    ]);
+  }
+
+  /** More than what is on screen. */
+  const hasMoreClips = computed(
+    () => clipsState.value.items.length < clipsState.value.total,
+  );
+
+  /**
+   * The next page, on the end of this one.
+   *
+   * The page number is put back if the request fails, because a page number
+   * ahead of the list is a page of clips silently skipped next time.
+   */
+  async function loadMoreClips(): Promise<void> {
+    const id = clipsState.value.currentCollectionId;
+    if (id === null || clipsState.value.loading || !hasMoreClips.value) return;
+
+    clipsState.value.page++;
+    try {
+      await fetchCollectionClips(id, true);
+    } catch (error) {
+      clipsState.value.page--;
+      throw error;
+    }
   }
 
   const hasNextPage = computed(() => {
@@ -181,6 +228,8 @@ export const useCollectionsStore = defineStore('collections', () => {
     collections,
     clipsState,
     hasNextPage,
+    hasMoreClips,
+    loadMoreClips,
     hasPreviousPage,
     totalPages,
     fetchCollections,

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from 'reka-ui';
 import { useCollectionsStore } from '@renderer/stores/collections';
+import { useToastStore } from '@renderer/stores/toast';
 import { useClipsStore } from '@renderer/stores/clips';
 import { useGamesStore } from '@renderer/stores/games';
 import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
@@ -25,7 +26,7 @@ import type { Clip } from '@renderer/types/clip';
 import ClipFilters from '@renderer/components/Library/ClipFilters.vue';
 import BaseField from '@renderer/components/Base/BaseField.vue';
 import ClipsDisplay from '@renderer/components/Library/ClipsDisplay.vue';
-import ClipsPaginationControls from '@renderer/components/Library/ClipsPaginationControls.vue';
+import ClipsListFooter from '@renderer/components/Library/ClipsListFooter.vue';
 import FloatingControlsBar from '@renderer/components/Library/FloatingControlsBar.vue';
 import BatchTagDialog from '@renderer/components/Library/BatchTagDialog.vue';
 import BatchCollectionDialog from '@renderer/components/Library/BatchCollectionDialog.vue';
@@ -52,6 +53,7 @@ import BatchCollectionDialog from '@renderer/components/Library/BatchCollectionD
 const { openCollectionId, close } = useCollectionDetail();
 
 const collectionsStore = useCollectionsStore();
+const toastStore = useToastStore();
 const clipsStore = useClipsStore();
 const gamesStore = useGamesStore();
 const config = useConfiguration();
@@ -69,8 +71,23 @@ const clips = computed(() => collectionsStore.clipsState.items);
 const total = computed(() => collectionsStore.clipsState.total);
 const loading = computed(() => collectionsStore.clipsState.loading);
 const isEmpty = computed(() => !loading.value && !clips.value.length);
-const currentPage = computed(() => collectionsStore.clipsState.page);
-const totalPages = computed(() => collectionsStore.totalPages);
+const hasMore = computed(() => collectionsStore.hasMoreClips);
+
+/**
+ * The next page of this collection, on the end of the ones on screen.
+ *
+ * The footer's observer watches this layer's own scroller rather than the
+ * page's, which it does not have to be told: an `IntersectionObserver` with no
+ * root uses the nearest scrolling ancestor, and that is the whole reason the
+ * same component works here and in the library.
+ */
+async function loadMore(): Promise<void> {
+  try {
+    await collectionsStore.loadMoreClips();
+  } catch {
+    toastStore.error('Could not load any more clips');
+  }
+}
 const collection = computed(() =>
   collectionsStore.items.find((c) => c.id === collectionId.value),
 );
@@ -92,9 +109,8 @@ async function reload(): Promise<void> {
   ]);
 }
 
-const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHandlers({
+const { handleClipUpdated, handleClipDeleted } = useClipListHandlers({
   clips,
-  onPageChange: (page: number) => collectionsStore.gotoPage(page),
   onClipUpdated: (updatedClip: Clip) => {
     const index = collectionsStore.clipsState.items.findIndex((c) => c.id === updatedClip.id);
     if (index !== -1) {
@@ -133,14 +149,11 @@ const {
   onClipsUpdated: reload,
 });
 
+/* No page keys: this list grows downwards, like the library's. */
 useClipListKeyboardShortcuts({
   toggleViewMode: () => {
     config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
   },
-  onPageNext: () => handlePageChange(currentPage.value + 1),
-  onPagePrevious: () => handlePageChange(currentPage.value - 1),
-  canGoNext: computed(() => collectionsStore.hasNextPage),
-  canGoPrevious: computed(() => collectionsStore.hasPreviousPage),
   isLoading: loading,
   isSelectionMode,
   inLayer: true,
@@ -286,13 +299,12 @@ watch(
                 @clip-deleted="handleClipDeleted"
               />
 
-              <ClipsPaginationControls
+              <ClipsListFooter
                 :loading="loading"
-                :current-page="currentPage"
-                :total-pages="totalPages"
+                :has-more="hasMore"
+                :loaded="clips.length"
                 :total="total"
-                :has-clips="clips.length > 0"
-                @page-change="handlePageChange"
+                @load-more="loadMore"
               />
             </div>
           </div>

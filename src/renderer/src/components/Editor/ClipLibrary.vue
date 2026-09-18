@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useLoadMoreWhenSeen } from '@renderer/composables/library/useLoadMoreWhenSeen';
 import { Icon } from '@iconify/vue';
 import { useFormat } from '@renderer/composables/ui/useFormat';
 import { useClipGrouping } from '@renderer/composables/library/useClipGrouping';
@@ -46,6 +47,12 @@ const ROW =
   'w-full group flex items-center gap-2.5 p-1.5 rounded-sm text-left ' +
   'hover:bg-muted-50 outline-none focus-visible:focus-ring ' +
   'transition-colors duration-150 cursor-pointer';
+
+const sentinel = useLoadMoreWhenSeen({
+  loading: () => props.loading,
+  hasMore: () => props.hasMore,
+  load: () => emit('load-more'),
+});
 
 const addedIds = computed(() => new Set(props.addedClipIds));
 
@@ -285,6 +292,13 @@ function isAdded(clip: Clip): boolean {
         </button>
         </template>
       </section>
+
+      <!--
+        The same trigger the library and the collection layer use, so all three
+        lists behave the same way: the button is the control and the sentinel
+        above it presses it when the end of the list comes into view.
+      -->
+      <div ref="sentinel" class="h-px -mb-px" aria-hidden="true"></div>
 
       <button
         v-if="hasMore"

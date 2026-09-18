@@ -4,58 +4,31 @@ import { launchApp, seedClips, type TestApp } from './app';
 /**
  * The library stops listening while a clip is open over it.
  *
- * `ClipDetailModal` opens *over* `ClipsPage`, which stays mounted with
- * `ArrowLeft` and `ArrowRight` bound to paging and the scroll keys bound to the
- * list. So arrow keys pressed inside an open clip were also turning the page
- * underneath it, and nothing on screen said so: you close the panel and the
- * library is somewhere else.
+ * `ClipDetailModal` opens *over* `ClipsPage`, which stays mounted with the
+ * scroll keys bound to its own list. So `ArrowUp` and `ArrowDown` pressed
+ * inside an open clip were also moving the library underneath it, and nothing
+ * on screen said so: you close the panel and the library is somewhere else.
  *
- * Found while adding frame stepping to the trimmer, which wants those two keys
- * for the handles and had to take them in the capture phase to get them at all.
+ * Found while adding frame stepping to the trimmer, which wants the arrows for
+ * the handles and had to take them in the capture phase to get them at all.
  * That is the symptom rather than the cause, so the guard is in
  * `useClipListKeyboardShortcuts`, which fixes it for every view of an open clip
- * and for both pages that show a list.
+ * and for both screens that show a list.
+ *
+ * **This used to be about paging**, and read the page number off the pager's
+ * own "Showing page N of M". Issue #3 removed the pager: the library grows as
+ * you scroll and `page-next` and `page-previous` no longer exist. The scroll
+ * keys are what is left of the same question, and the readout is the scroll
+ * offset, which is the thing they move.
  */
 test.describe('keys behind an open clip', () => {
   let ctx: TestApp;
 
-  const call = async <T = unknown>(path: string, query?: unknown): Promise<T> => {
-    const response = (await ctx.page.evaluate(
-      ([p, q]) =>
-        window.goodbit!.apiRequest({
-          method: 'GET',
-          path: p as string,
-          query: (q ?? {}) as Record<string, unknown>,
-        }),
-      [path, query] as const,
-    )) as { body: T };
-    return response.body;
-  };
-
   test.beforeAll(async () => {
     ctx = await launchApp();
-    // More than one page of them, so paging has somewhere to go.
+    // Enough clips that the library is taller than the window and can scroll.
     seedClips(ctx.videosRoot, 'TestGame', 12, 1);
-    await ctx.page.waitForTimeout(12_000);
-
-    /*
-     * Five per page, so twelve clips is three pages and paging has somewhere
-     * to go. The default is 50, and without this the pagination control does
-     * not render at all, which is how the first attempt at this spec failed:
-     * not "paging did not happen" but "there was nothing to page".
-     *
-     * `goodbit-public-config` is the key `useConfiguration` writes, a flat
-     * object rather than one nested under `public`.
-     */
-    await ctx.page.evaluate(() => {
-      const KEY = 'goodbit-public-config';
-      try {
-        const config = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-        localStorage.setItem(KEY, JSON.stringify({ ...config, pageSize: 5 }));
-      } catch {
-        localStorage.setItem(KEY, JSON.stringify({ pageSize: 5 }));
-      }
-    });
+    await ctx.page.waitForTimeout(14_000);
     await ctx.page.reload();
     await ctx.page.waitForTimeout(3000);
   });
@@ -64,59 +37,63 @@ test.describe('keys behind an open clip', () => {
     await ctx?.close();
   });
 
-  /**
-   * Which page the library is on, read off the page it is drawing.
-   *
-   * Two earlier attempts failed and are worth recording. Comparing the first
-   * thirty characters of each card's text compares `TestGame0:01·38.6 KBjust
-   * now` against itself, because the seeded clips differ only in a filename
-   * that is further along. And asking `GET /clips` returns the page the
-   * *request* asked for, not the one the library is showing.
-   *
-   * The pagination control prints "Showing page N of M", which is the app
-   * telling us the answer in the same words it tells the user.
-   */
-  const currentPageFromUi = async (): Promise<number> => {
-    const text = await ctx.page.getByText(/Showing page \d+ of \d+/).first().textContent();
-    const match = /Showing page (\d+) of/.exec(text ?? '');
-    expect(match, `no pagination readout, got: ${text}`).toBeTruthy();
-    return Number(match![1]);
-  };
+  /** How far down the library is, read off the element that scrolls. */
+  const offset = async (): Promise<number> =>
+    ctx.page.evaluate(() => document.querySelector('main')?.scrollTop ?? -1);
 
   /**
    * Put focus somewhere that is not a clip and not a control.
    *
    * Clicking at a guessed coordinate in the middle of the page lands on a clip
-   * card, which opens the panel, and the arrow key is then correctly
-   * suppressed: the control test was failing because it had triggered the very
-   * thing it was controlling for. The pagination readout is plain text at the
-   * bottom of the list and reacts to nothing.
+   * card, which opens the panel, and the key is then correctly suppressed: an
+   * earlier version of the control test was failing because it had triggered
+   * the very thing it was controlling for. The library's own title is plain
+   * text and reacts to nothing.
    */
   const focusNothing = async (): Promise<void> => {
-    await ctx.page.getByText(/Showing page \d+ of \d+/).first().click();
+    await ctx.page.getByText('My Library').first().click();
     await expect(ctx.page.getByRole('dialog')).toHaveCount(0);
   };
 
-  test('arrow keys page the library when nothing is open', async () => {
+  /**
+   * Park the list at a given offset.
+   *
+   * After `focusNothing`, never before: clicking the title scrolls it into
+   * view, so anything set beforehand is undone by the click itself. That is
+   * what made the third test assert "less than zero".
+   */
+  const parkAt = async (offsetPx: number): Promise<void> => {
+    await ctx.page.evaluate((top) => {
+      const main = document.querySelector('main');
+      if (main) main.scrollTop = top;
+    }, offsetPx);
+    await ctx.page.waitForTimeout(300);
+  };
+
+  test('arrow keys scroll the library when nothing is open', async () => {
     // The control. If this does not move, the test below proves nothing.
     await focusNothing();
-    await ctx.page.keyboard.press('ArrowRight');
-    await ctx.page.waitForTimeout(1500);
+    await parkAt(0);
 
-    const after = await currentPageFromUi();
-    console.log(`with nothing open, ArrowRight moved to page ${after}`);
-    expect(after).toBeGreaterThan(1);
+    await ctx.page.keyboard.press('ArrowDown');
+    await ctx.page.waitForTimeout(900);
+
+    const after = await offset();
+    console.log(`with nothing open, ArrowDown moved the library to ${after}`);
+    expect(after).toBeGreaterThan(0);
   });
 
-  test('and stop paging it the moment a clip is open over it', async () => {
-    const behind = await currentPageFromUi();
+  test('and stop scrolling it the moment a clip is open over it', async () => {
+    await focusNothing();
+    await parkAt(300);
+    const behind = await offset();
 
     await ctx.page.locator('article.clip-card').first().click();
     await expect(ctx.page.getByRole('dialog').first()).toBeVisible({ timeout: 15_000 });
 
     // Several presses, because one could be swallowed by something focused.
     for (let i = 0; i < 3; i++) {
-      await ctx.page.keyboard.press('ArrowRight');
+      await ctx.page.keyboard.press('ArrowDown');
       await ctx.page.waitForTimeout(250);
     }
 
@@ -124,19 +101,28 @@ test.describe('keys behind an open clip', () => {
     await expect(ctx.page.getByRole('dialog').first()).toBeHidden({ timeout: 10_000 });
     await ctx.page.waitForTimeout(800);
 
-    const after = await currentPageFromUi();
-    console.log(`behind the dialog: page ${behind} -> page ${after} after closing`);
-    // Closing the panel should not reveal a list that has wandered off.
-    expect(after).toBe(behind);
+    const after = await offset();
+    console.log(`behind the dialog: ${behind} -> ${after} after closing`);
+
+    /*
+     * A scroll step is 300px, so anything under a third of one is not the key.
+     *
+     * Closing the panel puts focus back on the card that opened it, and the
+     * browser brings a focused element fully into view, which moved the list
+     * by 22px in measurement. That is the panel handing focus back, not the
+     * library answering a key it should not have heard.
+     */
+    expect(Math.abs(after - behind)).toBeLessThan(100);
   });
 
   test('and take them back once it closes', async () => {
-    const before = await currentPageFromUi();
-
     await focusNothing();
-    await ctx.page.keyboard.press('ArrowLeft');
-    await ctx.page.waitForTimeout(1500);
+    await parkAt(300);
+    const before = await offset();
 
-    expect(await currentPageFromUi()).toBeLessThan(before);
+    await ctx.page.keyboard.press('ArrowUp');
+    await ctx.page.waitForTimeout(900);
+
+    expect(await offset()).toBeLessThan(before);
   });
 });

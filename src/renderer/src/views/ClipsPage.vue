@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue';
 import { useClipsStore } from '@renderer/stores/clips';
+import { useToastStore } from '@renderer/stores/toast';
 import { useGamesStore } from '@renderer/stores/games';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
@@ -15,12 +16,13 @@ import type { Clip } from '@renderer/types/clip';
 import ClipFilters from '@renderer/components/Library/ClipFilters.vue';
 import CollectionsRow from '@renderer/components/Collection/CollectionsRow.vue';
 import ClipsDisplay from '@renderer/components/Library/ClipsDisplay.vue';
-import ClipsPaginationControls from '@renderer/components/Library/ClipsPaginationControls.vue';
+import ClipsListFooter from '@renderer/components/Library/ClipsListFooter.vue';
 import FloatingControlsBar from '@renderer/components/Library/FloatingControlsBar.vue';
 import BatchTagDialog from '@renderer/components/Library/BatchTagDialog.vue';
 import BatchCollectionDialog from '@renderer/components/Library/BatchCollectionDialog.vue';
 
 const clipsStore = useClipsStore();
+const toastStore = useToastStore();
 const gamesStore = useGamesStore();
 const config = useConfiguration();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
@@ -141,8 +143,34 @@ function handleEmptyAction(): void {
    */
   void rescan();
 }
-const currentPage = computed(() => clipsStore.page);
-const totalPages = computed(() => clipsStore.totalPages);
+/**
+ * Whether there is more than what is on screen, and how much.
+ *
+ * `total` is what the filters match, `clips.length` is what has been fetched.
+ * The difference is the whole of what the page bar used to be for.
+ */
+const hasMore = computed(() => clipsStore.hasMore);
+
+/**
+ * Selecting everything means everything *on screen*, and says so.
+ *
+ * With a page bar, "select all" and "the page" were the same set, so the count
+ * in the toolbar was the whole truth. Scrolling breaks that: the same keystroke
+ * selects a different number of clips depending on how far somebody happened to
+ * get, and the next thing they press is often Delete. So it says what it did
+ * whenever there is more that it did not touch.
+ */
+function selectAllOnScreen(): void {
+  handleSelectAll();
+
+  if (hasSelection.value && hasMore.value) {
+    toastStore.info(
+      `${selectedCount.value} on screen are selected. ` +
+        `${total.value - clips.value.length} more match these filters and are not loaded yet.`,
+      'Selected what is loaded',
+    );
+  }
+}
 
 const {
   isSelectionMode,
@@ -173,9 +201,8 @@ const {
   }),
 });
 
-const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHandlers({
+const { handleClipUpdated, handleClipDeleted } = useClipListHandlers({
   clips,
-  onPageChange: (page: number) => clipsStore.goto(page),
   onClipUpdated: (clip: Clip) => clipsStore.updateClip(clip),
   onClipDeleted: () => {
     return preserveScrollPosition(async () => {
@@ -187,14 +214,19 @@ const { handlePageChange, handleClipUpdated, handleClipDeleted } = useClipListHa
   },
 });
 
+/*
+ * No page keys here any more.
+ *
+ * There are no pages to turn: the list grows downwards and the scroll keys
+ * already move through it. `onPageNext` is left unwired rather than bound to
+ * `loadMore`, because a key that quietly fetched more would be a different
+ * promise from one that jumped a page, and the scroll it would need to follow
+ * is the thing the wheel already does.
+ */
 useClipListKeyboardShortcuts({
   toggleViewMode: () => {
     config.public.value.viewMode = config.public.value.viewMode === 'grid' ? 'grouped' : 'grid';
   },
-  onPageNext: () => handlePageChange(currentPage.value + 1),
-  onPagePrevious: () => handlePageChange(currentPage.value - 1),
-  canGoNext: computed(() => clipsStore.hasNextPage),
-  canGoPrevious: computed(() => clipsStore.hasPreviousPage),
   isLoading: loading,
   isSelectionMode,
 });
@@ -213,8 +245,23 @@ useSelectAllShortcut({
   clips,
   isSelectionMode,
   enterSelectionMode,
-  selectAll: handleSelectAll,
+  selectAll: selectAllOnScreen,
 });
+
+/**
+ * The next page, on the end of this one.
+ *
+ * The store owns the page number and the guard, so this is only the place the
+ * failure is reported: a swallowed rejection here is a list that silently
+ * stops growing.
+ */
+async function loadMore(): Promise<void> {
+  try {
+    await clipsStore.loadMore();
+  } catch {
+    toastStore.error('Could not load any more clips');
+  }
+}
 
 onMounted(() => {
   void clipsStore.fetchClips(false);
@@ -259,13 +306,12 @@ onMounted(() => {
         @clip-deleted="handleClipDeleted"
       />
 
-      <ClipsPaginationControls
+      <ClipsListFooter
         :loading="loading"
-        :current-page="currentPage"
-        :total-pages="totalPages"
+        :has-more="hasMore"
+        :loaded="clips.length"
         :total="total"
-        :has-clips="clips.length > 0"
-        @page-change="handlePageChange"
+        @load-more="loadMore"
       />
     </div>
 

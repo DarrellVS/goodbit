@@ -1,6 +1,6 @@
 /**
  * Keyboard Shortcut Action Definitions
- * 
+ *
  * Defines all available actions that can be mapped to keyboard shortcuts.
  * Each action has an ID, label, description, and category.
  */
@@ -36,7 +36,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
     category: 'global',
     defaultKey: 'Slash',
   },
-  
+
   // Clips Page Actions
   {
     id: 'toggle-view-mode',
@@ -52,20 +52,15 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
     category: 'clips',
     defaultKey: 'Escape',
   },
-  {
-    id: 'page-next',
-    label: 'Next Page',
-    description: 'Navigate to next page of clips',
-    category: 'clips',
-    defaultKey: 'ArrowRight',
-  },
-  {
-    id: 'page-previous',
-    label: 'Previous Page',
-    description: 'Navigate to previous page of clips',
-    category: 'clips',
-    defaultKey: 'ArrowLeft',
-  },
+  /*
+   * `page-next` and `page-previous` were here, on the arrow keys.
+   *
+   * The library does not page any more, it grows as you scroll, so the two
+   * actions had nothing to do. They are removed rather than left bound to
+   * `loadMore`: a key that quietly fetches another fifty clips is a different
+   * promise from one that jumps a page, and the scroll it would have to follow
+   * is what the wheel and the two keys below already do.
+   */
   {
     id: 'scroll-down',
     label: 'Scroll Down',
@@ -80,7 +75,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
     category: 'clips',
     defaultKey: 'ArrowUp',
   },
-  
+
   // Editor Actions
   {
     id: 'editor-play-pause',
@@ -112,13 +107,13 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   },
 ];
 
-export type ShortcutKey = 
-  | 'Space' 
-  | 'ArrowLeft' 
-  | 'ArrowRight' 
-  | 'ArrowUp' 
+export type ShortcutKey =
+  | 'Space'
+  | 'ArrowLeft'
+  | 'ArrowRight'
+  | 'ArrowUp'
   | 'ArrowDown'
-  | 'Delete' 
+  | 'Delete'
   | 'Escape'
   | 'KeyG'
   | 'KeyL'

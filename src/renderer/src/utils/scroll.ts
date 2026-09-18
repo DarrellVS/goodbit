@@ -29,12 +29,27 @@ export function rememberScrollFor(path: string): void {
 }
 
 /**
- * Put a screen back where it was.
+ * Put a screen back where it was, or leave it at the top.
  *
  * The list is fetched after the route changes, so the page is short for a few
- * frames and a single assignment would be clamped to zero. It keeps trying
- * until the content is tall enough to hold the position, and gives up quickly
- * rather than fighting a screen that is genuinely shorter now.
+ * frames and an assignment made then would be clamped. It waits for the
+ * content to be tall enough to hold the position, and gives up quickly rather
+ * than fighting a screen that is genuinely shorter now.
+ *
+ * **It never assigns a position the content cannot hold**, and that is the
+ * whole of the rewrite. The library loads as you scroll, so a remembered
+ * offset of 4000px belongs to a list of two hundred cards and the screen you
+ * are coming back to has fetched fifty. Assigning it landed at the bottom of
+ * the fifty, which the list reads as "you have reached the end" and answers by
+ * fetching the next page, whose arrival makes a slightly lower position
+ * reachable, which this function was still trying to assign. Between them they
+ * walked the whole library back, one page at a time, for somebody who only
+ * wanted to be where they were.
+ *
+ * So the offset is either reachable, in which case it is restored in one
+ * assignment, or it is not, in which case the screen stays where a fresh visit
+ * would put it. Either way it is forgotten: a position that can never be
+ * reached is worse than none, because it keeps being tried.
  */
 export function restoreScrollFor(path: string): void {
   const wanted = byPath.get(path);
@@ -45,12 +60,19 @@ export function restoreScrollFor(path: string): void {
     const target = document.querySelector('main');
     if (!target) return;
 
-    target.scrollTop = wanted;
+    if (wanted <= target.scrollHeight - target.clientHeight) {
+      target.scrollTop = wanted;
+      byPath.delete(path);
+      return;
+    }
+
     framesLeft -= 1;
-    if (Math.abs(target.scrollTop - wanted) > 1 && framesLeft > 0) {
+    if (framesLeft > 0) {
       requestAnimationFrame(settle);
       return;
     }
+
+    // Out of reach. Leave the screen at the top and stop remembering it.
     byPath.delete(path);
   };
 
