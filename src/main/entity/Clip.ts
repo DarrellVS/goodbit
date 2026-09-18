@@ -103,6 +103,22 @@ export class Clip {
   @Column({ type: 'integer', default: 0 })
   openCount!: number;
 
+  /**
+   * How many moments the analysis is confident about in this clip.
+   *
+   * Written by the sweep that runs when a game closes, which otherwise leaves
+   * nothing behind: the measurement lives in `.goodbit-cache/analysis`, keyed
+   * by mtime, and the verdict is recomputed from it every time. The library is
+   * one query over this table and cannot open a cache file per tile, so the
+   * count comes back with the sweep and the grid reads it for free.
+   *
+   * Null is "nobody has looked", which is not the same as zero. Every row
+   * predating the column is null, and so is every clip recorded while the
+   * sweep is switched off.
+   */
+  @Column({ type: 'integer', nullable: true })
+  suggestedCount?: number | null;
+
   @ManyToMany(() => Tag, { cascade: ['insert'] })
   @JoinTable()
   tags!: Tag[];

@@ -330,6 +330,9 @@ function page(): string {
        *
        * Sine throughout, with an exponential tail. A raw gate on a sine pops at
        * both ends, and the envelope is the only reason this does not click.
+       *
+       * The sweep has a voice of its own below, on the same grammar and
+       * deliberately nothing like it to listen to.
        */
       // Keyed by the state name the card is given, not by a name of their own:
       // they were 'start' and 'saved' against states 'saving' and 'saved', so
@@ -339,6 +342,30 @@ function page(): string {
         saved: [
           { hz: 1046.5, at: 0, peak: 0.6, tail: 0.2 },
           { hz: 1318.5, at: 0.085, peak: 0.6, tail: 0.2 },
+        ],
+        /*
+         * The sweep, and it has to be unmistakably not the clip pair.
+         *
+         * Three notes rather than two, a rising G major triad, and an octave
+         * below the clip's C6-E6. Two notes high up is "your key worked, the
+         * clip is safe"; a lower arpeggio is "here is something I found while
+         * you were away", which is a different sentence and arrives in a
+         * different situation. Somebody who has heard both a hundred times
+         * should not have to read the card to know which one just played.
+         *
+         * Lower is affordable here. The clip chime is pitched to cut through a
+         * game; this one only ever plays once a game has closed, so it can be
+         * round rather than bright. Quieter per note as well, because three of
+         * them at the pair's level is a louder event than either.
+         *
+         * Nothing on the opening half, deliberately. It fires the moment
+         * somebody closes a game, which is often the moment they get up, and
+         * the card alone is enough to say the machine is busy.
+         */
+        found: [
+          { hz: 392.0, at: 0, peak: 0.45, tail: 0.26 },
+          { hz: 493.88, at: 0.075, peak: 0.45, tail: 0.26 },
+          { hz: 587.33, at: 0.15, peak: 0.45, tail: 0.3 },
         ],
       };
 
@@ -396,7 +423,13 @@ function page(): string {
           text.classList.add('swap');
         }
 
-        card.classList.toggle('saved', state === 'saved');
+        // The 'saved' class is the *resolved* half of a pair rather than the
+        // word saved: the tick, the drain bar, the settled colours. The
+        // sweep's pair ends in 'found', and it ends the same way.
+        //
+        // No backticks in here, ever: this whole page is a template literal in
+        // clipToast.ts, and one in a comment ends the string.
+        card.classList.toggle('saved', state === 'saved' || state === 'found');
         card.classList.add('in');
         if (withSound) chime(state, volume);
       };
@@ -480,20 +513,53 @@ function place(win: BrowserWindow, corner: Corner): void {
  * Safe to call more than once, and cheap when the window already exists.
  */
 export function warmClipToast(): void {
-  if (loadSettings().clipToast === false) return;
+  const settings = loadSettings();
+  // Either card wants the window, so either card is a reason to build it.
+  if (settings.clipToast === false && settings.analyzeOnGameCloseToast === false) return;
   if (overlay && !overlay.isDestroyed()) return;
   overlay = build();
 }
 
+/**
+ * The four states this card has, in two pairs.
+ *
+ * `saving`/`saved` is a clip being filed. `finding`/`found` is a session's
+ * clips being read once the game has closed. Each pair is a promise and its
+ * receipt, and the first half exists because the wait is the reason the card
+ * is there at all.
+ */
+type ToastState = 'saving' | 'saved' | 'finding' | 'found';
+
+interface RenderOptions {
+  sound?: boolean;
+  /**
+   * How long the card stays up.
+   *
+   * The caller's, because only the caller knows. `SAVING_TIMEOUT_MS` is a
+   * backstop for a clip that never arrives; a sweep can outrun it easily, and
+   * the first card giving up while the job is still running is the failure
+   * this file warns about in the other direction.
+   */
+  lingerMs?: number;
+  /**
+   * Whether this card is wanted at all.
+   *
+   * Passed in rather than read here, because the two pairs answer to two
+   * different settings: `clipToast` for a clip being filed and
+   * `analyzeOnGameCloseToast` for a sweep.
+   */
+  enabled: boolean;
+}
+
 async function render(
-  state: 'saving' | 'saved',
+  state: ToastState,
   title: string,
   subtitle: string,
-  sound = false,
+  { sound = false, lingerMs, enabled }: RenderOptions,
 ): Promise<void> {
   const began = Date.now();
   const settings = loadSettings();
-  if (settings.clipToast === false) return;
+  if (!enabled) return;
 
   if (!overlay || overlay.isDestroyed()) overlay = build();
   const win = overlay;
@@ -521,7 +587,8 @@ async function render(
   // around it, so it says out loud whether the arrangement is working.
   console.log(`[toast] ${state} in ${Date.now() - began}ms`);
 
-  const linger = state === 'saved' ? SHOW_MS : SAVING_TIMEOUT_MS;
+  const settled = state === 'saved' || state === 'found';
+  const linger = lingerMs ?? (settled ? SHOW_MS : SAVING_TIMEOUT_MS);
   hideTimer = setTimeout(() => {
     void (async () => {
       try {
@@ -542,12 +609,10 @@ async function render(
 export async function showClipSaving(): Promise<void> {
   try {
     const settings = loadSettings();
-    await render(
-      'saving',
-      'Saving your clip',
-      'Filing it into your library',
-      settings.clipToastSound !== false,
-    );
+    await render('saving', 'Saving your clip', 'Filing it into your library', {
+      sound: settings.clipToastSound !== false,
+      enabled: settings.clipToast !== false,
+    });
   } catch (error) {
     console.error('[toast]', error instanceof Error ? error.message : error);
   }
@@ -557,10 +622,95 @@ export async function showClipSaving(): Promise<void> {
 export async function showClipSaved(subtitle: string): Promise<void> {
   try {
     const settings = loadSettings();
-    await render('saved', 'Clip saved', subtitle, settings.clipToastSound !== false);
+    await render('saved', 'Clip saved', subtitle, {
+      sound: settings.clipToastSound !== false,
+      enabled: settings.clipToast !== false,
+    });
   } catch (error) {
     console.error('[toast]', error instanceof Error ? error.message : error);
   }
+}
+
+/**
+ * The sweep has started, and how much of it there is.
+ *
+ * Silent, whatever the settings say. The half with news in it has the sound;
+ * this one fires as somebody closes a game, which is often the moment they get
+ * up, and the card alone says the machine is busy.
+ *
+ * The linger comes from the caller because a sweep can run for minutes and the
+ * card has to outlast it. There is still a cap: a job that dies without ever
+ * reporting must not leave a card up for the rest of the evening.
+ */
+export async function showSweepStarted(
+  clips: number,
+  game: string,
+  lingerMs: number,
+): Promise<void> {
+  try {
+    const settings = loadSettings();
+    await render(
+      'finding',
+      'Looking for GoodBits',
+      `${clips} ${clips === 1 ? 'clip' : 'clips'} from ${game}`,
+      {
+        lingerMs,
+        enabled:
+          settings.analyzeOnGameClose !== false && settings.analyzeOnGameCloseToast !== false,
+      },
+    );
+  } catch (error) {
+    console.error('[toast]', error instanceof Error ? error.message : error);
+  }
+}
+
+/**
+ * The sweep is done and it found something. The half that resolves.
+ *
+ * **Only called when there is something to report.** A sweep that turns up
+ * nothing takes its card down instead (`dismissClipToast`), because a card
+ * arriving after somebody has stopped playing to tell them about nothing is an
+ * interruption with no payload. The promise half is still worth drawing while
+ * the work runs: it says why the machine is busy.
+ */
+export async function showSweepFinished(found: number, clips: number): Promise<void> {
+  try {
+    const settings = loadSettings();
+    const title = `Found ${found} ${found === 1 ? 'GoodBit' : 'GoodBits'}`;
+    const subtitle = `in ${clips} ${clips === 1 ? 'clip' : 'clips'}, ready to trim`;
+
+    await render('found', title, subtitle, {
+      sound: settings.analyzeOnGameCloseSound !== false,
+      enabled:
+        settings.analyzeOnGameClose !== false && settings.analyzeOnGameCloseToast !== false,
+    });
+  } catch (error) {
+    console.error('[toast]', error instanceof Error ? error.message : error);
+  }
+}
+
+/**
+ * Take the card down now, without a receipt.
+ *
+ * For a sweep that was cancelled or failed: the promise it made should stop
+ * standing there rather than resolve into a number that was never counted.
+ */
+export function dismissClipToast(): void {
+  if (hideTimer) clearTimeout(hideTimer);
+  hideTimer = null;
+  if (!overlay || overlay.isDestroyed() || !overlay.isVisible()) return;
+
+  const win = overlay;
+  void (async () => {
+    try {
+      await win.webContents.executeJavaScript('window.dismiss();');
+      setTimeout(() => {
+        if (!win.isDestroyed()) win.hide();
+      }, 260);
+    } catch {
+      if (!win.isDestroyed()) win.hide();
+    }
+  })();
 }
 
 /**
@@ -571,6 +721,13 @@ export async function previewClipToast(): Promise<void> {
   await showClipSaving();
   await new Promise((resolve) => setTimeout(resolve, 1600));
   await showClipSaved('Battlefield 6 · 0:30');
+}
+
+/** The sweep's pair, from Settings, for the same reason. */
+export async function previewSweepToast(): Promise<void> {
+  await showSweepStarted(12, 'Battlefield 6', 8000);
+  await new Promise((resolve) => setTimeout(resolve, 1900));
+  await showSweepFinished(4, 12);
 }
 
 export function closeClipToast(): void {

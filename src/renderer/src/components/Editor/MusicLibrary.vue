@@ -144,9 +144,13 @@ onBeforeUnmount(stopPreview);
     <!--
       No heading. The tab above it says `Music`, in a panel that holds nothing
       else, and the dropzone under it says what the panel is for.
+
+      Space under it as well as over it: the dropzone and the first track were
+      touching, so the dashed box read as the top of the list rather than as
+      the thing above the list.
     -->
     <div
-      class="shrink-0 mt-3 rounded-md border border-dashed transition-colors duration-150"
+      class="shrink-0 mt-3 mb-3 rounded-md border border-dashed transition-colors duration-150"
       :class="isDragOver ? 'border-accent bg-accent/8' : 'border-border'"
       @dragover.prevent="isDragOver = true"
       @dragleave="isDragOver = false"
@@ -185,55 +189,72 @@ onBeforeUnmount(stopPreview);
       </div>
     </div>
 
+    <!--
+      One row per track, not a card with a second floor.
+
+      The name, the length and the size sat in a block with the preview and
+      delete buttons on a row of their own underneath, which made every track
+      92px tall and put its two actions as far from its name as the next
+      track's. They are on the one line now, in the same shape the clip card
+      uses: the actions keep their space at rest and only their opacity moves,
+      because nothing here changes size on hover.
+
+      The name is one truncated line rather than two wrapped ones. A music file
+      is named by whoever made it and some of those names are a sentence; the
+      full one is in the row's own title.
+    -->
     <div v-else class="flex-1 overflow-y-auto scroll-p-1.5 pb-3 space-y-0.5">
       <div
         v-for="track in tracks"
         :key="track.id"
-        class="group rounded-sm overflow-hidden transition-colors duration-150"
+        class="group flex items-center gap-2 rounded-sm px-2 py-1.5 transition-colors duration-150"
         :class="isAdded(track) ? 'bg-muted-100' : 'hover:bg-muted-50'"
       >
         <button
-          class="w-full text-left px-2.5 pt-2.5 pb-1.5"
-          :title="isAdded(track) ? 'Already on the timeline. Click to place another copy' : 'Add to the timeline'"
+          class="flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:focus-ring rounded-sm"
+          :title="isAdded(track)
+            ? `${track.displayName}. Already on the timeline, click to place another copy`
+            : `${track.displayName}. Add to the timeline`"
           @click="emit('add-to-timeline', track)"
         >
-          <div class="flex items-start gap-2">
-            <div class="mt-0.5 w-7 h-7 rounded-md bg-accent flex items-center justify-center shrink-0">
-              <Icon icon="material-symbols:add" class="text-accent-fg text-base" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="text-sm font-medium text-foreground line-clamp-2 leading-snug">
-                {{ track.displayName }}
-              </div>
-              <div class="mt-1.5 flex items-center gap-2 text-xs text-muted-600 font-mono">
-                <span>{{ formatTimeSimple(track.durationSec) }}</span>
-                <span>·</span>
-                <span>{{ formatBytes(track.sizeBytes) }}</span>
-                <span v-if="isAdded(track)" class="text-accent-ink font-sans font-medium">on timeline</span>
-              </div>
-            </div>
-          </div>
+          <span class="size-7 shrink-0 inline-flex items-center justify-center rounded-md bg-accent">
+            <Icon icon="material-symbols:add" class="size-4 shrink-0 block text-accent-fg" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-foreground">
+              {{ track.displayName }}
+            </span>
+            <span class="mt-0.5 flex items-center gap-1.5 text-xs text-muted-600">
+              <span class="font-mono tabular-nums">{{ formatTimeSimple(track.durationSec) }}</span>
+              <span class="text-muted-300">·</span>
+              <span class="font-mono tabular-nums">{{ formatBytes(track.sizeBytes) }}</span>
+              <span v-if="isAdded(track)" class="truncate font-medium text-accent-ink">on timeline</span>
+            </span>
+          </span>
         </button>
 
-        <div class="flex items-center justify-end gap-1 px-2 pb-2">
+        <span
+          class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+        >
           <button
-            class="p-1.5 rounded-md hover:bg-accent/8 text-muted-600 hover:text-accent-ink transition-colors"
+            class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-accent/8 hover:text-accent-ink outline-none focus-visible:opacity-100 focus-visible:focus-ring transition-colors duration-150"
+            :class="previewId === track.id ? 'opacity-100 text-accent-ink' : ''"
             :title="previewId === track.id ? 'Stop preview' : 'Preview'"
             @click.stop="togglePreview(track)"
           >
             <Icon
               :icon="previewId === track.id ? 'material-symbols:stop-circle' : 'material-symbols:play-circle'"
-              class="text-lg"
+              class="size-4 shrink-0 block"
             />
           </button>
           <button
-            class="p-1.5 rounded-md hover:bg-danger/8 text-muted-600 hover:text-danger-ink transition-colors"
+            class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-danger/8 hover:text-danger-ink outline-none focus-visible:opacity-100 focus-visible:focus-ring transition-colors duration-150"
             title="Delete track"
             @click.stop="remove(track)"
           >
-            <Icon icon="material-symbols:delete-outline" class="text-lg" />
+            <Icon icon="material-symbols:delete-outline" class="size-4 shrink-0 block" />
           </button>
-        </div>
+        </span>
       </div>
     </div>
   </div>

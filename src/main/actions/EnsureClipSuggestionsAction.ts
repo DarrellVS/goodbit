@@ -141,8 +141,9 @@ export class EnsureClipSuggestionsAction extends BaseAction<
     // When the screen decided it, the window belongs around what the screen
     // showed, not around the loudest second, which on a clip with a kill in
     // it is often a reload or a teammate shouting somewhere else.
-    const anchored =
-      verdict.anchor && this.placeAround(verdict.anchor, analysis.durationSec, windowSec);
+    const anchored = verdict.anchors.length
+      ? this.placeAround(verdict.anchors, analysis.durationSec, windowSec)
+      : null;
 
     return {
       ...analysis,
@@ -161,27 +162,52 @@ export class EnsureClipSuggestionsAction extends BaseAction<
   }
 
   /**
-   * A window built around something the game showed.
+   * A window built around everything the game showed, not only the best of it.
    *
-   * Same shape as the one built from sound, lead-in, the thing, a beat after
-   *, but the "thing" is however long the event took, so three kills in nine
-   * seconds produce a window that holds all three.
+   * Same shape as the one built from sound, lead-in, the thing, a beat after,
+   * with two differences that come from the screen being able to enumerate
+   * what happened where the sound cannot.
+   *
+   * **It spans every reading.** It used to be placed around the strongest one
+   * alone, so a clip with a kill at 0:04 and another at 0:22 offered a ten
+   * second window over one of them and said nothing about the other, and
+   * pressing *Use it* cut the second one off. Readings that belong to one
+   * moment are already merged by the module, so two anchors really are two
+   * things that happened, and the honest cut keeps both: from the first one's
+   * lead-in to the last one's tail.
+   *
+   * **`windowSec` only caps a single moment.** It is the answer to "how much
+   * of this clip is the good bit", which is a question about one of them. Two
+   * moments twenty seconds apart are twenty seconds apart however long the
+   * good bit is, and clamping there would drop one of them again, quietly.
+   *
+   * Every reading also becomes a suggested mark, in time order, so the row of
+   * chips under the banner is the list of what was found rather than a repeat
+   * of the headline.
    */
   private placeAround(
-    event: GameEvent,
+    events: GameEvent[],
     durationSec: number,
     windowSec: number,
   ): { window: { start: number; end: number }; goodBits: SuggestedGoodBit[] } | null {
-    if (!durationSec) return null;
-    const until = Math.max(event.atSec, event.untilSec ?? event.atSec);
-    const span = until - event.atSec;
+    if (!durationSec || !events.length) return null;
 
-    const longest = Math.min(windowSec, Math.max(MIN_WINDOW_SEC, durationSec * 0.95));
+    const inTime = [...events].sort((a, b) => a.atSec - b.atSec);
+    const first = inTime[0];
+    const last = inTime[inTime.length - 1];
+    const until = Math.max(last.atSec, last.untilSec ?? last.atSec);
+    const span = until - first.atSec;
+
+    const room = Math.max(MIN_WINDOW_SEC, durationSec * 0.95);
+    const longest = inTime.length > 1 ? room : Math.min(windowSec, room);
     const length = Math.min(longest, Math.max(MIN_WINDOW_SEC, LEAD_IN + span + TAIL_ROOM));
 
     return {
-      window: place(length, durationSec, event.atSec, until),
-      goodBits: [{ t: round(event.atSec), score: round(event.confidence, 2) }],
+      window: place(length, durationSec, first.atSec, until),
+      goodBits: inTime.map((event) => ({
+        t: round(event.atSec),
+        score: round(event.confidence, 2),
+      })),
     };
   }
 
@@ -203,7 +229,7 @@ export class EnsureClipSuggestionsAction extends BaseAction<
   } | null {
     const strongest = anchors[0];
     if (!strongest) return null;
-    const placed = this.placeAround(strongest, durationSec, windowSec);
+    const placed = this.placeAround(anchors, durationSec, windowSec);
     return placed ? { ...placed, evidence: strongest.reason } : null;
   }
 

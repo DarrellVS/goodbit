@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import Wordmark from '@renderer/components/Shell/Wordmark.vue';
-import { momentCovered } from '@renderer/utils/goodBits';
+import { anchorName, momentCovered } from '@renderer/utils/goodBits';
 import type { ClipSuggestions, SuggestionEvent } from '@renderer/services/clips';
 import type { GoodBit } from '@renderer/types/goodbit';
 
@@ -80,12 +80,6 @@ const headline = computed(() =>
   evidence.value ? `Worth keeping: ${label.value}` : `The loudest stretch is ${label.value}`,
 );
 
-const detail = computed(() =>
-  evidence.value
-    ? evidence.value
-    : `${seconds.value}s, which is usually where the good bit is`,
-);
-
 const seconds = computed(() => {
   const w = window.value;
   return w ? Math.round((w.end - w.start) * 10) / 10 : 0;
@@ -110,11 +104,37 @@ const anchors = computed<SuggestionEvent[]>(() => {
   return found.length > 1 ? [...found].sort((a, b) => a.atSec - b.atSec) : [];
 });
 
-/** The window the server placed, which belongs to the strongest reading only. */
-const strongest = computed(() => props.suggestions?.anchors?.[0] ?? null);
+/**
+ * What the line after the range says.
+ *
+ * With one reading it is that reading's own sentence. With several the
+ * suggested cut spans all of them, so the sentence has to be about the set:
+ * naming the strongest and saying nothing about the rest is how a cut that
+ * deliberately holds three moments reads as a cut that found one.
+ */
+const detail = computed(() => {
+  if (anchors.value.length > 1) {
+    return `${anchors.value.length} GoodBits, and this keeps all of them`;
+  }
+  return evidence.value
+    ? evidence.value
+    : `${seconds.value}s, which is usually where the good bit is`;
+});
 
 function keptAlready(anchor: SuggestionEvent): boolean {
   return momentCovered(anchor.atSec, props.goodBits);
+}
+
+/**
+ * Whether this reading is one where things went badly.
+ *
+ * Drawn in the quiet ladder rather than in the accent, because the accent
+ * means the good bit and has one meaning. A death is worth keeping often
+ * enough to be offered and is not the thing the accent is for; the word on the
+ * chip says which it is, and the colour keeps them apart at a glance.
+ */
+function isDeath(anchor: SuggestionEvent): boolean {
+  return anchor.kind === 'death';
 }
 
 /**
@@ -150,10 +170,18 @@ function reject(): void {
     from a height nobody knows in advance, which is the case here: the answer is
     one line, two on a narrow window. The child needs `overflow-hidden` and
     `min-h-0` or it refuses to be squeezed.
+
+    **The delay is on the way in only.** Opening the trimmer scales the whole
+    panel in over 260ms, and this row growing at the same moment is two
+    animations arguing about where the picture above them ends: it reads as the
+    panel stuttering rather than as a banner arriving. Half a second lets the
+    panel land first. The delay lives on the class that is applied while it is
+    open, so it is spent expanding and never on the way out, where waiting for
+    a row to leave would be a row that hangs about.
   -->
   <div
     class="grid transition-[grid-template-rows] duration-300 ease-out"
-    :class="occupied ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
+    :class="occupied ? 'grid-rows-[1fr] delay-500' : 'grid-rows-[0fr] delay-0'"
   >
     <div class="overflow-hidden min-h-0">
       <!--
@@ -236,17 +264,24 @@ function reject(): void {
       it. The press also seeks, so what has just been kept is on screen rather
       than taken on trust.
 
-      This is the convenience half of the feature and it is deliberately second.
-      Four percent of a real library holds two or more of these, against a bar
-      of fifteen for building the release on them, so the bar below the timeline
-      is the primary path and this row fills in the few it happens to find.
+      The same ranges are drawn as outlines along the strip, which is where a
+      range belongs: this row names them and says how sure the reading was,
+      which an outline cannot, and the strip says where in half a minute of
+      footage they are, which a row of times cannot. Two of them side by side
+      was the other idea, and it makes two banners argue about which is the
+      answer.
+
+      This is still the convenience half of the feature and it is deliberately
+      second: the mark bar below the timeline is the primary path, because a
+      person watching a clip knows it has two good bits whether or not the
+      game happened to say so.
     -->
     <div
       v-if="anchors.length > 0"
       class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-accent/50"
     >
       <span class="text-xs text-muted-500 mr-1">
-        This game showed {{ anchors.length }} moments. Keep any of them:
+        This game showed {{ anchors.length }} GoodBits, outlined on the strip. Keep any of them:
       </span>
 
       <button
@@ -256,8 +291,12 @@ function reject(): void {
         class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors disabled:cursor-default"
         :class="
           keptAlready(anchor)
-            ? 'border-accent/60 text-muted-500 bg-accent/4'
-            : 'border-accent text-accent-ink hover:bg-accent/16'
+            ? isDeath(anchor)
+              ? 'border-border text-muted-500 bg-muted-50'
+              : 'border-accent/60 text-muted-500 bg-accent/4'
+            : isDeath(anchor)
+              ? 'border-border text-muted-700 hover:bg-muted-100'
+              : 'border-accent text-accent-ink hover:bg-accent/16'
         "
         :disabled="keptAlready(anchor)"
         :title="
@@ -277,6 +316,13 @@ function reject(): void {
         />
         <span class="font-mono tabular-nums">{{ format(anchor.atSec) }}</span>
         <!--
+          What this reading is, in the word it will be saved under. A row of
+          times alone cannot say that one of these is a kill and the next one
+          is where you went down, and the colour only says which is which to
+          somebody who has been told.
+        -->
+        <span v-if="anchorName(anchor)" class="font-medium">{{ anchorName(anchor) }}</span>
+        <!--
           The confidence, because these are readings rather than facts and the
           one at 0.81 deserves less trust than the one at 0.98. Three of the
           seven multi-event clips in the measurement had a reading at exactly
@@ -287,14 +333,6 @@ function reject(): void {
           {{ Math.round(anchor.confidence * 100) }}%
         </span>
       </button>
-
-      <!--
-        Where *Use it* puts the handles, named, so the row above and this one
-        are visibly about the same clip rather than two unrelated readings.
-      -->
-      <span v-if="strongest" class="text-[11px] text-muted-400 ml-auto">
-        Strongest: {{ format(strongest.atSec) }}
-      </span>
     </div>
   </div>
       </Transition>

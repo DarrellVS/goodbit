@@ -17,7 +17,7 @@
     @drop="fileImport.handleDrop"
   >
     <Sidebar
-      :active-game="selectedGame"
+      :active-games="clipsStore.selectedGames"
       :disable-games-filter="disableGamesFilter"
       @select-game="selectGame"
     />
@@ -42,11 +42,26 @@
       <PageHeader
         v-if="router.currentRoute.value.meta.title"
         v-model:search="searchText"
+        :compact="scrolled"
         :title="(router.currentRoute.value.meta.title as string)"
         :subtitle="(router.currentRoute.value.meta.subtitle as string)"
       />
 
-      <main class="flex-1 overflow-y-auto scroll-p-1.5">
+      <!--
+        The one thing that scrolls, which is why the header above it can shrink
+        as it does: `useScrolledPage` follows this element and every screen
+        inside it reads the same flag.
+
+        **`overflow-anchor: none` is load-bearing.** Chromium keeps what you
+        are looking at still when content above it changes size, by moving the
+        scroll position to match. The sticky band at the top of the library
+        changes size *because of* the scroll position, so the compensation fed
+        straight back into the thing that caused it and the header bounced
+        between its two sizes for as long as you left the wheel near the top.
+        Switching anchoring off is what breaks the circuit; the thresholds in
+        `useScrolledPage` are the second line of defence.
+      -->
+      <main ref="scroller" class="flex-1 overflow-y-auto scroll-p-1.5 [overflow-anchor:none]">
         <RouterView />
       </main>
     </div>
@@ -74,7 +89,6 @@ import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import { RouterView, useRouter } from 'vue-router';
 import ClipDetailModal from '@renderer/components/ClipDetail/ClipDetailModal.vue';
 import CollectionDetailModal from '@renderer/components/Collection/CollectionDetailModal.vue';
-import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
 import { useClipsStore } from '@renderer/stores/clips';
 import { useGamesStore } from '@renderer/stores/games';
 import { useTagsStore } from '@renderer/stores/tags';
@@ -89,30 +103,42 @@ import { useServiceEvents } from '@renderer/composables/app/useServiceEvents';
 import { usePublishProgress } from '@renderer/composables/clips/usePublishProgress';
 import { useCollectionsStore } from '@renderer/stores/collections';
 import { rememberScrollFor, restoreScrollFor } from '@renderer/utils/scroll';
+import { useScrolledPage } from '@renderer/composables/ui/useScrolledPage';
 
 const gamesStore = useGamesStore();
 const tagsStore = useTagsStore();
 const clipsStore = useClipsStore();
 const fileImport = useFileImport();
-const selectedGame = ref('');
 const searchText = ref('');
 const router = useRouter();
 
-const { openCollectionId } = useCollectionDetail();
+const scroller = ref<HTMLElement | null>(null);
+const { scrolled, watchScroller } = useScrolledPage();
+let unwatchScroll: (() => void) | null = null;
 
 /*
- * The games list filters the clips, so it is live wherever clips are listed.
- * A collection is one of those places and used to be recognised by its route
- * name; it is a layer now, so the layer is what to ask.
+ * The games list filters the library, so it is live on the screens that are
+ * the library.
+ *
+ * A collection used to be one of them, first by route name and then by asking
+ * the layer. It is neither now: a collection owns its own game filter, set
+ * from the popover in its own header, because a list somebody made by hand
+ * should not arrive narrowed by whatever the sidebar behind the scrim was on.
  */
 const disableGamesFilter = computed(() => {
-  if (openCollectionId.value !== null) return false;
   const routeName = router.currentRoute.value.name;
   return !(routeName === 'clips' || routeName === 'today');
 });
 
+/**
+ * One game, replacing whatever was there.
+ *
+ * The filter holds several and the popover is where more than one is chosen.
+ * A row in this list is a place rather than a checkbox, so pressing one means
+ * "show me this", including when it is already the only one lit.
+ */
 function selectGame(g: string): void {
-  selectedGame.value = g;
+  clipsStore.setGame(g);
 }
 
 const collectionsStore = useCollectionsStore();
@@ -155,22 +181,20 @@ router.afterEach((to) => {
   restoreScrollFor(to.fullPath);
 });
 
-onMounted(() => document.addEventListener('keydown', handlePaletteKey));
-onBeforeUnmount(() => document.removeEventListener('keydown', handlePaletteKey));
+onMounted(() => {
+  document.addEventListener('keydown', handlePaletteKey);
+  unwatchScroll = watchScroller(scroller.value);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handlePaletteKey);
+  unwatchScroll?.();
+  unwatchScroll = null;
+});
 
 onMounted(async () => {
   // The palette offers collections as well as games and tags, so they have to
   // be loaded for it to find them.
   await Promise.all([gamesStore.fetchGames(), tagsStore.fetchTags(), collectionsStore.fetchCollections()]);
-  selectedGame.value = clipsStore.selectedGame;
-});
-
-watch(selectedGame, (g) => {
-  clipsStore.setGame(g);
-});
-
-watch(() => clipsStore.selectedGame, (g) => {
-  selectedGame.value = g;
 });
 
 watch(searchText, (q) => {
@@ -178,9 +202,8 @@ watch(searchText, (q) => {
 });
 
 watch(disableGamesFilter, (isDisabled) => {
-  if (isDisabled && selectedGame.value) {
-    selectedGame.value = '';
-    clipsStore.setGame('');
+  if (isDisabled && clipsStore.selectedGames.length) {
+    clipsStore.setGames([]);
   }
 });
 

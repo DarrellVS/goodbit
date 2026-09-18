@@ -24,6 +24,7 @@ interface GoodBitBridge {
   ) => Promise<{ problem: string | null; obsRunning: boolean }>;
   dragOutClip: (clipId: number) => void;
   previewClipToast: () => Promise<void>;
+  previewSweepToast: () => Promise<void>;
   onDragOutEnd: (listener: () => void) => () => void;
   steamLaunch: (
     game: string,

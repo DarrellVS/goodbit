@@ -19,6 +19,14 @@ interface Props {
   isEditing: boolean;
   editingName: string;
   isDragOver: boolean;
+  /**
+   * The row is pinned to the top of the page, so the card gives up its second
+   * line: the count, and the rename and delete buttons that share it.
+   *
+   * They are one scroll away, and what a pinned row is for is getting into a
+   * collection rather than administering one.
+   */
+  compact?: boolean;
 }
 
 interface Emits {
@@ -33,7 +41,7 @@ interface Emits {
   (e: 'drop', event: DragEvent): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { compact: false });
 const emit = defineEmits<Emits>();
 
 /*
@@ -58,12 +66,15 @@ const isOpen = computed(() => openCollectionId.value === props.collection.id);
     role="button"
     tabindex="0"
     data-collection-card
-    class="group flex min-w-0 cursor-pointer flex-col gap-2 rounded-md border bg-card p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-    :class="isDragOver
-      ? 'border-accent bg-accent/10'
-      : isOpen
-        ? 'border-accent/40 hover:bg-muted-50'
-        : 'border-border hover:border-muted-300 hover:bg-muted-50'"
+    class="group flex min-w-0 cursor-pointer flex-col rounded-md border bg-card text-left transition-[background-color,border-color,padding,gap] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    :class="[
+      compact ? 'gap-0 p-2' : 'gap-2 p-3',
+      isDragOver
+        ? 'border-accent bg-accent/10'
+        : isOpen
+          ? 'border-accent/40 hover:bg-muted-50'
+          : 'border-border hover:border-muted-300 hover:bg-muted-50',
+    ]"
     @click="open(collection.id)"
     @keydown.enter.prevent="open(collection.id)"
     @keydown.space.prevent="open(collection.id)"
@@ -99,27 +110,37 @@ const isOpen = computed(() => openCollectionId.value === props.collection.id);
       The count and the two buttons share the bottom line rather than sitting
       over the name: a rename button on top of the thing it renames hides the
       only way to tell which card you are on.
+
+      The whole line collapses when the row is pinned, the same `1fr` to `0fr`
+      grid the heading above it uses.
     -->
-    <div class="flex items-center justify-between gap-2">
-      <span class="text-xs text-muted-400">
-        {{ collection.clipCount }} {{ pluralize(collection.clipCount, 'clip') }}
-      </span>
-      <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          v-if="!isEditing"
-          class="rounded-sm p-1 transition-colors hover:bg-accent/20"
-          title="Rename"
-          @click.prevent.stop="emit('start-edit')"
-        >
-          <Icon icon="material-symbols:edit" class="text-sm text-muted-500" />
-        </button>
-        <button
-          class="rounded-sm p-1 transition-colors hover:bg-danger/20"
-          title="Delete"
-          @click.prevent.stop="emit('delete')"
-        >
-          <Icon icon="material-symbols:delete" class="text-sm text-muted-500" />
-        </button>
+    <div
+      class="grid transition-[grid-template-rows] duration-200 ease-out"
+      :class="compact ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+    >
+      <div class="overflow-hidden min-h-0">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs text-muted-400">
+            {{ collection.clipCount }} {{ pluralize(collection.clipCount, 'clip') }}
+          </span>
+          <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              v-if="!isEditing"
+              class="rounded-sm p-1 transition-colors hover:bg-accent/20"
+              title="Rename"
+              @click.prevent.stop="emit('start-edit')"
+            >
+              <Icon icon="material-symbols:edit" class="text-sm text-muted-500" />
+            </button>
+            <button
+              class="rounded-sm p-1 transition-colors hover:bg-danger/20"
+              title="Delete"
+              @click.prevent.stop="emit('delete')"
+            >
+              <Icon icon="material-symbols:delete" class="text-sm text-muted-500" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

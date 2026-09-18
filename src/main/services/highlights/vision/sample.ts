@@ -90,87 +90,190 @@ export interface SampleOptions {
 }
 
 /**
- * Grab one region's frames.
+ * One decode, however many boxes were asked for.
  *
- * One ffmpeg per region rather than one with several outputs: raw video cannot
- * share a pipe, and a module asks for two boxes at most. The GPU path is tried
- * first and a machine without one falls back to software, which is slower but
- * still finishes.
+ * It used to be one ffmpeg per region, on the grounds that raw video cannot
+ * share a pipe. That part is true and the conclusion did not follow: the boxes
+ * can be stacked into one taller picture inside the filter graph and sliced
+ * apart again here, so a second box costs a crop and a scale rather than a
+ * second pass over the file. Decoding is nearly the whole cost: reading
+ * Battlefield's two death cues as well as its kill banner took a real library
+ * from 0.173 to 0.196 seconds per second of footage, three boxes for the price
+ * of a little over one, where three ffmpegs would have been three times.
+ *
+ * **The tone map stays in front of the crop**, and that is deliberate rather
+ * than left alone. Running it on the small crops instead is a quarter faster,
+ * 0.174 seconds per second of footage against 0.133, and it is not the same
+ * picture: the source is 4:2:0, so `zscale`'s chroma upsampling reads
+ * neighbouring pixels, and cropping first changes both the neighbours at the
+ * edge and the chroma phase. Measured over 40 real recordings it moved every
+ * score by about five thousandths, which flipped four clips across the bar in
+ * both directions: two kills lost, two found. Same count, different clips.
+ * A quarter off a cached measurement is not worth quietly changing which
+ * moments the app finds; in the shared head it runs once for every box anyway.
+ *
+ * The GPU path is tried first and a machine without one falls back to
+ * software, which is slower and still finishes.
  */
-async function sampleRegion(
-  filePath: string,
-  region: Region,
-  fps: number,
-  shape: VideoShape,
-  signal?: AbortSignal,
-): Promise<SampledRegion | null> {
-  const rect = resolveRegion(region, shape.width, shape.height);
-  const [outWidth, outHeight] = region.out;
-
-  const filters = (hardware: boolean): string =>
-    [
-      `fps=${fps}`,
-      ...(hardware ? ['hwdownload', `format=${shape.swFormat}`] : []),
-      ...(shape.isHdr ? [TONEMAP] : []),
-      `crop=${rect.w}:${rect.h}:${rect.x}:${rect.y}`,
-      `scale=${outWidth}:${outHeight}`,
-      'format=rgb24',
-    ].join(',');
-
-  const run = (hardware: boolean): Promise<Buffer | null> =>
-    new Promise((resolve) => {
-      const args = [
-        '-hide_banner', '-v', 'error', '-nostdin',
-        ...(hardware ? ['-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda'] : []),
-        '-i', filePath,
-        '-an', '-sn',
-        '-vf', filters(hardware),
-        '-f', 'rawvideo', 'pipe:1',
-      ];
-      const child = spawn(FFMPEG_PATH, args, { stdio: ['ignore', 'pipe', 'ignore'] });
-      const chunks: Buffer[] = [];
-      let bytes = 0;
-
-      const abort = (): void => {
-        try {
-          child.kill('SIGKILL');
-        } catch {
-          /* already gone */
-        }
-      };
-      signal?.addEventListener('abort', abort, { once: true });
-
-      child.stdout.on('data', (chunk: Buffer) => {
-        chunks.push(chunk);
-        bytes += chunk.length;
-      });
-      child.on('error', () => {
-        signal?.removeEventListener('abort', abort);
-        resolve(null);
-      });
-      child.on('close', (code) => {
-        signal?.removeEventListener('abort', abort);
-        resolve(code === 0 && bytes > 0 ? Buffer.concat(chunks, bytes) : null);
-      });
-    });
-
-  const bytes = (await run(true)) ?? (await run(false));
-  if (!bytes) return null;
-
-  const stride = outWidth * outHeight * 3;
-  const count = Math.floor(bytes.length / stride);
-  const frames: Sampled[] = [];
-  for (let i = 0; i < count; i++) {
-    frames.push({
-      width: outWidth,
-      height: outHeight,
-      data: new Uint8Array(bytes.buffer, bytes.byteOffset + i * stride, stride),
-    });
-  }
-  return { width: outWidth, height: outHeight, data: new Uint8Array(0), rect, frames };
+interface Plan {
+  name: string;
+  region: Region;
+  rect: Rect;
+  outWidth: number;
+  outHeight: number;
+  /** Where this box's rows start in the stacked frame. */
+  offsetY: number;
 }
 
-/** Sample every region a module asked for. */
+function planRegions(
+  regions: Record<string, Region>,
+  shape: VideoShape,
+): { plans: Plan[]; stackWidth: number; stackHeight: number } {
+  const plans: Plan[] = [];
+  let offsetY = 0;
+  let stackWidth = 0;
+  for (const [name, region] of Object.entries(regions)) {
+    const rect = resolveRegion(region, shape.width, shape.height);
+    const [outWidth, outHeight] = region.out;
+    plans.push({ name, region, rect, outWidth, outHeight, offsetY });
+    offsetY += outHeight;
+    stackWidth = Math.max(stackWidth, outWidth);
+  }
+  return { plans, stackWidth, stackHeight: offsetY };
+}
+
+/**
+ * The filter graph for every box at once.
+ *
+ * `vstack` wants its inputs the same width, so a narrower box is padded on the
+ * right and the padding is dropped again when the rows are sliced apart. One
+ * box skips the split and the stack entirely, which keeps the single-region
+ * case exactly the chain it has always been.
+ */
+function buildFilter(
+  plans: Plan[],
+  stackWidth: number,
+  fps: number,
+  shape: VideoShape,
+  hardware: boolean,
+): string {
+  const head = [
+    `fps=${fps}`,
+    ...(hardware ? ['hwdownload', `format=${shape.swFormat}`] : []),
+    ...(shape.isHdr ? [TONEMAP] : []),
+  ].join(',');
+
+  const branch = (plan: Plan): string =>
+    [
+      `crop=${plan.rect.w}:${plan.rect.h}:${plan.rect.x}:${plan.rect.y}`,
+      `scale=${plan.outWidth}:${plan.outHeight}`,
+      'format=rgb24',
+      ...(plan.outWidth < stackWidth
+        ? [`pad=${stackWidth}:${plan.outHeight}:0:0`]
+        : []),
+    ].join(',');
+
+  if (plans.length === 1) return `${head},${branch(plans[0])}`;
+
+  const labels = plans.map((_, i) => `r${i}`);
+  return [
+    `[0:v]${head},split=${plans.length}${labels.map((l) => `[${l}]`).join('')}`,
+    ...plans.map((plan, i) => `[${labels[i]}]${branch(plan)}[o${i}]`),
+    `${plans.map((_, i) => `[o${i}]`).join('')}vstack=inputs=${plans.length}[out]`,
+  ].join(';');
+}
+
+function runFfmpeg(
+  filePath: string,
+  filter: string,
+  hardware: boolean,
+  complex: boolean,
+  signal?: AbortSignal,
+): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    const args = [
+      '-hide_banner', '-v', 'error', '-nostdin',
+      ...(hardware ? ['-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda'] : []),
+      '-i', filePath,
+      '-an', '-sn',
+      ...(complex ? ['-filter_complex', filter, '-map', '[out]'] : ['-vf', filter]),
+      '-f', 'rawvideo', 'pipe:1',
+    ];
+    const child = spawn(FFMPEG_PATH, args, { stdio: ['ignore', 'pipe', 'ignore'] });
+    const chunks: Buffer[] = [];
+    let bytes = 0;
+
+    const abort = (): void => {
+      try {
+        child.kill('SIGKILL');
+      } catch {
+        /* already gone */
+      }
+    };
+    signal?.addEventListener('abort', abort, { once: true });
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      chunks.push(chunk);
+      bytes += chunk.length;
+    });
+    child.on('error', () => {
+      signal?.removeEventListener('abort', abort);
+      resolve(null);
+    });
+    child.on('close', (code) => {
+      signal?.removeEventListener('abort', abort);
+      resolve(code === 0 && bytes > 0 ? Buffer.concat(chunks, bytes) : null);
+    });
+  });
+}
+
+/**
+ * One region's frames, out of the stacked picture.
+ *
+ * A box as wide as the stack is already contiguous and is handed out without
+ * copying; a padded one is copied row by row, which is a memcpy per frame and
+ * does not show up beside the decode.
+ */
+function sliceRegion(
+  bytes: Buffer,
+  plan: Plan,
+  stackWidth: number,
+  stackHeight: number,
+  count: number,
+): SampledRegion {
+  const frameStride = stackWidth * stackHeight * 3;
+  const rowStride = stackWidth * 3;
+  const outRowStride = plan.outWidth * 3;
+  const frames: Sampled[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const top = i * frameStride + plan.offsetY * rowStride;
+    if (plan.outWidth === stackWidth) {
+      frames.push({
+        width: plan.outWidth,
+        height: plan.outHeight,
+        data: new Uint8Array(bytes.buffer, bytes.byteOffset + top, plan.outHeight * rowStride),
+      });
+      continue;
+    }
+    const data = new Uint8Array(plan.outHeight * outRowStride);
+    for (let row = 0; row < plan.outHeight; row++) {
+      const from = bytes.byteOffset + top + row * rowStride;
+      data.set(new Uint8Array(bytes.buffer, from, outRowStride), row * outRowStride);
+    }
+    frames.push({ width: plan.outWidth, height: plan.outHeight, data });
+  }
+
+  return {
+    width: plan.outWidth,
+    height: plan.outHeight,
+    data: new Uint8Array(0),
+    rect: plan.rect,
+    frames,
+  };
+}
+
+/** Sample every region a module asked for, in one pass over the file. */
 export async function sampleRegions({
   filePath,
   regions,
@@ -178,11 +281,21 @@ export async function sampleRegions({
   shape,
   signal,
 }: SampleOptions): Promise<Record<string, SampledRegion>> {
+  const { plans, stackWidth, stackHeight } = planRegions(regions, shape);
+  if (!plans.length || signal?.aborted) return {};
+
+  const complex = plans.length > 1;
+  const bytes =
+    (await runFfmpeg(filePath, buildFilter(plans, stackWidth, fps, shape, true), true, complex, signal)) ??
+    (await runFfmpeg(filePath, buildFilter(plans, stackWidth, fps, shape, false), false, complex, signal));
+  if (!bytes) return {};
+
+  const count = Math.floor(bytes.length / (stackWidth * stackHeight * 3));
+  if (!count) return {};
+
   const out: Record<string, SampledRegion> = {};
-  for (const [name, region] of Object.entries(regions)) {
-    if (signal?.aborted) break;
-    const sampled = await sampleRegion(filePath, region, fps, shape, signal);
-    if (sampled) out[name] = sampled;
+  for (const plan of plans) {
+    out[plan.name] = sliceRegion(bytes, plan, stackWidth, stackHeight, count);
   }
   return out;
 }

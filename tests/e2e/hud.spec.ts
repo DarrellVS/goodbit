@@ -12,7 +12,8 @@ import { launchApp, seedClips, type TestApp } from './app';
  * happens. Battlefield's own kill banner is the first one, and this checks the
  * whole path: the module is registered, a game with no module is never
  * decoded, and, where a real recording is available, a clip with a kill in
- * it comes back with the kill as the grounds.
+ * it comes back with the kill as the grounds, and a clip with a death in it
+ * comes back with the death.
  */
 test.describe('what the screen gives away', () => {
   let ctx: TestApp;
@@ -58,21 +59,40 @@ test.describe('what the screen gives away', () => {
     }
   }
 
+  /** Looked for in every library this machine might have, in order. */
+  function findRecording(name: string): string {
+    return (
+      [configuredVideosRoot(), join(homedir(), 'Videos')]
+        .filter((root): root is string => !!root)
+        .map((root) => join(root, 'Battlefield 6', name))
+        .find((candidate) => existsSync(candidate)) ?? ''
+    );
+  }
+
   const CLIP_NAME = 'Battlefield 6_22.08.2026_15-43-01.mp4';
-  const REAL_CLIP =
-    [configuredVideosRoot(), join(homedir(), 'Videos')]
-      .filter((root): root is string => !!root)
-      .map((root) => join(root, 'Battlefield 6', CLIP_NAME))
-      .find((candidate) => existsSync(candidate)) ?? '';
+  const REAL_CLIP = findRecording(CLIP_NAME);
   const hasRealClip = REAL_CLIP !== '';
+
+  /**
+   * Seven seconds ending in a death, with no kill anywhere in it.
+   *
+   * Confirmed by eye: the camera falls at about five and a half seconds, and
+   * both of the lines Battlefield draws when you go down are legible from
+   * about six. Deliberately a clip with nothing else in it, so a pass cannot
+   * come from the kill detector finding something nearby.
+   */
+  const DEATH_CLIP_NAME = 'Battlefield 6_06.09.2026_20-53-57.mp4';
+  const DEATH_CLIP = findRecording(DEATH_CLIP_NAME);
+  const hasDeathClip = DEATH_CLIP !== '';
 
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'QuietGame', 1, 8);
-    if (hasRealClip) {
+    if (hasRealClip || hasDeathClip) {
       const dir = join(ctx.videosRoot, 'Battlefield 6');
       mkdirSync(dir, { recursive: true });
-      copyFileSync(REAL_CLIP, join(dir, 'bf6_kill.mp4'));
+      if (hasRealClip) copyFileSync(REAL_CLIP, join(dir, 'bf6_kill.mp4'));
+      if (hasDeathClip) copyFileSync(DEATH_CLIP, join(dir, 'bf6_death.mp4'));
     }
     await ctx.page.waitForTimeout(12_000);
   });
@@ -146,6 +166,47 @@ test.describe('what the screen gives away', () => {
     expect(body.window).toBeTruthy();
     expect(body.window!.start).toBeLessThanOrEqual(kill.atSec);
     expect(body.window!.end).toBeGreaterThanOrEqual(kill.atSec);
+  });
+
+  test('a Battlefield clip where you went down is suggested because of that', async () => {
+    test.skip(!hasDeathClip, 'needs a real Battlefield recording, which is not in the repo');
+
+    const list = (await call('GET', '/clips', undefined, { pageSize: 50, game: 'Battlefield 6' }))
+      .body as { items: Array<{ id: number; filename: string }> };
+    const clip = list.items.find((c) => c.filename === 'bf6_death.mp4');
+    expect(clip, 'the copied recording should have been indexed').toBeTruthy();
+
+    const res = await call('GET', `/clips/${clip!.id}/suggestions`);
+    const body = res.body as {
+      confident: boolean;
+      basis: string;
+      evidence: string | null;
+      window: { start: number; end: number } | null;
+      events: Array<{ kind: string; atSec: number; confidence: number; reason: string }>;
+    };
+
+    expect(body.basis).toBe('hud');
+    expect(body.confident).toBe(true);
+
+    const death = body.events.find((event) => event.kind === 'death');
+    expect(death, `events were: ${JSON.stringify(body.events)}`).toBeTruthy();
+    expect(death!.confidence).toBeGreaterThanOrEqual(0.8);
+    // The lines appear as the camera hits the ground, and the moment itself is
+    // a beat before that. Confirmed by eye at about five and a half seconds.
+    expect(death!.atSec).toBeGreaterThan(3.5);
+    expect(death!.atSec).toBeLessThan(6.5);
+
+    // Said as a sentence to the person looking at it, like every other reason.
+    // The wording rotates, so this is what every one of them has to say rather
+    // than the one it happened to pick.
+    expect(death!.reason).toBe(death!.reason.toLowerCase());
+    expect(death!.reason).toMatch(/went down|they got you|got dropped/);
+
+    // A seven second clip whose death is at the end: the window has to hold it,
+    // and `place` takes the last half second rather than leaving it behind.
+    expect(body.window).toBeTruthy();
+    expect(body.window!.start).toBeLessThanOrEqual(death!.atSec);
+    expect(body.window!.end).toBeGreaterThanOrEqual(death!.atSec);
   });
 
   test('the answer is cached, so opening the page twice only reads once', async () => {

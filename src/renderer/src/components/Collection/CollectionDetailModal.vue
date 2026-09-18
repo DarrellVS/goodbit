@@ -192,15 +192,28 @@ watch(openCollectionId, (id, was) => {
   }
   if (id === was) return;
 
+  /*
+   * Open on the whole collection, whatever the library was showing.
+   *
+   * The game filter used to be the clips store's, which is the sidebar's, so
+   * opening a collection with a game picked showed the part of it recorded in
+   * that game and said nothing about why. A collection is a list somebody made
+   * by hand: what is in it is the answer. The popover in this header sets this
+   * one, and it starts empty every time.
+   */
+  collectionsStore.selectedGames = [];
   collectionsStore.resetCollectionClips();
   void collectionsStore.fetchCollectionClips(id);
   void gamesStore.fetchGames();
   scrollToTop(scroller.value, 'auto');
 });
 
+/*
+ * The filters this layer shares with the library. The game is not one of them,
+ * because it has its own; see the store.
+ */
 watch(
   [
-    () => clipsStore.selectedGame,
     () => clipsStore.searchText,
     () => clipsStore.selectedTags,
     () => clipsStore.publishedFilter,
@@ -271,8 +284,10 @@ watch(
             <ClipFilters
               flush
               :total-count="total"
+              :selected-games="collectionsStore.selectedGames"
               :is-selection-mode="isSelectionMode"
               :sortable="false"
+              @update:selected-games="collectionsStore.setGames($event)"
               @enter-selection="enterSelectionMode"
               @exit-selection="exitSelectionMode"
             >

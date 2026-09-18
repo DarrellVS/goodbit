@@ -6,13 +6,14 @@ import { expect, test } from '@playwright/test';
 import { launchApp, seedClips, type TestApp } from './app';
 
 /**
- * Numbers, rather than opinions, about three things 2.0 is waiting on.
+ * Numbers, rather than opinions, about three things that were open in 2.0.
  *
- * `2.0-PLAN.md` gates decisions on measurements that did not exist: how long a
- * whole-library scan takes, which says whether incremental indexing is worth
- * building; how long a real export takes, which says how big the export rework
- * is; and whether an mkv survives the round trip now that one list decides
- * what a clip is.
+ * The plan that asked for them gated decisions on measurements that did not
+ * exist: how long a whole-library scan takes, which says whether incremental
+ * indexing is worth building; how long a real export takes, which says how big
+ * the export rework is; and whether an mkv survives the round trip now that
+ * one list decides what a clip is. The plan is gone and the measurements are
+ * still the answer, so they stay.
  *
  * Kept as a spec rather than a script because all three need the real app: the
  * scan is an action behind the internal API, the export is a job with a poll

@@ -93,15 +93,34 @@ function time(clip: Clip): number {
         day from the next.
       -->
       <div class="flex items-center gap-3 pb-2 border-b border-border">
-        <h3 class="text-xs font-medium uppercase tracking-label text-foreground shrink-0">
-          {{ group.displayDate }}
-        </h3>
-        <span class="text-sm text-muted-500 truncate">
-          {{ getGameDisplayName(group.game) }}
-        </span>
-        <span class="font-mono text-xs tabular-nums text-muted-400 shrink-0">
-          {{ group.clips.length }}
-        </span>
+        <!--
+          The three words sit on one baseline, and the row they are in is
+          centred.
+
+          They are three sizes: a 12px uppercase date, a 14px game and a 12px
+          mono count. Centring boxes of three sizes leaves each one on its own
+          baseline, which is what made this row look shuffled. Baselines are
+          the right answer for text of mixed sizes and the wrong one for the
+          button at the end of the row, whose glyph would then hang off its own
+          text, so the text is a group of its own inside a centred row.
+        -->
+        <div class="flex items-baseline gap-2 min-w-0">
+          <h3 class="text-xs font-medium uppercase tracking-label text-foreground shrink-0">
+            {{ group.displayDate }}
+          </h3>
+          <span class="text-sm text-muted-500 truncate">
+            {{ getGameDisplayName(group.game) }}
+          </span>
+          <!--
+            The count is a fact about the game, so it is joined to it rather
+            than left floating a gap away. Same middle dot as the meta line
+            under every card.
+          -->
+          <span aria-hidden="true" class="text-muted-400 shrink-0">&middot;</span>
+          <span class="font-mono text-xs tabular-nums text-muted-400 shrink-0">
+            {{ group.clips.length }}
+          </span>
+        </div>
         <span class="flex-1" aria-hidden="true"></span>
 
         <!--

@@ -30,8 +30,14 @@ import type { ComboBoxOption } from '@renderer/components/Base/types';
  * - **Tags are multiple.** `GET /clips` takes a comma separated `tags` and
  *   requires all of them, which is the useful case: "the funny ones from that
  *   squad wipe".
- * - **A game is one.** A clip lives in one folder, so two games at once is a
- *   question with no answer.
+ * - **Games are multiple, and whose they are depends on where this is.** A
+ *   *clip* lives in one folder, which is not the same statement as a *filter*
+ *   holding one: "the Battlefield and Ready Or Not clips from that evening"
+ *   was a question the library could answer and could not be asked. The list
+ *   comes in as a prop rather than off the clips store, because a collection
+ *   has its own: it is a list somebody put together by hand, so opening one
+ *   must not silently show the part of it that was recorded in whatever game
+ *   the sidebar happened to be on.
  * - **Starred is its own answer, and combines with any publish state.** The
  *   store has always held `starredFilter` and `publishedFilter` as two
  *   independent fields and the API has always taken both at once; it was the
@@ -64,6 +70,18 @@ import type { ComboBoxOption } from '@renderer/components/Base/types';
  * stand rather than a form to fill in. `Done` closes it and `Clear` empties
  * all three sections at once.
  */
+interface Props {
+  /** The games in force here, owned by whoever drew this row. */
+  selectedGames: string[];
+}
+
+interface Emits {
+  (e: 'update:selectedGames', games: string[]): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
 const clipsStore = useClipsStore();
 const tagsStore = useTagsStore();
 const gamesStore = useGamesStore();
@@ -79,7 +97,7 @@ const PUBLISH_STATES: Array<{ value: boolean | null; label: string }> = [
 /** How many separate answers are in force, for the badge on the trigger. */
 const activeCount = computed(() => {
   let n = clipsStore.selectedTags.length;
-  if (clipsStore.selectedGame) n += 1;
+  n += props.selectedGames.length;
   if (clipsStore.starredFilter) n += 1;
   if (clipsStore.publishedFilter !== null) n += 1;
   return n;
@@ -117,17 +135,24 @@ const tagsBeyondChips = computed(() =>
   Math.max(0, clipsStore.selectedTags.length - CHIP_LIMIT),
 );
 
-/** A game is one, so this is one chip or none. */
-const gameChip = computed(() => {
-  const chosen = clipsStore.selectedGame;
-  if (!chosen) return null;
-  const game = gamesStore.items.find((item) => item.game === chosen);
-  return game?.displayName || game?.game || chosen;
-});
+/** The same three-then-a-number as the tags, for the same reason. */
+function gameLabel(name: string): string {
+  const game = gamesStore.items.find((item) => item.game === name);
+  return game?.displayName || game?.game || name;
+}
+
+const gameChips = computed(() => props.selectedGames.slice(0, CHIP_LIMIT));
+const gamesBeyondChips = computed(() =>
+  Math.max(0, props.selectedGames.length - CHIP_LIMIT),
+);
+
+function removeGame(name: string): void {
+  emit('update:selectedGames', props.selectedGames.filter((game) => game !== name));
+}
 
 function clearAll(): void {
   clipsStore.setTags([]);
-  clipsStore.setGame('');
+  emit('update:selectedGames', []);
   clipsStore.setStarredFilter(false);
   clipsStore.setPublishedFilter(null);
 }
@@ -180,6 +205,7 @@ const CHIP =
           <h3 :class="HEADING">Filter by tag</h3>
           <div class="px-2 pb-1">
             <BaseComboBox
+              block
               variant="quiet"
               label="Filter by tag"
               placeholder="Any tag"
@@ -217,32 +243,39 @@ const CHIP =
           </div>
         </section>
 
-        <!-- One game, because a clip lives in one folder. -->
+        <!-- Any number of games, the same as the tags above. -->
         <section v-if="gamesStore.items.length" class="p-2 border-t border-border">
-          <h3 :class="HEADING">Game</h3>
+          <h3 :class="HEADING">Games</h3>
           <div class="px-2 pb-1">
             <BaseComboBox
+              block
               variant="quiet"
               label="Filter by game"
               placeholder="Any game"
               search-placeholder="Find a game"
+              empty-message="No game by that name."
+              multiple
               :searchable="gamesStore.items.length > 8"
-              :model-value="clipsStore.selectedGame || null"
+              :model-value="props.selectedGames"
               :options="gameOptions"
-              @update:model-value="(value) => clipsStore.setGame((value as string) ?? '')"
+              :summary="(chosen) => `${chosen.length} games`"
+              @update:model-value="(value) => emit('update:selectedGames', (value as string[]) ?? [])"
             />
 
-            <div v-if="gameChip" class="flex flex-wrap items-center gap-1.5 mt-2">
-              <span :class="CHIP">
-                <span class="truncate max-w-[11rem]">{{ gameChip }}</span>
+            <div v-if="gameChips.length" class="flex flex-wrap items-center gap-1.5 mt-2">
+              <span v-for="game in gameChips" :key="game" :class="CHIP">
+                <span class="truncate max-w-[11rem]">{{ gameLabel(game) }}</span>
                 <button
                   type="button"
                   class="size-5 shrink-0 inline-flex items-center justify-center rounded-full text-muted-400 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
-                  aria-label="Show every game again"
-                  @click="clipsStore.setGame('')"
+                  :aria-label="`Stop filtering by ${gameLabel(game)}`"
+                  @click="removeGame(game)"
                 >
                   <Icon icon="material-symbols:close" class="size-3.5 shrink-0 block" />
                 </button>
+              </span>
+              <span v-if="gamesBeyondChips" class="text-sm text-muted-400">
+                +{{ gamesBeyondChips }} more
               </span>
             </div>
           </div>

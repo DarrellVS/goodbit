@@ -5,6 +5,7 @@ import { useToastStore } from '@renderer/stores/toast';
 import { useMarkdown } from '@renderer/composables/ui/useMarkdown';
 import { updateClipNotes } from '@renderer/services/clips';
 import { formatTimestamp } from '@renderer/utils/timestampParser';
+import { SECTION_HEADER } from '@renderer/components/Base/geometry';
 import MarkdownToolbar from '@renderer/components/Base/MarkdownToolbar.vue';
 import MarkdownTextarea from '@renderer/components/Base/MarkdownTextarea.vue';
 import MarkdownPreview from '@renderer/components/Base/MarkdownPreview.vue';
@@ -181,7 +182,7 @@ function discard(): void {
       shrink, it overflowed, and the Save button ended up painted underneath
       the column beside it where nothing could press it.
     -->
-    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
+    <div :class="SECTION_HEADER">
       <h2 class="text-sm font-medium text-muted-600 shrink-0">Notes &amp; Annotations</h2>
 
       <!--

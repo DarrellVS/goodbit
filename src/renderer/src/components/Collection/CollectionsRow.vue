@@ -24,6 +24,19 @@ import type { DragData } from '@renderer/composables/editor/useDragAndDrop';
  * Both shapes size a card the same way, `minmax(11rem, 1fr)` over four
  * columns, so showing them all rearranges the cards without resizing them.
  */
+withDefaults(
+  defineProps<{
+    /**
+     * The page is scrolled, so this row is pinned and has to earn its height.
+     *
+     * The heading goes, and each card loses its second line. Sixteen pixels of
+     * label and a count somebody has already read, against a row of clips.
+     */
+    compact?: boolean;
+  }>(),
+  { compact: false },
+);
+
 const {
   collections,
   showNewCollectionInput: showCreateInput,
@@ -41,38 +54,50 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
 </script>
 
 <template>
-  <section aria-labelledby="collections-heading" class="space-y-2">
-    <div class="flex items-center gap-2">
-      <h2
-        id="collections-heading"
-        class="text-xs font-medium uppercase tracking-label text-muted-400"
-      >
-        Collections
-      </h2>
-      <button
-        type="button"
-        class="size-6 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-500 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
-        title="New collection"
-        aria-label="New collection"
-        @click="actions.startCreateCollection"
-      >
-        <Icon icon="material-symbols:add" class="size-4 shrink-0 block" />
-      </button>
-      <button
-        v-if="layout.toggleLabel"
-        type="button"
-        class="ml-auto h-7 inline-flex items-center rounded-sm px-1 text-sm text-muted-500 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
-        @click="showAll = !showAll"
-      >
-        {{ layout.toggleLabel }}
-      </button>
+  <section aria-labelledby="collections-heading">
+    <!--
+      The heading and its two buttons, collapsed when the row is pinned. The
+      same `1fr` to `0fr` grid the page header's subtitle uses, because the row
+      wraps at narrow widths and its height is not known in advance.
+    -->
+    <div
+      class="grid transition-[grid-template-rows] duration-200 ease-out"
+      :class="compact ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+    >
+      <div class="overflow-hidden min-h-0">
+        <div class="flex items-center gap-2 pb-2">
+          <h2
+            id="collections-heading"
+            class="text-xs font-medium uppercase tracking-label text-muted-400"
+          >
+            Collections
+          </h2>
+          <button
+            type="button"
+            class="size-6 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-500 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+            title="New collection"
+            aria-label="New collection"
+            @click="actions.startCreateCollection"
+          >
+            <Icon icon="material-symbols:add" class="size-4 shrink-0 block" />
+          </button>
+          <button
+            v-if="layout.toggleLabel"
+            type="button"
+            class="ml-auto h-7 inline-flex items-center rounded-sm px-1 text-sm text-muted-500 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+            @click="showAll = !showAll"
+          >
+            {{ layout.toggleLabel }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!--
       A name is asked for first, so say what is being named. A collection is a
       list you make by hand, and clips can sit in several at once.
     -->
-    <div v-if="showCreateInput" class="max-w-md space-y-1">
+    <div v-if="showCreateInput" class="max-w-md space-y-1 pb-2">
       <input
         v-model="createInputValue"
         placeholder="Name it, then press Enter"
@@ -124,6 +149,7 @@ const shown = computed(() => collections.value.slice(0, layout.value.visible));
         :is-editing="editingId === collection.id"
         :editing-name="editingName"
         :is-drag-over="dragOverId === collection.id"
+        :compact="compact"
         @update:editing-name="editingName = $event"
         @save-edit="actions.saveCollectionEdit"
         @cancel-edit="actions.cancelEdit"

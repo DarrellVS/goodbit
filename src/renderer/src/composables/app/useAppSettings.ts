@@ -26,6 +26,12 @@ export interface AppSettings {
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   /** 0 to 100. */
   clipToastVolume?: number;
+  /** Read the session's clips when the game closes. Unset means on. */
+  analyzeOnGameClose?: boolean;
+  /** Say so on the same card. Unset means on. */
+  analyzeOnGameCloseToast?: boolean;
+  /** A chime with the card that says what it found. Unset means on. */
+  analyzeOnGameCloseSound?: boolean;
   migratedFromWebApp: boolean;
   /** Re-encode a trim to share size. Unset means off. */
   compressTrims?: boolean;

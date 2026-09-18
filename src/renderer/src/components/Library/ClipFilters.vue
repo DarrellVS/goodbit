@@ -36,6 +36,14 @@ import ClipFilterPopover from './ClipFilterPopover.vue';
  */
 interface Props {
   totalCount: number;
+  /**
+   * The games this list is narrowed to, and where they are kept.
+   *
+   * Passed through to the popover rather than read off the clips store,
+   * because the library and an open collection each own their own. See the
+   * docblock in `ClipFilterPopover.vue`.
+   */
+  selectedGames: string[];
   /** Drawn as *Cancel*, since there is no longer a floating bar to leave. */
   isSelectionMode?: boolean;
   /**
@@ -60,6 +68,7 @@ interface Props {
 interface Emits {
   (e: 'enter-selection'): void;
   (e: 'exit-selection'): void;
+  (e: 'update:selectedGames', games: string[]): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -161,7 +170,10 @@ function onSortChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
       -->
       <slot name="search" />
 
-      <ClipFilterPopover />
+      <ClipFilterPopover
+        :selected-games="props.selectedGames"
+        @update:selected-games="emit('update:selectedGames', $event)"
+      />
 
       <!--
         The library had no sort at all: newest first was the only order on

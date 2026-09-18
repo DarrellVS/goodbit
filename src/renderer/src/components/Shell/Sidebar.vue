@@ -4,7 +4,8 @@ import SidebarGames from './SidebarGames.vue';
 import SidebarRow from './SidebarRow.vue';
 
 interface Props {
-  activeGame?: string;
+  /** Every game the library is filtered to. Several of them light up at once. */
+  activeGames?: string[];
   disableGamesFilter?: boolean;
 }
 
@@ -13,6 +14,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  activeGames: () => [],
   disableGamesFilter: false,
 });
 const emit = defineEmits<Emits>();
@@ -104,7 +106,7 @@ function isActive(to: string): boolean {
       </div>
 
       <SidebarGames
-        :active-game="activeGame"
+        :active-games="props.activeGames"
         :disabled="props.disableGamesFilter"
         @select-game="emit('select-game', $event)"
       />

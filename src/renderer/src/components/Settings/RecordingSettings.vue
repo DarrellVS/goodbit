@@ -73,6 +73,10 @@ function previewToast(): void {
   void window.goodbit?.previewClipToast();
 }
 
+function previewSweep(): void {
+  void window.goodbit?.previewSweepToast();
+}
+
 const showDialog = ref(false);
 
 /*
@@ -377,7 +381,7 @@ function openGuide(): void {
 
       <SettingSelect
         label="Where it appears"
-        description="On whichever screen your pointer is on, which is the one you are playing on."
+        description="Follows your pointer to whichever screen you are playing on."
         :model-value="settings.clipToastCorner ?? 'top-right'"
         :options="CORNERS"
         @update:model-value="saveSettings({ clipToastCorner: $event as never })"
@@ -408,6 +412,53 @@ function openGuide(): void {
         Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
         games default to, is fine.
       </p>
+    </template>
+
+    <h3 class="setting-subhead">When you stop playing</h3>
+
+    <!--
+      Here rather than beside the suggestion settings, because the trigger is
+      about playing rather than about the analysis: it fires when a game
+      closes, and what it costs is a machine somebody has just stopped using.
+    -->
+    <SettingToggle
+      label="Look for GoodBits when a game closes"
+      description="Goes through that session's clips while nothing else needs the machine. Alt-tabbing does not count as closing, and it leaves you alone if you start another game."
+      :model-value="settings.analyzeOnGameClose !== false"
+      @update:model-value="saveSettings({ analyzeOnGameClose: $event })"
+    />
+
+    <template v-if="settings.analyzeOnGameClose !== false">
+      <SettingToggle
+        label="Say what it found"
+        description="A card while it looks, and another at the end if it found anything."
+        :model-value="settings.analyzeOnGameCloseToast !== false"
+        @update:model-value="saveSettings({ analyzeOnGameCloseToast: $event })"
+      />
+
+      <SettingToggle
+        v-if="settings.analyzeOnGameCloseToast !== false"
+        label="Play a sound with that one"
+        description="A short sound when it finds something, at the volume above."
+        :model-value="settings.analyzeOnGameCloseSound !== false"
+        @update:model-value="saveSettings({ analyzeOnGameCloseSound: $event })"
+      />
+
+      <div
+        v-if="settings.analyzeOnGameCloseToast !== false"
+        data-setting="Try that one"
+        :class="['setting-block !border-b-0 flex items-start justify-between gap-6', settingRing('Try that one')]"
+      >
+        <div class="min-w-0 flex-1">
+          <label class="text-sm font-medium text-foreground">Try that one</label>
+          <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+            Shows both halves, without reading anything
+          </p>
+        </div>
+        <button type="button" :class="[BUTTON, 'shrink-0']" @click="previewSweep">
+          Show me
+        </button>
+      </div>
     </template>
 
     <ObsSetupDialog

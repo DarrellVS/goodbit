@@ -111,6 +111,18 @@ interface Props {
    * 36px and quiet ones are 32px, and neither is a free number.
    */
   variant?: 'bordered' | 'quiet';
+  /**
+   * Fill the container instead of hugging the chosen label.
+   *
+   * A quiet dropdown is a word in a line of words, so it is as wide as what it
+   * says and the chevron follows the text. That is right in the filter row and
+   * wrong in the filter popover, where two of them sit one under the other in
+   * a column: hugging made the tag control as wide as `Any tag` and the game
+   * control as wide as whatever game was picked, so the two lines under the
+   * two headings started at the same x and ended wherever. Height is still not
+   * a prop, and never will be; width has always been the caller's.
+   */
+  block?: boolean;
 }
 
 interface Emits {
@@ -126,6 +138,7 @@ const props = withDefaults(defineProps<Props>(), {
   summary: undefined,
   emptyMessage: 'Nothing matches',
   variant: 'bordered',
+  block: false,
 });
 
 const emit = defineEmits<Emits>();
@@ -227,6 +240,7 @@ const LIST_Z_INDEX = 'z-300';
   -->
   <ComboboxRoot
     v-slot="{ open }"
+    :class="block ? 'w-full' : undefined"
     :model-value="resolvedValue"
     :multiple="multiple"
     :disabled="disabled"
@@ -239,14 +253,15 @@ const LIST_Z_INDEX = 'z-300';
         :aria-label="label"
         :class="[
           QUIET_CONTROL_HEIGHT,
-          'inline-flex items-center gap-1.5 rounded-md px-1 text-sm text-left',
+          block ? 'flex w-full' : 'inline-flex',
+          'items-center gap-1.5 rounded-md px-1 text-sm text-left',
           'outline-none focus-visible:focus-ring transition-colors duration-150',
           'disabled:cursor-not-allowed disabled:opacity-50',
           open ? 'text-foreground' : 'text-muted-600 hover:text-foreground',
         ]"
       >
         <Icon v-if="triggerIcon" :icon="triggerIcon" class="size-4 shrink-0 block text-muted-400" />
-        <span class="min-w-0 truncate">{{ triggerLabel }}</span>
+        <span class="min-w-0 truncate" :class="block ? 'flex-1' : ''">{{ triggerLabel }}</span>
         <Icon
           icon="material-symbols:expand-more"
           class="size-4 shrink-0 block text-muted-400 transition-transform duration-150"

@@ -2,6 +2,7 @@ import { Baseline1789563600000 } from './1789563600000-Baseline.js';
 import { GoodBits1789563600001 } from './1789563600001-GoodBits.js';
 import { ClipLastOpenedAt1789563600002 } from './1789563600002-ClipLastOpenedAt.js';
 import { ClipSearch1789563600003 } from './1789563600003-ClipSearch.js';
+import { ClipSuggestedCount1789563600004 } from './1789563600004-ClipSuggestedCount.js';
 
 /**
  * Every migration, listed by hand and in order.
@@ -27,4 +28,5 @@ export const migrations = [
   GoodBits1789563600001,
   ClipLastOpenedAt1789563600002,
   ClipSearch1789563600003,
+  ClipSuggestedCount1789563600004,
 ];

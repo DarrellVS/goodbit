@@ -221,7 +221,7 @@ test.describe('nothing scrolls sideways that should not', () => {
 
       for (const view of [
         { hash: `#/clips/${id}`, name: 'clip-panel', settle: 2500 },
-        // The frame strip is an ffmpeg job away, and the mark bar sits under it.
+        // The frame strip is an ffmpeg job away, and the marks column beside it
         { hash: `#/trim/${id}`, name: 'trim', settle: 4500 },
       ]) {
         await ctx.page.evaluate((h) => {

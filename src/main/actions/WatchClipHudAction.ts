@@ -27,8 +27,13 @@ import '../services/highlights/games/index.js';
  * Bumped when the detection changes in a way that would give a different
  * answer for the same frames: a new template, a moved box, a different
  * threshold.
+ *
+ * 2: Battlefield reads deaths as well as kills, which is two new boxes and two
+ * new templates. Every clip anybody had already opened held a cached answer
+ * that predates them, and without this the app would have gone on reporting
+ * kills only for exactly the clips its owner looks at most.
  */
-const HUD_VERSION = 1;
+const HUD_VERSION = 2;
 
 /**
  * Samples a second.

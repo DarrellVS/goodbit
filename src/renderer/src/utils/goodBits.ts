@@ -386,8 +386,12 @@ export function anchorToGoodBit(
  * identifier: `kill` reads as "Kill" in a list, and the `reason` underneath it
  * is the full sentence. The reason itself would be too long for a name, and a
  * name is what goes on the file if the GoodBit is ever rendered out.
+ *
+ * Exported because the chips that offer to keep a reading show the same word.
+ * A chip that says `Down` and then writes a mark called something else is two
+ * names for one thing, arrived at separately.
  */
-function anchorName(anchor: SuggestionEvent): string | null {
+export function anchorName(anchor: SuggestionEvent): string | null {
   const kind = (anchor.kind ?? '').trim();
   if (!kind) return null;
 

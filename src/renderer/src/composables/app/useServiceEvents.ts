@@ -1,5 +1,6 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useClipsStore } from '@renderer/stores/clips';
+import { useCollectionsStore } from '@renderer/stores/collections';
 import { useGamesStore } from '@renderer/stores/games';
 
 /**
@@ -21,6 +22,7 @@ export type ServiceEvent =
   | { type: 'scan-finished'; added: number; updated: number; removed: number; total: number }
   | { type: 'clip-added'; filePath: string; game: string }
   | { type: 'clip-ready'; clipId: number; game: string; filePath: string }
+  | { type: 'clip-analyzed'; clipId: number; suggestedCount: number }
   | { type: 'clip-removed'; filePath: string }
   | {
       type: 'publish-progress';
@@ -33,6 +35,7 @@ export type ServiceEvent =
 
 export function useServiceEvents() {
   const clipsStore = useClipsStore();
+  const collectionsStore = useCollectionsStore();
   const gamesStore = useGamesStore();
 
   /** True while the service is scanning, so the UI can say so. */
@@ -81,6 +84,14 @@ export function useServiceEvents() {
 
       case 'clip-removed':
         refreshSoon();
+        break;
+
+      case 'clip-analyzed':
+        // One field on one row, patched in place. A refetch would be a page of
+        // fifty rows per clip the sweep gets through, and the list would flash
+        // for every one of them.
+        clipsStore.setSuggestedCount(event.clipId, event.suggestedCount);
+        collectionsStore.setSuggestedCount(event.clipId, event.suggestedCount);
         break;
 
       case 'publish-progress':

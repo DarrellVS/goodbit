@@ -148,7 +148,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   },
   {
     label: 'Where it appears',
-    description: 'On whichever screen your pointer is on, which is the one you are playing on.',
+    description: 'Follows your pointer to whichever screen you are playing on.',
     section: 'recording',
     keywords: ['corner', 'position', 'top right', 'bottom left', 'overlay', 'monitor'],
   },
@@ -157,6 +157,45 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
     description: 'Shows the card and plays the chime, without recording anything',
     section: 'recording',
     keywords: ['preview', 'test', 'demo', 'show me'],
+  },
+  {
+    label: 'Look for GoodBits when a game closes',
+    description:
+      "Goes through that session's clips while nothing else needs the machine. Alt-tabbing does not count as closing, and it leaves you alone if you start another game.",
+    section: 'recording',
+    keywords: [
+      'analyse',
+      'analyze',
+      'suggestions',
+      'automatic',
+      'background',
+      'session',
+      'idle',
+      'highlights',
+    ],
+  },
+  {
+    label: 'Say what it found',
+    description:
+      'A card while it looks, and another at the end if it found anything.',
+    section: 'recording',
+    keywords: ['overlay', 'toast', 'notification', 'silent', 'card'],
+    shownWhen: 'Look for GoodBits when a game closes is on',
+  },
+  {
+    label: 'Play a sound with that one',
+    description:
+      'A short sound when it finds something, at the volume above.',
+    section: 'recording',
+    keywords: ['chime', 'sound', 'beep', 'audio', 'notification'],
+    shownWhen: 'Look for GoodBits when a game closes and Say what it found are both on',
+  },
+  {
+    label: 'Try that one',
+    description: 'Shows both halves, without reading anything',
+    section: 'recording',
+    keywords: ['preview', 'test', 'demo', 'show me'],
+    shownWhen: 'Look for GoodBits when a game closes and Say what it found are both on',
   },
 
   // Watching

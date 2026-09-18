@@ -81,6 +81,46 @@ export interface Settings {
    * over anything.
    */
   clipToastVolume?: number;
+  /**
+   * Read the session's clips the moment the game closes.
+   *
+   * Suggestions are worked out when somebody opens the Trim page and not a
+   * second before, which is the right rule for a half that decodes video:
+   * doing it while OBS is filling a replay buffer is the thing to avoid. The
+   * cost of that rule is that the first open of every clip pays for the read
+   * while somebody is sitting there waiting to cut.
+   *
+   * Closing the game is the one moment when the machine is unambiguously free
+   * and the answer is wanted: the GPU is idle, nothing is recording, and the
+   * clips from that session are exactly the ones about to be looked at.
+   *
+   * On by default. The work lands on an idle machine, it stands down if
+   * another game is in front, and the payoff is a Trim page that opens
+   * instantly for the rest of the evening.
+   */
+  analyzeOnGameClose?: boolean;
+  /**
+   * Say so, on the same card the clip toast uses.
+   *
+   * Separate from the sweep itself, the same way `clipToastSound` is separate
+   * from `clipToast`, and for the reason stated there: doing the work and
+   * drawing something about it are different levels of intrusion. Silent
+   * either way, even when the clip chime is on, because this one arrives after
+   * somebody has stopped playing rather than answering a key they just
+   * pressed.
+   */
+  analyzeOnGameCloseToast?: boolean;
+  /**
+   * A chime with the card that says what it found.
+   *
+   * Its own switch, the same way `clipToastSound` is separate from
+   * `clipToast`: a noise and a picture are different amounts of interruption.
+   * Deliberately not the clip chime's notes, and only on the half that has
+   * news in it. Shares `clipToastVolume`, because it is the same card in the
+   * same window and two volume sliders for one overlay is a setting nobody
+   * wants to reason about.
+   */
+  analyzeOnGameCloseSound?: boolean;
   mcpEnabled?: boolean;
   mcpPort?: number;
   mcpToken?: string;
@@ -137,6 +177,9 @@ const DEFAULTS: Settings = {
   clipToastSound: true,
   clipToastCorner: 'top-right',
   clipToastVolume: 75,
+  analyzeOnGameClose: true,
+  analyzeOnGameCloseToast: true,
+  analyzeOnGameCloseSound: true,
   migratedFromWebApp: false,
 };
 

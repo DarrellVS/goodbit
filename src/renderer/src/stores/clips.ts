@@ -8,7 +8,17 @@ interface ClipsState {
   total: number;
   page: number;
   pageSize: number;
-  selectedGame: string;
+  /**
+   * The games the library is narrowed to, or none for all of them.
+   *
+   * It was one string. A clip lives in one folder, so a *clip* has one game,
+   * which is not the same statement as a *filter* having one: "the Battlefield
+   * and Ready Or Not clips from that evening" is a question the library could
+   * answer and could not be asked. The sidebar still sets one at a time,
+   * because a row in a list of games is a place rather than a checkbox; the
+   * filter popover is where more than one is chosen.
+   */
+  selectedGames: string[];
   searchText: string;
   selectedTags: string[];
   publishedFilter: boolean | null;
@@ -58,7 +68,7 @@ export const useClipsStore = defineStore('clips', {
     total: 0,
     page: 1,
     pageSize: 5,
-    selectedGame: '',
+    selectedGames: [],
     searchText: '',
     selectedTags: [],
     publishedFilter: null,
@@ -89,7 +99,7 @@ export const useClipsStore = defineStore('clips', {
      */
     listKey: (state) =>
       JSON.stringify([
-        state.selectedGame,
+        [...state.selectedGames].sort(),
         state.searchText,
         [...state.selectedTags].sort(),
         state.publishedFilter,
@@ -133,7 +143,7 @@ export const useClipsStore = defineStore('clips', {
           pageSize: config.public.value.pageSize
         };
 
-        if (this.selectedGame) params.game = this.selectedGame;
+        if (this.selectedGames.length) params.games = this.selectedGames.join(',');
         if (this.searchText) params.q = this.searchText;
         if (this.selectedTags.length) params.tags = this.selectedTags.join(',');
         if (this.publishedFilter !== null) params.published = String(this.publishedFilter);
@@ -187,6 +197,23 @@ export const useClipsStore = defineStore('clips', {
       }
     },
 
+    /**
+     * What the analysis found in one clip, onto the row already on screen.
+     *
+     * The sweep that runs when a game closes writes this to the database and
+     * announces it; without patching here the badge only appeared on the next
+     * refresh, which is how it was first noticed. Assigning the field rather
+     * than refetching, because a page holds fifty rows and the sweep reports
+     * one clip at a time.
+     *
+     * Silent when the clip is not on screen: the row will carry the count when
+     * it is next fetched.
+     */
+    setSuggestedCount(clipId: number, suggestedCount: number): void {
+      const clip = this.items.find((row) => row.id === clipId);
+      if (clip) clip.suggestedCount = suggestedCount;
+    },
+
     updateClip(updatedClip: Clip): void {
       const index = this.items.findIndex(clip => clip.id === updatedClip.id);
       if (index !== -1) {
@@ -202,8 +229,18 @@ export const useClipsStore = defineStore('clips', {
       }
     },
 
+    /**
+     * This game and no other, which is what picking one in the sidebar means.
+     *
+     * The empty string is All, so the sidebar's own `All` row keeps working
+     * unchanged. Use `setGames` for a filter that is several of them.
+     */
     setGame(game: string): void {
-      this.selectedGame = game;
+      this.setGames(game ? [game] : []);
+    },
+
+    setGames(games: string[]): void {
+      this.selectedGames = games;
       this.page = 1;
       void this.fetchClips(false);
     },
@@ -245,7 +282,7 @@ export const useClipsStore = defineStore('clips', {
     },
 
     resetFilters(): void {
-      this.selectedGame = '';
+      this.selectedGames = [];
       this.searchText = '';
       this.selectedTags = [];
       this.publishedFilter = null;

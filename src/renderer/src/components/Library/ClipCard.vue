@@ -20,6 +20,7 @@ import ClipGoodBitPips from './ClipGoodBitPips.vue';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
 import ClipPublishedBadge from './ClipPublishedBadge.vue';
+import ClipSuggestedBadge from './ClipSuggestedBadge.vue';
 import ClipNameInput from './ClipNameInput.vue';
 import ClipMetadata from './ClipMetadata.vue';
 import ClipTags from './ClipTags.vue';
@@ -63,7 +64,7 @@ const gameDisplayName = computed(() => {
   const known = gamesStore.items.find((g) => g.game === props.clip.game);
   return known?.displayName || props.clip.game;
 });
-const { endDrag } = useDragAndDrop();
+const { startDrag, endDrag } = useDragAndDrop();
 const { open: openClip } = useClipDetail();
 
 const isSelected = computed(() => batchStore.isSelected(props.clip.id));
@@ -222,21 +223,24 @@ onBeforeUnmount(() => {
 /**
  * Drag the file itself out of the window, into Discord, Explorer, anything.
  *
- * **The whole card, which is a trade rather than a free win.**
- * `webContents.startDrag` takes the drag over completely: it cancels the web
- * drag and runs a nested message loop in the shell, so one element cannot be
- * both a file source and an HTML5 drag source. The card body used to be the
- * second of those, carrying a clip onto a collection tile, and it cannot be
- * both either.
+ * **Behind the grip, and not on the card body, because the two drags cannot
+ * share one element.** `webContents.startDrag` takes the drag over completely:
+ * it cancels the web drag and runs a nested message loop in the shell, so an
+ * element that hands a file to the shell cannot also be an HTML5 drag source.
  *
- * Dragging a clip out is the thing people reach for without being told, and it
- * was behind a 32px grip that had to be found first. Adding one to a
- * collection is in the card's own menu, where it is findable rather than
- * discoverable, so the tile no longer offers to be dropped on.
+ * The whole card was the file source for a while, on the argument that
+ * dragging a clip out is what people reach for without being told. So is
+ * dropping one on a collection, and that one the app promises in writing: an
+ * empty collection says "Drag and drop clips from your library to add them
+ * here". The card body is the clip, the collection tile is the shelf, and the
+ * gesture between them was doing nothing. The grip is the odd one out, so the
+ * grip is what gets a handle to find.
  *
  * `preventDefault` first, then hand off. The web drag has to be cancelled or
  * the shell ends up running two at once and neither finishes; this is the
- * shape Electron documents.
+ * shape Electron documents. `.stop` on the grip's own `dragstart` keeps the
+ * card's from firing as well, or the clip would head for a collection at the
+ * same time.
  */
 function handleDragOut(event: DragEvent) {
   event.preventDefault();
@@ -244,9 +248,47 @@ function handleDragOut(event: DragEvent) {
   window.goodbit?.dragOutClip(props.clip.id);
 }
 
+/**
+ * Drag this clip onto a collection tile, which is how clips get into one.
+ *
+ * Nothing but the clip's id travels: the tile hands it to
+ * `useCollectionManagement`, which is where the shared drag state is read. The
+ * `text/plain` payload is there so the drag has a type at all; nothing reads
+ * it back.
+ */
+function handleCardDragStart(event: DragEvent) {
+  startDrag({ type: 'clip', clipId: props.clip.id }, event);
+}
+
 function handleCheckboxClick(event: MouseEvent) {
   event.stopPropagation();
   batchStore.toggleClip(props.clip.id, props.clipIndex);
+}
+
+/**
+ * Right click goes straight to the trimmer.
+ *
+ * Left click opens the clip, which is the thing to do with most of them, and
+ * the one thing anybody does to a clip they have opened is cut it. The menu
+ * behind the card's own dots still gets there; this is the shortcut for
+ * somebody working through a session's worth of clips.
+ *
+ * `open(id, 'trim')` rather than a route, so the library underneath stays
+ * mounted, and so backing out of the trimmer lands on the library rather than
+ * on a details panel that was never opened.
+ *
+ * `preventDefault` is called here rather than with a `.prevent` modifier,
+ * because a text field inside the card has a context menu worth more than this
+ * one: copy and paste beat a shortcut in a box somebody is typing a name into.
+ */
+function handleCardContextMenu(event: MouseEvent) {
+  if (props.isSelectionMode) return;
+
+  const target = event.target as HTMLElement;
+  if (target.closest('input') || target.closest('textarea')) return;
+
+  event.preventDefault();
+  openClip(props.clip.id, 'trim');
 }
 
 function handleCardClick(event: MouseEvent) {
@@ -285,9 +327,10 @@ function handleCardClick(event: MouseEvent) {
     ]"
     @mouseenter="emit('is-hovered', true)"
     @mouseleave="emit('is-hovered', false)"
-    @dragstart="handleDragOut"
+    @dragstart="handleCardDragStart"
     @dragend="endDrag"
     @click="handleCardClick"
+    @contextmenu="handleCardContextMenu"
   >
     <!-- Selection Checkbox -->
     <div
@@ -314,6 +357,7 @@ function handleCardClick(event: MouseEvent) {
     </div>
 
     <ClipPublishedBadge :published="clip.published" />
+    <ClipSuggestedBadge :count="clip.suggestedCount" />
 
     <div
       ref="previewEl"
@@ -431,6 +475,27 @@ function handleCardClick(event: MouseEvent) {
         <ClipNameInput :clip="clip" @updated="emit('updated', $event)" />
 
         <div v-if="!isSelectionMode" class="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
+          <!--
+            The file, out of the window. Its space is reserved at rest and only
+            its opacity moves, like the menu beside it, because nothing on this
+            card changes size on hover.
+
+            `draggable` and `dragstart` of its own, with `.stop`: the card is
+            already an HTML5 drag source aimed at the collections above the
+            grid, and `webContents.startDrag` cannot share an element with one.
+          -->
+          <button
+            type="button"
+            draggable="true"
+            class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:opacity-100 focus-visible:focus-ring transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+            title="Drag the file out, into Discord or a folder"
+            aria-label="Drag the file out of GoodBit"
+            @click.stop
+            @dragstart.stop="handleDragOut"
+          >
+            <Icon icon="material-symbols:drag-indicator" class="size-4 shrink-0 block" />
+          </button>
+
           <ClipStarButton :clip="clip" @updated="emit('updated', $event)" />
 
           <div class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">

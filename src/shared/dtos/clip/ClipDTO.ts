@@ -33,6 +33,11 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
    */
   lastOpenedAt?: string | null;
   openCount!: number;
+  /**
+   * How many moments the analysis is confident about, or null if nobody has
+   * looked. Written by the sweep when a game closes; see the entity.
+   */
+  suggestedCount?: number | null;
   tags?: string[]; // Tag names array
 
   /**
@@ -83,6 +88,7 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
       ? entity.lastOpenedAt.toISOString()
       : (entity.lastOpenedAt ?? null);
     dto.openCount = entity.openCount ?? 0;
+    dto.suggestedCount = entity.suggestedCount ?? null;
     
     // Extract tag names if tags relation is loaded
     if (entity.tags && Array.isArray(entity.tags)) {

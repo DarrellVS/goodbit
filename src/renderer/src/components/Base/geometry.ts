@@ -109,6 +109,23 @@ export const FOCUS_RING = 'outline-none focus-visible:focus-ring';
  */
 export const PANEL_HEADER = 'text-sm font-medium text-muted-600';
 
+/**
+ * A section header inside a panel: the title, and whatever acts on the section.
+ *
+ * **The height has a floor so that two sections side by side line up.** The
+ * GoodBits header carries a *Mark or adjust* button and the notes header
+ * beside it carries nothing until there is a note to edit, so one row was 34px
+ * and the other 20px, and the two titles sat fourteen pixels apart at the top
+ * of a clip. Worse, the notes title *moved* the moment a note was written,
+ * because that is when its Edit button appears. A floor rather than a fixed
+ * height, because the notes header grows a formatting toolbar while editing
+ * and that one is allowed to be taller.
+ *
+ * `min-h-9` is `CONTROL_HEIGHT`, which is what the buttons that sit in these
+ * rows already are.
+ */
+export const SECTION_HEADER = 'min-h-9 flex flex-wrap items-center gap-x-3 gap-y-2 mb-2.5';
+
 /** The motion budget. Opacity and transform only, and nothing bounces. */
 export const MOTION = 'transition-colors duration-150';
 export const MOTION_OPACITY = 'transition-opacity duration-150';

@@ -24,6 +24,23 @@ export const useCollectionsStore = defineStore('collections', () => {
   const clipsStore = useClipsStore();
   const config = useConfiguration();
 
+  /**
+   * Which games the open collection is narrowed to. Its own, not the library's.
+   *
+   * Everything else in the filter row is shared with the library on purpose: a
+   * collection is a view of it, so a search or a tag typed in one is the same
+   * question asked of the other. The game was shared too, and that one came
+   * from the sidebar rather than from anything in the layer: opening a
+   * collection while a game was picked showed the part of it recorded in that
+   * game, with no sign of why, and the sidebar is behind a scrim so it could
+   * not be the answer either. A collection is a list somebody put together by
+   * hand and the whole of it is what they asked for.
+   *
+   * Emptied whenever a collection opens, so the layer always starts on all of
+   * them; the popover inside it sets this and nothing else does.
+   */
+  const selectedGames = ref<string[]>([]);
+
   const clipsState = ref<CollectionClipsState>({
     currentCollectionId: null,
     items: [],
@@ -86,7 +103,7 @@ export const useCollectionsStore = defineStore('collections', () => {
         pageSize: config.public.value.pageSize,
       };
 
-      if (clipsStore.selectedGame) params.game = clipsStore.selectedGame;
+      if (selectedGames.value.length) params.games = selectedGames.value.join(',');
       if (clipsStore.searchText) params.q = clipsStore.searchText;
       if (clipsStore.selectedTags.length) params.tags = clipsStore.selectedTags.join(',');
       if (clipsStore.publishedFilter !== null) params.published = String(clipsStore.publishedFilter);
@@ -126,6 +143,25 @@ export const useCollectionsStore = defineStore('collections', () => {
     }
   }
 
+  function setGames(games: string[]): void {
+    selectedGames.value = games;
+    clipsState.value.page = 1;
+    if (clipsState.value.currentCollectionId !== null) {
+      void fetchCollectionClips(clipsState.value.currentCollectionId, false);
+    }
+  }
+
+  /**
+   * The same patch as the clips store's, for the collection layer's own list.
+   *
+   * It holds its own rows, so a clip analysed while a collection is open would
+   * otherwise keep the card it was fetched with.
+   */
+  function setSuggestedCount(clipId: number, suggestedCount: number): void {
+    const clip = clipsState.value.items.find((row) => row.id === clipId);
+    if (clip) clip.suggestedCount = suggestedCount;
+  }
+
   function resetCollectionClips(): void {
     clipsState.value.currentCollectionId = null;
     clipsState.value.page = 1;
@@ -137,7 +173,7 @@ export const useCollectionsStore = defineStore('collections', () => {
   function collectionListKey(collectionId: number): string {
     return JSON.stringify([
       collectionId,
-      clipsStore.selectedGame,
+      [...selectedGames.value].sort(),
       clipsStore.searchText,
       [...clipsStore.selectedTags].sort(),
       clipsStore.publishedFilter,
@@ -227,6 +263,9 @@ export const useCollectionsStore = defineStore('collections', () => {
     items,
     collections,
     clipsState,
+    selectedGames,
+    setGames,
+    setSuggestedCount,
     hasNextPage,
     hasMoreClips,
     loadMoreClips,

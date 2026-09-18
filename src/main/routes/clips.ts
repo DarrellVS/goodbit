@@ -59,7 +59,7 @@ import type { ExportFormat } from '@shared/index.js';
 export const clipsRouter = express.Router();
 
 clipsRouter.get('/', asyncHandler(async (req, res) => {
-  const { game, q, tags, published, starred, includeHidden, sort, page = '1', pageSize = '50' } = req.query as Record<string, string>;
+  const { game, games, q, tags, published, starred, includeHidden, sort, page = '1', pageSize = '50' } = req.query as Record<string, string>;
   const pageNum = Math.max(parseInt(page || '1', 10) || 1, 1);
   const pageSz = Math.min(Math.max(parseInt(pageSize || '50', 10) || 50, 1), 200);
 
@@ -92,10 +92,25 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
     .orderBy(sortColumn, sortDirection)
     .addOrderBy('clip.createdAt', 'DESC');
 
-  if (game && game.length > 0) {
-    // An explicit game filter is an explicit request for that folder, so it wins
-    // over hiding, a hidden game stays reachable through its own filter or a link.
-    qb = qb.andWhere('clip.game = :game', { game });
+  /*
+   * One game, several, or all of them.
+   *
+   * `games` is a comma separated list and `game` is the single one this route
+   * has always taken; both are read because the second is what the editor's
+   * clip picker, the e2e suite and anything holding an old link still send,
+   * and a filter that silently stopped working would look like an empty
+   * library rather than a changed parameter.
+   */
+  const gameList = (games ?? game ?? '')
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+
+  if (gameList.length > 0) {
+    // An explicit game filter is an explicit request for those folders, so it
+    // wins over hiding, a hidden game stays reachable through its own filter
+    // or a link.
+    qb = qb.andWhere('clip.game IN (:...gameList)', { gameList });
   } else if (includeHidden !== 'true') {
     qb = await excludeHiddenGames(qb);
   }

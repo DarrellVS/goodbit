@@ -9,27 +9,6 @@
     already explain by existing.
   -->
   <section class="space-y-5">
-    <header class="flex items-center justify-end gap-2">
-      <div class="flex items-center gap-2 text-sm">
-        <span class="text-muted-500">Duration</span>
-        <!-- `duration` is already formatted, frames and all. -->
-        <span class="font-mono font-medium text-foreground tabular-nums">{{ duration }}</span>
-        <!--
-          The frame rate, beside the first timecode on the screen, because it is
-          the legend for the last field of every one of them.
-
-          `0:12:20` and `0:12.20` are one character apart and mean different
-          things, frames against hundredths, so which one is being read has to
-          be visible rather than inferred. When nothing has reported a rate the
-          readouts fall back to hundredths and this says so, rather than the
-          page assuming 30 or 60 and drawing a control that looks exact.
-        -->
-        <span class="text-xs text-muted-400 border-l border-line-strong pl-2 ml-0.5">
-          {{ frameRateText ?? 'frame rate unknown' }}
-        </span>
-      </div>
-    </header>
-
     <div
       ref="strip"
       class="relative h-32 rounded-md overflow-visible border border-border"
@@ -130,7 +109,9 @@
         :good-bits="goodBits"
         :duration-sec="maxDuration"
         :selected-id="selectedGoodBitId"
+        :suggested="suggestedBands"
         @select="(goodBit) => emit('select-goodbit', goodBit)"
+        @keep-suggested="(band) => emit('keep-suggested', band)"
       />
     </div>
 
@@ -145,22 +126,64 @@
         <Icon :icon="isPlaying ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="text-2xl" />
       </button>
 
-      <span class="font-mono text-sm text-muted-400 tabular-nums">
-        <span class="text-foreground">{{ playhead }}</span>
-        <span class="mx-1">/</span>
-        <span>{{ duration }}</span>
+      <!--
+        Where the playhead is. The length is at the other end of this row now,
+        so this no longer prints it as a denominator: the same number twice on
+        one line is a number nobody reads.
+
+        The arrow keys move this, which was the half of the keyboard hint that
+        no other tooltip covered, so it is this readout's own tooltip: hovering
+        the number says what moves it.
+      -->
+      <span
+        class="font-mono text-sm tabular-nums text-foreground"
+        :title="`The playhead. Space plays the trimmed range on loop, ${arrowHint}.`"
+      >
+        {{ playhead }}
       </span>
 
       <!--
-        Both keys, said where the transport is, because a binding nobody is told
-        about is a binding nobody has.
+        How long the recording is, and at what rate, moved down from a header
+        of its own above the strip.
+
+        It had a line to itself for one short readout, which put a rule and a
+        band of empty space between the picture and the strip it belongs to.
+        Down here it is reading matter about the clip in the row that already
+        holds reading matter about the clip.
+
+        The keyboard hint that used to sit here is gone on request. The
+        bindings are not: Space is in the play button's own tooltip and the
+        arrows are in the nudge buttons' beside the numbers they move.
       -->
-      <span class="text-xs text-muted-400 ml-auto text-right">
-        Space plays the trimmed range on loop · {{ arrowHint }}
-      </span>
+      <div class="ml-auto flex items-center gap-2 text-sm">
+        <span class="text-muted-500">Duration</span>
+        <!-- `duration` is already formatted, frames and all. -->
+        <span class="font-mono font-medium text-foreground tabular-nums">{{ duration }}</span>
+        <!--
+          The frame rate, beside a timecode, because it is the legend for the
+          last field of every one of them.
+
+          `0:12:20` and `0:12.20` are one character apart and mean different
+          things, frames against hundredths, so which one is being read has to
+          be visible rather than inferred. When nothing has reported a rate the
+          readouts fall back to hundredths and this says so, rather than the
+          page assuming 30 or 60 and drawing a control that looks exact.
+        -->
+        <span class="text-xs text-muted-400 border-l border-line-strong pl-2 ml-0.5">
+          {{ frameRateText ?? 'frame rate unknown' }}
+        </span>
+      </div>
     </div>
 
-    <footer class="flex items-center justify-between pt-4 border-t border-border">
+    <!--
+      The numbers, and the one act that replaces the recording.
+
+      Nothing else on this screen is filled with the accent. Marking a GoodBit
+      is in the column beside the picture now, in the details screen's own
+      styling, so the bottom of the trimmer reads as one decision rather than
+      as two of similar weight a hand's width apart.
+    -->
+    <footer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-4 border-t border-border">
       <div class="flex items-center gap-6 text-sm">
         <TimeIndicator
           label="Start"
@@ -224,7 +247,7 @@ import { computed, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseRangeSlider from '@renderer/components/Base/BaseRangeSlider.vue';
 import TimeIndicator from './TimeIndicator.vue';
-import GoodBitBands from './GoodBitBands.vue';
+import GoodBitBands, { type SuggestedBand } from './GoodBitBands.vue';
 import type { TimeRange } from '@renderer/composables/trim/useTrimRange';
 import type { GoodBit } from '@renderer/types/goodbit';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
@@ -259,6 +282,13 @@ interface Props {
   /** Which of them the handles are sitting on, so the band can say so. */
   selectedGoodBitId?: number | null;
   /**
+   * Ranges the game's HUD found and nobody has kept, drawn as outlines.
+   *
+   * Only passed when there are several: see `GoodBitBands`, where one offered
+   * range is the range the handles are already on.
+   */
+  suggestedBands?: readonly SuggestedBand[];
+  /**
    * How far one drag increment moves, in seconds: one frame, or a tenth when
    * nothing has reported a frame rate.
    */
@@ -277,6 +307,7 @@ const props = withDefaults(defineProps<Props>(), {
   saveProgress: 0,
   goodBits: () => [],
   selectedGoodBitId: null,
+  suggestedBands: () => [],
   sliderStep: 0.1,
   frameRateText: null,
   stepLabel: 'one frame',
@@ -290,6 +321,8 @@ interface Emits {
   (e: 'seek', time: number): void;
   /** A band was pressed: put the handles on it. */
   (e: 'select-goodbit', goodBit: GoodBit): void;
+  /** An offered band was pressed: keep it as a GoodBit. */
+  (e: 'keep-suggested', band: SuggestedBand): void;
   /** A nudge button was pressed beside one of the readouts. */
   (e: 'step-handle', which: 'start' | 'end', delta: number): void;
   /**
@@ -307,7 +340,11 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 /**
- * Space, and now the arrows, said in the words this clip's frame rate allows.
+ * The arrows, said in the words this clip's frame rate allows.
+ *
+ * It was a standing line on the transport row and is the playhead readout's
+ * tooltip now: a sentence that is read once and then sits there for ever was
+ * the widest thing on that row, and the row's job is the two numbers.
  *
  * Only the playhead is named. The other half of the rule, that the arrows move
  * a handle once one is grabbed, is on the nudge buttons' own tooltips beside

@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { useGoodBits } from '@renderer/composables/clips/useGoodBits';
 import { durationLabel, goodBitLabel, rangeLabel } from '@renderer/utils/goodBits';
+import { SECTION_HEADER } from '@renderer/components/Base/geometry';
 import type { Clip } from '@renderer/types/clip';
 import type { GoodBit } from '@renderer/types/goodbit';
 
@@ -29,13 +30,83 @@ import type { GoodBit } from '@renderer/types/goodbit';
  * (see `useGoodBits.remove`). That is the difference between this feature and a
  * trim, so it is said at the moment somebody might be worried about it rather
  * than in a heading nobody reads.
+ *
+ * ## The same list, in the trimmer
+ *
+ * Pass `range` and this becomes the trimmer's own GoodBits column: the header
+ * marks the range the handles are on instead of opening the trimmer, a row
+ * puts the handles on itself instead of playing, and the row the handles are
+ * on is outlined.
+ *
+ * One component rather than two, because the two lists are the same list and
+ * a second implementation is a second set of paddings to drift. The trimmer
+ * had its own bar under the timeline: a heading, a range readout that repeated
+ * the one six pixels above it, a name field and a button, all competing with
+ * *Save Trimmed Clip* directly beside them. Naming happens on the row here,
+ * the same way it does on the details screen, so the bar is gone and the only
+ * filled button left on that screen is the one that replaces the recording.
  */
 interface Props {
   clip: Clip;
+  /**
+   * Where the trim handles are, when this is drawn inside the trimmer.
+   *
+   * Null on the details screen, where there are no handles and the header
+   * offers to go and get some instead.
+   */
+  range?: readonly [number, number] | null;
+  /** The row the handles are sitting on, if any. */
+  selectedId?: number | null;
+  /** Whether the handles have moved off the selected row, or its name changed. */
+  dirty?: boolean;
+  /** A mark or a save is in flight. */
+  busy?: boolean;
+  /** False while the handles are somewhere a GoodBit cannot be. */
+  canMark?: boolean;
+  /**
+   * Whether this is the first thing in its column, with nothing above it to be
+   * separated from.
+   *
+   * On the details screen the section follows the player, so the hairline over
+   * its heading is what says where one ends and the other begins. In the
+   * trimmer's column it is the top of the column, and a rule across the top of
+   * a column is a line under nothing.
+   */
+  flush?: boolean;
+  /**
+   * Why marking is off, when it is off for a reason worth saying.
+   *
+   * A disabled button with no explanation is a dead end, and the one case that
+   * happens here is worth a sentence: the range under the handles is already
+   * marked, so the row for it is on screen a few pixels below.
+   */
+  markHint?: string | null;
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{ (e: 'play', goodBit: GoodBit): void }>();
+const props = withDefaults(defineProps<Props>(), {
+  range: null,
+  selectedId: null,
+  dirty: false,
+  busy: false,
+  canMark: true,
+  markHint: null,
+  flush: false,
+});
+
+const emit = defineEmits<{
+  (e: 'play', goodBit: GoodBit): void;
+  /** Trimmer only: keep the range the handles are on. */
+  (e: 'mark'): void;
+  /** Trimmer only: put the handles on this one. */
+  (e: 'select', goodBit: GoodBit): void;
+  /** Trimmer only: write the moved handles back to the selected row. */
+  (e: 'save'): void;
+  /** Trimmer only: stop editing the selected row. */
+  (e: 'deselect'): void;
+}>();
+
+/** Whether this is the trimmer's copy, which is the one with a range. */
+const inTrimmer = computed(() => props.range !== null);
 
 const { show } = useClipDetail();
 
@@ -118,8 +189,8 @@ const sourceIcon: Record<string, string> = {
 </script>
 
 <template>
-  <section class="border-t border-border pt-5">
-    <div class="flex items-center gap-3 mb-3">
+  <section :class="flush ? '' : 'border-t border-border pt-5'">
+    <div :class="SECTION_HEADER">
       <h2 class="text-sm font-medium text-muted-600 shrink-0">GoodBits</h2>
       <span
         v-if="goodBits.length > 0"
@@ -131,16 +202,52 @@ const sourceIcon: Record<string, string> = {
       <!--
         The way to mark one, and the only way to move one's edges. Two handles
         over a frame strip is the control for a range and it lives in the
-        trimmer, so this is a door rather than a duplicate.
+        trimmer, so on the details screen this is a door rather than a
+        duplicate. In the trimmer the handles are right there, so it marks.
       -->
       <button
-        v-if="goodBits.length > 0"
+        v-if="!inTrimmer && goodBits.length > 0"
         class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 shrink-0"
         title="Open the trimmer to mark a range, or move one you have marked"
         @click="show('trim')"
       >
         <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-base" />
         Mark or adjust
+      </button>
+
+      <!--
+        Editing one, which is what a selected row means: the handles are on it,
+        so moving them is how its edges change. *Done* rather than *Cancel*,
+        because nothing is pending, the handles have simply been borrowed.
+      -->
+      <template v-else-if="inTrimmer && selectedId !== null">
+        <button
+          class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-40 disabled:pointer-events-none"
+          :disabled="busy || !dirty || !canMark"
+          :title="dirty ? 'Save where the handles are now' : 'Move a handle to change this one'"
+          @click="emit('save')"
+        >
+          <Icon icon="material-symbols:check-rounded" class="text-base" />
+          Save range
+        </button>
+        <button
+          class="px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors shrink-0"
+          title="Stop editing this one and mark a new range instead"
+          @click="emit('deselect')"
+        >
+          Done
+        </button>
+      </template>
+
+      <button
+        v-else-if="inTrimmer && goodBits.length > 0"
+        class="ml-auto px-3 py-1.5 rounded-lg text-sm text-muted-600 hover:bg-muted-50 transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-40 disabled:pointer-events-none"
+        :disabled="busy || !canMark"
+        :title="markHint ?? 'Keep the range the handles are on. The recording is not changed.'"
+        @click="emit('mark')"
+      >
+        <Icon icon="material-symbols:bookmark-add-outline-rounded" class="text-base" />
+        Mark this range
       </button>
     </div>
 
@@ -154,8 +261,9 @@ const sourceIcon: Record<string, string> = {
     -->
     <button
       v-else-if="goodBits.length === 0"
-      class="w-full rounded-md border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors"
-      @click="show('trim')"
+      class="w-full rounded-md border border-dashed border-border bg-card px-4 py-6 text-center hover:border-accent/50 hover:bg-accent/4 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+      :disabled="inTrimmer && (busy || !canMark)"
+      @click="inTrimmer ? emit('mark') : show('trim')"
     >
       <p class="text-sm text-muted-500">
         Nothing marked yet. A GoodBit names a range and leaves the recording
@@ -163,7 +271,7 @@ const sourceIcon: Record<string, string> = {
       </p>
       <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-accent-ink">
         <Icon icon="material-symbols:add" class="text-lg" />
-        Mark a range
+        {{ inTrimmer ? 'Mark this range' : 'Mark a range' }}
       </span>
     </button>
 
@@ -171,7 +279,8 @@ const sourceIcon: Record<string, string> = {
       <li
         v-for="goodBit in goodBits"
         :key="goodBit.id"
-        class="relative overflow-hidden rounded-md border border-border bg-background/40 px-3 py-2"
+        class="relative overflow-hidden rounded-md border bg-background/40 px-3 py-2"
+        :class="goodBit.id === selectedId ? 'border-accent' : 'border-border'"
       >
         <!--
           The render's own progress, as the row filling.
@@ -188,11 +297,24 @@ const sourceIcon: Record<string, string> = {
         ></span>
 
         <div class="relative flex items-center gap-2">
+          <!--
+            On the details screen this plays the range. In the trimmer it puts
+            the handles on it, which seeks there and loops it, so the glyph
+            means the same thing in both: the picture goes to this moment.
+          -->
           <button
             class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-accent-ink hover:bg-accent/10 transition-colors"
-            :title="`Play ${goodBitLabel(goodBit)}`"
-            :aria-label="`Play ${goodBitLabel(goodBit)}`"
-            @click="emit('play', goodBit)"
+            :title="
+              inTrimmer
+                ? `Put the handles on ${goodBitLabel(goodBit)}`
+                : `Play ${goodBitLabel(goodBit)}`
+            "
+            :aria-label="
+              inTrimmer
+                ? `Edit ${goodBitLabel(goodBit)}`
+                : `Play ${goodBitLabel(goodBit)}`
+            "
+            @click="inTrimmer ? emit('select', goodBit) : emit('play', goodBit)"
           >
             <Icon icon="material-symbols:play-arrow-rounded" class="text-xl" />
           </button>
@@ -224,7 +346,13 @@ const sourceIcon: Record<string, string> = {
             </button>
 
             <div class="flex items-center gap-2 px-1.5 text-xs text-muted-500 min-w-0">
-              <span class="font-mono tabular-nums shrink-0">
+              <!--
+                The range, only when the line above is a name. `goodBitLabel`
+                falls back to the range for a GoodBit nobody has named, which
+                is the normal case for one marked from the trimmer, and this
+                row then read `0:17 – 0:24` twice, one line apart.
+              -->
+              <span v-if="goodBit.name" class="font-mono tabular-nums shrink-0">
                 {{ rangeLabel(goodBit.startSec, goodBit.endSec) }}
               </span>
               <span class="shrink-0">{{ durationLabel(goodBit.durationSec) }}</span>

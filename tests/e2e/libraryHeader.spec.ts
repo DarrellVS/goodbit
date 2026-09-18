@@ -142,6 +142,42 @@ test.describe('the library header', () => {
     await expect(cards).toHaveCount(4);
   });
 
+  test('dragging a clip onto a collection puts it in', async () => {
+    /*
+     * The gesture the empty state promises in writing.
+     *
+     * "Drag and drop clips from your library to add them here" is what an
+     * empty collection says, and for a while it was not true: the card body
+     * had been handed to `webContents.startDrag` so the file could be dragged
+     * out to Discord, and that cancels the web drag outright, so a clip
+     * dropped on a collection did nothing at all. Nothing failed, nothing was
+     * logged, and the tile lit up on hover exactly as before.
+     *
+     * The file drag lives on a grip beside the star now and the card body is
+     * the in-app drag again. One element cannot be both, so this test is the
+     * thing that says which one won.
+     */
+    const target = ctx.page.locator('[data-collection-card]').first();
+    const name = (await target.innerText()).trim().split('\n')[0].trim();
+
+    const before = await call<Array<{ name: string; clipCount: number }>>('GET', '/collections');
+    const was = before.find((collection) => collection.name === name)?.clipCount ?? 0;
+
+    const card = ctx.page.locator('.clip-card').first();
+    await expect(card).toBeVisible({ timeout: 15_000 });
+    await card.dragTo(target);
+    await ctx.page.waitForTimeout(1200);
+
+    const after = await call<Array<{ name: string; clipCount: number }>>('GET', '/collections');
+    const now = after.find((collection) => collection.name === name)?.clipCount ?? 0;
+    expect(now, `"${name}" held ${was} clips before the drag`).toBe(was + 1);
+
+    // And the card says so without a reload, because the store took the
+    // updated row back from the request that did it.
+    await expect(target).toContainText('1 clip');
+    await ctx.page.screenshot({ path: join(SHOTS, 'collection-drop.png') });
+  });
+
   test('collections are out of the sidebar', async () => {
     // The sidebar kept a capped list of five and its own create field. There
     // is one answer to "how many are visible" now and it is in the row.

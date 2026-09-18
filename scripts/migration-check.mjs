@@ -220,6 +220,24 @@ const after = census(upgraded);
 console.log(`after      ${Object.entries(after).map(([t, n]) => `${t}:${n}`).join('  ')}\n`);
 
 for (const [table, count] of Object.entries(before)) {
+  /*
+   * `migrations` is the one table that is *supposed* to grow.
+   *
+   * It is TypeORM's record of what has been applied, so a release that adds
+   * one adds a row, and holding it to "every row survives" made this bench
+   * fail for the one reason that means everything worked. It still has to
+   * grow rather than shrink or be rewritten: losing a row here is a migration
+   * that would run twice.
+   */
+  if (table === 'migrations') {
+    ok(
+      `migrations grew from ${count}`,
+      after[table] >= count,
+      `${count} -> ${after[table]} (${appliedUpgrade.length} applied)`,
+    );
+    continue;
+  }
+
   ok(`${table} kept all ${count} rows`, after[table] === count, `now ${after[table]}`);
 }
 
@@ -229,6 +247,7 @@ ok('the search index exists', 'clip_search' in after);
 const clipColumns = columnsOf(upgraded, 'clip');
 ok('clip gained lastOpenedAt', clipColumns.includes('lastOpenedAt'));
 ok('clip gained openCount', clipColumns.includes('openCount'));
+ok('clip gained suggestedCount', clipColumns.includes('suggestedCount'));
 
 // 2. The search index has to have been backfilled, not just created. An empty
 //    index is a search that finds nothing, which reads as a broken search.

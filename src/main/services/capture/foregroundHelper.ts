@@ -23,6 +23,34 @@
  * protected process while the limited right is allowed. Ask for the pair and
  * the games most likely to be protected are exactly the ones that cannot be
  * named, and those clips land with no game at all.
+ *
+ * ## It also answers "is that one still running"
+ *
+ * Naming a clip only needs what is in front. Knowing that a *session* ended
+ * needs something the samples cannot say: a game alt-tabbed away from and a
+ * game that has exited look identical from here, because both simply stop
+ * appearing.
+ *
+ * So the helper takes a pid to track, on stdin, and reports whether it is
+ * alive once a second alongside the samples. `process.kill(pid, 0)` from Node
+ * would answer the same question and is the wrong answer to this one: pids are
+ * reused on Windows, quickly, so it can end up describing a different program.
+ * **A held handle pins the pid**, and this helper already opens one per sample.
+ * Keeping one open costs nothing on top of 0.11% of a core.
+ *
+ * **`GetExitCodeProcess`, not `WaitForSingleObject`**, and that cost a
+ * debugging session. Waiting on a process handle is the obvious test and it
+ * needs the `SYNCHRONIZE` right, which `PROCESS_QUERY_LIMITED_INFORMATION`
+ * does not grant: the call fails, returns `WAIT_FAILED`, and a failure that is
+ * not `WAIT_OBJECT_0` reads as "still running". Measured against a process
+ * that had definitely been killed, it reported `alive` for as long as it was
+ * asked. Asking for `SYNCHRONIZE` as well would fix it and would be the same
+ * mistake as `PROCESS_VM_READ` above: the games most likely to be protected
+ * are exactly the ones a wider request fails on. `GetExitCodeProcess` needs
+ * only the right already held, and `STILL_ACTIVE` is its answer for a process
+ * that has not finished. A process that genuinely exits *with* code 259 reads
+ * as alive for ever, which means a sweep that never fires, which is the safe
+ * direction.
  */
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -65,7 +93,65 @@ public static class GoodBitForeground
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "QueryFullProcessImageNameW")]
     private static extern bool QueryFullProcessImageName(IntPtr process, uint flags, StringBuilder name, ref uint size);
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetExitCodeProcess(IntPtr handle, out uint code);
+
     private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+    private const uint STILL_ACTIVE = 259;
+
+    // The tracked process, and the handle that stops its pid being reused
+    // under us. Guarded, because stdin is read on its own thread.
+    private static readonly object trackLock = new object();
+    private static IntPtr tracked = IntPtr.Zero;
+    private static uint trackedPid = 0;
+    private static bool trackedOpened = false;
+
+    private static void Track(uint pid)
+    {
+        lock (trackLock)
+        {
+            if (tracked != IntPtr.Zero) CloseHandle(tracked);
+            tracked = pid == 0 ? IntPtr.Zero : OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+            trackedPid = pid;
+            // Whether the handle was ever obtained, which is how "gone" is told
+            // apart from "never opened". Reporting a process we could not open
+            // as exited would end a session somebody is still playing.
+            trackedOpened = tracked != IntPtr.Zero;
+        }
+    }
+
+    private static string TrackedState()
+    {
+        lock (trackLock)
+        {
+            if (trackedPid == 0) return "";
+            if (!trackedOpened) return "unknown";
+
+            uint code;
+            if (!GetExitCodeProcess(tracked, out code)) return "unknown";
+            return code == STILL_ACTIVE ? "alive" : "exited";
+        }
+    }
+
+    private static void ReadCommands()
+    {
+        string line;
+        while ((line = Console.In.ReadLine()) != null)
+        {
+            string[] parts = line.Trim().Split(' ');
+            if (parts.Length == 0) continue;
+
+            if (parts[0] == "T" && parts.Length > 1)
+            {
+                uint pid;
+                if (uint.TryParse(parts[1], out pid)) Track(pid);
+            }
+            else if (parts[0] == "U")
+            {
+                Track(0);
+            }
+        }
+    }
 
     private static string PathFor(uint pid)
     {
@@ -92,6 +178,10 @@ public static class GoodBitForeground
 
         DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        Thread commands = new Thread(ReadCommands);
+        commands.IsBackground = true;
+        commands.Start();
+
         while (true)
         {
             IntPtr window = GetForegroundWindow();
@@ -106,6 +196,13 @@ public static class GoodBitForeground
 
             long now = (long)(DateTime.UtcNow - epoch).TotalMilliseconds;
             Console.WriteLine(now + "\t" + pid + "\t" + exe);
+
+            // A second line, and only while something is being tracked. It
+            // starts with a letter rather than a timestamp, so a reader that
+            // knows nothing about it parses NaN and skips it.
+            string state = TrackedState();
+            if (state.Length > 0) Console.WriteLine("L\t" + trackedPid + "\t" + state);
+
             Console.Out.Flush();
             Thread.Sleep(intervalMs);
         }

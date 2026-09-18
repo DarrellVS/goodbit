@@ -58,13 +58,16 @@ collectionsRouter.delete('/:id', asyncHandler(async (req, res) => {
 
 collectionsRouter.get('/:id/clips', asyncHandler(async (req, res) => {
   const collectionId = Number(req.params.id);
-  const { game, q, tags, published, starred, sort, page, pageSize } =
+  const { game, games, q, tags, published, starred, sort, page, pageSize } =
     req.query as Record<string, string>;
 
   const action = new GetCollectionClipsAction();
   const result = await action.execute({
     collectionId,
+    // Several games, or the single one this route has always taken. Same two
+    // parameters as `GET /clips`, for the same reason.
     game,
+    games,
     q,
     tags,
     published,

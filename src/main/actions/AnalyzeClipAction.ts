@@ -217,8 +217,23 @@ export function place(
   let end = Math.min(durationSec, Math.max(0, onset - LEAD_IN) + length);
   end = Math.max(end, Math.min(durationSec, peak + TAIL_ROOM));
 
-  return { start: round(Math.max(0, end - length)), end: round(end) };
+  const start = Math.max(0, end - length);
+  // A window that stops just short of the end takes the whole end instead.
+  // Half a second of a recording is a dozen frames nobody wants back, and a
+  // cut that leaves them is a cut somebody has to drag to the end by hand.
+  if (durationSec - end <= END_SNAP_SEC) end = durationSec;
+
+  return { start: round(start), end: round(end) };
 }
+
+/**
+ * How close to the end of a clip is close enough to be the end of it.
+ *
+ * Taken rather than left: the frames after a suggested cut are the ones the
+ * moment fades into, and half a second of them is not footage anybody keeps
+ * separately. Leaving the gap also makes the trim look like it missed.
+ */
+export const END_SNAP_SEC = 0.5;
 
 export function round(n: number, places = 1): number {
   const f = 10 ** places;

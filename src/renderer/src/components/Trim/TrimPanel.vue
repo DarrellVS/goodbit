@@ -10,7 +10,20 @@
     with two answers.
   -->
   <div class="h-full min-h-0 flex flex-col overflow-hidden">
-    <main class="flex-1 min-h-0 w-full px-6 py-5 flex flex-col gap-4 overflow-y-auto scroll-p-1.5">
+    <!--
+      Two columns, the same two the details screen has: the picture and what
+      you do to it on the left, and a 336px column beside it. The numbers are
+      the details screen's own, so opening the trimmer from a clip does not
+      move the furniture.
+
+      Below `xl` the column drops underneath and the whole thing scrolls, which
+      is what the details screen does at that width too.
+    -->
+    <main class="flex-1 min-h-0 w-full p-6 overflow-y-auto scroll-p-1.5 xl:overflow-hidden">
+      <div
+        class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_336px] gap-6 items-start xl:h-full xl:min-h-0"
+      >
+        <div class="min-w-0 flex flex-col gap-4 xl:h-full xl:min-h-0">
       <VideoPreview
         ref="videoPreviewRef"
         class="flex-1 min-h-[140px]"
@@ -50,6 +63,7 @@
         :is-playing="isPlaying"
         :good-bits="goodBits"
         :selected-good-bit-id="selectedGoodBitId"
+        :suggested-bands="suggestedBands"
         :slider-step="sliderStep"
         :frame-rate-text="frameRateText"
         :step-label="stepLabel"
@@ -59,33 +73,40 @@
         @toggle-playback="togglePlayback"
         @seek="scrubTo"
         @select-goodbit="selectGoodBit"
+        @keep-suggested="keepSuggestedBand"
         @step-handle="stepHandle"
         @arm="(handle) => (armedHandle = handle)"
       />
 
-      <!--
-        Under the timeline, not beside the trim button.
+        </div>
 
-        The handles pick a range and then there are two things to do with it,
-        and only one of them replaces the recording. Putting the marking control
-        in its own bar under the strip keeps the destructive one where it has
-        always been, inside the timeline's own footer, rather than making two
-        buttons of equal weight out of two decisions of very different weight.
-      -->
-      <GoodBitMarkBar
-        class="shrink-0"
-        :range="range"
-        :selected="selectedGoodBit"
-        :good-bits="goodBits"
-        :saving="goodBitSaving"
-        :clashes="clashes"
-        :valid="isValidRange"
-        @mark="markRange"
-        @save="saveSelected"
-        @deselect="selectedGoodBitId = null"
-        @forget="removeGoodBit"
-        @select="selectGoodBit"
-      />
+        <!--
+          The marks, beside the picture rather than under the timeline.
+
+          They were a bar below the strip: a heading, a range readout that
+          repeated the one directly above it, a name field and a button, all
+          level with *Save Trimmed Clip* and in the same corner of the eye. The
+          column is the details screen's own GoodBits list, in the details
+          screen's own styling, so the same thing looks the same on both
+          screens and the bottom of the trimmer has one filled button in it.
+        -->
+        <div v-if="clip" class="min-w-0 xl:h-full xl:min-h-0 xl:overflow-y-auto scroll-p-1.5">
+          <ClipGoodBitsSection
+            flush
+            :clip="clip"
+            :range="range"
+            :selected-id="selectedGoodBitId"
+            :dirty="selectedIsDirty"
+            :busy="goodBitSaving"
+            :can-mark="isValidRange && !alreadyMarked"
+            :mark-hint="alreadyMarked ? 'This exact range is already marked' : null"
+            @mark="markRange(null)"
+            @select="selectGoodBit"
+            @save="saveSelected"
+            @deselect="selectedGoodBitId = null"
+          />
+        </div>
+      </div>
     </main>
   </div>
 </template>
@@ -118,13 +139,16 @@ import {
   anchorToGoodBit,
   goodBitLabel,
   goodBitsLostToTrim,
+  momentCovered,
   overlapping,
+  sameRange,
 } from '@renderer/utils/goodBits';
 import type { GoodBit } from '@renderer/types/goodbit';
 import VideoPreview from './VideoPreview.vue';
 import TimelineEditor from './TimelineEditor.vue';
 import SuggestionBanner from './SuggestionBanner.vue';
-import GoodBitMarkBar from './GoodBitMarkBar.vue';
+import type { SuggestedBand } from './GoodBitBands.vue';
+import ClipGoodBitsSection from '@renderer/components/ClipDetail/ClipGoodBitsSection.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
 
 // Confirmations are a dialog, never a toast.
@@ -381,7 +405,6 @@ const {
   load: loadGoodBits,
   mark,
   edit: editGoodBit,
-  remove: forgetGoodBit,
 } = useGoodBits(computed(() => Number(props.id)));
 
 const selectedGoodBitId = ref<number | null>(null);
@@ -414,6 +437,21 @@ const clashes = computed(() =>
   ),
 );
 
+/**
+ * Whether this exact range is already marked.
+ *
+ * The one overlap worth stopping rather than remarking on: it is never
+ * deliberate, and it leaves two identical rows that differ only by id.
+ * Overlaps in general are fine and common, which is why the bands stack.
+ */
+const alreadyMarked = computed(
+  () =>
+    selectedGoodBitId.value === null &&
+    clashes.value.some((other) =>
+      sameRange({ startSec: range.value[0], endSec: range.value[1] }, other),
+    ),
+);
+
 function selectGoodBit(goodBit: GoodBit): void {
   selectedGoodBitId.value = goodBit.id;
   range.value = [goodBit.startSec, Math.min(goodBit.endSec, duration.value)];
@@ -436,40 +474,90 @@ async function markRange(name: string | null): Promise<void> {
   selectedGoodBitId.value = null;
 }
 
-async function saveSelected(name: string | null): Promise<void> {
+/**
+ * Write the moved handles back to the row they were borrowed from.
+ *
+ * The range only. The name is edited on the row itself, the way it is on the
+ * details screen, so sending one from here would send whatever this screen
+ * last knew about it and quietly undo a rename made two seconds ago.
+ */
+async function saveSelected(): Promise<void> {
   const selected = selectedGoodBit.value;
   if (!selected) return;
 
   await editGoodBit(selected, {
-    name,
     startSec: range.value[0],
     endSec: range.value[1],
   });
 }
 
-function removeGoodBit(goodBit: GoodBit): void {
-  forgetGoodBit(goodBit);
-}
+/**
+ * Whether the handles have moved off the row they were put on.
+ *
+ * What makes *Save range* live. A rename is not in here: that is saved on the
+ * row as it is typed, and this screen never holds an unsaved copy of a name.
+ */
+const selectedIsDirty = computed(() => {
+  const selected = selectedGoodBit.value;
+  if (!selected) return false;
+  return !sameRange({ startSec: range.value[0], endSec: range.value[1] }, selected, 0.05);
+});
 
 /**
  * Keep one of the readings the game's own HUD produced.
  *
- * The strongest reading gets the window the server already placed around it, so
- * this and the banner's *Use it* agree about the same moment. Every other one
- * gets the lead-in and the tail. See `anchorToGoodBit`.
+ * Each one gets its own lead-in and tail. It used to be that the strongest got
+ * the window the server had placed, so that this and *Use it* agreed about the
+ * same moment; that window now spans every reading in the clip, and handing it
+ * to one of them would mark the whole span as a single moment. The chips only
+ * appear when there are several, so what they have to agree with is each
+ * other. See `anchorToGoodBit`.
  */
 async function keepAnchor(anchor: SuggestionEvent): Promise<void> {
-  const isStrongest = suggestions.value?.anchors?.[0]?.atSec === anchor.atSec;
-  const created = await mark(
-    anchorToGoodBit(
-      anchor,
-      duration.value,
-      isStrongest ? (suggestions.value?.window ?? null) : null,
-    ),
-  );
+  const created = await mark(anchorToGoodBit(anchor, duration.value, null));
   // Put the handles on what was kept, so it can be adjusted while it is still
   // the thing being looked at. A detected range is a starting point.
   if (created) selectGoodBit(created);
+}
+
+/**
+ * The readings drawn as outlines along the strip, and what pressing one does.
+ *
+ * Only when there are several. One reading is what the handles are already
+ * sitting on, and an outline around the handles says nothing that the handles
+ * do not.
+ */
+const offeredAnchors = computed<SuggestionEvent[]>(() => {
+  const anchors = suggestions.value?.anchors ?? [];
+  if (anchors.length < 2) return [];
+  return [...anchors]
+    // One that has already been kept is drawn as a kept band, by the row it
+    // wrote. Leaving the outline there as well would draw the same moment
+    // twice and offer to keep it again.
+    .filter((anchor) => !momentCovered(anchor.atSec, goodBits.value))
+    .sort((a, b) => a.atSec - b.atSec);
+});
+
+function anchorKey(anchor: SuggestionEvent): string {
+  return `${anchor.kind}-${anchor.atSec}`;
+}
+
+const suggestedBands = computed<SuggestedBand[]>(() =>
+  offeredAnchors.value.map((anchor) => {
+    const range = anchorToGoodBit(anchor, duration.value, null);
+    return {
+      key: anchorKey(anchor),
+      startSec: range.startSec,
+      endSec: range.endSec,
+      reason: anchor.reason,
+      name: range.name ?? null,
+    };
+  }),
+);
+
+function keepSuggestedBand(band: SuggestedBand): void {
+  const anchor = offeredAnchors.value.find((candidate) => anchorKey(candidate) === band.key);
+  if (anchor) void keepAnchor(anchor);
 }
 
 /**

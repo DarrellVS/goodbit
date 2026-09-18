@@ -21,7 +21,15 @@ import GameRenameDialog from '@renderer/components/Game/GameRenameDialog.vue';
 import { Icon } from '@iconify/vue';
 
 interface Props {
-  activeGame?: string;
+  /**
+   * The games the library is filtered to, all of which are lit.
+   *
+   * Pressing a row emits that one game and the store replaces the filter with
+   * it, so this list grows only from the Filter popover. A row here is a place
+   * rather than a checkbox: clicking one means "show me this", and clicking
+   * one that is already lit alone is that same sentence again.
+   */
+  activeGames?: string[];
   disabled?: boolean;
 }
 
@@ -29,7 +37,9 @@ interface Emits {
   (e: 'select-game', game: string): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  activeGames: () => [],
+});
 const emit = defineEmits<Emits>();
 
 const { games, matching, visibleGames, hasMoreGames, showAllGames, search, showSearch } =
@@ -113,7 +123,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
       -->
       <SidebarRow
         label="All"
-        :active="!activeGame"
+        :active="!props.activeGames.length"
         :count="totalClips"
         :disabled="props.disabled"
         @select="emit('select-game', '')"
@@ -128,7 +138,7 @@ async function handleGameRenamed(gameName: string, displayName: string | null) {
         :key="game.game"
         :label="game.displayName || game.game || 'Unknown'"
         :title="game.displayName || game.game || 'Unknown'"
-        :active="activeGame === game.game"
+        :active="props.activeGames.includes(game.game)"
         :disabled="props.disabled"
         @select="emit('select-game', game.game)"
       >

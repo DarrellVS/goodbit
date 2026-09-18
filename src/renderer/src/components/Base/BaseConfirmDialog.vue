@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 
 /**
@@ -65,16 +65,58 @@ function onBackdrop(event: MouseEvent): void {
   // Clicking away is a cancel, never a confirm.
   if (event.target === event.currentTarget) emit('cancel');
 }
+
+/**
+ * Escape answers the question, and only the question.
+ *
+ * This is nearly always raised from inside something else that is already
+ * open: a clip panel, the trimmer inside it, the export sheet. Those are Reka
+ * dialogs and they close themselves on Escape from a listener on `document`,
+ * so one press cancelled the question *and* shut the panel underneath it.
+ * Somebody who thought better of forgetting a GoodBit lost the clip they were
+ * working on as well.
+ *
+ * On `window`, in the capture phase, which is the first place an event can be
+ * seen: capture runs window, document, then down to the target, so stopping it
+ * here means no document listener anywhere ever hears it.
+ * `stopImmediatePropagation` covers anything else registered on `window`
+ * itself.
+ *
+ * Only while the question is up. Closed, this is not in the way of anything.
+ */
+function onEscape(event: KeyboardEvent): void {
+  if (!props.open || event.key !== 'Escape') return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  emit('cancel');
+}
+
+onMounted(() => window.addEventListener('keydown', onEscape, true));
+onBeforeUnmount(() => window.removeEventListener('keydown', onEscape, true));
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal-backdrop">
+      <!--
+        `pointer-events-auto`, and it is the difference between a dialog and a
+        picture of one.
+
+        This teleports to `body`, and a Reka dialog that is already open, the
+        clip panel or the trimmer inside it, sets `pointer-events: none` on
+        `body` so that nothing outside itself can be clicked. Everything
+        teleported there inherits that. The question painted on top, looked
+        entirely normal, and passed every click straight through to whatever
+        was underneath: pressing *Confirm* over the trimmer played and paused
+        the video and left the question standing. Re-enabling events on this
+        subtree is what puts the buttons back.
+      -->
       <div
         v-if="open"
-        class="fixed inset-0 z-70 flex items-center justify-center bg-scrim-modal p-4"
+        class="fixed inset-0 z-70 flex items-center justify-center bg-scrim-modal p-4 pointer-events-auto"
         @click="onBackdrop"
-        @keydown.esc="emit('cancel')"
       >
         <Transition name="modal-content">
           <div

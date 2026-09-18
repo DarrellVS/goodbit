@@ -12,6 +12,7 @@ import { useClipListKeyboardShortcuts } from '@renderer/composables/library/useC
 import { useClipListHandlers } from '@renderer/composables/library/useClipListHandlers';
 import { useLibraryRescan } from '@renderer/composables/library/useLibraryRescan';
 import { useSelectAllShortcut } from '@renderer/composables/ui/useSelectAllShortcut';
+import { useScrolledPage } from '@renderer/composables/ui/useScrolledPage';
 import type { Clip } from '@renderer/types/clip';
 import ClipFilters from '@renderer/components/Library/ClipFilters.vue';
 import CollectionsRow from '@renderer/components/Collection/CollectionsRow.vue';
@@ -27,6 +28,9 @@ const gamesStore = useGamesStore();
 const config = useConfiguration();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
 const { rescan } = useLibraryRescan();
+
+/** The shell follows the scroll; this row only reads it. */
+const { scrolled } = useScrolledPage();
 
 const clips = computed(() => clipsStore.items);
 const total = computed(() => clipsStore.total);
@@ -44,7 +48,7 @@ const narrowed = computed(
   () =>
     Boolean(clipsStore.searchText) ||
     clipsStore.selectedTags.length > 0 ||
-    Boolean(clipsStore.selectedGame) ||
+    clipsStore.selectedGames.length > 0 ||
     clipsStore.starredFilter ||
     clipsStore.publishedFilter !== null,
 );
@@ -61,7 +65,11 @@ const emptyState = computed(() => {
      * they had no Ready Or Not clips at all.
      */
     const alsoNarrowing = [
-      clipsStore.selectedGame ? `the ${clipsStore.selectedGame} filter` : null,
+      clipsStore.selectedGames.length === 1
+        ? `the ${clipsStore.selectedGames[0]} filter`
+        : clipsStore.selectedGames.length > 1
+          ? `your ${clipsStore.selectedGames.length} game filters`
+          : null,
       clipsStore.selectedTags.length > 0
         ? `${clipsStore.selectedTags.length === 1 ? 'a tag filter' : 'your tag filters'}`
         : null,
@@ -120,8 +128,8 @@ function handleEmptyAction(): void {
     // The label promises the filters too when they are part of the reason, so
     // clearing only the search would leave the same empty screen behind.
     clipsStore.setSearch('');
-    if (clipsStore.selectedGame || clipsStore.selectedTags.length > 0) {
-      clipsStore.setGame('');
+    if (clipsStore.selectedGames.length > 0 || clipsStore.selectedTags.length > 0) {
+      clipsStore.setGames([]);
       clipsStore.setTags([]);
     }
     return;
@@ -129,7 +137,7 @@ function handleEmptyAction(): void {
   if (narrowed.value) {
     clipsStore.setStarredFilter(false);
     clipsStore.setPublishedFilter(null);
-    clipsStore.setGame('');
+    clipsStore.setGames([]);
     clipsStore.setTags([]);
     return;
   }
@@ -270,12 +278,41 @@ onMounted(() => {
 
 <template>
   <div>
-    <ClipFilters
-      :total-count="total"
-      :is-selection-mode="isSelectionMode"
-      @enter-selection="enterSelectionMode"
-      @exit-selection="exitSelectionMode"
-    />
+    <!--
+      What describes the list, and what narrows it, pinned to the top.
+
+      The two rows in here answer "which clips am I looking at" and they are
+      the two rows somebody scrolls past first and then wants back. So they
+      stick, and they shrink as they go: the filter row loses its top padding
+      and the collections lose their heading and their second line, which is
+      about ninety pixels of chrome returned to the clips.
+
+      One band rather than two sticky elements, because the second would need
+      to know the first's height to offset itself, and the first's height is
+      the thing that changes. One `border-b` at the bottom of the whole band,
+      so `ClipFilters` goes in `flush` and the band supplies the padding it
+      would have brought.
+    -->
+    <div
+      class="sticky top-0 z-30 bg-background border-b border-border transition-[padding] duration-200 ease-out"
+      :class="scrolled ? 'pt-2' : 'pt-7'"
+    >
+      <ClipFilters
+        flush
+        :total-count="total"
+        :selected-games="clipsStore.selectedGames"
+        :is-selection-mode="isSelectionMode"
+        @update:selected-games="clipsStore.setGames($event)"
+        @enter-selection="enterSelectionMode"
+        @exit-selection="exitSelectionMode"
+      />
+
+      <!--
+        Collections come before the clips, because a collection is a way of
+        looking at them.
+      -->
+      <CollectionsRow class="px-12 pb-4" :compact="scrolled" />
+    </div>
 
     <!--
       No `pb-16` any more. It was there to keep the last row of clips out from
@@ -284,12 +321,6 @@ onMounted(() => {
       selection is something you just made.
     -->
     <div class="px-12 py-6 space-y-6">
-      <!--
-        Collections come before the clips, because a collection is a way of
-        looking at them.
-      -->
-      <CollectionsRow />
-
       <ClipsDisplay
         :clips="clips"
         :view-mode="config.public.value.viewMode"

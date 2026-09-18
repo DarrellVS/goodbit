@@ -19,9 +19,11 @@ export function useGameVisibility() {
       await setGameHidden(gameName, hidden);
 
       // The library is still filtered on a game that just disappeared from the
-      // list, so fall back to All before refetching.
-      if (hidden && clipsStore.selectedGame === gameName) {
-        clipsStore.selectedGame = '';
+      // list, so drop it out of the filter before refetching. Only that one:
+      // the filter holds several now, and hiding one is not a reason to forget
+      // the others.
+      if (hidden && clipsStore.selectedGames.includes(gameName)) {
+        clipsStore.selectedGames = clipsStore.selectedGames.filter((game) => game !== gameName);
       }
 
       clipsStore.resetPagination();

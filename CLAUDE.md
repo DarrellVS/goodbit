@@ -46,6 +46,8 @@ node scripts/restore-check.mjs    # prove a backup can be put back, and that a b
 node scripts/obs-backup.mjs  # verified snapshot of a real OBS configuration
 node scripts/obs-check.mjs   # what GoodBit makes of this machine's OBS
 node scripts/obs-apply-check.mjs  # apply the setup against a throw-away OBS directory
+node scripts/visual-deaths.mjs   # what the two death cues score across a real library
+node scripts/foreground-track-check.mjs  # prove the helper tells a running process from a closed one
 node scripts/trim-check.mjs  # run the shipped trim on a real clip and check where it landed
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
@@ -159,6 +161,8 @@ content that is already there. Same footing as `displayName`.
   **7, or 4%**, holding two or more detected moments above the confidence floor, against the 15%
   that would have made the detector the story. A person watching a clip knows it has two good bits
   whether or not a kill banner appeared. `source` is `manual` by default for that reason.
+  Reading deaths as well as kills doubled that to **14, or 8%**, which is worth having and is still
+  not the story: 76 of those 174 clips hold nothing the screen can name at all.
 - **The detector still feeds it.** `decide()` used to sort events by confidence and keep `[0]`; it
   carries every confident one as `anchors` now, best first, so a suggestion chip can be kept as a
   GoodBit in one press. Across the real library that stops discarding eight found moments.
@@ -237,7 +241,7 @@ change underneath it.
 hard, keyed by the clip's own mtime, and is never triggered by indexing, only by the Trim page
 asking for suggestions. Decoding video while OBS is writing clips is the thing to avoid.
 
-Three rules hold the vision code together, and each is there because the obvious alternative was
+Four rules hold the vision code together, and each is there because the obvious alternative was
 measured and was worse:
 
 - **Geometry is in units of frame height from an anchor** (`vision/geometry.ts`), never fractions of
@@ -250,6 +254,18 @@ measured and was worse:
 - **Crop at full resolution, scale only the crop.** Scaling the frame down first blurs the HUD into
   the scenery it has to stand out from: a signal that read 0 then 6128 collapsed into noise between
   145 and 1162.
+- **Every box rides one decode.** It was one ffmpeg per region, because raw video cannot share a
+  pipe. True, and the conclusion did not follow: the boxes are stacked into one taller picture
+  inside the filter graph and sliced apart in `sample.ts`, so a second box costs a crop and a scale
+  rather than a second pass over the file. Reading Battlefield's two death cues as well as its kill
+  banner took the whole library from 0.173 to 0.196 seconds per second of footage, and most of that
+  is the extra template matching rather than the extra boxes; as three separate regions it would
+  have been three decodes. **The tone map stays in front of the crop**, which is the one part that
+  looks like an oversight and is not: running it on the small crops instead is a quarter faster and
+  is not the same picture, because the source is 4:2:0 and cropping first moves the chroma phase.
+  Measured over 40 recordings it shifted every score by about five thousandths and flipped four
+  clips across the bar, two each way. A quarter off a cached measurement does not buy the right to
+  change which moments the app finds.
 
 A module declares boxes to sample and turns them into `GameEvent`s carrying a `reason`, a sentence
 shown to the user. Adding one is a **measuring job**: `scripts/visual-*.mjs` renders contact sheets
@@ -258,6 +274,26 @@ a real library by bundling `src/main` with esbuild, so the bench and the app can
 Nothing belongs in the registry until those sheets show the thing it claims to find. Battlefield 6 is
 the only module: 2042's HUD is different and four recordings is too thin to check a second one
 against.
+
+It reads **deaths as well as kills**: 20 of them across the 174 clip library, 3 of which fold into a
+kill moment and 2 of which are dropped as already on screen when the recording starts. That took two
+boxes rather than one. Dying puts MAN DOWN
+under the revive ring in the middle of the screen and a PLAYER CARD prompt in the bottom right
+corner, which are two anchors, so no single box catches both at more than one aspect ratio. Neither
+cue is enough on its own either: over the whole 174 clip library MAN DOWN found 16 of the 23 deaths
+and the prompt found 14, seven of which MAN DOWN had missed, because MAN DOWN is the revive state
+and the prompt names whoever killed you. Two words of text separate far better than an icon
+does, so where the skull needs three tests and a two-frame rule, a death is one threshold: nothing
+without a death in it reaches 0.41, and every death scores 0.69 or better. **A lone frame is
+believed here**, which it deliberately is not for a kill, and that is worth two of the 23: one where
+MAN DOWN was legible in a single sample, and one caught while the words were still wiping on.
+
+**A death within two seconds of a kill is part of that moment**, not a second one. Trading a kill
+for your own life is one thing that happened and one range to cut, and the sentence says so: "two
+kills, 5 seconds apart, then you went down". Further off it gets its own range, because a death
+twenty seconds after a kill is a second story and merging them would suggest a cut with a long walk
+in the middle. `composeMoments` is exported and takes numbers, so
+`tests/unit/main/battlefieldMoments.spec.ts` owns those rules without needing a GPU.
 
 ### Setting OBS up, from inside GoodBit
 
@@ -353,6 +389,64 @@ game, so this is the half that makes a library readable.
   settle is there because a file being written gives a garbage duration and a black first frame, and
   it buys nothing for a file that arrived by an atomic same-volume rename and was whole before it
   appeared.
+
+### Reading a session's clips when the game closes
+
+`services/capture/sessionWatch.ts`. Suggestions are worked out when somebody
+opens the Trim page and not a second before, which is right for a half that
+decodes video. Its cost is that the first open of every clip pays for the read
+while somebody sits there waiting to cut. Closing the game is the one moment
+the machine is unambiguously free and the answer is wanted. **On by default**,
+in Settings, Recording.
+
+- **The trigger is a close, not an alt-tab**, and the samples cannot tell those
+  apart: `foregroundHistory` answers "what is in front", and a game tabbed away
+  from and a game that has exited are the same absence. So the helper takes a
+  pid on stdin and reports whether it is alive beside every sample.
+  `process.kill(pid, 0)` would answer the same question and is the wrong answer
+  to this one, because Windows reuses pids quickly; **a held handle pins the
+  pid**, and the helper already opens one per sample.
+- **`GetExitCodeProcess`, not `WaitForSingleObject`.** Waiting on a process
+  handle needs the `SYNCHRONIZE` right, which `PROCESS_QUERY_LIMITED_INFORMATION`
+  does not grant: the call fails, and a failure that is not `WAIT_OBJECT_0`
+  reads as "still running". It reported a killed process as alive for as long
+  as it was asked. Asking for `SYNCHRONIZE` too would be the same mistake as
+  `PROCESS_VM_READ`, so the test is the one that needs no extra right.
+- **The decision is a pure function**, `sessionEnd.ts`, taking samples and a
+  liveness answer and returning the session that ended, so `tests/unit` owns it
+  without a running helper. Same split as `voteOver` out of `dominantBetween`.
+  An exit settles for 20 seconds before it is believed, because a crash and a
+  relaunch, an anti-cheat wrapper re-execing and a launcher spawning the real
+  game are all a pid going away and another arriving. A hole in the samples,
+  which is what sleeping looks like, resets it rather than ending anything.
+- **Staging drains first.** A clip still in `.goodbit-incoming/` when the game
+  closes is the last play of the night, which is the one most likely to be
+  worth cutting, and firing before it is filed reads every clip except that one.
+- **It stands down if another game is in front**, and while the library is
+  suspended for a move.
+- **Two at a time on a machine with a hardware decoder and eight cores, one
+  otherwise.** The screen-reading half is GPU bound, so a second clip overlaps
+  the first; without NVDEC it is two things being slow at each other on a
+  laptop that has just finished running a game.
+- **It writes no GoodBits.** The measurement lands in the cache, keyed by
+  mtime, and the verdict is recomputed as it always was. The one thing that
+  does persist is `clip.suggestedCount`, because the library is a single query
+  and cannot open a cache file per tile; null there means "nobody has looked",
+  which is not the same as zero. Writing a band onto every confident reading
+  while nobody is watching would fill a library with marks nobody asked for,
+  and 4% of a real library holds two or more of them.
+- **One card, and only when it found something.** The same overlay the clip
+  toast uses, with a `finding`/`found` pair beside `saving`/`saved`. A sweep
+  that turns up nothing takes its card down rather than interrupting with an
+  empty result. The linger comes from the caller, because `SAVING_TIMEOUT_MS`
+  is 45 seconds and a sweep can outrun it.
+- **Its chime is nothing like the clip's**, and only on the half with news in
+  it. A rising G major triad an octave below the clip pair's C6-E6: three
+  notes against two, round rather than bright, because it only ever plays once
+  a game has closed and has nothing to cut through. Somebody who has heard both
+  a hundred times should not have to read the card to know which one played.
+  The opening half is silent whatever the settings say: it fires as somebody
+  closes a game, which is often the moment they get up.
 
 ### Saying the clip was saved, over the game
 
@@ -602,6 +696,21 @@ stays.
 - `stores/` (Pinia): `clips`, `collections`, `games`, `tags`, `batchOperations`, `toast`.
   `clips` and `collections` use the abort-and-requestId pattern to drop stale responses; preserve it.
 - `composables/` hold most component logic; `services/` are thin one-function-per-endpoint wrappers.
+- **The trimmer and the clip panel are the same two columns.** The picture and
+  everything that acts on it on the left, a 336px column beside it, `gap-6`,
+  the same numbers in both, so opening the trimmer from a clip does not move
+  the furniture. The trimmer's column is the clip panel's own
+  `ClipGoodBitsSection`, not a second list styled to match: marking used to be
+  a bar under the timeline carrying a heading, a range readout that repeated
+  the one six pixels above it, a name field and a button, level with *Save
+  Trimmed Clip* and in the same corner of the eye. A GoodBit is named on its
+  own row now, the way it always was on the clip panel, and **the only filled
+  accent button left on that screen is the one that replaces the recording**.
+- **A section header has a floor on its height** (`SECTION_HEADER` in
+  `Base/geometry.ts`). Two sections side by side must line up whether or not
+  either has a button in its header, and the notes header grows one the moment
+  a note exists: without the floor, writing a note moved its own title up
+  fourteen pixels.
 - **A confirmation is a dialog, never a toast.** `Base/BaseConfirmDialog.vue`,
   asked through `composables/ui/useConfirm.ts`. This used to be
   `toastStore.confirm` with `duration: 10000`, which put the question in the
@@ -611,6 +720,15 @@ stays.
   confirms, and `danger` is the default tone because nearly everything worth
   asking about here deletes, replaces or overwrites. `confirm` no longer exists
   on the toast store, so the old shape cannot come back by habit.
+  **Two things about it are load-bearing and invisible in a screenshot.** It
+  teleports to `body`, and a Reka dialog that is already open, a clip panel or
+  the trimmer inside it, sets `pointer-events: none` there so nothing outside
+  itself can be clicked: without `pointer-events-auto` the question painted
+  perfectly and passed every click straight through, so pressing *Confirm* over
+  the trimmer played the video and left the question standing. And Escape is
+  caught on `window` in the capture phase, because those panels close
+  themselves from a listener on `document`: one press cancelled the question
+  *and* shut the panel somebody was working in.
 - **One switch component.** `Base/BaseToggle.vue` is the only on/off control; `Settings/SettingToggle.vue`
   wraps it with a label and a description. Native checkboxes were mixed in with hand-rolled switches
   and read as two different controls for the same kind of decision.

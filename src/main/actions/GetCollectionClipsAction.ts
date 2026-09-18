@@ -9,7 +9,10 @@ export interface GetCollectionClipsInput {
   collectionId: number;
   page?: number;
   pageSize?: number;
+  /** One game. Kept beside `games` for callers that have always sent it. */
   game?: string;
+  /** Several games, comma separated. Empty or absent means every game. */
+  games?: string;
   q?: string;
   tags?: string;
   published?: string;
@@ -83,8 +86,13 @@ export class GetCollectionClipsAction extends BaseAction<GetCollectionClipsInput
       .orderBy(sortColumn, sortDirection)
       .addOrderBy('clip.id', 'DESC');
 
-    if (input.game && input.game.length > 0) {
-      qb = qb.andWhere('clip.game = :game', { game: input.game });
+    const gameList = (input.games ?? input.game ?? '')
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean);
+
+    if (gameList.length > 0) {
+      qb = qb.andWhere('clip.game IN (:...gameList)', { gameList });
     }
 
     if (input.published === 'true') {

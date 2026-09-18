@@ -23,6 +23,7 @@ const api = {
   /** Fire and forget: the window manager owns the drag from here. */
   dragOutClip: (clipId: number) => ipcRenderer.send('clip:dragOut', clipId),
   previewClipToast: () => ipcRenderer.invoke('toast:preview'),
+  previewSweepToast: () => ipcRenderer.invoke('toast:previewSweep'),
   /** Fires when the shell is done with a drag this window started. */
   onDragOutEnd: (listener: () => void) => {
     const handler = (): void => listener();

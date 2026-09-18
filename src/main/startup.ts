@@ -10,6 +10,7 @@ import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
 import { CACHE_DIR_NAME, migrateLegacyCacheDir } from './services/cachePaths.js';
 import { startForegroundHistory } from './services/capture/foregroundHistory.js';
+import { setSweepsPaused, watchGameSessions } from './services/capture/sessionWatch.js';
 import {
   drainIncoming,
   onClipArriving,
@@ -54,6 +55,20 @@ export type ServiceEvent =
    */
   | { type: 'clip-ready'; clipId: number; game: string; filePath: string }
   | { type: 'clip-removed'; filePath: string }
+  /**
+   * A clip has been read and this is what the analysis found in it.
+   *
+   * The sweep writes `suggestedCount` straight to the row, and a database the
+   * window is not told about is a badge that appears on the next refresh and
+   * not before. That is what it did: somebody closed a game, the sweep ran,
+   * and the library went on showing cards with nothing on them until the page
+   * was reloaded by hand.
+   *
+   * Carries the count rather than the clip, so the renderer patches the one
+   * field on the row it already has. Refetching a page of fifty rows for each
+   * of a dozen clips would be a list that flashes twelve times.
+   */
+  | { type: 'clip-analyzed'; clipId: number; suggestedCount: number }
   /**
    * Publishing a clip takes as long as it takes to squeeze two hundred
    * megabytes and push them up a home connection, a minute is normal. Saying
@@ -333,6 +348,12 @@ export async function startServices(): Promise<void> {
   startWatching();
   watchIncoming();
   attachFiledListener();
+  /*
+   * Registered once, like the filed listener above, and for the same reason:
+   * it hangs off the foreground sampler rather than off a service, so a
+   * restart of the services must not leave two of them counting.
+   */
+  watchGameSessions();
 
   const steps: Array<[string, () => Promise<unknown>]> = [
     ['folder cleanup', () => cleanupEmptyFolders(VIDEOS_ROOT)],
@@ -432,6 +453,8 @@ export async function stopWatchers(): Promise<void> {
  * up with the files.
  */
 export async function suspendLibrary(): Promise<void> {
+  // Nothing may read the library while its files are being moved under it.
+  setSweepsPaused(true);
   await stopWatchers();
 
   /*
@@ -449,6 +472,7 @@ export async function suspendLibrary(): Promise<void> {
 
 /** Watch again, at whatever the root is now. */
 export async function resumeLibrary(): Promise<void> {
+  setSweepsPaused(false);
   startWatching();
   watchIncoming();
   reconcileTimer = setInterval(() => void reconcile(), RECONCILE_INTERVAL_MS);

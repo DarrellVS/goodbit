@@ -221,6 +221,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return { ok: true };
   });
 
+  /** The sweep's pair, for the same reason. */
+  ipcMain.handle('toast:previewSweep', async () => {
+    const { previewSweepToast } = await import('../services/clipToast.js');
+    await previewSweepToast();
+    return { ok: true };
+  });
+
   ipcMain.handle('library:rescan', async () => {
     await reconcile();
     return { ok: true };
