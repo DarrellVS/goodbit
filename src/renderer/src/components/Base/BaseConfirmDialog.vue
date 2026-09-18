@@ -66,6 +66,33 @@ function onBackdrop(event: MouseEvent): void {
   if (event.target === event.currentTarget) emit('cancel');
 }
 
+/*
+ * ## Why the overlay stops `pointerdown`
+ *
+ * The same defect as the Escape one below, one input away, and it survived the
+ * Escape fix because it looks like nothing: the question answered correctly
+ * and the panel it was asked over closed anyway, about two tenths of a second
+ * later, which reads as the app deciding the job was over.
+ *
+ * This teleports to `body`, so every press inside it is a press *outside* the
+ * Reka dialog underneath, and a modal Reka dialog dismisses itself on a
+ * pointer down outside its own content. Both buttons did it, so cancelling a
+ * question over the trimmer shut the trimmer, which is the one answer that is
+ * supposed to change nothing.
+ *
+ * Stopped on the overlay, in the bubble phase, rather than on `window` in the
+ * capture phase the way Escape is. Capture at `window` runs before the target
+ * sees the event, so stopping it there would stop the buttons from being
+ * pressed at all. Here the event reaches whatever was clicked, including the
+ * backdrop, and then goes no further: Reka listens on `document`, which is one
+ * step above this.
+ *
+ * `pointerdown` alone is enough, and deliberately so. That is the event Reka
+ * dismisses on, `click` is already stopped at the card by `@click.stop`, and
+ * swallowing more than the one event that causes the problem would take the
+ * question further out of the document than it needs to be.
+ */
+
 /**
  * Escape answers the question, and only the question.
  *
@@ -117,6 +144,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onEscape, true));
         v-if="open"
         class="fixed inset-0 z-70 flex items-center justify-center bg-scrim-modal p-4 pointer-events-auto"
         @click="onBackdrop"
+        @pointerdown.stop
       >
         <Transition name="modal-content">
           <div
