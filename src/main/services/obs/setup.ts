@@ -8,12 +8,13 @@ import { readObs, userConfigFile, type ObsSnapshot } from './config.js';
 import type { CaptureDisplay } from './displays.js';
 import type { EncoderChoice } from './encoderChoice.js';
 import type { AudioDevice } from './audioDevices.js';
+import { planAudioTracks, audioSourceName, describeAudioTracks } from './audioTracks.js';
 import { recordingVideoSettings } from './displays.js';
 import { userDataDir } from '../../settings.js';
 
 /* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
-import type { ChangeKind, PlannedChange, ObsSetupPlan } from '@shared/index.js';
-export type { ChangeKind, PlannedChange, ObsSetupPlan };
+import type { ChangeKind, PlannedChange, ObsSetupPlan, ObsAudioTrack } from '@shared/index.js';
+export type { ChangeKind, PlannedChange, ObsSetupPlan, ObsAudioTrack };
 
 /**
  * Writing the setup, one preview at a time.
@@ -71,6 +72,15 @@ export interface ObsSetupChoices {
    * to make for them, so the default is the system's own output.
    */
   audio: AudioDevice[];
+  /**
+   * Give each of those devices a track of its own.
+   *
+   * On, because the alternative is a decision made at record time that cannot
+   * be taken back: one stream holding the game, the voice chat and the music
+   * is one stream for ever. Off writes exactly what this wrote before, which
+   * is what somebody with one device gets anyway.
+   */
+  multiTrackAudio: boolean;
   /**
    * Capture the whole screen underneath the game capture.
    *
@@ -214,6 +224,22 @@ export function profileEdits(choices: ObsSetupChoices): IniEdit[] {
     // So a file sitting in staging is recognisable as ours to anyone who opens
     // the folder, rather than looking like OBS lost track of it.
     { section: 'SimpleOutput', key: 'RecRBPrefix', value: 'GoodBit' },
+    /*
+     * Which tracks are written to the file, as a bitmask.
+     *
+     * Written always, not only when there is more than one device. Absent, OBS
+     * records track 1 alone, and a profile that had six tracks and now has one
+     * device would go on writing six copies of the same mix: the key has to be
+     * able to come back down as well as go up.
+     *
+     * See `services/obs/audioTracks.ts` for how the number is arrived at, and
+     * for the two checks that say Simple output mode can do this at all.
+     */
+    {
+      section: 'SimpleOutput',
+      key: 'RecTracks',
+      value: String(planAudioTracks(choices.audio, choices.multiTrackAudio).recTracks),
+    },
   ];
 
   if (choices.encoder) {
@@ -338,8 +364,19 @@ function buildCollection(
     captureDesktop: boolean;
     tenBit: boolean;
     audio: AudioDevice[];
+    multiTrackAudio: boolean;
   },
 ): string {
+  /*
+   * Where each source's sound lands, worked out once.
+   *
+   * `mixers` used to be 255 on everything, which reads as generous and is the
+   * opposite: every source feeding every track means every track holds the
+   * same mix, so the six streams in a recording were six copies of one
+   * decision. Track 1 stays the full mix so nothing that reads one track
+   * changes; the rest carry one source each.
+   */
+  const audioPlan = planAudioTracks(options.audio, options.multiTrackAudio);
   /*
    * `rgb10a2_space` is the other half of the HDR setting, and it lives here
    * rather than in the profile.
@@ -360,7 +397,11 @@ function buildCollection(
         capture_cursor: true,
         rgb10a2_space: hdr ? '2100pq' : 'srgb',
       },
-      mixers: 255,
+      // Game capture can carry sound of its own, and under a multi-track plan
+      // it belongs in the mix and nowhere else: feeding it into every track
+      // would put game audio on the voice chat track, which is the one thing
+      // being separated here.
+      mixers: audioPlan.captureMixers,
     },
   ];
 
@@ -387,7 +428,7 @@ function buildCollection(
         // screen on the way in, which is the damage this is avoiding.
         force_sdr: false,
       },
-      mixers: 255,
+      mixers: audioPlan.captureMixers,
     });
   }
 
@@ -400,19 +441,18 @@ function buildCollection(
    * has. A microphone is `wasapi_input_capture`; everything else is the output
    * flavour.
    */
-  for (const device of options.audio) {
+  options.audio.forEach((device, index) => {
     sources.push({
       id: device.flow === 'input' ? 'wasapi_input_capture' : 'wasapi_output_capture',
-      // `Speakers` three times is what the OBS mixer would otherwise show.
-      name: device.isDefault
-        ? 'Desktop audio'
-        : device.description
-          ? `${device.name} (${device.description})`
-          : device.name,
+      // `Speakers` three times is what the OBS mixer would otherwise show. The
+      // name comes from `audioSourceName` rather than from here, so the name in
+      // the mixer and the name on the track are one string: two spellings of
+      // one device is how somebody mutes the wrong track.
+      name: audioSourceName(device),
       settings: { device_id: device.id },
-      mixers: 255,
+      mixers: audioPlan.mixers[index],
     });
-  }
+  });
 
   const built = sources.map((source) => ({
     prev_ver: 520159234,
@@ -599,11 +639,19 @@ export function planObsSetup(
         value: `Screen capture, ${choices.display.label}, for anything not fullscreen`,
       });
     }
-    for (const device of choices.audio) {
+    const audioPlan = planAudioTracks(choices.audio, choices.multiTrackAudio);
+    choices.audio.forEach((device, index) => {
+      const mask = audioPlan.mixers[index];
+      const track = audioPlan.tracks.find((candidate) => !candidate.master && mask & (1 << (candidate.track - 1)));
       sceneDetails.push({
         key: 'Source',
-        value: `${device.flow === 'input' ? 'Microphone' : 'Audio'}, ${device.name}`,
+        value: `${device.flow === 'input' ? 'Microphone' : 'Audio'}, ${device.name}${
+          track ? `, on track ${track.track}` : ''
+        }`,
       });
+    });
+    if (audioPlan.multiTrack) {
+      sceneDetails.push({ key: '[SimpleOutput] RecTracks', value: String(audioPlan.recTracks) });
     }
 
     const sceneSummary = ['Whatever game is running fullscreen is captured'];
@@ -614,17 +662,15 @@ export function planObsSetup(
     } else {
       sceneSummary.push('Only fullscreen games are captured, so a clip of a browser comes out black');
     }
-    if (choices.audio.length === 0) {
-      sceneSummary.push('No sound is recorded, because no audio device was chosen');
-    } else if (choices.audio.length === 1) {
-      sceneSummary.push(`Sound comes from ${choices.audio[0].name.toLowerCase()}`);
-    } else {
-      sceneSummary.push(
-        `Sound comes from ${choices.audio.length} devices, each on its own fader: ${choices.audio
-          .map((device) => device.name)
-          .join(', ')}`,
-      );
-    }
+    /*
+     * The routing plan, in full, because it is the one thing here that cannot
+     * be changed afterwards.
+     *
+     * Everything else the setup writes can be redone against tomorrow's
+     * recordings. Which sounds ended up in which stream is decided at the
+     * moment the file is written and is decided for ever.
+     */
+    sceneSummary.push(...describeAudioTracks(audioPlan));
 
     changes.push({
       kind: existsSync(file) ? 'modify' : 'create',
@@ -718,6 +764,19 @@ export interface ObsSetupManifest {
   created: string[];
   /** Files edited in place, with where their backup went. */
   edited: Array<{ file: string; backup: string }>;
+  /**
+   * Which sound was routed to which track.
+   *
+   * The one thing written here that is not about undoing the setup. A file on
+   * disk says it has six audio streams and nothing else: that stream 3 is
+   * voice chat is known only to the scene collection that recorded it, and a
+   * clip outlives the collection. `GetClipAudioTracksAction` reads this to put
+   * a name on a track in the trimmer.
+   *
+   * Optional because a manifest written by an earlier version has none, and a
+   * setup nobody has re-run is not a reason to fail.
+   */
+  audioTracks?: ObsAudioTrack[];
 }
 
 export function manifestPath(): string {
@@ -789,6 +848,7 @@ export function applyObsSetup(
         captureDesktop: choices.captureDesktop,
         tenBit: choices.encoder?.tenBit === true,
         audio: choices.audio,
+        multiTrackAudio: choices.multiTrackAudio,
       }),
       'utf-8',
     );
@@ -845,6 +905,7 @@ export function applyObsSetup(
     collection: choices.createScene ? GOODBIT_COLLECTION : null,
     created,
     edited,
+    audioTracks: planAudioTracks(choices.audio, choices.multiTrackAudio).tracks,
   };
 
   writeFileSync(manifestPath(), JSON.stringify(manifest, null, 2), 'utf-8');

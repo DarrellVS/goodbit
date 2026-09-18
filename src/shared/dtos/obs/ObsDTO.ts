@@ -38,6 +38,24 @@ export interface ObsFinding {
   fixable: boolean;
 }
 
+/**
+ * One recorded track, and what it carries.
+ *
+ * Produced by the setup and written into the manifest, because a file on disk
+ * says only that it has six audio streams. Which one is voice chat is
+ * something only the scene collection that recorded it knows.
+ */
+export interface ObsAudioTrack {
+  /** OBS's own numbering, from 1. */
+  track: number;
+  /** The device, named the way the OBS mixer names it. */
+  label: string;
+  /** Null on the mix, which is not one device. */
+  deviceId: string | null;
+  /** The full mix. Track 1, always, when there is more than one track. */
+  master: boolean;
+}
+
 export interface ObsStatus {
   installed: boolean;
   running: boolean;
@@ -73,6 +91,21 @@ export interface ObsStatus {
   hotkey: string | null;
   /** What the GoodBit scene already captures, so the setup can show it ticked. */
   audioDeviceIds: string[];
+  /**
+   * Whether this profile writes more than one audio track.
+   *
+   * Read back from `[SimpleOutput] RecTracks` rather than from the manifest,
+   * because the manifest says what GoodBit wrote and this says what OBS will
+   * do tonight. A profile edited by hand since is the case worth catching.
+   */
+  multiTrackAudio: boolean;
+  /**
+   * What each track carries, when the setup that wrote it recorded a mapping.
+   *
+   * Empty on a profile GoodBit did not write, where the tracks exist and
+   * nothing knows what is on them.
+   */
+  audioTracks: ObsAudioTrack[];
   setupWrittenAt: string | null;
 }
 
@@ -122,6 +155,13 @@ export interface ObsSetupRequest {
   displayId?: number;
   /** OBS device ids. Absent means the system's own output, alone. */
   audioDeviceIds?: string[];
+  /**
+   * Give each of those devices a track of its own. On unless it is refused.
+   *
+   * Only does anything with two or more devices: there is nothing to separate
+   * below that, and a one-device setup writes exactly what it wrote before.
+   */
+  multiTrackAudio?: boolean;
   captureDesktop?: boolean;
   enableReplayBuffer?: boolean;
   replayBufferSeconds?: number;

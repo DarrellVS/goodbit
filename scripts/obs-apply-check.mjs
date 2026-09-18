@@ -43,7 +43,20 @@ const call = (method, path, body) =>
 await page.evaluate((root) => window.goodbit.saveSettings({ videosRoot: root }), library);
 await page.waitForTimeout(400);
 
-const applied = await call('POST', '/obs/apply', {});
+/*
+ * Several devices, because one is the case that changes nothing.
+ *
+ * The routing is only interesting with something to separate: one device is
+ * one track whatever anybody asks for, so applying the default here would
+ * write `RecTracks=1` and prove nothing about the feature. Real endpoints off
+ * this machine, so the ids are ones OBS would accept.
+ */
+const devices = (await call('GET', '/obs/audio-devices')).body ?? [];
+const chosen = devices.slice(0, 4).map((device) => device.id);
+console.log('--- devices ---');
+console.log(chosen.join(', ') || 'none on this machine');
+
+const applied = await call('POST', '/obs/apply', { audioDeviceIds: chosen });
 console.log('--- apply ---');
 console.log(JSON.stringify(applied.body ?? applied, null, 1));
 
@@ -58,6 +71,19 @@ if (existsSync(collection)) {
   console.log('--- GoodBit.json ---');
   console.log('scenes:', parsed.scene_order.map((entry) => entry.name).join(', '));
   console.log('sources:', parsed.sources.map((source) => `${source.name} (${source.id})`).join(', '));
+  /*
+   * The two numbers the multi-track routing is made of.
+   *
+   * `mixers` is which tracks a source feeds and `RecTracks` in the profile
+   * above is which tracks are written. Either one alone records six copies of
+   * one mix or a file with five silent streams, and neither failure shows up
+   * anywhere except in a clip nobody can fix afterwards.
+   */
+  console.log('--- mixers ---');
+  for (const source of parsed.sources) {
+    if (source.id === 'scene') continue;
+    console.log(`${String(source.mixers).padStart(3)}  0b${source.mixers.toString(2).padStart(6, '0')}  ${source.name}`);
+  }
   console.log('script:', script?.path);
   console.log('script settings:', JSON.stringify({ ...script?.settings, aliases_list: `${script?.settings?.aliases_list?.length ?? 0} aliases` }, null, 1));
   console.log('first aliases:', (script?.settings?.aliases_list ?? []).slice(0, 3).map((entry) => entry.value));
@@ -77,7 +103,12 @@ const status = await call('GET', '/obs/status');
 console.log('\n--- status after ---');
 console.log(
   JSON.stringify(
-    { ready: status.body.ready, findings: status.body.findings.map((f) => `${f.level}: ${f.title}`) },
+    {
+      ready: status.body.ready,
+      multiTrackAudio: status.body.multiTrackAudio,
+      audioTracks: status.body.audioTracks.map((track) => `${track.track}: ${track.label}`),
+      findings: status.body.findings.map((f) => `${f.level}: ${f.title}`),
+    },
     null,
     1,
   ),

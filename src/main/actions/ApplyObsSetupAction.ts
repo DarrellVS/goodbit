@@ -9,6 +9,7 @@ import { chooseEncoder } from '../services/obs/encoderChoice.js';
 import { audioDevices, type AudioDevice } from '../services/obs/audioDevices.js';
 import { captureDisplays, defaultCaptureDisplay, type CaptureDisplay } from '../services/obs/displays.js';
 import { installedSteamGames, type SteamGame } from '../services/obs/steam.js';
+import { planAudioTracks } from '../services/obs/audioTracks.js';
 import {
   applyObsSetup,
   planObsSetup,
@@ -62,6 +63,16 @@ async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices
     captureDesktop: request.captureDesktop !== false,
     encoder,
     audio,
+    /*
+     * On unless it is refused.
+     *
+     * The same default as every other step here, and for a stronger reason
+     * than most: this one is the only choice the setup makes that a person
+     * cannot revisit later. A profile pointed at the wrong folder can be
+     * pointed at the right one tonight, and every clip already recorded is
+     * fine. Sound mixed down to one track at record time is mixed for ever.
+     */
+    multiTrackAudio: request.multiTrackAudio !== false,
   };
 }
 
@@ -116,6 +127,15 @@ export class ApplyObsSetupAction extends BaseAction<ObsSetupRequest, ObsSetupRes
         choices.captureDesktop && choices.display?.monitorId
           ? 'Created the GoodBit scene: the game on top, your screen underneath'
           : 'Created the GoodBit scene, capturing anything fullscreen',
+      );
+    }
+    const audioPlan = planAudioTracks(choices.audio, choices.multiTrackAudio);
+    if (audioPlan.multiTrack) {
+      summary.push(
+        `Each sound source records onto its own track: ${audioPlan.tracks
+          .filter((track) => !track.master)
+          .map((track) => `${track.track} is ${track.label.toLowerCase()}`)
+          .join(', ')}, with track 1 holding the lot`,
       );
     }
     /*

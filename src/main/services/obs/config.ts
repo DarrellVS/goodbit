@@ -29,6 +29,15 @@ export interface ObsProfile {
   baseResolution: string | null;
   colorSpace: string | null;
   colorFormat: string | null;
+  /**
+   * Which audio tracks this profile records, as a bitmask.
+   *
+   * Null when the key is absent, which OBS treats as track 1 alone. Read so
+   * the status can say what tonight's recording will hold rather than what the
+   * setup wrote once: a profile edited by hand since is the case worth
+   * catching, and nothing else would notice.
+   */
+  recTracks: number | null;
 }
 
 export interface ObsScriptEntry {
@@ -164,6 +173,7 @@ export function readProfile(folder: string): ObsProfile | null {
     baseResolution: base && baseY ? `${base}x${baseY}` : null,
     colorSpace: iniValue(ini, 'Video', 'ColorSpace'),
     colorFormat: iniValue(ini, 'Video', 'ColorFormat'),
+    recTracks: numberOrNull(iniValue(ini, section, 'RecTracks')),
   };
 }
 

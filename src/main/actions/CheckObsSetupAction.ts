@@ -7,8 +7,8 @@ import { loadSettings } from '../settings.js';
 import { INCOMING_DIR_NAME } from '../services/capture/incoming.js';
 
 /* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
-import type { FindingLevel, ObsFinding, ObsStatus } from '@shared/index.js';
-export type { FindingLevel, ObsFinding, ObsStatus };
+import type { FindingLevel, ObsFinding, ObsStatus, ObsAudioTrack } from '@shared/index.js';
+export type { FindingLevel, ObsFinding, ObsStatus, ObsAudioTrack };
 
 /**
  * What is wrong with this machine's OBS, in sentences.
@@ -184,6 +184,52 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
       });
     }
 
+    /*
+     * Whether tonight's recording will hold more than one stream of sound.
+     *
+     * Read from the profile rather than from the manifest, because the
+     * manifest says what GoodBit wrote and this says what OBS will do. The
+     * difference is a profile edited by hand since, which is the case nothing
+     * else here would notice.
+     */
+    const recordedTracks = profile?.recTracks ?? 1;
+    const multiTrackAudio = recordedTracks > 1;
+    const manifest = readManifest();
+    const audioTracks: ObsAudioTrack[] = multiTrackAudio ? (manifest?.audioTracks ?? []) : [];
+    const capturedDevices =
+      obs.collections.find((candidate) => candidate.name === GOODBIT_COLLECTION)?.audioDeviceIds ??
+      [];
+
+    /*
+     * Several sources, one stream, which is a decision that cannot be undone.
+     *
+     * A warning rather than a blocker: clips still arrive and still play. What
+     * is lost is everything afterwards, because the loud friend on voice chat
+     * is in the same samples as the gunfire and no amount of editing separates
+     * them again. Worth saying precisely because nothing looks wrong.
+     */
+    if (profile && capturedDevices.length > 1 && !multiTrackAudio) {
+      findings.push({
+        id: 'audio-single-track',
+        level: 'warning',
+        title: 'Every sound is being recorded onto one track',
+        detail: `OBS is capturing ${capturedDevices.length} audio devices and mixing them into a single track, so a loud voice chat or a peaking microphone is part of the same sound as the game and cannot be turned down afterwards. Setting up again gives each one its own track, and the trimmer can then mute or lower one.`,
+        fixable: true,
+      });
+    }
+
+    if (multiTrackAudio && audioTracks.length > 1) {
+      findings.push({
+        id: 'audio-multi-track',
+        level: 'ok',
+        title: `Sound is recorded on ${audioTracks.length} tracks`,
+        detail: `${audioTracks
+          .map((track) => `Track ${track.track}: ${track.label}`)
+          .join(', ')}. The trimmer can mute or turn down any of them on a clip.`,
+        fixable: false,
+      });
+    }
+
     const blocking = findings.filter((finding) => finding.level === 'blocker');
 
     return {
@@ -200,12 +246,12 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
       recordingPath: profile?.recordingPath ?? null,
       replayBufferSeconds: profile?.replayBufferSeconds ?? null,
       hotkey: profile?.saveReplayKey ?? null,
-      audioDeviceIds:
-        obs.collections.find((collection) => collection.name === GOODBIT_COLLECTION)
-          ?.audioDeviceIds ?? [],
+      audioDeviceIds: capturedDevices,
+      multiTrackAudio,
+      audioTracks,
       // GoodBit's own if it has one, otherwise the best the machine offers, so
       // the interface can say what the situation is either way.
-      setupWrittenAt: readManifest()?.writtenAt ?? null,
+      setupWrittenAt: manifest?.writtenAt ?? null,
     };
   }
 }

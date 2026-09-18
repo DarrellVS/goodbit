@@ -117,6 +117,7 @@ const {
   desktopStep,
   bufferStep,
   hotkeyStep,
+  multiTrackStep,
   forwardDisabled,
 } = wizard;
 
@@ -239,7 +240,9 @@ function notNow(): void {
           v-else-if="page === 'audio'"
           :devices="audio"
           :chosen-ids="audioIds"
+          :multi-track-step="multiTrackStep"
           @toggle="toggleAudio"
+          @toggle-step="wizard.setStepEnabled"
         />
 
         <!-- 5. Sorting, which is not optional -->

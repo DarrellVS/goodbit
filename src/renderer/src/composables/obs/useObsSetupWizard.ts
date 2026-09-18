@@ -316,6 +316,9 @@ export function useObsSetupWizard(options: {
     () => steps.value.find((step) => step.key === 'enableReplayBuffer') ?? null,
   );
   const hotkeyStep = computed(() => steps.value.find((step) => step.key === 'bindHotkey') ?? null);
+  const multiTrackStep = computed(
+    () => steps.value.find((step) => step.key === 'multiTrackAudio') ?? null,
+  );
 
   /** The only writer of `step.enabled`, so a step page can stay a prop away. */
   function setStepEnabled(key: SetupStep['key'], enabled: boolean): void {
@@ -395,6 +398,7 @@ export function useObsSetupWizard(options: {
     desktopStep,
     bufferStep,
     hotkeyStep,
+    multiTrackStep,
     forwardDisabled,
     setStepEnabled,
     askObsToClose,

@@ -124,6 +124,21 @@ export function useObsSetup() {
           ? 'You already have scenes. GoodBit leaves them alone unless you ask.'
           : undefined,
       },
+      /*
+       * The one choice here that cannot be revisited.
+       *
+       * Every other step can be set again tomorrow and every clip already
+       * recorded is fine. Sound mixed down to one track at record time is
+       * mixed for ever: the friend on voice chat is in the same samples as the
+       * gunfire and no editing takes them apart again.
+       */
+      {
+        key: 'multiTrackAudio',
+        label: 'Record each sound source on its own track',
+        description:
+          'Track 1 still holds everything mixed, so clips play normally anywhere. The tracks beside it let the trimmer mute a loud voice chat or turn down a peaking microphone.',
+        enabled: true,
+      },
       {
         key: 'captureDesktop',
         label: 'Also capture the screen itself',

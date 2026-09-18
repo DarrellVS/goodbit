@@ -115,10 +115,31 @@ const subhead = computed(() => {
     return 'GoodBit keeps the clips OBS records. Without OBS there is nothing to keep.';
   }
   if (current.ready) {
-    return `Profile ${current.activeProfileName}, ${current.hotkey ?? 'no key'} saves the last ${current.replayBufferSeconds ?? '?'} seconds.`;
+    const line = `Profile ${current.activeProfileName}, ${current.hotkey ?? 'no key'} saves the last ${current.replayBufferSeconds ?? '?'} seconds.`;
+    // Working, and still losing something at every recording. Said here rather
+    // than left to the warning below, because "set up and recording" is the
+    // line somebody reads before deciding there is nothing to do.
+    if (singleTrackAudio.value) return `${line} Every sound is on one track.`;
+    if (current.multiTrackAudio && current.audioTracks.length > 1) {
+      return `${line} Sound is on ${current.audioTracks.length} tracks.`;
+    }
+    return line;
   }
   return 'One or two settings are in the way. Each one below says which.';
 });
+
+/**
+ * The one warning worth naming on the button itself.
+ *
+ * A setup that is otherwise perfect reads as "OBS is set up and recording",
+ * and the offer beside it is *Change the setup*, which is not a thing anybody
+ * presses when nothing appears to be wrong. This is the case where something
+ * is: every sound is going onto one track, and unlike everything else on this
+ * card it cannot be put right for the clips recorded in the meantime.
+ */
+const singleTrackAudio = computed(
+  () => status.value?.findings.some((finding) => finding.id === 'audio-single-track') === true,
+);
 
 const blockers = computed(() => status.value?.findings.filter((f) => f.level === 'blocker') ?? []);
 const warnings = computed(() => status.value?.findings.filter((f) => f.level === 'warning') ?? []);
@@ -223,9 +244,11 @@ function openGuide(): void {
             {{
               !status.installed
                 ? 'Install OBS and set it up'
-                : status.ready
-                  ? 'Change the setup'
-                  : 'Set up OBS for me'
+                : singleTrackAudio
+                  ? 'Give each sound its own track'
+                  : status.ready
+                    ? 'Change the setup'
+                    : 'Set up OBS for me'
             }}
           </button>
 
