@@ -671,21 +671,45 @@ async function waitForStrips(page, timeoutMs = 120_000) {
  * It measures afterwards rather than trusting the reset, and says so when the
  * number is wrong, because this is exactly the sort of thing that is invisible
  * until somebody puts a screenshot next to a ruler.
+ *
+ * **Nothing here is found by how it is painted.** This used to select the lane
+ * as `.h-16.rounded-lg` and walk two `parentElement`s to the scroller, and the
+ * 3.x redesign made that lane `h-18 rounded-sm`: the selector matched nothing,
+ * the reset never ran, and the editor was photographed scrolled to the end of
+ * its own timeline, one clip against an empty lane with the playhead off the
+ * left edge. A warning was printed and the shot was shipped anyway. So the two
+ * hooks are `data-lane` and `data-ruler-mark`, which are attributes the
+ * component sets on purpose rather than classes a designer may repaint, and
+ * the scroller is found by asking which ancestor actually scrolls.
  */
 async function settleTimeline(page) {
   const gutter = await page.evaluate(() => {
-    const lane = document.querySelector('.h-16.rounded-lg');
-    if (!lane) return null;
+    /** The nearest ancestor that scrolls sideways, whatever it is called. */
+    const scrollerFor = (node) => {
+      for (let element = node?.parentElement; element; element = element.parentElement) {
+        const overflow = getComputedStyle(element).overflowX;
+        if (overflow === 'auto' || overflow === 'scroll') return element;
+      }
+      return null;
+    };
 
-    // The lanes' own scroller, and the ruler that scrolls in step with it.
-    const content = lane.parentElement?.parentElement;
-    const ruler = content?.previousElementSibling;
-    if (content) content.scrollLeft = 0;
+    const lane = document.querySelector('[data-lane="video"]');
+    const content = scrollerFor(lane);
+    if (!lane || !content) return null;
+
+    /*
+     * The ruler is a second scroller, kept in step by the component's own
+     * `syncScroll` handler. That fires on a scroll event, so setting one and
+     * trusting the other to follow is a race with the shutter; both are set.
+     */
+    const ruler = scrollerFor(document.querySelector('[data-ruler-mark]'));
+
+    content.scrollLeft = 0;
     if (ruler) ruler.scrollLeft = 0;
 
-    const scroller = content?.getBoundingClientRect().left;
+    const scroller = content.getBoundingClientRect().left;
     const inset = lane.getBoundingClientRect().left;
-    return scroller == null ? null : Math.round((inset - scroller) * 100) / 100;
+    return Math.round((inset - scroller) * 100) / 100;
   });
 
   await page.waitForTimeout(600);
