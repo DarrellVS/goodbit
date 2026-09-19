@@ -1,4 +1,5 @@
 import { ref, watch, onBeforeUnmount, type Ref } from 'vue';
+import { correctPlayhead, playFrom } from './playheadRules';
 
 interface VideoPlayerOptions {
   videoElement: Ref<HTMLVideoElement | null>;
@@ -23,30 +24,38 @@ interface VideoPlayerOptions {
  * page draws come from.
  */
 export function useVideoPlayer({ videoElement, range, onMetadataLoaded, locked }: VideoPlayerOptions) {
-  const LOOP_THRESHOLD = 0.02;
-
   const isLocked = (): boolean => locked?.value === true;
 
   const currentTime = ref(0);
   const isPlaying = ref(false);
 
+  /*
+   * The loop, and the one place the playhead is moved on the player's own
+   * events.
+   *
+   * `playheadRules.ts` holds the decision, because the decision is where this
+   * went wrong: a seek lands on the frame *containing* the time asked for, so
+   * seeking to the start of the range leaves `currentTime` a frame short of
+   * it, a bare `currentTime < startTime` says "before the range", and the
+   * correction seeks to the same place and lands short again. Every
+   * `timeupdate` re-seeked, playback never crossed the start, and pressing
+   * Space read as a player that had stopped working.
+   */
   const handleTimeUpdate = () => {
     const video = videoElement.value;
     if (!video) return;
 
-    const [startTime, endTime] = range.value;
+    const correction = correctPlayhead({
+      time: video.currentTime,
+      range: range.value,
+      paused: video.paused,
+      seeking: video.seeking,
+      locked: isLocked(),
+    });
 
-    if (video.currentTime < startTime) {
-      video.currentTime = startTime;
-    }
-
-    if (video.currentTime >= endTime - LOOP_THRESHOLD) {
-      video.currentTime = startTime;
-      // The loop is what makes a lock more than a pause: pausing alone lasts
-      // until the range ends and this starts it again.
-      if (video.paused && !isLocked()) {
-        video.play().catch(() => {});
-      }
+    if (correction) {
+      video.currentTime = correction.seekTo;
+      if (correction.play) video.play().catch(() => {});
     }
 
     currentTime.value = video.currentTime;
@@ -61,11 +70,46 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded, locked }
     onMetadataLoaded?.();
   };
 
+  /*
+   * Where the playhead is, read once per animation frame while something is
+   * playing.
+   *
+   * `timeupdate` fires about four times a second at irregular intervals, so a
+   * playhead driven by it steps across the strip rather than moving, and a CSS
+   * transition over the top only smears the steps into each other. The loop
+   * runs only while the preview is actually playing, and there is one preview.
+   *
+   * The event is still where the *correction* happens: reading the clock and
+   * deciding whether the clock is somewhere allowed are separate jobs, and
+   * seeking from inside a frame callback would fight every seek in flight.
+   */
+  let frame: number | null = null;
+
+  function readPlayhead(): void {
+    const video = videoElement.value;
+    if (video) currentTime.value = video.currentTime;
+  }
+
+  function follow(): void {
+    readPlayhead();
+    frame = requestAnimationFrame(follow);
+  }
+
+  function stopFollowing(): void {
+    if (frame !== null) cancelAnimationFrame(frame);
+    frame = null;
+    // One last read, so a pause lands on the frame it paused at rather than
+    // wherever the previous tick left it.
+    readPlayhead();
+  }
+
   const handlePlay = () => {
     isPlaying.value = true;
+    if (frame === null) frame = requestAnimationFrame(follow);
   };
   const handlePause = () => {
     isPlaying.value = false;
+    stopFollowing();
   };
 
   /** Play from the start of the range if the playhead sits outside it. */
@@ -73,12 +117,12 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded, locked }
     const video = videoElement.value;
     if (!video || isLocked()) return;
 
-    const [startTime, endTime] = range.value;
-
     if (video.paused) {
-      if (video.currentTime < startTime || video.currentTime >= endTime) {
-        video.currentTime = startTime;
-      }
+      // Same slop as the loop: with the head resting a frame short of the
+      // start, Space means play, not seek to a place it will land short of
+      // again.
+      const from = playFrom(video.currentTime, range.value);
+      if (from !== null) video.currentTime = from;
       video.play().catch(() => {});
     } else {
       video.pause();
@@ -151,6 +195,7 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded, locked }
       video.addEventListener('loadedmetadata', handleLoadedMetadata);
       video.addEventListener('play', handlePlay);
       video.addEventListener('pause', handlePause);
+      video.addEventListener('ended', handlePause);
 
       if (video.readyState >= 1) handleLoadedMetadata();
     },
@@ -164,9 +209,11 @@ export function useVideoPlayer({ videoElement, range, onMetadataLoaded, locked }
     video.removeEventListener('loadedmetadata', handleLoadedMetadata);
     video.removeEventListener('play', handlePlay);
     video.removeEventListener('pause', handlePause);
+    video.removeEventListener('ended', handlePause);
   }
 
   onBeforeUnmount(() => {
+    stopFollowing();
     if (videoElement.value) detach(videoElement.value);
     window.removeEventListener('keydown', handleKeydown, { capture: true });
   });

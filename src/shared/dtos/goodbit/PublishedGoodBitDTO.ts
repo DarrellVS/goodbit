@@ -12,7 +12,7 @@ import type { GoodBitLike } from './GoodBitDTO.js';
  * is not sent cannot leak.
  *
  * `name` and `reason` are both nullable and both carried, because the page
- * falls back from one to the other to "Highlight N": a hand marked GoodBit is
+ * falls back from one to the other to "GoodBit N": a hand marked GoodBit is
  * the common case and usually has neither.
  */
 export interface PublishedGoodBit {
@@ -27,7 +27,7 @@ export interface PublishedGoodBit {
  * The marks on a clip, in the order they happen, ready to be uploaded.
  *
  * Sorted here rather than trusted from the query, because this list is also
- * what numbers the "Highlight 2" fallback on the page, and a list that arrives
+ * what numbers the "GoodBit 2" fallback on the page, and a list that arrives
  * in a different order from the bands above it reads as a bug in the player.
  *
  * Rounded to milliseconds, which is finer than any scrubber can be clicked and

@@ -50,7 +50,7 @@ describe('the marks a publisher accepts', () => {
   });
 
   it('puts them in the order they happen', () => {
-    // The page numbers its "Highlight 2" fallback off this order, so a list
+    // The page numbers its "GoodBit 2" fallback off this order, so a list
     // that disagrees with the bands above it reads as a bug in the player.
     const parsed = parseGoodBits([
       { startSec: 12, endSec: 14 },
@@ -64,7 +64,7 @@ describe('the marks a publisher accepts', () => {
     const parsed = parseGoodBits([{ startSec: 1, endSec: 2, name: long, reason: '  ' }]);
     expect(parsed?.[0].name).toHaveLength(200);
     // Whitespace is not a name. Left in, the chip would be an empty button
-    // rather than falling back to "Highlight 1".
+    // rather than falling back to "GoodBit 1".
     expect(parsed?.[0].reason).toBeNull();
   });
 

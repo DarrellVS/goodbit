@@ -42,7 +42,7 @@ describe('the marks that go up with a clip', () => {
   });
 
   it('puts them in the order they happen', () => {
-    // The page numbers its "Highlight 2" fallback off this order.
+    // The page numbers its "GoodBit 2" fallback off this order.
     const sent = toPublishedGoodBits([
       mark({ startSec: 30, endSec: 32 }),
       mark({ startSec: 2, endSec: 4 }),

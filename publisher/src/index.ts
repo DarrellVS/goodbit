@@ -125,7 +125,7 @@ app.get('/:filename', (req, res) => {
   // same moment.
   const labelled = goodBits.map((bit, index) => ({
     ...bit,
-    label: bit.name || bit.reason || `Highlight ${index + 1}`,
+    label: bit.name || bit.reason || `GoodBit ${index + 1}`,
   }));
 
   // The page names a date and a size. Both come off the file itself rather
@@ -464,23 +464,32 @@ app.get('/:filename', (req, res) => {
       .mark:hover,
       .mark:focus-visible { opacity: 1; }
 
-      /* The playhead, so the rail says where you are as well as what is in it. */
+      /*
+       * The playhead, so the rail says where you are as well as what is in it.
+       *
+       * Moved with a transform rather than a left percentage: "left" is a
+       * layout property, so writing it sixty times a second reflows the rail,
+       * and a transform is handed to the compositor and costs nothing.
+       */
       .playhead {
         position: absolute;
         top: 0;
         bottom: 0;
+        left: 0;
         width: 2px;
         margin-left: -1px;
         background: var(--ink);
         pointer-events: none;
-        left: 0;
+        will-change: transform;
       }
 
       /*
        * The chips. Same mono small caps as everything else on this page, and
        * the timecode is the part that is always true: a hand-marked GoodBit
        * usually has no name and no reason, so most of these read
-       * "Highlight 2 0:14" and the number is what somebody aims at.
+       * "GoodBit 2 0:14" and the number is what somebody aims at. The app's
+       * own word for the thing, so a page and the library that made it do not
+       * have two names for one mark.
        */
       .chips {
         display: flex;
@@ -798,9 +807,50 @@ app.get('/:filename', (req, res) => {
         video.addEventListener('loadedmetadata', drawMarks);
         if (video.readyState >= 1) drawMarks();
 
-        video.addEventListener('timeupdate', () => {
-          if (!playhead || !Number.isFinite(video.duration) || video.duration <= 0) return;
-          playhead.style.left = (video.currentTime / video.duration) * 100 + '%';
+        /*
+         * The playhead follows an animation frame, not the "timeupdate" event.
+         *
+         * That event fires about four times a second at irregular intervals,
+         * so a head driven by it steps across the rail rather than moving, and
+         * a CSS transition over the top only smears the steps into each other.
+         * The loop runs only while the clip is actually playing.
+         */
+        let frame = null;
+        let railWidth = marks.clientWidth;
+
+        function placePlayhead() {
+          if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+          const fraction = Math.min(1, Math.max(0, video.currentTime / video.duration));
+          playhead.style.transform = 'translateX(' + fraction * railWidth + 'px)';
+        }
+
+        function follow() {
+          placePlayhead();
+          frame = requestAnimationFrame(follow);
+        }
+
+        video.addEventListener('play', () => {
+          if (frame === null) frame = requestAnimationFrame(follow);
+        });
+
+        for (const event of ['pause', 'ended']) {
+          video.addEventListener(event, () => {
+            if (frame !== null) cancelAnimationFrame(frame);
+            frame = null;
+            // One last read, so a pause lands where it paused rather than
+            // wherever the previous tick left the head.
+            placePlayhead();
+          });
+        }
+
+        // A seek while paused moves the head, and nothing is reading the clock.
+        video.addEventListener('seeked', placePlayhead);
+        video.addEventListener('loadedmetadata', placePlayhead);
+
+        // The rail is a percentage of the page, and the transform is in pixels.
+        window.addEventListener('resize', () => {
+          railWidth = marks.clientWidth;
+          placePlayhead();
         });
 
         marks.addEventListener('click', (e) => {
