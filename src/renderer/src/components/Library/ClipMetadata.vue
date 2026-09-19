@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { formatRelativeTime, formatExactDate } from '@renderer/helpers/dateFormat';
+import { useFormat } from '@renderer/composables/ui/useFormat';
 
 /**
  * When the clip was recorded, which is the file's own date.
@@ -32,6 +33,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const config = useConfiguration();
+const { formatBytes } = useFormat();
 const showExactDate = ref(false);
 
 const length = computed(() => {
@@ -58,14 +60,14 @@ const displayDate = computed(() => {
 
 <template>
   <!--
-    One line: how long, which game, how long ago.
+    One line: how long, which game, how long ago, how big.
 
     It was the duration and the file size on the left with the date pushed to
     the right edge, so each card carried a two-column layout of its own and a
     grid of forty drew a ragged column of dates down its right. The size is
-    gone rather than moved: nobody scanning a library picks a clip by
-    megabytes, and it is on the clip's own page where somebody looking for it
-    would go.
+    back, last on the line rather than in a column of its own, because a
+    library on a filling drive is read by size and the tile was the only
+    place that could answer it without opening every clip.
   -->
   <div
     v-if="config.public.value.showMetadata"
@@ -84,6 +86,8 @@ const displayDate = computed(() => {
     >
       {{ displayDate }}
     </time>
+    <span v-if="displayDate && sizeBytes" aria-hidden="true" class="shrink-0">·</span>
+    <span v-if="sizeBytes" class="shrink-0 tabular-nums">{{ formatBytes(sizeBytes) }}</span>
   </div>
 </template>
 
