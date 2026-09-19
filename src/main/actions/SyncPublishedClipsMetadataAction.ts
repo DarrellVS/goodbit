@@ -2,7 +2,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
-import { publisherService } from '../services/publisherService.js';
+import { publisherService, publishedGoodBitsFor } from '../services/publisherService.js';
 
 export interface SyncPublishedClipsMetadataOutput {
   synced: number;
@@ -34,11 +34,14 @@ export class SyncPublishedClipsMetadataAction extends BaseAction<void, SyncPubli
       try {
         const gameDisplayName = gameDisplayNameMap.get(clip.game) || clip.game;
         
-        // Update only the metadata file
+        // Update only the metadata file. The marks go with it, because this
+        // sweep is also how a library published before the chaptered player
+        // gets its bands without re-uploading a single byte of video.
         await publisherService.updateMetadata(
           clip.filename,
           clip.displayName || clip.filename,
-          gameDisplayName
+          gameDisplayName,
+          await publishedGoodBitsFor(clip.id),
         );
         
         synced++;

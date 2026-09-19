@@ -2,12 +2,19 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
+import type { PublishedGoodBit } from '../utils/goodBits.js';
 
 export interface PublishClipInput {
   filePath: string;
   originalName: string;
   displayName?: string;
   game?: string;
+  /**
+   * The clip's marks, which the embed page draws on the scrubber and lists as
+   * chips under the player. Absent from an upload by a desktop older than the
+   * chaptered player, which is a plain player and not a broken one.
+   */
+  goodBits?: PublishedGoodBit[];
 }
 
 export interface PublishClipOutput {
@@ -45,6 +52,7 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
       displayName: input.displayName || filename,
       game: input.game || '',
       publishedAt: new Date().toISOString(),
+      goodBits: input.goodBits ?? [],
     };
 
     try {

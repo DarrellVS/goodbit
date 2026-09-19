@@ -4,11 +4,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import axios from 'axios';
 import { BaseAction } from './BaseAction.js';
+import type { PublishedGoodBit } from '@shared/index.js';
 
 export interface RemotePublishInput {
   filePath: string;
   displayName?: string;
   game?: string;
+  /**
+   * The clip's marks, for the embed page's scrubber.
+   *
+   * A text field on the same multipart request rather than a second call, and
+   * the poster's argument for being its own call does not apply: multer
+   * refuses an unexpected *file*, not an unexpected field, so a publisher too
+   * old to know about this reads the clip and the name as it always did and
+   * ignores this one.
+   */
+  goodBits?: PublishedGoodBit[];
   /** 0-1 of the bytes sent, when the size is known. */
   onProgress?: (fraction: number) => void;
 }
@@ -51,6 +62,9 @@ export class RemotePublishAction extends BaseAction<RemotePublishInput, RemotePu
     form.append('file', fs.createReadStream(input.filePath), filename);
     if (input.displayName) form.append('displayName', input.displayName);
     if (input.game) form.append('game', input.game);
+    // JSON in a form field: a multipart part is bytes with a name, and
+    // form-data has no notion of a nested array.
+    if (input.goodBits?.length) form.append('goodBits', JSON.stringify(input.goodBits));
     const url = `${baseUrl}/api/publish`;
     try {
       return await this.send(url, form, input);

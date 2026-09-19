@@ -11,7 +11,10 @@ import { Game } from '../entity/Game.js';
 import { GoodBit, type GoodBitSource } from '../entity/GoodBit.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { videoService } from '../services/videoService.js';
-import { publisherService } from '../services/publisherService.js';
+import {
+  pushPublishedMetadata,
+  pushPublishedMetadataFor,
+} from '../services/publishedMetadata.js';
 import { PublishClipAction } from '../actions/PublishClipAction.js';
 import { UnpublishClipAction } from '../actions/UnpublishClipAction.js';
 import { ExportTimelineAction } from '../actions/ExportTimelineAction.js';
@@ -353,7 +356,6 @@ clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   }
 
   const repo = AppDataSource.getRepository(Clip);
-  const gameRepo = AppDataSource.getRepository(Game);
   const tagRepo = AppDataSource.getRepository(Tag);
   const clip = await repo.findOne({ where: { id }, relations: { tags: true } }) as Clip | null;
   if (!clip) return res.status(404).json({ error: 'Not found' });
@@ -401,19 +403,7 @@ clipsRouter.patch('/:id', asyncHandler(async (req, res) => {
   const saved = await repo.save(clip);
   
   // Update metadata on publisher if clip is published and displayName changed
-  if (wasPublished && displayNameChanged) {
-    try {
-      const game = await gameRepo.findOne({ where: { name: saved.game } });
-      const gameDisplayName = game?.displayName || saved.game;
-      await publisherService.updateMetadata(
-        saved.filename,
-        saved.displayName || saved.filename,
-        gameDisplayName
-      );
-    } catch (error) {
-      console.error('Failed to update published clip metadata:', error);
-    }
-  }
+  if (wasPublished && displayNameChanged) await pushPublishedMetadata(saved);
   
   const dto = ClipDTO.fromEntity(saved);
 
@@ -583,6 +573,7 @@ clipsRouter.post('/:id/goodbits', asyncHandler(async (req, res) => {
       confidence,
     });
     res.status(201).json(GoodBitDTO.fromEntity(goodBit));
+    await pushPublishedMetadataFor(clipId);
   } catch (error) {
     if (!goodBitFailure(res, error, 'Clip not found')) throw error;
   }
@@ -608,6 +599,7 @@ clipsRouter.patch('/:id/goodbits/:goodBitId', asyncHandler(async (req, res) => {
       name,
     });
     res.json(GoodBitDTO.fromEntity(goodBit));
+    await pushPublishedMetadataFor(clipId);
   } catch (error) {
     if (!goodBitFailure(res, error, 'No GoodBit with that id on this clip')) throw error;
   }
@@ -619,6 +611,7 @@ clipsRouter.delete('/:id/goodbits/:goodBitId', asyncHandler(async (req, res) => 
   const { deleted } = await new DeleteGoodBitAction().execute({ clipId, goodBitId });
   if (!deleted) return res.status(404).json({ error: 'No GoodBit with that id on this clip' });
   res.json({ ok: true });
+  await pushPublishedMetadataFor(clipId);
 }));
 
 /**

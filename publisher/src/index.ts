@@ -7,6 +7,7 @@ import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { reportTokenState } from './middlewares/requireToken.js';
 import { posterPathFor, posterUrlFor } from './utils/posterPath.js';
+import { parseGoodBits, type PublishedGoodBit } from './utils/goodBits.js';
 
 dotenv.config();
 
@@ -97,6 +98,15 @@ app.get('/:filename', (req, res) => {
   let game = '';
   
   let publishedAt = '';
+  /*
+   * The marks inside the clip, if the desktop sent any.
+   *
+   * Parsed rather than trusted, even though this file is one this server
+   * wrote: it is a file on disk, it can be edited by hand, and what comes out
+   * of it is injected into the page below. The same function checks the
+   * request that writes it, so there is one idea of what a mark is.
+   */
+  let goodBits: PublishedGoodBit[] = [];
 
   if (fs.existsSync(metaPath)) {
     try {
@@ -104,10 +114,19 @@ app.get('/:filename', (req, res) => {
       displayName = meta.displayName || filename;
       game = meta.game || '';
       publishedAt = meta.publishedAt || '';
+      goodBits = parseGoodBits(meta.goodBits) ?? [];
     } catch (e) {
       // Ignore parsing errors
     }
   }
+
+  // What each band and each chip is called, decided once so the tooltip over
+  // the scrubber and the chip under it cannot say different things about the
+  // same moment.
+  const labelled = goodBits.map((bit, index) => ({
+    ...bit,
+    label: bit.name || bit.reason || `Highlight ${index + 1}`,
+  }));
 
   // The page names a date and a size. Both come off the file itself rather
   // than out of a probe: an ffprobe per page view is a lot to pay for one
@@ -403,6 +422,108 @@ app.get('/:filename', (req, res) => {
         background: #000;
       }
 
+      /*
+       * The chapter rail: where the marked moments are, as a strip of its own
+       * under the picture rather than an overlay on the player's own scrubber.
+       *
+       * A native "video controls" draws its bar inside a shadow root no page
+       * can reach, so the choice is a full custom player or a second bar. A
+       * custom player is a keyboard map, a fullscreen button, a volume slider
+       * and a buffering state to get wrong on somebody's phone, for a page
+       * whose whole job is to play one clip that was linked in a chat. So the
+       * rail sits directly beneath the video, the same width, with a playhead
+       * of its own, and the browser's controls go on working exactly as they
+       * did.
+       */
+      .marks {
+        position: relative;
+        height: 14px;
+        background: var(--panel-2);
+        border-top: 1px solid var(--rule);
+        cursor: pointer;
+      }
+
+      .mark {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        /*
+         * A one-second mark on a five-minute clip is a third of a pixel, so
+         * every band gets a floor it cannot go under, and the shortest ones
+         * grow around their own middle rather than to the right.
+         */
+        min-width: 4px;
+        padding: 0;
+        border: 0;
+        background: var(--accent);
+        opacity: 0.72;
+        cursor: pointer;
+        transition: opacity 0.12s linear;
+      }
+
+      .mark:hover,
+      .mark:focus-visible { opacity: 1; }
+
+      /* The playhead, so the rail says where you are as well as what is in it. */
+      .playhead {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        margin-left: -1px;
+        background: var(--ink);
+        pointer-events: none;
+        left: 0;
+      }
+
+      /*
+       * The chips. Same mono small caps as everything else on this page, and
+       * the timecode is the part that is always true: a hand-marked GoodBit
+       * usually has no name and no reason, so most of these read
+       * "Highlight 2 0:14" and the number is what somebody aims at.
+       */
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1.1rem;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 34px;
+        padding: 0 0.7rem;
+        border: 1px solid var(--rule);
+        background: transparent;
+        color: var(--ink-2);
+        font-family: var(--mono);
+        font-size: 0.74rem;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+        max-width: 100%;
+        transition: border-color 0.12s linear, color 0.12s linear;
+      }
+
+      .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+      .chip .play {
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+
+      .chip .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .chip .at {
+        color: var(--ink-3);
+        flex-shrink: 0;
+      }
+
       .below {
         display: flex;
         align-items: flex-start;
@@ -555,7 +676,22 @@ app.get('/:filename', (req, res) => {
             <source src="${videoUrl}" type="video/mp4">
             Your browser does not support the video tag.
           </video>
+          ${labelled.length ? `<div class="marks" id="marks" role="group" aria-label="Marked moments">
+            <div class="playhead" id="playhead"></div>
+          </div>` : ''}
         </div>
+
+        ${labelled.length ? `<div class="chips">
+          ${labelled
+            .map(
+              (bit, index) => `<button class="chip" type="button" data-at="${bit.startSec}" title="${escapeHtml(bit.label)}">
+            <span class="play" aria-hidden="true">&#9654;</span>
+            <span class="name">${escapeHtml(bit.label)}</span>
+            <span class="at">${timecode(bit.startSec)}</span>
+          </button>`,
+            )
+            .join('\n          ')}
+        </div>` : ''}
 
         <div class="below">
           <div>
@@ -587,6 +723,17 @@ app.get('/:filename', (req, res) => {
     <script>
       const video = document.getElementById('video');
 
+      /*
+       * The marked moments, written into the page rather than fetched.
+       *
+       * This page is generated per request and never cached, so a second round
+       * trip for a list of three numbers would buy nothing. "<" is escaped in
+       * the serialisation, because a name ending in a closing script tag would
+       * otherwise close this block: the names come from whatever somebody
+       * typed in their own library, which is not a reason to trust them here.
+       */
+      const goodBits = ${JSON.stringify(labelled).replace(/</g, '\\u003c')};
+
       // The length is not in the metadata file, and probing for it would cost
       // an ffprobe per page view. The player already knows.
       video.addEventListener('loadedmetadata', () => {
@@ -598,6 +745,74 @@ app.get('/:filename', (req, res) => {
         label.textContent = mins + ':' + secs;
         label.hidden = false;
       });
+
+      const marks = document.getElementById('marks');
+      const playhead = document.getElementById('playhead');
+
+      function seekTo(seconds) {
+        video.currentTime = seconds;
+        video.play().catch(() => {});
+      }
+
+      /*
+       * The bands need a length to be laid out against, and the length only
+       * exists once the player has read the file's metadata. The "loadedmetadata" event
+       * has usually fired by the time this runs on a cached clip, so the
+       * readyState is checked as well: a rail that stayed empty on a second
+       * visit and filled on the first is the shape that bug takes.
+       */
+      function drawMarks() {
+        if (!marks || !Number.isFinite(video.duration) || video.duration <= 0) return;
+        for (const old of marks.querySelectorAll('.mark')) old.remove();
+
+        for (const bit of goodBits) {
+          /*
+           * A mark that is not inside this file is not drawn.
+           *
+           * The clip on the publisher and the marks in the library are two
+           * copies that can go out of step: a shorter cut re-published under
+           * the same name keeps the sidecar until the next metadata sync, and
+           * a band running off the end of the rail, or past 100% and out of
+           * the page, is a worse way to say so than one band missing.
+           */
+          if (bit.startSec >= video.duration) continue;
+          const end = Math.min(bit.endSec, video.duration);
+
+          const band = document.createElement('button');
+          band.className = 'mark';
+          band.type = 'button';
+          band.style.left = (bit.startSec / video.duration) * 100 + '%';
+          band.style.width = ((end - bit.startSec) / video.duration) * 100 + '%';
+          band.title = bit.label;
+          band.setAttribute('aria-label', 'Play ' + bit.label);
+          band.addEventListener('click', (e) => {
+            // The rail seeks where it was clicked, and a band is on the rail.
+            e.stopPropagation();
+            seekTo(bit.startSec);
+          });
+          marks.appendChild(band);
+        }
+      }
+
+      if (goodBits.length) {
+        video.addEventListener('loadedmetadata', drawMarks);
+        if (video.readyState >= 1) drawMarks();
+
+        video.addEventListener('timeupdate', () => {
+          if (!playhead || !Number.isFinite(video.duration) || video.duration <= 0) return;
+          playhead.style.left = (video.currentTime / video.duration) * 100 + '%';
+        });
+
+        marks.addEventListener('click', (e) => {
+          if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+          const box = marks.getBoundingClientRect();
+          seekTo(((e.clientX - box.left) / box.width) * video.duration);
+        });
+
+        for (const chip of document.querySelectorAll('.chip')) {
+          chip.addEventListener('click', () => seekTo(Number(chip.dataset.at)));
+        }
+      }
 
       const copyButton = document.getElementById('copy');
       const copyLabel = document.getElementById('copy-label');
@@ -644,6 +859,12 @@ function formatBytes(bytes: number): string {
   const mb = bytes / (1024 * 1024);
   if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
   return `${mb.toFixed(1)} MB`;
+}
+
+/** `m:ss`, the way every other timecode on this page and in the app is set. */
+function timecode(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 function escapeHtml(unsafe: string): string {

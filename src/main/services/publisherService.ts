@@ -8,6 +8,8 @@ import { RemotePublishThumbnailAction } from '../actions/RemotePublishThumbnailA
 import { RemoteUnpublishAction } from '../actions/RemoteUnpublishAction.js';
 import { RemoteListPublishedAction } from '../actions/RemoteListPublishedAction.js';
 import { RemoteUpdateMetadataAction } from '../actions/RemoteUpdateMetadataAction.js';
+import { ListGoodBitsAction } from '../actions/ListGoodBitsAction.js';
+import { toPublishedGoodBits, type PublishedGoodBit } from '@shared/index.js';
 
 class PublisherService {
   /**
@@ -17,6 +19,11 @@ class PublisherService {
    * explicitly by the one caller that uploads something else: a compressed
    * copy in a scratch folder has no row of its own, and the poster still has
    * to be the library's.
+   * @param goodBits The clip's marks, which the embed page draws on its
+   * scrubber. The same argument as the poster applies to a compressed copy:
+   * the file being uploaded has no row, and the marks belong to the clip it
+   * was made from. They still line up, because compressing re-encodes the
+   * whole recording rather than cutting any of it.
    */
   async publish(
     filePath: string,
@@ -24,10 +31,11 @@ class PublisherService {
     game?: string,
     onProgress?: (fraction: number) => void,
     posterPath?: string,
+    goodBits?: PublishedGoodBit[],
   ): Promise<{ filename: string; url: string; }>
   {
     const action = new RemotePublishAction();
-    const result = await action.execute({ filePath, displayName, game, onProgress });
+    const result = await action.execute({ filePath, displayName, game, onProgress, goodBits });
     await this.sendPoster(result.filename, posterPath ?? (await posterForFile(filePath)));
     return result;
   }
@@ -44,10 +52,15 @@ class PublisherService {
     return files;
   }
 
-  async updateMetadata(filename: string, displayName: string, game: string): Promise<{ success: boolean; }>
+  async updateMetadata(
+    filename: string,
+    displayName: string,
+    game: string,
+    goodBits?: PublishedGoodBit[],
+  ): Promise<{ success: boolean; }>
   {
     const action = new RemoteUpdateMetadataAction();
-    return await action.execute({ filename, displayName, game });
+    return await action.execute({ filename, displayName, game, goodBits });
   }
 
   /**
@@ -131,6 +144,27 @@ async function posterForFile(filePath: string): Promise<string | undefined> {
       error instanceof Error ? error.message : String(error),
     );
     return undefined;
+  }
+}
+
+/**
+ * The marks on a clip, in the shape the publisher stores.
+ *
+ * Never throws, for the same reason the poster lookup does not: a publish that
+ * worked is not undone because the chapter list could not be read, and a clip
+ * whose marks failed to go up is a plain player rather than a broken one. The
+ * caller logs and carries on.
+ */
+export async function publishedGoodBitsFor(clipId: number): Promise<PublishedGoodBit[]> {
+  try {
+    const { goodBits } = await new ListGoodBitsAction().execute({ clipId });
+    return toPublishedGoodBits(goodBits);
+  } catch (error) {
+    console.warn(
+      `No chapter marks for clip ${clipId}:`,
+      error instanceof Error ? error.message : String(error),
+    );
+    return [];
   }
 }
 

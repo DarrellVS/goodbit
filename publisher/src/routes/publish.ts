@@ -6,6 +6,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { clipsService } from '../services/clipsService.js';
 import { StoreThumbnailAction } from '../actions/StoreThumbnailAction.js';
 import { UpdateMetadataAction } from '../actions/UpdateMetadataAction.js';
+import { parseGoodBits } from '../utils/goodBits.js';
 
 const uploadDest = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'public');
 const storage = multer.diskStorage({
@@ -34,7 +35,16 @@ publishRouter.post('/', upload.single('file'), asyncHandler(async (req, res) => 
   if (!req.file) return res.status(400).json({ error: 'Missing file' });
   const displayName = (req.body?.displayName as string | undefined) || req.file.originalname;
   const game = (req.body?.game as string | undefined) || '';
-  const result = await clipsService.publish(req.file.path, req.file.originalname, displayName, game);
+  // A multipart field, so a JSON string. Unparseable or absent is no marks,
+  // which is what every desktop older than the chaptered player sends.
+  const goodBits = parseGoodBits(req.body?.goodBits);
+  const result = await clipsService.publish(
+    req.file.path,
+    req.file.originalname,
+    displayName,
+    game,
+    goodBits,
+  );
   res.json(result);
 }));
 
@@ -87,8 +97,15 @@ publishRouter.patch('/:filename/metadata', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'displayName and game are required' });
   }
 
+  /*
+   * `goodBits` is optional and its absence means something: keep what is
+   * already in the sidecar. An app that only knows how to rename a clip must
+   * not wipe the bands off its player by saying nothing about them.
+   */
+  const goodBits = parseGoodBits(req.body?.goodBits);
+
   const action = new UpdateMetadataAction();
-  const result = await action.execute({ filename, displayName, game });
+  const result = await action.execute({ filename, displayName, game, goodBits });
   res.json(result);
 }));
 

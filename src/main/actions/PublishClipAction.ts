@@ -5,10 +5,15 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
-import { publisherService, posterForClip } from '../services/publisherService.js';
+import {
+  publisherService,
+  posterForClip,
+  publishedGoodBitsFor,
+} from '../services/publisherService.js';
 import { CompressVideoAction } from './CompressVideoAction.js';
 import { compressPublished } from '../settings.js';
 import { announce } from '../startup.js';
+import type { PublishedGoodBit } from '@shared/index.js';
 
 export interface PublishClipInput {
   id: number;
@@ -66,14 +71,25 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
        */
       const posterPath = await posterForClip(clip);
 
+      /*
+       * The marks go up with the clip, for the bands on the embed's scrubber.
+       *
+       * Read here rather than inside the upload so the compressed path gets
+       * the same list: that copy has no row of its own, exactly as its poster
+       * does not, and the numbers still line up because compressing re-encodes
+       * the whole recording rather than cutting any of it.
+       */
+      const goodBits = await publishedGoodBitsFor(clip.id);
+
       const result = compress
-        ? await this.publishCompressed(clip, gameDisplayName, posterPath, say)
+        ? await this.publishCompressed(clip, gameDisplayName, posterPath, goodBits, say)
         : await publisherService.publish(
             clip.filePath,
             name,
             gameDisplayName,
             (f) => say('uploading', Math.round(f * 100)),
             posterPath,
+            goodBits,
           );
 
       clip.published = true;
@@ -96,6 +112,7 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
     clip: Clip,
     gameDisplayName: string,
     posterPath: string | undefined,
+    goodBits: PublishedGoodBit[],
     say: (stage: 'compressing' | 'uploading' | 'done' | 'failed', percent: number) => void,
   ) {
     const scratch = await fsPromises.mkdtemp(path.join(tmpdir(), 'goodbit-publish-'));
@@ -113,9 +130,10 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
         clip.displayName || clip.filename,
         gameDisplayName,
         (fraction) => say('uploading', Math.round(fraction * 100)),
-        // The scratch copy has no row of its own, so the poster is the
-        // library's own picture of the clip this came from.
+        // The scratch copy has no row of its own, so the poster and the marks
+        // are the library's, for the clip this came from.
         posterPath,
+        goodBits,
       );
     } finally {
       await fsPromises.rm(scratch, { recursive: true, force: true }).catch(() => {});
