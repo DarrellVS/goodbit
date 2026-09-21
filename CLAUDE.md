@@ -719,6 +719,31 @@ recording;
 `compressPublished` is **on**, because what goes behind a public link is a copy and the file on disk
 is untouched either way. `shareEncoderArgs` is the share preset both use.
 
+### What the publisher promises a CDN
+
+`/media` answers `s-maxage=31536000`, a year at the edge, and that is only honest because **every
+write in the publisher purges the URL it changed**: `PublishClipAction` the clip,
+`StoreThumbnailAction` the poster, `UnpublishClipAction` both. A new write path that forgets to
+purge serves a stale clip for a year and no reload fixes it, because the browser is not the one
+holding the copy. So the rule is the invariant rather than the header: nothing here may change the
+bytes at a URL without purging it.
+
+`max-age` for the browser is five minutes, deliberately not the year, and `immutable` is not set at
+all. These URLs are the clip's own filename rather than a content hash, and a browser cache has no
+purge, so a viewer who watched a clip and came back after the owner re-published a trimmed cut
+under the same name would be served the old one off their own disk.
+
+**The embed page stays `no-store`.** Its metadata writes all purge it already, so the per-request
+generation is not the hazard. The deploy is: the HTML is a template compiled into the server, so
+shipping a new publisher changes the page of every clip ever published at once and there is no list
+of them to purge.
+
+`cachePrewarm.ts` asks for a clip's own public URLs once after publishing, so the first viewer, who
+is usually whoever just pressed Publish, does not pay for the miss. It waits for the purge in front
+of it, it drains the body because an edge that has not finished receiving an object does not store
+it, and it range-requests the video: a full GET would send the clip back down the same home uplink
+it just came up, for a link that may never be opened.
+
 ### Client
 
 #### Where a file goes, and how to tell
