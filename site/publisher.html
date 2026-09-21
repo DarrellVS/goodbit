@@ -163,6 +163,17 @@ docker build -t goodbit-publisher .</code></pre>
                   serve for a while.
                 </td>
               </tr>
+              <tr>
+                <td><code>CACHE_PREWARM</code></td>
+                <td>
+                  Optional, on unless set to <code>0</code>. After a clip is published the
+                  publisher asks for its own public URLs once, so a CDN has the page and the start
+                  of the video cached before the first person opens the link. It needs no
+                  credential, does nothing without <code>PUBLIC_BASE_URL</code>, and range-requests
+                  the video, so it costs a few megabytes per publish rather than the size of the
+                  clip. Turn it off on a metered uplink.
+                </td>
+              </tr>
             </tbody>
           </table>
 
@@ -588,6 +599,42 @@ proxy_send_timeout 600s;</code></pre>
             <p>
               With one missing or wrong, the publisher carries on and simply does not purge; it will
               not break publishing.
+            </p>
+
+            <h3>Two things worth doing in the dashboard</h3>
+            <p>
+              Neither can be set from here, because neither is something an API token with one
+              purge permission is allowed to touch. Both are one click.
+            </p>
+            <ul>
+              <li>
+                <strong>Smart Tiered Cache</strong>, under <em>Caching</em> ·
+                <em>Tiered Cache</em>. It gives your zone an upper tier in front of the origin, so
+                the pre-warm above warms one cache that every edge location then pulls from,
+                instead of warming whichever location the publisher happened to reach. Without it
+                the pre-warm still helps, it just helps in one city.
+              </li>
+              <li>
+                <strong>Check it is working.</strong> Publish a clip, wait ten seconds, then ask
+                for the video and read one header:
+              </li>
+            </ul>
+            <div class="copy">
+              <button type="button" data-copy="#cmd-cfcheck">Copy</button>
+              <pre><code id="cmd-cfcheck">curl -sI -r 0-1 https://your-domain.com/media/your-clip.mp4 | grep -i cf-cache-status</code></pre>
+            </div>
+            <p>
+              <code>HIT</code> is the answer you want. <code>MISS</code> on the very first ask is
+              normal; <code>MISS</code> every time means the pre-warm is not reaching this address,
+              which is nearly always <code>PUBLIC_BASE_URL</code> pointing at the LAN name rather
+              than the public one. The publisher logs one line per warmed URL with the same header
+              in it, so its own log will say the same thing.
+            </p>
+            <p>
+              The embed page itself is deliberately <em>not</em> cached at the edge and will always
+              read <code>DYNAMIC</code>. It is a couple of kilobytes built per request, and it is
+              compiled into the server, so a publisher update changes the page of every clip you
+              have ever published and there is no list of them to purge.
             </p>
           </section>
 

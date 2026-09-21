@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
+import { prewarmClip } from '../services/cachePrewarm.js';
 import type { PublishedGoodBit } from '../utils/goodBits.js';
 
 export interface PublishClipInput {
@@ -70,6 +71,17 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
         ] });
       } catch {}
     }
+
+    /*
+     * And warmed, after the purge rather than instead of it.
+     *
+     * The clip, its sidecar and the purge are all done by this point, so the
+     * URLs answer the same thing a viewer would get. Not awaited and
+     * incapable of throwing: the upload is finished, and the caller is a
+     * desktop waiting on this response with a several-hundred-megabyte POST
+     * behind it. See `services/cachePrewarm.ts`.
+     */
+    prewarmClip(filename);
 
     return { filename, url };
   }

@@ -43,12 +43,61 @@ app.get('/', (_req, res) => res.redirect(302, SITE_URL));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api', apiRouter);
 
-// Serve raw media files (videos and thumbnails)
+/*
+ * The bytes: clips, and the poster frames beside them.
+ *
+ * These asked browsers and the edge alike to revalidate on every request,
+ * which made the CDN in front of this server a proxy rather than a cache: the
+ * first frame of every share link came off somebody's home uplink, every
+ * time, and a clip opened by five people in a Discord thread was uploaded
+ * five times over. So this splits the two caches, because they are not the
+ * same problem and only one of them can be reached afterwards.
+ *
+ * `s-maxage` is a year, for the edge. That is safe precisely because it can
+ * be taken back: every write in this server purges the URL it changed, and
+ * each of those was a bug fixed the hard way. `PublishClipAction` purges the
+ * clip, `StoreThumbnailAction` purges the poster (a re-uploaded trim keeps its
+ * filename, so the CDN would otherwise hold a frame from before the cut), and
+ * `UnpublishClipAction` purges both. Nothing here changes bytes at a URL
+ * without purging it.
+ *
+ * `max-age` is five minutes, for the browser, and deliberately not the year
+ * the issue asked for. A browser cache has no purge: a viewer who watched a
+ * clip, and then watched it again after the owner trimmed and re-published it
+ * under the same filename, would be served the old cut out of their own disk
+ * for a year with no way for anybody to fix it. Five minutes covers the thing
+ * `max-age` is actually for here, a reload or a second tab, and costs the
+ * edge one revalidation afterwards rather than the origin one.
+ *
+ * `immutable` is not set for the same reason: these URLs are addressed by the
+ * clip's own filename rather than by a content hash, so the promise it makes
+ * is one this server cannot keep.
+ *
+ * Range requests are untouched. `express.static` answers them, and it has to:
+ * seeking a `<video>` is nothing but a range request, and so is the pre-warm.
+ */
+const MEDIA_EDGE_MAX_AGE = 31536000; // one year
+const MEDIA_BROWSER_MAX_AGE = 300; // five minutes
+const MEDIA_EXTENSIONS = /\.(mp4|mov|mkv|jpg|jpeg|png|webp)$/i;
+
 app.use('/media', express.static(UPLOAD_DIR, {
   etag: true,
   maxAge: 0,
-  setHeaders: (res) => {
-    // Ensure browsers revalidate or refetch; CDN is purged separately
+  setHeaders: (res, filePath) => {
+    if (MEDIA_EXTENSIONS.test(filePath)) {
+      res.setHeader(
+        'Cache-Control',
+        `public, max-age=${MEDIA_BROWSER_MAX_AGE}, s-maxage=${MEDIA_EDGE_MAX_AGE}, stale-while-revalidate=86400`,
+      );
+      return;
+    }
+    /*
+     * Anything else in this directory is a sidecar rather than an asset: the
+     * `.meta.json` next to each clip is rewritten by `PATCH /metadata` and
+     * nothing purges it, because nothing is supposed to read it over HTTP.
+     * It keeps the old header, so a long life can never be granted to a file
+     * by accident.
+     */
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -174,7 +223,21 @@ app.get('/:filename', (req, res) => {
    * right while every clip already published looked old, and a hard refresh
    * could not fix it because the browser was not the one holding the copy.
    *
-   * The media route beside this one has said the same thing all along.
+   * The media route beside this one no longer says the same thing, and this
+   * one still does. Giving the page an `s-maxage` was considered and refused,
+   * for a reason the per-request writes do not cover: every write that
+   * changes what this page says already purges its URL, so the clip's own
+   * metadata is not the hazard. The deploy is. This HTML is a template
+   * compiled into the server, so shipping a new publisher changes the page of
+   * every clip ever published at once, and there is no list of them to purge
+   * and no hook that would know to. That is exactly the failure the paragraph
+   * above describes, and it was found by a reader looking at a stale page
+   * rather than by anything here. Purging the whole zone on boot would fix it
+   * and would also throw away every warmed clip on every restart.
+   *
+   * So the page is uncached and the bytes are cached, which is the split that
+   * matters anyway: the HTML is a couple of kilobytes generated from one
+   * `stat` and one small JSON read, and the video is the clip.
    */
   res.setHeader('Cache-Control', 'no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');

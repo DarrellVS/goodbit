@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { posterPathFor, posterUrlFor } from '../utils/posterPath.js';
+import { prewarmPoster } from '../services/cachePrewarm.js';
 
 export interface StoreThumbnailInput {
   /** The clip this is a picture of, under the name it was uploaded with. */
@@ -71,6 +72,18 @@ export class StoreThumbnailAction extends BaseAction<StoreThumbnailInput, StoreT
         );
       }
     }
+
+    /*
+     * The poster is warmed here and nowhere else, because here is the first
+     * moment the file exists.
+     *
+     * `PublishClipAction` runs before this request and warms the page and the
+     * video; asking for the poster from there would fetch a 404 and teach the
+     * edge to serve one. A clip published by a desktop too old to send a
+     * picture never reaches this action, which is right: there is nothing to
+     * warm and the page does not name one.
+     */
+    prewarmPoster(filename);
 
     return { stored: true };
   }
