@@ -5,9 +5,11 @@ name: CI
 # a release on a real machine instead (see `npm run check:pre-release`).
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    # `dev` too: every feature PR in a bundled release targets it rather than
+    # `main`, so a gate that only watched `main` would watch nothing for weeks.
+    branches: [main, dev]
 
 # A new push supersedes the run in flight rather than queueing behind it.
 concurrency:

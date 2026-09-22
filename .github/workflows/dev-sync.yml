@@ -1,0 +1,127 @@
+name: Keep dev on top of main
+
+# `dev` is the integration branch for a release: every feature PR merges there,
+# the whole thing is tested by hand against a real library, and only then is it
+# promoted to `main`. That makes `dev` long-lived, and a long-lived branch that
+# does not follow `main` drifts: a hotfix tagged straight off `main` would be
+# missing from the release that comes after it, silently, because `dev` would
+# merge cleanly without it.
+#
+# So every push to `main` is merged into `dev`, and a merge that cannot be done
+# automatically opens an issue rather than being left to be noticed later.
+on:
+  push:
+    branches: [main]
+  # For a conflict that has been resolved by hand, or to check the two are in
+  # step without waiting for a push.
+  workflow_dispatch:
+
+concurrency:
+  group: dev-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Both branches and their history, or the merge has nothing to work
+          # with: the default checkout is a shallow copy of one ref.
+          fetch-depth: 0
+          ref: dev
+
+      - name: Is there a dev branch at all
+        id: exists
+        run: |
+          if git ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No dev branch, so nothing to keep up to date."
+          fi
+
+      - name: Merge main into dev
+        id: merge
+        if: steps.exists.outputs.found == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main dev
+          git checkout dev
+
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "dev already contains main."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A merge, never a rebase. `dev` is pushed to by several branches and
+          # is checked out on a real machine for testing; rewriting its history
+          # would strand both.
+          if git merge --no-edit origin/main; then
+            git push origin dev
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "changed=conflict" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Say so when it needs a person
+        if: failure() && steps.merge.outputs.changed == 'conflict'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'dev cannot be merged with main automatically';
+            const body = [
+              'A push to `main` could not be merged into `dev` without a conflict.',
+              '',
+              'Until it is resolved, `dev` is missing whatever landed on `main`,',
+              'which for a release branch means the thing being tested by hand is',
+              'not what would ship.',
+              '',
+              '```',
+              'git checkout dev',
+              'git merge origin/main',
+              '# resolve, then',
+              'git push origin dev',
+              '```',
+              '',
+              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+
+            // One issue, reopened rather than a new one per push: a conflict
+            // that survives three pushes to main is one problem, not three.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'dev-sync',
+              per_page: 10,
+            });
+
+            const open = existing.data.find((issue) => issue.title === title);
+            if (open && open.state === 'open') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                body,
+              });
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['dev-sync'],
+            });

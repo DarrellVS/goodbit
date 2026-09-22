@@ -69,6 +69,33 @@ Keep `npm run typecheck` green, `build` runs it first and fails otherwise.
 build that passed while the app keeps running the previous bundle. `npm run build > out.log 2>&1;
 echo "exit=$?"`.
 
+## `dev`, and never testing against the real library unprotected
+
+A bundled release is integrated on **`dev`**, not on `main`. Every feature PR targets `dev`, the
+whole branch is then tested by hand against a **real** library, and only once that passes is `dev`
+promoted to `main`. Feedback from that testing arrives as a new PR onto `dev` like everything else.
+
+`.github/workflows/dev-sync.yml` merges every push to `main` into `dev` and opens an issue when it
+cannot. A long-lived branch that does not follow `main` drifts silently: a hotfix tagged off `main`
+would be missing from the release that comes after it, and `dev` would merge cleanly without it.
+A merge, never a rebase, because `dev` is pushed to by several branches and is checked out on a
+real machine while it is being tested.
+
+**Before an unreleased build is ever pointed at the real library, back up what it can destroy, and
+verify the backup.** This is not a nicety. A clip row is the only copy of its tags, notes, display
+name, stars, collections and marks; a migration that runs is not undone by checking out the old
+branch; and a release like this one carries several PRs whose main verb replaces or deletes a file.
+
+- `node scripts/backup-db.mjs` for the library database, which reads its copy back.
+- `node scripts/obs-backup.mjs` before anything touches OBS, for the same reason.
+- Copy `settings.json` too, since a new build writes new keys into it and an older one will not
+  understand them.
+- Prefer `GOODBIT_USER_DATA` pointed at a throw-away profile whose `videosRoot` is the real one:
+  the database, the settings and the caches are then this run's own, and only the *files* are
+  shared. That is the smallest blast radius that still tests anything real.
+- `node scripts/restore-check.mjs` proves a backup can actually be put back, and that a corrupt one
+  is refused. Run it when the backup is the thing standing between a test and somebody's library.
+
 ## Stacked pull requests
 
 `gh stack`, the `github/gh-stack` extension, with the agent skill of the same name installed
