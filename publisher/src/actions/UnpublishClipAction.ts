@@ -3,6 +3,7 @@ import path from 'node:path';
 import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { posterPathFor, posterUrlFor } from '../utils/posterPath.js';
+import { forgetViews } from '../services/viewCounter.js';
 
 export interface UnpublishClipInput {
   filePath: string;
@@ -43,6 +44,15 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
         console.warn(`Failed to delete metadata ${metaPath}:`, err.message);
       }
     }
+
+    /*
+     * And its view count, which is about a clip that no longer exists.
+     *
+     * Kept would be worse than useless: re-publishing under the same filename,
+     * which a trim does, would inherit a stranger's count from whatever used to
+     * be at that name.
+     */
+    forgetViews(filename);
 
     // Purge Cloudflare cache for all related URLs
     const base = process.env.PUBLIC_BASE_URL || '';

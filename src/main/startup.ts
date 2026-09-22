@@ -7,6 +7,7 @@ import { SyncGamesAction } from './actions/SyncGamesAction.js';
 import { SyncClipCreationDatesAction } from './actions/SyncClipCreationDatesAction.js';
 import { SyncPublishedClipsMetadataAction } from './actions/SyncPublishedClipsMetadataAction.js';
 import { SyncPublisherAction } from './actions/SyncPublisherAction.js';
+import { SyncPublisherStatsAction } from './actions/SyncPublisherStatsAction.js';
 import { cleanupEmptyFolders } from './utils/cleanupEmptyFolders.js';
 import { CACHE_DIR_NAME, migrateLegacyCacheDir } from './services/cachePaths.js';
 import { startForegroundHistory } from './services/capture/foregroundHistory.js';
@@ -429,6 +430,10 @@ export async function startServices(): Promise<void> {
     steps.push(
       ['published metadata', () => new SyncPublishedClipsMetadataAction().execute()],
       ['publisher sync', () => new SyncPublisherAction().execute()],
+      // The view counts, once, beside the sync that already runs here. Pulled
+      // rather than polled: a number nobody is looking at is not worth a
+      // request over somebody's home uplink on a timer.
+      ['publisher stats', async () => void (await new SyncPublisherStatsAction().execute())],
     );
   }
 

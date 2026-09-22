@@ -138,6 +138,24 @@ export class Clip {
   @Column({ type: 'boolean', default: false })
   isExport!: boolean;
 
+  /**
+   * How often the published copy's page has been opened, and when last.
+   *
+   * Mirrored from the publisher by `SyncPublisherStatsAction`, the same way
+   * `suggestedCount` mirrors a cache: the library is one query per page and
+   * cannot ask a remote server per tile.
+   *
+   * **Null is "nobody has counted"**, which is not zero. A clip that is not
+   * published, a publisher older than the counter, and a sync that has not run
+   * all read null; zero means it is published, counting was happening, and
+   * nobody opened it. Anything recommending a cleanup has to tell those apart.
+   */
+  @Column({ type: 'integer', nullable: true })
+  publisherViews?: number | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  publisherLastViewedAt?: Date | null;
+
   @ManyToMany(() => Tag, { cascade: ['insert'] })
   @JoinTable()
   tags!: Tag[];

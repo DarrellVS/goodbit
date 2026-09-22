@@ -3,8 +3,22 @@ import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { getHiddenGameNames } from '../utils/hiddenGames.js';
+import { SyncPublisherStatsAction } from '../actions/SyncPublisherStatsAction.js';
 
 export const statsRouter = express.Router();
+
+/**
+ * Bring the publisher's view counts back, and say what it reported.
+ *
+ * A POST rather than a GET: it writes to `clip` rows. Pulled by the Publisher
+ * screen when it opens and once at boot, rather than polled, because a number
+ * only matters while somebody is looking at it and every refresh is a request
+ * over a home uplink to somebody's own server.
+ */
+statsRouter.post('/publisher/sync', asyncHandler(async (_req, res) => {
+  const result = await new SyncPublisherStatsAction().execute();
+  res.json(result);
+}));
 
 statsRouter.get('/', asyncHandler(async (_req, res) => {
   const repo = AppDataSource.getRepository(Clip);

@@ -8,6 +8,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import { reportTokenState } from './middlewares/requireToken.js';
 import { posterPathFor, posterUrlFor } from './utils/posterPath.js';
 import { parseGoodBits, type PublishedGoodBit } from './utils/goodBits.js';
+import { flushViewCounts, loadViewCounts, recordView } from './services/viewCounter.js';
 
 dotenv.config();
 
@@ -80,6 +81,30 @@ const MEDIA_EDGE_MAX_AGE = 31536000; // one year
 const MEDIA_BROWSER_MAX_AGE = 300; // five minutes
 const MEDIA_EXTENSIONS = /\.(mp4|mov|mkv|jpg|jpeg|png|webp)$/i;
 
+/*
+ * The sidecars are not assets and are no longer served.
+ *
+ * `GET /media/foo.mp4.meta.json` returned 200 with the display name and the
+ * marks. Harmless in content, since the page shows the same values, but it is
+ * surface nobody asked for and nobody reads: it exists because `/media` is
+ * `express.static(UPLOAD_DIR)` and hands out everything in that directory.
+ *
+ * **Before** `express.static`, which is the whole point: registered after it,
+ * the static handler answers first and the rule never runs. The bench caught
+ * exactly that, with a 200 and the display name in it.
+ *
+ * A 404 rather than a 403: whether a file exists is not something this has a
+ * reason to confirm.
+ *
+ * It is also the reason the view counter lives outside `UPLOAD_DIR` rather
+ * than beside each clip. A rule can be forgotten; a directory that is not
+ * served cannot leak.
+ */
+app.use('/media', (req, res, next) => {
+  if (/\.meta\.json$/i.test(req.path)) return res.status(404).end();
+  next();
+});
+
 app.use('/media', express.static(UPLOAD_DIR, {
   etag: true,
   maxAge: 0,
@@ -104,6 +129,7 @@ app.use('/media', express.static(UPLOAD_DIR, {
   },
 }));
 
+
 // Video embed page with Open Graph meta tags for Discord/social media
 app.get('/:filename', (req, res) => {
   /*
@@ -117,6 +143,21 @@ app.get('/:filename', (req, res) => {
    */
   const filename = path.basename(req.params.filename);
   const filePath = path.join(UPLOAD_DIR, filename);
+
+  /*
+   * One open of this page is one view.
+   *
+   * Here and nowhere else. `/media` answers a year at the edge since 3.4.3, so
+   * a counter there would measure cache misses rather than viewers: a number
+   * that falls as the caching works better. This page is `no-store`, so every
+   * open reaches the origin.
+   *
+   * Counted before the existence check, no: a link to a clip that has been
+   * unpublished redirects to the site, and that is not a view of anything.
+   */
+  if (fs.existsSync(filePath)) {
+    recordView(filename, req.method, req.get('user-agent'));
+  }
 
   /*
    * A clip that is not here is almost always one that was unpublished.
@@ -992,10 +1033,29 @@ function escapeHtml(unsafe: string): string {
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT || 5000);
+// Before the first request, so a view is never counted against an empty map
+// and then overwritten by the file being read in behind it.
+loadViewCounts();
+
 app.listen(PORT, () => {
   console.log(`Publisher listening on http://localhost:${PORT}`);
   console.log(`UPLOAD_DIR=${UPLOAD_DIR}`);
   reportTokenState();
 });
+
+/*
+ * Write the counts out on the way down.
+ *
+ * They are flushed on a timer while running, so this is only ever the last
+ * thirty seconds. Worth having anyway: a container restart is the normal way
+ * this process ends, and losing the most recent views every deploy is the kind
+ * of slow drift nobody would notice until the numbers looked wrong.
+ */
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.on(signal, () => {
+    flushViewCounts();
+    process.exit(0);
+  });
+}
 
 

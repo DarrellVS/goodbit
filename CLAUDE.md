@@ -53,6 +53,7 @@ node scripts/trim-check.mjs  # run the shipped trim on a real clip and check whe
 node scripts/clip-audio-check.mjs  # prove muting a track mutes it, through the real ffmpeg
 node scripts/compress-check.mjs   # squeeze a real recording and read back what landed
 node scripts/toast-button-check.mjs  # press the overlay card's button and see where the app goes
+node scripts/publisher-views-check.mjs  # run the real publisher and see what it counts
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -834,6 +835,24 @@ under the same name would be served the old one off their own disk.
 generation is not the hazard. The deploy is: the HTML is a template compiled into the server, so
 shipping a new publisher changes the page of every clip ever published at once and there is no list
 of them to purge.
+
+**The publisher counts one thing, and only on the page.** `services/viewCounter.ts` holds a map of
+filename to a count and a date, loaded at boot, flushed when dirty and on `SIGTERM`. It lives in
+**one file outside `UPLOAD_DIR`**, which is three decisions rather than one: a counter is written on
+a *read* by strangers while a sidecar is rewritten wholesale on a publish, so a hot count in a
+sidecar is reset by the next metadata sync; every question the dashboard asks is an aggregate, which
+one file answers in one read; and everything inside `UPLOAD_DIR` is served by
+`express.static`, so a counters file beside the clips would be public. The declared volume is
+`/data` rather than `/data/public` for exactly that reason.
+
+**Counted on the embed page, never on `/media`.** The page is `no-store`, so every open reaches the
+origin. `/media` answers a year at the edge, so a counter there would measure cache misses rather
+than viewers: a number that falls as the caching works better. The pre-warm and `HEAD` are skipped
+by name, or every clip would start life with one view.
+
+**The sidecars are no longer served**, and the rule sits *before* `express.static` rather than after
+it, which is the difference between a rule and a comment. `scripts/publisher-views-check.mjs` caught
+it returning 200.
 
 `cachePrewarm.ts` asks for a clip's own public URLs once after publishing, so the first viewer, who
 is usually whoever just pressed Publish, does not pay for the miss. It waits for the purge in front
