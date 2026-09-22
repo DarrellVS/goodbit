@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import { BUTTON, ICON_BOX, ICON_BOX_LG, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import {
+  BUTTON,
+  BUTTON_QUIET,
+  BUTTON_STRONG,
+  ICON_BOX,
+  ICON_BOX_LG,
+  SECTION_HEADER,
+} from '@renderer/components/Base/geometry';
+import { useRouter } from 'vue-router';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import PublisherStatCards from '@renderer/components/Publish/PublisherStatCards.vue';
 import PublisherClipRow from '@renderer/components/Publish/PublisherClipRow.vue';
@@ -32,6 +40,22 @@ const saver = usePublisherStats();
 const { confirm } = useConfirm();
 const { formatBytes } = useFormat();
 const toast = useToastStore();
+
+const router = useRouter();
+
+/** Where the publisher address and token are entered. */
+function openPublisherSettings(): void {
+  void router.push({ name: 'settings', query: { section: 'connections' } });
+}
+
+/**
+ * The setup guide, which is a wizard rather than a page: it writes the
+ * reader's own domain and paths into every command. Same address the
+ * Publisher card in Settings links to.
+ */
+function openGuide(): void {
+  void window.goodbit?.openExternal('https://darrellvs.github.io/goodbit/publisher.html');
+}
 
 const selected = ref<Set<number>>(new Set());
 const working = ref(false);
@@ -113,8 +137,23 @@ function unpublishSelected(): void {
       <p class="text-sm text-foreground">No publisher is set up</p>
       <p class="mx-auto mt-1 max-w-[52ch] text-sm text-muted-500">
         A publisher is a small server of your own that holds a copy of a clip behind a link you can
-        send. Settings, Connections has the address.
+        send. Once it is connected, this page shows what is on it and what nobody has opened.
       </p>
+      <!--
+        Taken there, not told where to go. The first version of this ended with
+        "Settings, Connections has the address", which is a set of directions
+        for the reader to follow by hand on the one screen whose whole job at
+        this point is to get them set up.
+      -->
+      <div class="mt-4 flex items-center justify-center gap-2">
+        <button type="button" :class="BUTTON_STRONG" @click="openPublisherSettings">
+          <Icon icon="material-symbols:settings" :class="ICON_BOX" />
+          Set up a publisher
+        </button>
+        <button type="button" :class="BUTTON_QUIET" @click="openGuide">
+          How it works
+        </button>
+      </div>
     </div>
 
     <template v-else>
@@ -137,7 +176,17 @@ function unpublishSelected(): void {
         />
         <p class="text-sm text-foreground">Could not reach the publisher</p>
         <p class="mx-auto mt-1 max-w-[52ch] text-sm text-muted-500">{{ saver.error.value }}</p>
-        <button type="button" :class="[BUTTON, 'mt-4']" @click="saver.load()">Try again</button>
+        <!--
+          Both ways out, because they are the two causes: the server is off or
+          asleep, which trying again fixes, or the address or token is wrong,
+          which only Settings can.
+        -->
+        <div class="mt-4 flex items-center justify-center gap-2">
+          <button type="button" :class="BUTTON" @click="saver.load()">Try again</button>
+          <button type="button" :class="BUTTON_QUIET" @click="openPublisherSettings">
+            Check the address
+          </button>
+        </div>
       </div>
 
       <template v-else-if="saver.stats.value">
