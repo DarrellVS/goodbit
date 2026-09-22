@@ -36,6 +36,7 @@ interface Emits {
   (e: 'unstar'): void;
   (e: 'add-tags'): void;
   (e: 'open-in-editor'): void;
+  (e: 'compress'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -58,6 +59,7 @@ const showSelectionToolbar = computed(() => props.hasSelection);
         :collection-id="collectionId"
         @deselect-all="emit('deselect-all')"
         @delete="emit('delete')"
+        @compress="emit('compress')"
         @add-to-collection="emit('add-to-collection')"
         @remove-from-collection="emit('remove-from-collection')"
         @publish="emit('publish')"

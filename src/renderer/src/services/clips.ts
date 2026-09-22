@@ -188,6 +188,18 @@ export async function recordClipOpened(id: number): Promise<ClipOpenedResult> {
   return data;
 }
 
+/**
+ * Squeeze this clip in place, as a job.
+ *
+ * Answers with a job id rather than the clip, the way a render does: it
+ * re-encodes, which on a 3440 wide recording is tens of seconds, and the
+ * finished row arrives on the job.
+ */
+export async function compressClip(id: number): Promise<{ jobId: string }> {
+  const { data } = await axios.post<{ jobId: string }>(`/api/clips/${id}/compress`);
+  return data;
+}
+
 export async function getClipMeta(id: number): Promise<ClipMeta> {
   const { data } = await axios.get<ClipMeta>(`/api/clips/${id}/meta`);
   return data;

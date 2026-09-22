@@ -192,6 +192,7 @@ const {
   deselectAll,
   handleSelectAll,
   handleBatchDelete,
+  handleBatchCompress,
   handleBatchPublish,
   handleBatchUnpublish,
   handleBatchStar,
@@ -365,6 +366,7 @@ onMounted(() => {
       :selected-clips="selectedClips"
       @deselect-all="deselectAll"
       @delete="handleBatchDelete"
+      @compress="handleBatchCompress"
       @add-to-collection="showCollectionDialog = true"
       @publish="handleBatchPublish"
       @unpublish="handleBatchUnpublish"

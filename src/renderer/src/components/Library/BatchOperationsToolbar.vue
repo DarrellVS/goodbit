@@ -28,6 +28,7 @@ interface Emits {
   (e: 'unstar'): void;
   (e: 'add-tags'): void;
   (e: 'open-in-editor'): void;
+  (e: 'compress'): void;
 }
 
 const props = defineProps<Props>();
@@ -155,6 +156,20 @@ const someStarred = computed(() =>
             >
               <Icon icon="material-symbols:folder-delete" class="size-4 shrink-0 block text-muted-400" />
               <span>Remove from Collection</span>
+            </DropdownMenuItem>
+
+            <!--
+              Compress, above the separator rather than below it beside Delete.
+              It changes the file, which nothing else in this group does, but
+              the recording survives in the Recycle Bin and only the picture
+              quality is spent, so it is not the same kind of act as deleting.
+            -->
+            <DropdownMenuItem
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              @click="emit('compress')"
+            >
+              <Icon icon="material-symbols:compress" class="size-4 shrink-0 block text-muted-400" />
+              <span>Compress</span>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />

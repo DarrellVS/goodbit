@@ -4,12 +4,13 @@ import type { Clip } from '@renderer/types/clip';
 import { saveScrollPosition } from '@renderer/utils/scroll';
 import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { prefetchFrameStrip } from '@renderer/utils/mediaUrl';
-import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer } from '@renderer/services/clips';
+import { publishClip, unpublishClip, openClip, deleteClip, exportAudio, moveClipToGame, revealFileInExplorer, compressClip } from '@renderer/services/clips';
 import { useToastStore } from '@renderer/stores/toast';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useGamesStore } from '@renderer/stores/games';
 import { useCollectionsStore } from '@renderer/stores/collections';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import { clipTitle } from '@renderer/utils/clipDeleteQuestion';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -210,6 +211,39 @@ export function createClipActionHandlers(params: {
     }
   }
 
+  /**
+   * Squeeze the recording, in place, to get the disk back.
+   *
+   * Asked first, always, and not behind `confirmBeforeDelete`: that switch is
+   * about deleting, and somebody who turned it off did not agree to have their
+   * only copy of a moment re-encoded without being told. What the question has
+   * to say is the part that cannot be undone, which is that the picture is
+   * being thrown away rather than the file being moved anywhere.
+   *
+   * The original goes to the Recycle Bin rather than being overwritten, so the
+   * sentence can honestly offer a way back, and it says so.
+   */
+  async function onCompress() {
+    const clip = getClip();
+
+    confirmAction(
+      `${clipTitle(clip)} will be re-encoded to about a fifth of its size, and the ` +
+        'picture it is now will be gone. The recording goes to the Recycle Bin, so you can ' +
+        'still get the original back from there. Its marks, tags and notes are untouched.',
+      async () => {
+        try {
+          await compressClip(clip.id);
+          toastStore.info('It will finish in the background', 'Compressing');
+        } catch (error) {
+          console.error('Failed to start compression:', error);
+          toastStore.error('Please try again.', 'Could not start');
+        }
+      },
+      'Compress this clip?',
+      { confirmLabel: 'Compress', tone: 'danger' },
+    );
+  }
+
   return { 
     onPublish, 
     onPublishCompressed,
@@ -223,6 +257,7 @@ export function createClipActionHandlers(params: {
     onMoveToGame,
     onRemoveFromCollection,
     onExportAudio,
+    onCompress,
   };
 }
 

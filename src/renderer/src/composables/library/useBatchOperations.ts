@@ -161,6 +161,46 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     }
   }
 
+  /**
+   * Squeeze every selected clip, in place.
+   *
+   * Dispatched one job per clip rather than one job for the batch, because
+   * `mediaQueue` is what actually bounds the work: forty jobs become four
+   * ffmpegs, and a single job would have to reimplement that limit and its own
+   * cancellation on top of it. What the user sees is the jobs list, which
+   * already reports progress and an ETA per job.
+   *
+   * Always confirmed, and not behind `confirmBeforeDelete`: that switch is
+   * about deleting, and somebody who turned it off did not thereby agree to
+   * have forty recordings re-encoded without being told. The sentence says the
+   * part that cannot be undone, which is that the picture is being spent, and
+   * the part that can, which is that the originals go to the Recycle Bin.
+   */
+  function handleBatchCompress(): void {
+    const clips = selectedClips.value;
+    const count = clips.length;
+    const clipIds = getValidClipIds(clips);
+    if (!clipIds.length) return;
+
+    confirmAction(
+      `${count} ${pluralize(count, 'clip')} will be re-encoded to about a fifth of ` +
+        `${count === 1 ? 'its' : 'their'} size, and the picture ` +
+        `${count === 1 ? 'it is' : 'they are'} now will be gone. The recordings go to the ` +
+        'Recycle Bin, so you can still get the originals back from there. Marks, tags and ' +
+        'notes are untouched.',
+      () => {
+        void Promise.allSettled(clipIds.map((id) => clipsService.compressClip(id)));
+        toastStore.info(
+          `${count} ${pluralize(count, 'clip')} queued. They finish in the background.`,
+          'Compressing',
+        );
+        exitAndCleanup(batchStore);
+      },
+      `Compress ${count} ${pluralize(count, 'clip')}?`,
+      { confirmLabel: 'Compress', tone: 'danger' },
+    );
+  }
+
   async function handleBatchPublish(): Promise<void> {
     const clipsToPublish = selectedClips.value.filter(clip => !clip.published);
     
@@ -353,6 +393,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     handleCheckboxClick,
     handleSelectAll,
     handleBatchDelete,
+    handleBatchCompress,
     handleBatchPublish,
     handleBatchUnpublish,
     handleBatchStar,
