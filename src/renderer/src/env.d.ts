@@ -46,6 +46,14 @@ interface GoodBitBridge {
     }>;
   }>;
   mcpEnable: (enabled: boolean) => Promise<{ ok: boolean }>;
+  streamDeckState: () => Promise<{
+    enabled: boolean;
+    running: boolean;
+    url: string;
+    token: string;
+    allowDiscard: boolean;
+  }>;
+  streamDeckEnable: (enabled: boolean) => Promise<{ ok: boolean }>;
   mcpRegister: (
     wanted: boolean,
     ids?: string[],
@@ -132,6 +140,10 @@ interface AppSettingsWire {
   mcpEnabled?: boolean;
   mcpPort?: number;
   mcpToken?: string;
+  streamDeckEnabled?: boolean;
+  streamDeckPort?: number;
+  streamDeckToken?: string;
+  streamDeckAllowDiscard?: boolean;
   migratedFromWebApp: boolean;
   /** The app version that last booted against this database. Main's, not the window's. */
   schemaVersion?: string;

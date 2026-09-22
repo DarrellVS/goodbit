@@ -47,6 +47,8 @@ export interface AppSettings {
    * disk, and it only lands when the OBS profile is next written.
    */
   recordingQuality?: RecordingQuality;
+  /** Whether a Stream Deck key may throw the latest clip away. Unset means no. */
+  streamDeckAllowDiscard?: boolean;
   /** Storage Saver: how old an unopened clip has to be. Days, 30 unset. */
   unreviewedDays?: number;
   /** Storage Saver: how close two saves are to be one moment. Seconds, 90 unset. */

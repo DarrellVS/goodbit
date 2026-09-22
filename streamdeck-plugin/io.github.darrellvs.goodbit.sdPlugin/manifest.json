@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "io.github.darrellvs.goodbit",
+  "Name": "GoodBit",
+  "Version": "0.1.0.0",
+  "Author": "GoodBit",
+  "Description": "Tag, publish or discard the clip you just saved, and see today's count, without leaving the game. Needs GoodBit running with the Stream Deck connection switched on in Settings, Connections.",
+  "URL": "https://darrellvs.github.io/goodbit/",
+  "Category": "GoodBit",
+  "CategoryIcon": "imgs/category",
+  "Icon": "imgs/plugin",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24",
+    "Debug": "disabled"
+  },
+  "Actions": [
+    {
+      "UUID": "io.github.darrellvs.goodbit.tag-latest",
+      "Name": "Tag the last clip",
+      "Tooltip": "Adds this key's tag to the clip you just saved.",
+      "Icon": "imgs/tag",
+      "PropertyInspectorPath": "ui/tag.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/tag",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
+      "UUID": "io.github.darrellvs.goodbit.publish-latest",
+      "Name": "Publish the last clip",
+      "Tooltip": "Uploads the clip you just saved to your publisher.",
+      "Icon": "imgs/publish",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/publish",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
+      "UUID": "io.github.darrellvs.goodbit.discard-latest",
+      "Name": "Discard the last clip (hold)",
+      "Tooltip": "Hold to send the clip you just saved to the Recycle Bin. Off in GoodBit until you allow it, and it keeps any clip you have tagged, named, starred, marked, noted or published.",
+      "Icon": "imgs/discard",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/discard",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
+      "UUID": "io.github.darrellvs.goodbit.stats",
+      "Name": "Today's clips",
+      "Tooltip": "How many clips you saved today, and how many there are altogether.",
+      "Icon": "imgs/stats",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/stats",
+          "TitleAlignment": "middle",
+          "FontSize": 12
+        }
+      ]
+    }
+  ]
+}

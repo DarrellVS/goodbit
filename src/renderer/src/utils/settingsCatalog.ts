@@ -372,6 +372,28 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
 
   // Connections
   {
+    label: 'Stream Deck',
+    description:
+      "Keys that tag or publish the clip you just saved, and show today's count, without leaving the game. Use Elgato's own OBS plugin for the key that saves the replay.",
+    section: 'connections',
+    keywords: ['stream deck', 'elgato', 'keys', 'buttons', 'hotkey', 'macro', 'plugin'],
+  },
+  {
+    label: 'Let the Stream Deck reach this library',
+    description: 'Off by default. Nothing is listening until you turn this on.',
+    section: 'connections',
+    keywords: ['stream deck', 'elgato', 'server', 'port', 'token'],
+    shownWhen: 'always, in the Stream Deck block',
+  },
+  {
+    label: 'Let a key throw away the last clip',
+    description:
+      'Off by default. The key has to be held, and GoodBit keeps any clip you have named, tagged, starred, marked, written a note on or published.',
+    section: 'connections',
+    keywords: ['stream deck', 'discard', 'delete', 'trash', 'recycle bin'],
+    shownWhen: 'Let the Stream Deck reach this library is on',
+  },
+  {
     label: 'Claude',
     description:
       'GoodBit can answer questions about your library and act on it: find the clip you are thinking of, tag a batch of them, say where the interesting part of a recording is, and trim to it.',

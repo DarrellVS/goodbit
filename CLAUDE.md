@@ -28,6 +28,7 @@ One electron-vite project, three builds.
 | `src/renderer` | Vue 3 + Pinia + vue-router + Tailwind |
 | `src/shared` | DTOs and constants both processes agree on, imported as `@shared/*` |
 | `publisher/` | Optional: Express + multer in Docker, serves `/media/*` and an embed page. **No ffmpeg**: the poster frame arrives with the clip |
+| `streamdeck-plugin/` | Optional: an Elgato Stream Deck plugin, its own `package.json`, built and versioned on its own. Never packed into the app |
 | `tests/e2e` | Playwright against the built app |
 
 ## Commands
@@ -55,6 +56,7 @@ node scripts/compress-check.mjs   # squeeze a real recording and read back what 
 node scripts/toast-button-check.mjs  # press the overlay card's button and see where the app goes
 node scripts/publisher-views-check.mjs  # run the real publisher and see what it counts
 node scripts/discord-webhook-check.mjs  # run the publisher against a fake Discord and read what it sent
+node scripts/streamdeck-check.mjs  # start the app with the Stream Deck server on and knock on its door
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -644,6 +646,30 @@ unless the user turns it on**, in Settings, Connections.
 - **Claude Desktop's config is not where the documentation says.** It ships as an MSIX package, so
   Windows redirects its `%APPDATA%` into `%LOCALAPPDATA%/Packages/Claude_<id>/LocalCache/Roaming`.
   Writing the documented path on a Store install produces a file the app never reads.
+
+### A Stream Deck plugin, and the second port
+
+`src/main/services/streamdeck/` is a small HTTP server for the plugin in `streamdeck-plugin/`.
+**Off unless the user turns it on**, in Settings, Connections, and built exactly like the MCP server
+because that is the precedent for opening a port here honestly: `127.0.0.1` only, a bearer token
+checked in constant time before routing, and **a Host and Origin check written by hand** in
+`auth.ts`, because the MCP SDK does that for its server and a plain `http.createServer` does not.
+Without it a web page the user merely has open can post to the port, and a page on a name it has
+re-pointed at `127.0.0.1` arrives with a foreign `Host`. `tests/unit/main/streamdeckAuth.spec.ts`
+owns the predicates, since a bug there is a security bug; `scripts/streamdeck-check.mjs` proves the
+401, both 403s, and that the port answers on no address but loopback.
+
+- **The handlers are a transport.** Each finds a clip and hands it to an Action that already exists:
+  `BatchAddTagsAction`, `PublishClipAction`, `BatchDeleteAction`.
+- **"The latest clip" refuses while staging holds a file.** For a few seconds after the replay key
+  the newest row is the *previous* clip, and a key in that window would act on the wrong recording.
+  Same rule as the clip toast: the receipt fires on the row, never on the key.
+- **Discard is three locks, not one.** Its own setting, off by default; a long press, which the
+  plugin says to the server as `confirm: true`; and `discardableFromAKey`, which keeps any clip
+  carrying something that exists only in GoodBit. The file comes back from the Recycle Bin, the row
+  does not, and a key has no room for the question `clipDeleteQuestion.ts` asks.
+- **There is no key to save the replay.** GoodBit has no channel into OBS to press it, obs-websocket
+  would mean writing OBS's config again, and Elgato's own OBS plugin already has that key.
 
 ### Steam, off the local disk
 
