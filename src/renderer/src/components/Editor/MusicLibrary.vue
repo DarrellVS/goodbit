@@ -9,6 +9,7 @@ import { deleteAudioTrack, importAudioTracks, pickAudioFiles, pathForFile } from
 import type { AudioTrack } from '@renderer/types/audio';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -236,8 +237,11 @@ onBeforeUnmount(stopPreview);
         <span
           class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
         >
-          <button
-            class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-accent/8 hover:text-accent-ink outline-none focus-visible:opacity-100 focus-visible:focus-ring transition-colors duration-150"
+          <BaseButton
+            tone="quiet"
+            size="dense"
+            icon-only
+            class="hover:bg-accent/8 hover:text-accent-ink focus-visible:opacity-100"
             :class="previewId === track.id ? 'opacity-100 text-accent-ink' : ''"
             :title="previewId === track.id ? 'Stop preview' : 'Preview'"
             @click.stop="togglePreview(track)"
@@ -246,14 +250,17 @@ onBeforeUnmount(stopPreview);
               :icon="previewId === track.id ? 'material-symbols:stop-circle' : 'material-symbols:play-circle'"
               class="size-4 shrink-0 block"
             />
-          </button>
-          <button
-            class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-danger/8 hover:text-danger-ink outline-none focus-visible:opacity-100 focus-visible:focus-ring transition-colors duration-150"
+          </BaseButton>
+          <BaseButton
+            tone="quiet"
+            size="dense"
+            icon-only
+            class="hover:bg-danger/8 hover:text-danger-ink focus-visible:opacity-100"
             title="Delete track"
             @click.stop="remove(track)"
           >
             <Icon icon="material-symbols:delete-outline" class="size-4 shrink-0 block" />
-          </button>
+          </BaseButton>
         </span>
       </div>
     </div>

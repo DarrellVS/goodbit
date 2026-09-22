@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
+import BaseButton from './BaseButton.vue';
 
 /**
  * Back, a position, forward.
@@ -43,16 +44,17 @@ const widthCh = computed(() => {
 
 <template>
   <div class="inline-flex items-center gap-1">
-    <button
-      type="button"
-      class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-30 disabled:pointer-events-none"
+    <BaseButton
+      tone="quiet"
+      size="dense"
+      icon-only
       :disabled="!hasPrevious"
       :title="`Previous ${noun} ([)`"
       :aria-label="`Previous ${noun}`"
       @click="$emit('previous')"
     >
       <Icon icon="material-symbols:chevron-left" class="size-4 shrink-0 block" />
-    </button>
+    </BaseButton>
 
     <span
       class="font-mono text-xs tabular-nums text-muted-500 text-center select-none"
@@ -62,15 +64,16 @@ const widthCh = computed(() => {
       {{ position }} of {{ total }}
     </span>
 
-    <button
-      type="button"
-      class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-30 disabled:pointer-events-none"
+    <BaseButton
+      tone="quiet"
+      size="dense"
+      icon-only
       :disabled="!hasNext"
       :title="`Next ${noun} (])`"
       :aria-label="`Next ${noun}`"
       @click="$emit('next')"
     >
       <Icon icon="material-symbols:chevron-right" class="size-4 shrink-0 block" />
-    </button>
+    </BaseButton>
   </div>
 </template>

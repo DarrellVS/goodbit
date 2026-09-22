@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BasePanel from '@renderer/components/Base/BasePanel.vue';
 import { computed } from 'vue';
 import { useFormat } from '@renderer/composables/ui/useFormat';
 import { formatRelativeTime, formatExactDate } from '@renderer/helpers/dateFormat';
@@ -58,7 +59,7 @@ const picture = computed(() => {
 </script>
 
 <template>
-  <div class="rounded-lg border border-border/60 px-4 py-3.5 space-y-2.5">
+  <BasePanel class="space-y-2.5">
     <div class="flex items-baseline justify-between gap-3">
       <span class="text-xs text-muted-500 shrink-0">Recorded</span>
       <!--
@@ -112,5 +113,5 @@ const picture = computed(() => {
       <div class="text-xs text-muted-500 mb-0.5">File</div>
       <div class="text-xs text-muted-600 break-all leading-relaxed">{{ clip.filename }}</div>
     </div>
-  </div>
+  </BasePanel>
 </template>

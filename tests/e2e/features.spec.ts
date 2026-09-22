@@ -150,7 +150,7 @@ test.describe('features survive the port', () => {
 
   test('an export renders and registers the result', async () => {
     const list = await call('GET', '/clips', undefined, { pageSize: 50 });
-    const clip = (list.body as { items: Array<{ id: number }> }).items[0];
+    const clip = (list.body as { items: Array<{ id: number; game: string }> }).items[0];
 
     const started = await call('POST', '/clips/export', {
       outputName: 'e2e_export',
@@ -176,8 +176,9 @@ test.describe('features survive the port', () => {
     expect(final?.clip).toBeTruthy();
     // Renders land in "Exports", not "Editor": a top level folder is a game name
     // here, so every export used to grow a game beside Battlefield 6 that shared
-    // its name with a screen.
-    expect(statSync(join(ctx.videosRoot, 'Exports', 'e2e_export.mp4')).size).toBeGreaterThan(0);
+    // its name with a screen. A timeline cut from one game lands in that game's
+    // own `Exports/` folder.
+    expect(statSync(join(ctx.videosRoot, clip.game, 'Exports', 'e2e_export.mp4')).size).toBeGreaterThan(0);
   });
 
   test('publishing is absent rather than broken with no publisher', async () => {

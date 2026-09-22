@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseChip from '@renderer/components/Base/BaseChip.vue';
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { ICON_BOX, FOCUS_RING, MOTION } from '@renderer/components/Base/geometry';
@@ -71,34 +72,35 @@ const title = computed(() => props.clip.displayName?.trim() || props.clip.filena
         link somebody may already have shared, and no Recycle Bin covers that,
         so it is said on the tile rather than only in the question.
       -->
-      <span
+      <BaseChip
         v-if="clip.published"
-        class="absolute top-1.5 right-1.5 rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video"
+        class="absolute top-1.5 right-1.5"
       >
         Published
-      </span>
+      </BaseChip>
 
-      <span
+      <BaseChip
         v-if="length"
-        class="absolute bottom-1.5 right-1.5 rounded-full bg-scrim px-2 py-0.5 font-mono text-[11px] tabular-nums text-on-video"
+        numeric
+        class="absolute bottom-1.5 right-1.5"
       >
         {{ length }}
-      </span>
+      </BaseChip>
 
       <!--
         The state, over the picture, in a fixed box so nothing moves when it
         changes. Colour moves; geometry does not.
       -->
-      <span
+      <BaseChip
         v-if="mode === 'keep'"
-        class="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video"
+        class="absolute top-1.5 left-1.5"
       >
         <Icon
           :icon="keeper ? 'material-symbols:check-circle' : 'material-symbols:delete-outline'"
           :class="ICON_BOX"
         />
         {{ keeper ? 'Keeping' : 'Deleting' }}
-      </span>
+      </BaseChip>
       <Icon
         v-else
         :icon="

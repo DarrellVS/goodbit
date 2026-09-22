@@ -1,11 +1,17 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, useAttrs } from 'vue';
 import { Icon } from '@iconify/vue';
-import type { ButtonVariant } from './types';
-import { CONTROL_HEIGHT, CONTROL_HEIGHT_DENSE, FOCUS_RING, ICON_BOX, ICON_GAP, MOTION } from './geometry';
+import type { ClassValue } from 'clsx';
+import { cn } from './cn';
+import { ICON_BOX } from './geometry';
+import { buttonVariants, type ButtonSize, type ButtonTone } from './variants';
 
 /**
  * A button, at the one height buttons are.
+ *
+ * The classes are `buttonVariants` in `variants.ts`, which is where the rules
+ * about tones live: one `strong` per region, `danger` outlined and never
+ * filled, nothing changing size between states.
  *
  * What it used to be: a violet-to-cyan gradient for `primary`, a drop shadow
  * that grew on hover, and `active:scale-[0.98]`. The scale is the one worth
@@ -13,12 +19,16 @@ import { CONTROL_HEIGHT, CONTROL_HEIGHT_DENSE, FOCUS_RING, ICON_BOX, ICON_GAP, M
  * the same class of defect as a card growing on hover: the box moves when the
  * state does. Colour moves; geometry does not.
  *
- * At most one `primary` per region. Everything else is `outline` or `ghost`,
- * which is what makes the filled one mean something.
+ * `inheritAttrs` is off so a caller's `class` goes through `cn` rather than
+ * being appended: `class="px-2"` on a button whose recipe says `px-3.5` should
+ * mean `px-2`, not both with the stylesheet deciding.
  */
+defineOptions({ inheritAttrs: false });
+
 const props = withDefaults(
   defineProps<{
-    variant?: ButtonVariant;
+    tone?: ButtonTone;
+    size?: ButtonSize;
     /** An Iconify name, drawn before the label in a fixed 16px box. */
     icon?: string;
     /**
@@ -28,43 +38,30 @@ const props = withDefaults(
      * labels start at different x, which is `07-editor-filter-dropdowns`.
      */
     reserveIcon?: boolean;
-    /** Only inside a dense toolbar. See `CONTROL_HEIGHT_DENSE`. */
-    dense?: boolean;
-    /** No label, so the box is square. */
+    /** No label, so the box is square. Give it an `aria-label`. */
     iconOnly?: boolean;
+    type?: 'button' | 'submit' | 'reset';
   }>(),
-  { variant: 'default' },
+  { tone: 'default', size: 'md', type: 'button' },
 );
 
-const variantClass = computed(() => {
-  switch (props.variant) {
-    case 'primary':
-      return 'bg-accent text-accent-fg border-transparent hover:bg-accent-hover';
-    case 'danger':
-      return 'bg-danger text-danger-fg border-transparent hover:opacity-90';
-    case 'ghost':
-      return 'bg-transparent border-transparent text-muted-600 hover:bg-muted-50 hover:text-foreground';
-    case 'outline':
-    case 'muted':
-      return 'bg-transparent border-border text-foreground hover:bg-muted-50';
-    default:
-      return 'bg-muted-50 border-transparent text-foreground hover:bg-muted-100';
-  }
-});
+const attrs = useAttrs();
 
-const sizeClass = computed(() => {
-  const height = props.dense ? CONTROL_HEIGHT_DENSE : CONTROL_HEIGHT;
-  if (props.iconOnly) return `${height} ${props.dense ? 'w-7' : 'w-9'} px-0`;
-  return `${height} ${props.dense ? 'px-2.5' : 'px-3.5'}`;
+const classes = computed(() =>
+  cn(
+    buttonVariants({ tone: props.tone, size: props.size, iconOnly: props.iconOnly }),
+    attrs.class as ClassValue,
+  ),
+);
+
+const rest = computed(() => {
+  const { class: _class, ...others } = attrs;
+  return others;
 });
 </script>
 
 <template>
-  <button
-    type="button"
-    class="inline-flex items-center justify-center rounded-md border text-sm font-medium disabled:opacity-50 disabled:pointer-events-none"
-    :class="[variantClass, sizeClass, ICON_GAP, FOCUS_RING, MOTION]"
-  >
+  <button :type="type" v-bind="rest" :class="classes">
     <Icon v-if="icon" :icon="icon" :class="ICON_BOX" />
     <span v-else-if="reserveIcon" :class="ICON_BOX" aria-hidden="true" />
     <slot />

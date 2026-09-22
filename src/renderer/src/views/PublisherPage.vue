@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import {
-  BUTTON,
-  BUTTON_QUIET,
-  BUTTON_STRONG,
-  ICON_BOX,
-  ICON_BOX_LG,
-  SECTION_HEADER,
-} from '@renderer/components/Base/geometry';
+import { ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
+import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
 import { useRouter } from 'vue-router';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import PublisherStatCards from '@renderer/components/Publish/PublisherStatCards.vue';
@@ -126,35 +121,28 @@ function unpublishSelected(): void {
       has never set one up, and this screen is the only place that can say what
       one is for.
     -->
-    <div
+    <BaseEmptyState
       v-if="!saver.configured.value"
-      class="rounded-lg border border-border/60 px-4 py-8 text-center"
+      size="panel"
+      icon="material-symbols:cloud-off-outline"
+      title="No publisher is set up"
+      description="A publisher is a small server of your own that holds a copy of a clip behind a link you can send. Once it is connected, this page shows what is on it and what nobody has opened."
     >
-      <Icon
-        icon="material-symbols:cloud-off-outline"
-        :class="[ICON_BOX_LG, 'mx-auto mb-2 text-muted-400']"
-      />
-      <p class="text-sm text-foreground">No publisher is set up</p>
-      <p class="mx-auto mt-1 max-w-[52ch] text-sm text-muted-500">
-        A publisher is a small server of your own that holds a copy of a clip behind a link you can
-        send. Once it is connected, this page shows what is on it and what nobody has opened.
-      </p>
       <!--
         Taken there, not told where to go. The first version of this ended with
         "Settings, Connections has the address", which is a set of directions
         for the reader to follow by hand on the one screen whose whole job at
         this point is to get them set up.
       -->
-      <div class="mt-4 flex items-center justify-center gap-2">
-        <button type="button" :class="BUTTON_STRONG" @click="openPublisherSettings">
-          <Icon icon="material-symbols:settings" :class="ICON_BOX" />
+      <template #actions>
+        <BaseButton tone="strong" icon="material-symbols:settings" @click="openPublisherSettings">
           Set up a publisher
-        </button>
-        <button type="button" :class="BUTTON_QUIET" @click="openGuide">
+        </BaseButton>
+        <BaseButton tone="quiet" @click="openGuide">
           How it works
-        </button>
-      </div>
-    </div>
+        </BaseButton>
+      </template>
+    </BaseEmptyState>
 
     <template v-else>
       <div v-if="saver.loading.value && !saver.stats.value" class="flex justify-center py-10">
@@ -166,28 +154,26 @@ function unpublishSelected(): void {
         unreachable in a way no other screen can. It says so rather than
         spinning: a spinner is a promise that something is coming.
       -->
-      <div
+      <BaseEmptyState
         v-else-if="saver.error.value"
-        class="rounded-lg border border-border/60 px-4 py-8 text-center"
+        size="panel"
+        tone="warning"
+        icon="material-symbols:cloud-off-outline"
+        title="Could not reach the publisher"
+        :description="saver.error.value"
       >
-        <Icon
-          icon="material-symbols:cloud-off-outline"
-          :class="[ICON_BOX_LG, 'mx-auto mb-2 text-warning']"
-        />
-        <p class="text-sm text-foreground">Could not reach the publisher</p>
-        <p class="mx-auto mt-1 max-w-[52ch] text-sm text-muted-500">{{ saver.error.value }}</p>
         <!--
           Both ways out, because they are the two causes: the server is off or
           asleep, which trying again fixes, or the address or token is wrong,
           which only Settings can.
         -->
-        <div class="mt-4 flex items-center justify-center gap-2">
-          <button type="button" :class="BUTTON" @click="saver.load()">Try again</button>
-          <button type="button" :class="BUTTON_QUIET" @click="openPublisherSettings">
+        <template #actions>
+          <BaseButton @click="saver.load()">Try again</BaseButton>
+          <BaseButton tone="quiet" @click="openPublisherSettings">
             Check the address
-          </button>
-        </div>
-      </div>
+          </BaseButton>
+        </template>
+      </BaseEmptyState>
 
       <template v-else-if="saver.stats.value">
         <PublisherStatCards
@@ -209,32 +195,24 @@ function unpublishSelected(): void {
             and one that offers to unpublish everything. Nothing was counted
             before the counter shipped, so on day one every clip reads zero.
           -->
-          <div
+          <BaseEmptyState
             v-if="!saver.warmedUp.value"
-            class="rounded-lg border border-border/60 px-4 py-8 text-center"
+            size="panel"
+            icon="material-symbols:hourglass-top"
+            title="Still watching"
           >
-            <Icon
-              icon="material-symbols:hourglass-top"
-              :class="[ICON_BOX_LG, 'mx-auto mb-2 text-muted-400']"
-            />
-            <p class="text-sm text-foreground">Still watching</p>
-            <p class="mx-auto mt-1 max-w-[52ch] text-sm text-muted-500">
-              Your publisher only started counting recently, so "nobody opened this" would be true
-              of everything. Suggestions appear in about {{ saver.daysUntilWarm.value }}
-              {{ pluralize(saver.daysUntilWarm.value, 'day') }}.
-            </p>
-          </div>
+            Your publisher only started counting recently, so "nobody opened this" would be true
+            of everything. Suggestions appear in about {{ saver.daysUntilWarm.value }}
+            {{ pluralize(saver.daysUntilWarm.value, 'day') }}.
+          </BaseEmptyState>
 
-          <div
+          <BaseEmptyState
             v-else-if="!saver.neverWatched.value.length"
-            class="rounded-lg border border-border/60 px-4 py-8 text-center"
-          >
-            <Icon
-              icon="material-symbols:check-circle-outline"
-              :class="[ICON_BOX_LG, 'mx-auto mb-2 text-success']"
-            />
-            <p class="text-sm text-foreground">Everything you published has been opened</p>
-          </div>
+            size="panel"
+            tone="success"
+            icon="material-symbols:check-circle-outline"
+            title="Everything you published has been opened"
+          />
 
           <template v-else>
             <div :class="SECTION_HEADER">
@@ -242,9 +220,9 @@ function unpublishSelected(): void {
                 {{ saver.neverWatched.value.length }} ·
                 {{ formatBytes(saver.reclaimable.value) }} on the server
               </span>
-              <button type="button" :class="[BUTTON, 'ml-auto']" @click="selectAllUnwatched">
+              <BaseButton class="ml-auto" @click="selectAllUnwatched">
                 Select all
-              </button>
+              </BaseButton>
             </div>
 
             <div class="space-y-0.5">
@@ -288,15 +266,14 @@ function unpublishSelected(): void {
           <span class="text-sm text-foreground">
             {{ selected.size }} selected · {{ formatBytes(selectedBytes) }} on the server
           </span>
-          <button
-            type="button"
-            :class="[BUTTON, 'ml-auto']"
+          <BaseButton
+            class="ml-auto"
             :disabled="working"
             @click="unpublishSelected"
           >
             <Icon icon="material-symbols:cloud-off-outline" :class="ICON_BOX" />
             Take off the publisher
-          </button>
+          </BaseButton>
         </div>
       </template>
     </template>

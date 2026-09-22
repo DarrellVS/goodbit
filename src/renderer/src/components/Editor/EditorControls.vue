@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue';
 import { formatTime } from '@renderer/utils/timeFormat';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { EDITOR_CONSTANTS } from '@renderer/constants/editor';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /*
  * The transport buttons carried no text and no tooltip, so the only way to
@@ -47,39 +48,42 @@ const emit = defineEmits<Emits>();
 <template>
   <div class="flex items-center justify-between gap-4 px-4 h-14 bg-card border-t border-border">
     <div class="flex items-center gap-1.5">
-      <button
-        type="button"
-        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
+      <BaseButton
+        tone="quiet"
+        size="sm"
+        icon-only
         :disabled="!canUndo"
         title="Undo"
         aria-label="Undo"
         @click="emit('undo')"
       >
         <Icon icon="material-symbols:undo" class="size-5 shrink-0 block" />
-      </button>
+      </BaseButton>
 
-      <button
-        type="button"
-        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
+      <BaseButton
+        tone="quiet"
+        size="sm"
+        icon-only
         :disabled="!canRedo"
         title="Redo"
         aria-label="Redo"
         @click="emit('redo')"
       >
         <Icon icon="material-symbols:redo" class="size-5 shrink-0 block" />
-      </button>
+      </BaseButton>
 
       <div class="w-px h-5 bg-line-strong mx-1 shrink-0" aria-hidden="true" />
 
-      <button
-        type="button"
-        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
+      <BaseButton
+        tone="quiet"
+        size="sm"
+        icon-only
         :title="`Back ${SKIP_SECONDS} seconds`"
         :aria-label="`Back ${SKIP_SECONDS} seconds`"
         @click="emit('skip-backward')"
       >
         <Icon icon="material-symbols:fast-rewind" class="size-5 shrink-0 block" />
-      </button>
+      </BaseButton>
 
       <!--
         The one filled control in this row, and the only one allowed to be
@@ -98,15 +102,16 @@ const emit = defineEmits<Emits>();
         <Icon :icon="playing ? 'material-symbols:pause' : 'material-symbols:play-arrow'" class="size-5 shrink-0 block" />
       </button>
 
-      <button
-        type="button"
-        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
+      <BaseButton
+        tone="quiet"
+        size="sm"
+        icon-only
         :title="`Forward ${SKIP_SECONDS} seconds`"
         :aria-label="`Forward ${SKIP_SECONDS} seconds`"
         @click="emit('skip-forward')"
       >
         <Icon icon="material-symbols:fast-forward" class="size-5 shrink-0 block" />
-      </button>
+      </BaseButton>
     </div>
 
     <div class="flex items-center gap-4">
@@ -117,16 +122,17 @@ const emit = defineEmits<Emits>();
       <div class="w-px h-5 bg-line-strong shrink-0" aria-hidden="true" />
 
       <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
+        <BaseButton
+          tone="quiet"
+          size="sm"
+          icon-only
           title="Zoom out"
           aria-label="Zoom out"
           :disabled="zoom <= 0.25"
           @click="emit('zoom-out')"
         >
           <Icon icon="material-symbols:zoom-out" class="size-5 shrink-0 block" />
-        </button>
+        </BaseButton>
 
         <!--
           The zoom floor is 25%, which is not far enough: a three clip, eighty
@@ -143,16 +149,17 @@ const emit = defineEmits<Emits>();
           {{ Math.round(zoom * 100) }}%
         </button>
 
-        <button
-          type="button"
-          class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none"
+        <BaseButton
+          tone="quiet"
+          size="sm"
+          icon-only
           title="Zoom in"
           aria-label="Zoom in"
           :disabled="zoom >= 3"
           @click="emit('zoom-in')"
         >
           <Icon icon="material-symbols:zoom-in" class="size-5 shrink-0 block" />
-        </button>
+        </BaseButton>
       </div>
 
       <div class="w-px h-5 bg-line-strong shrink-0" aria-hidden="true" />

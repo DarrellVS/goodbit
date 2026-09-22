@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import BasePanel from '@renderer/components/Base/BasePanel.vue';
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { BUTTON, ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import { ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import StorageClipTile from './StorageClipTile.vue';
 import { useFormat } from '@renderer/composables/ui/useFormat';
 import type { BurstCluster } from '@renderer/services/clips';
@@ -46,7 +48,7 @@ const publishedDoomed = computed(() => doomed.value.filter((clip) => clip.publis
 </script>
 
 <template>
-  <div class="rounded-lg border border-border/60 p-4">
+  <BasePanel>
     <div :class="SECTION_HEADER">
       <h3 class="text-sm font-medium text-foreground">
         {{ cluster.clips.length }} saves of one moment
@@ -79,15 +81,15 @@ const publishedDoomed = computed(() => doomed.value.filter((clip) => clip.publis
         {{ publishedDoomed === 1 ? 'its link' : 'their links' }} will stop working.
       </p>
 
-      <button
-        type="button"
-        :class="[BUTTON, 'ml-auto border-danger text-danger-ink hover:bg-danger/10']"
+      <BaseButton
+        tone="danger"
+        class="ml-auto"
         :disabled="deleting || doomed.length === 0"
         @click="emit('delete', doomed)"
       >
         <Icon icon="material-symbols:delete-outline" :class="ICON_BOX" />
         Delete the other {{ doomed.length }}
-      </button>
+      </BaseButton>
     </div>
-  </div>
+  </BasePanel>
 </template>

@@ -2,7 +2,8 @@
 import { Icon } from '@iconify/vue';
 import { useLibraryRescan } from '@renderer/composables/library/useLibraryRescan';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
-import { BUTTON, ICON_BOX } from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /**
  * Reread the clips folder, which used to be the biggest button in the app.
@@ -39,13 +40,13 @@ const { settingRing } = useSettingsSearch();
       added by something other than GoodBit.
     </p>
     <div class="mt-4">
-      <button type="button" :class="BUTTON" :disabled="rescanning" @click="rescan">
+      <BaseButton :disabled="rescanning" @click="rescan">
         <Icon
           icon="material-symbols:refresh"
           :class="[ICON_BOX, { 'animate-spin': rescanning }]"
         />
         <span>{{ rescanning ? 'Scanning' : 'Rescan' }}</span>
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

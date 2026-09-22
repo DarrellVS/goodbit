@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseChip from '@renderer/components/Base/BaseChip.vue';
 interface Props {
   published?: boolean;
 }
@@ -16,9 +17,9 @@ defineProps<Props>();
     card is the layout-shift rule broken by animation.
   -->
   <div v-if="published" class="absolute top-2 right-2 z-10">
-    <span class="rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video">
+    <BaseChip>
       Published
-    </span>
+    </BaseChip>
   </div>
 </template>
 

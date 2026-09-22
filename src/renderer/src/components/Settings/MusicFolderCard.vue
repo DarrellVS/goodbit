@@ -2,7 +2,7 @@
 import { onMounted } from 'vue';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
-import { BUTTON } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import { useToastStore } from '@renderer/stores/toast';
 
 /**
@@ -49,7 +49,7 @@ async function change(): Promise<void> {
     <p>Where GoodBit looks for the audio you can lay under a clip in the editor.</p>
 
     <div class="mt-4">
-      <button type="button" :class="BUTTON" @click="change">Change</button>
+      <BaseButton @click="change">Change</BaseButton>
     </div>
   </div>
 </template>

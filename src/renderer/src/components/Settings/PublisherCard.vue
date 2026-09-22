@@ -7,11 +7,8 @@ import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSea
 import { useToastStore } from '@renderer/stores/toast';
 import SettingToggle from './SettingToggle.vue';
 import BaseField from '@renderer/components/Base/BaseField.vue';
-import {
-  BUTTON,
-  BUTTON_STRONG,
-  ICON_BOX,
-} from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /**
  * The server that hosts your public links.
@@ -119,15 +116,13 @@ async function testPublisher(): Promise<void> {
             @keydown.enter="savePublisher"
           />
         </BaseField>
-        <button
-          type="button"
-          :class="BUTTON"
+        <BaseButton
           :disabled="!publisherUrl.trim()"
           @click="testPublisher"
         >
           Test
-        </button>
-        <button type="button" :class="BUTTON_STRONG" @click="savePublisher">Save</button>
+        </BaseButton>
+        <BaseButton tone="strong" @click="savePublisher">Save</BaseButton>
       </div>
 
       <!--
@@ -148,9 +143,8 @@ async function testPublisher(): Promise<void> {
             @keydown.enter="savePublisher"
           />
         </BaseField>
-        <button
-          type="button"
-          :class="[BUTTON, '!px-3']"
+        <BaseButton
+          class="px-3"
           :title="showToken ? 'Hide the token' : 'Show the token'"
           :aria-label="showToken ? 'Hide the token' : 'Show the token'"
           @click="showToken = !showToken"
@@ -159,7 +153,7 @@ async function testPublisher(): Promise<void> {
             :icon="showToken ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"
             :class="ICON_BOX"
           />
-        </button>
+        </BaseButton>
       </div>
 
       <p class="!mt-2.5">

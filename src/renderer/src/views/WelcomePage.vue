@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { stepVariants } from '@renderer/components/Base/variants';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -140,8 +141,7 @@ async function finish(): Promise<void> {
         <li
           v-for="(entry, index) in steps"
           :key="entry.id"
-          class="h-1 flex-1 rounded-full transition-colors"
-          :class="index <= step ? 'bg-accent' : 'bg-muted-100'"
+          :class="stepVariants({ reached: index <= step })"
           :title="entry.label"
         ></li>
       </ol>

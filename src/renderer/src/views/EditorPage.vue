@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toolbarToggleVariants } from '@renderer/components/Base/variants';
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -877,8 +878,7 @@ watch(
         <button
           type="button"
           :aria-pressed="showLibrary"
-          class="h-8 px-2.5 inline-flex items-center gap-2 rounded-md text-xs font-medium border border-transparent outline-none focus-visible:focus-ring transition-colors duration-150"
-          :class="showLibrary ? 'bg-muted-200 text-foreground' : 'text-muted-600 hover:bg-muted-100 hover:text-foreground'"
+          :class="toolbarToggleVariants({ pressed: showLibrary })"
           @click="toggleLibrary"
         >
           <Icon icon="material-symbols:video-library" class="size-4 shrink-0 block" />
@@ -888,8 +888,7 @@ watch(
         <button
           type="button"
           :aria-pressed="showProperties"
-          class="h-8 px-2.5 inline-flex items-center gap-2 rounded-md text-xs font-medium border border-transparent outline-none focus-visible:focus-ring transition-colors duration-150"
-          :class="showProperties ? 'bg-muted-200 text-foreground' : 'text-muted-600 hover:bg-muted-100 hover:text-foreground'"
+          :class="toolbarToggleVariants({ pressed: showProperties })"
           @click="toggleProperties"
         >
           <Icon icon="material-symbols:tune" class="size-4 shrink-0 block" />
