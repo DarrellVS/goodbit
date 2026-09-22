@@ -5,6 +5,7 @@ import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { prewarmClip } from '../services/cachePrewarm.js';
 import type { PublishedGoodBit } from '../utils/goodBits.js';
 import { writeJsonAtomic } from '../utils/writeJsonAtomic.js';
+import { notePublished } from '../services/discordWebhook.js';
 
 export interface PublishClipInput {
   filePath: string;
@@ -57,6 +58,17 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
       goodBits: input.goodBits ?? [],
     };
 
+    /*
+     * Whether this clip has been here before, read before the sidecar is
+     * written over.
+     *
+     * A re-publish under the same filename happens on every trim of a
+     * published clip and every "shrink the published copy". Only a first
+     * publish is news to a Discord channel; the others would teach it to mute
+     * the bot.
+     */
+    const hadSidecar = await fs.stat(metaPath).then(() => true, () => false);
+
     try {
       // Through a temporary file and a rename: a crash mid-write used to leave
       // truncated JSON, and the reader falls back silently, so the clip simply
@@ -86,6 +98,10 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
      * behind it. See `services/cachePrewarm.ts`.
      */
     prewarmClip(filename);
+
+    // Announced when the poster lands, or after a grace period without one,
+    // and only if this is news. See `services/discordWebhook.ts`.
+    notePublished(filename, hadSidecar);
 
     return { filename, url };
   }

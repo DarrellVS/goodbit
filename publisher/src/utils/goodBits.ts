@@ -83,3 +83,14 @@ export function parseGoodBits(value: unknown): PublishedGoodBit[] | undefined {
 export function sameGoodBits(a: PublishedGoodBit[], b: PublishedGoodBit[]): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
+
+/**
+ * What a mark is called wherever it is shown.
+ *
+ * The embed page used this inline, and the Discord embed needs the same answer.
+ * Two copies of `name || reason || 'GoodBit n'` is how the chip under the
+ * player and the line in the channel end up naming one moment two ways.
+ */
+export function goodBitLabel(bit: PublishedGoodBit, index: number): string {
+  return bit.name || bit.reason || `GoodBit ${index + 1}`;
+}

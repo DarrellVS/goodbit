@@ -4,6 +4,7 @@ import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { posterPathFor, posterUrlFor } from '../utils/posterPath.js';
 import { prewarmPoster } from '../services/cachePrewarm.js';
+import { posterArrived } from '../services/discordWebhook.js';
 
 export interface StoreThumbnailInput {
   /** The clip this is a picture of, under the name it was uploaded with. */
@@ -84,6 +85,11 @@ export class StoreThumbnailAction extends BaseAction<StoreThumbnailInput, StoreT
      * warm and the page does not name one.
      */
     prewarmPoster(filename);
+
+    // The picture Discord is about to fetch now exists, so a clip waiting to be
+    // announced can be. Announcing any earlier left the card pictureless for
+    // ever, because Discord fetches the image once and keeps what it got.
+    posterArrived(filename);
 
     return { stored: true };
   }
