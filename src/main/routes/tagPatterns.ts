@@ -2,22 +2,21 @@ import express from 'express';
 import { AppDataSource } from '../data-source.js';
 import { TagPattern } from '../entity/TagPattern.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { TagPatternDTO } from '@shared/index.js';
+import { TagPatternDTO, tagPatternProblem } from '@shared/index.js';
 
 export const tagPatternsRouter = express.Router();
 
-/** Guards against a rule that cannot compile being saved and then thrown on every match. */
+/**
+ * Guards against a rule that cannot compile, or one that could backtrack for
+ * ever, being saved and then run against every clip. See `tagPatternProblem`.
+ */
 function invalidExpression(patterns: unknown): string | null {
   if (!Array.isArray(patterns) || patterns.length === 0) {
     return 'A pattern needs at least one expression';
   }
   for (const source of patterns) {
-    if (typeof source !== 'string' || !source.trim()) return 'An expression cannot be empty';
-    try {
-      new RegExp(source, 'i');
-    } catch {
-      return `"${source}" is not a valid expression`;
-    }
+    const problem = tagPatternProblem(source);
+    if (problem) return problem;
   }
   return null;
 }

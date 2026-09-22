@@ -4,6 +4,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { cleanupEmptyFolders } from '../utils/cleanupEmptyFolders.js';
+import { gameFolderPath } from '../services/gameFolder.js';
 
 export interface MoveClipToGameInput {
   clipId: number;
@@ -30,11 +31,14 @@ export class MoveClipToGameAction extends BaseAction<MoveClipToGameInput, MoveCl
     const oldPath = clip.filePath;
     const filename = clip.filename;
     
-    // Determine new path
-    const targetDir = path.join(VIDEOS_ROOT, targetGame);
+    // Refused before anything touches the disk, since a name holding a
+    // separator is a path and this moves somebody's recording to it.
+    const targetDir = gameFolderPath(VIDEOS_ROOT, targetGame);
     await fs.mkdir(targetDir, { recursive: true });
 
-    let newPath = path.join(targetDir, filename);
+    // The filename comes from the database, which the scan filled from disk,
+    // but a basename of it costs nothing and keeps the file in that folder.
+    let newPath = path.join(targetDir, path.basename(filename));
     let counter = 1;
 
     // Handle filename conflicts

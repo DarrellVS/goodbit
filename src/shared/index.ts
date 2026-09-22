@@ -32,6 +32,7 @@ export * from './constants/ui.js';
 
 // Which files are clips, so the scan and the watcher cannot disagree again
 export * from './constants/videoFiles.js';
+export * from './constants/tagPatternRules.js';
 
 // Where a window opens and closes around a moment, so the analysis and a
 // GoodBit made from one cannot disagree about the same reading

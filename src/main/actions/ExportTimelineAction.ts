@@ -38,6 +38,7 @@ import {
 } from '../services/exportPlan.js';
 import type { ExportFormat, ProjectTimelineTransition } from '@shared/index.js';
 import { EXPORTS_FOLDER } from '@shared/constants/videoFiles.js';
+import { trimChar } from '../utils/trimChar.js';
 
 
 interface TimelineClipData {
@@ -482,9 +483,11 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
    * no separators, no drive letters, none of the characters Windows rejects.
    */
   private sanitizeOutputName(name?: string): string {
-    const cleaned = (name ?? '')
-      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
-      .replace(/\.+$/, '')
+    const cleaned = trimChar(
+      (name ?? '').replace(/[<>:"/\\|?*\x00-\x1f]/g, ''),
+      '.',
+      'end',
+    )
       .trim()
       .slice(0, 120);
 
