@@ -422,6 +422,9 @@ export async function startServices(): Promise<void> {
      * optional and it starts last; a dynamic import keeps it out of the way.
      */
     ['mcp', async () => (await import('./services/mcp/server.js')).startMcp()],
+    // Dynamically imported for the same reason as the MCP server above, and
+    // only listening if somebody switched it on.
+    ['stream deck', async () => (await import('./services/streamdeck/server.js')).startStreamDeck()],
   ];
 
   // Publishing is optional now: with no publisher configured these would fail

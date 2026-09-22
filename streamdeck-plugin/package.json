@@ -1,0 +1,25 @@
+{
+  "name": "goodbit-streamdeck",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stream Deck keys for GoodBit: tag, publish or discard the clip you just saved.",
+  "scripts": {
+    "build": "rollup -c",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^3.0.0"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.10.0",
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^22.20.4",
+    "rollup": "^4.63.4",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.3"
+  }
+}

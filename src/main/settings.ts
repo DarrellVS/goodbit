@@ -125,6 +125,24 @@ export interface Settings {
   mcpEnabled?: boolean;
   mcpPort?: number;
   mcpToken?: string;
+  /**
+   * The Stream Deck plugin's server. Off unless switched on, for the same
+   * reason the MCP server is: it is a port into a library holding the only
+   * copy of somebody's tags and notes. See `services/streamdeck/server.ts`.
+   */
+  streamDeckEnabled?: boolean;
+  streamDeckPort?: number;
+  streamDeckToken?: string;
+  /**
+   * Whether a Stream Deck key may throw the latest clip away.
+   *
+   * **Off by default, separately from the server.** A key pressed mid-game by
+   * somebody not looking at a screen has no room for the question
+   * `clipDeleteQuestion.ts` asks, so this is its own decision, the plugin only
+   * sends it on a long press, and the server still refuses any clip carrying
+   * something that exists only in GoodBit.
+   */
+  streamDeckAllowDiscard?: boolean;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
   /**

@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import SettingToggle from './SettingToggle.vue';
 import PublisherCard from './PublisherCard.vue';
+import StreamDeckCard from './StreamDeckCard.vue';
 import { useToastStore } from '@renderer/stores/toast';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import { BUTTON_SMALL } from '@renderer/components/Base/geometry';
@@ -279,5 +280,11 @@ async function copyCommand(): Promise<void> {
       </template>
     </div>
 
+    <!--
+      Last, because it is the one of the three that needs a device somebody
+      has to own first. Same shape as Claude above it: a server on this machine
+      only, behind a token, off until switched on.
+    -->
+    <StreamDeckCard />
   </section>
 </template>

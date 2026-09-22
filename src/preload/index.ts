@@ -32,6 +32,8 @@ const api = {
   },
   mcpState: () => ipcRenderer.invoke('mcp:state'),
   mcpEnable: (enabled: boolean) => ipcRenderer.invoke('mcp:enable', enabled),
+  streamDeckState: () => ipcRenderer.invoke('streamdeck:state'),
+  streamDeckEnable: (enabled: boolean) => ipcRenderer.invoke('streamdeck:enable', enabled),
   mcpRegister: (wanted: boolean, ids?: string[]) =>
     ipcRenderer.invoke('mcp:register', wanted, ids),
 

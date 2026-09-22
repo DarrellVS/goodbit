@@ -1,0 +1,6 @@
+node_modules/
+dist/
+# Built by `npm run build`; the source is in src/.
+io.github.darrellvs.goodbit.sdPlugin/bin/plugin.js
+io.github.darrellvs.goodbit.sdPlugin/bin/plugin.js.map
+io.github.darrellvs.goodbit.sdPlugin/logs/

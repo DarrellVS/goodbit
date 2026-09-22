@@ -127,6 +127,26 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     };
   });
 
+  ipcMain.handle('streamdeck:state', async () => {
+    const { streamDeckRunning, streamDeckUrl, streamDeckToken } = await import(
+      '../services/streamdeck/server.js'
+    );
+    const settings = loadSettings();
+    return {
+      enabled: settings.streamDeckEnabled === true,
+      running: streamDeckRunning(),
+      url: streamDeckUrl(),
+      token: streamDeckToken(),
+      allowDiscard: settings.streamDeckAllowDiscard === true,
+    };
+  });
+
+  ipcMain.handle('streamdeck:enable', async (_event, enabled: boolean) => {
+    const { setStreamDeckEnabled } = await import('../services/streamdeck/server.js');
+    await setStreamDeckEnabled(enabled === true);
+    return { ok: true };
+  });
+
   ipcMain.handle('mcp:enable', async (_event, enabled: boolean) => {
     const { setMcpEnabled } = await import('../services/mcp/server.js');
     await setMcpEnabled(enabled === true);
