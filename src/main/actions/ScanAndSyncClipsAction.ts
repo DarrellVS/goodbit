@@ -40,11 +40,16 @@ export type ScanResult = {
 const MAX_PRUNE_FRACTION = 0.5;
 
 /**
- * What a trim leaves behind while it works, and what an interrupted one leaves
+ * What a job leaves behind while it works, and what an interrupted one leaves
  * behind for good. Hidden by their leading dot now, but the older shape is
  * still on disk in libraries that trimmed on 1.3.5 or earlier.
+ *
+ * Extended rather than left alone whenever something new writes beside a clip:
+ * a prefix that is not named here is a half-written file that gets indexed as
+ * a recording, dated now, sitting in the library next to the clip it is an
+ * incomplete copy of.
  */
-const WORKING_FILE = /(^\.goodbit-(trim|bak)-|\.tmp-\d+\.[a-z0-9]+$)/i;
+const WORKING_FILE = /(^\.goodbit-(trim|bak|compress|render)-|\.tmp-\d+\.[a-z0-9]+$)/i;
 
 function toRelPath(absolutePath: string): string {
   return path.relative(VIDEOS_ROOT, absolutePath);

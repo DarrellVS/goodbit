@@ -51,6 +51,7 @@ node scripts/visual-deaths.mjs   # what the two death cues score across a real l
 node scripts/foreground-track-check.mjs  # prove the helper tells a running process from a closed one
 node scripts/trim-check.mjs  # run the shipped trim on a real clip and check where it landed
 node scripts/clip-audio-check.mjs  # prove muting a track mutes it, through the real ffmpeg
+node scripts/compress-check.mjs   # squeeze a real recording and read back what landed
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -747,6 +748,15 @@ either way, and so is any player that happens to honour the flag.
 Because cuts made before that fix are still on disk, `decodeArgs` takes the file as well as the
 encoder and **falls back to software decode for a source that still has a pre-roll**, which is 30%
 slower and correct rather than fast and green.
+
+**Squeezing a clip already on disk is the same operation as a trim**, and it is careful in the same
+ways plus one: `CompressClipAction` writes beside the file, reads the result back, and only then
+sends the original to the Recycle Bin and renames. It is **allowed to refuse**, which is the part
+worth keeping: a result that is not at least 5% smaller means the clip was already below what the
+share preset aims for, and a result of the wrong length is a truncated encode, which is what a full
+disk leaves behind and which would otherwise read as a spectacular saving.
+`scripts/compress-check.mjs` asserts both, plus that every audio track survived, because
+flattening six tracks to one is invisible until somebody tries to mute voice chat next month.
 
 **Compressing a trim and compressing a published copy are two settings.** A trim replaces the only
 copy of that moment, so `compressTrims` is **off** by default and the cut stays close to the

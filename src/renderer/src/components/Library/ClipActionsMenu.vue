@@ -68,6 +68,7 @@ const {
   onMoveToGame,
   onRemoveFromCollection,
   onExportAudio,
+  onCompress,
 } = createClipActionHandlers({
   clip: computed(() => props.clip),
   isPublishing,
@@ -157,6 +158,21 @@ async function handleMoveToGame(targetGame: string) {
             <BaseSpinner v-if="isExportingAudio" class="text-base" />
             <Icon v-else icon="material-symbols:audio-file" class="size-4 shrink-0 block text-muted-400" />
             <span>{{ isExportingAudio ? 'Exporting Audio...' : 'Export Audio' }}</span>
+          </MenubarItem>
+
+          <!--
+            Compress, above Move to Game and below the exports, because it is
+            the other thing in this menu that changes the file rather than what
+            is written about it. Not beside Delete: it is not destructive in the
+            same way, the recording goes to the Recycle Bin and only the picture
+            quality is spent.
+          -->
+          <MenubarItem
+            class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+            @click="onCompress"
+          >
+            <Icon icon="material-symbols:compress" class="size-4 shrink-0 block text-muted-400" />
+            <span>Compress</span>
           </MenubarItem>
 
           <!-- Move to Game -->

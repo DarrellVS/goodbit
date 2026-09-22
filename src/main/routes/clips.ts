@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { EntityNotFoundError, In } from 'typeorm';
 import { RecordClipOpenedAction } from '../actions/RecordClipOpenedAction.js';
+import { CompressClipAction } from '../actions/CompressClipAction.js';
 import { planSearch } from '../services/clipSearch.js';
 import { searchIndexUsable } from '../services/clipSearchIndex.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
@@ -654,6 +655,53 @@ clipsRouter.post('/:id/goodbits/:goodBitId/render', asyncHandler(async (req, res
     .catch((error: Error) => {
       // A cancel arrives here as an ffmpeg kill; failJob tells the two apart.
       if (!signal?.aborted) console.error('GoodBit render failed:', error);
+      failJob(jobId, error.message);
+    });
+
+  res.status(202).json({ jobId });
+}));
+
+/**
+ * Squeeze this clip, in place, to get the disk back.
+ *
+ * A job rather than an awaited call, for the same reason the render is one: it
+ * re-encodes, which on a 3440 wide recording is tens of seconds, and a batch
+ * of forty is minutes. `mediaQueue` caps how many of those exist at once, so
+ * dispatching forty of these is forty queued jobs and four ffmpegs.
+ *
+ * Deliberately **not** offered as something that happens on its own after a
+ * recording. That would re-encode the only copy of every clip, unattended, on
+ * the machine that has just finished running a game, fighting the game-close
+ * sweep for the same GPU. #13's recording quality is the right way to get
+ * smaller files: record smaller in the first place, losing nothing, rather
+ * than recording large and throwing quality away afterwards.
+ */
+clipsRouter.post('/:id/compress', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const clip = await AppDataSource.getRepository(Clip).findOneBy({ id: clipId });
+  if (!clip) return res.status(404).json({ error: 'Clip not found' });
+
+  const jobId = randomUUID();
+  createJob('trim', clip.displayName ?? clip.filename, jobId);
+  const signal = jobSignal(jobId);
+
+  void new CompressClipAction()
+    .execute({
+      clipId,
+      signal,
+      onProgress: (fraction) => setJobProgress(jobId, fraction * 100, 'Compressing'),
+    })
+    .then(async (result) => {
+      // The row is the answer worth waiting for: the tile has to redraw with
+      // the new size, and a refusal has to redraw with the old one.
+      const after = await AppDataSource.getRepository(Clip).findOneBy({ id: clipId });
+      if (!result.replaced) {
+        console.log(`[compress] ${clip.filename}: ${result.reason}, left alone`);
+      }
+      completeJob(jobId, after ? ClipDTO.fromEntity(after) : undefined);
+    })
+    .catch((error: Error) => {
+      if (!signal?.aborted) console.error('Compress failed:', error);
       failJob(jobId, error.message);
     });
 
