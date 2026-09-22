@@ -193,6 +193,7 @@ const {
   handleSelectAll,
   handleBatchDelete,
   handleBatchCompress,
+  handleBatchCompressPublished,
   handleBatchPublish,
   handleBatchUnpublish,
   handleBatchStar,
@@ -367,6 +368,7 @@ onMounted(() => {
       @deselect-all="deselectAll"
       @delete="handleBatchDelete"
       @compress="handleBatchCompress"
+      @compress-published="handleBatchCompressPublished"
       @add-to-collection="showCollectionDialog = true"
       @publish="handleBatchPublish"
       @unpublish="handleBatchUnpublish"

@@ -5,6 +5,18 @@ import { RecordClipOpenedAction } from '../actions/RecordClipOpenedAction.js';
 import { CompressClipAction } from '../actions/CompressClipAction.js';
 import { FindUnreviewedClipsAction } from '../actions/FindUnreviewedClipsAction.js';
 import { FindBurstClipsAction } from '../actions/FindBurstClipsAction.js';
+import { CompressPublishedClipAction } from '../actions/CompressPublishedClipAction.js';
+
+/**
+ * How long to leave between two published re-uploads.
+ *
+ * Each one purges a URL at the edge, and Cloudflare rate-limits purges. Two
+ * seconds is invisible next to an upload and bounds a run of forty short clips
+ * well under any published limit.
+ */
+const PURGE_PACE_MS = 2000;
+
+const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 import { planSearch } from '../services/clipSearch.js';
 import { searchIndexUsable } from '../services/clipSearchIndex.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
@@ -271,6 +283,60 @@ clipsRouter.post('/batch/publish', asyncHandler(async (req, res) => {
   const action = new BatchPublishAction();
   const result = await action.execute({ clipIds, publish });
   res.json(result);
+}));
+
+/**
+ * Squeeze the published copies of several clips, one at a time and paced.
+ *
+ * **Serial, with a pause, and that is the whole reason this is not a loop in
+ * the renderer.** Every one of these is a real Cloudflare purge of a real URL,
+ * which is exactly what `UpdateMetadataAction` avoids by only purging when the
+ * sidecar actually changed. Forty at once would be forty purges in a second,
+ * and a 429 from Cloudflare would arrive *after* the upload succeeded.
+ *
+ * A purge that was rate-limited is not a lost clip. The file is already
+ * correct on the origin; a stale edge is temporary and cosmetic, and it heals
+ * when the year runs out or the next purge lands. So a failure on one clip is
+ * logged and the run continues, rather than taking the other thirty-nine with
+ * it.
+ */
+clipsRouter.post('/batch/compress-published', asyncHandler(async (req, res) => {
+  const { clipIds } = req.body as { clipIds: number[] };
+  const ids = Array.isArray(clipIds) ? clipIds.filter((id) => Number.isFinite(id)) : [];
+  if (!ids.length) return res.status(400).json({ error: 'No clips' });
+
+  const jobId = randomUUID();
+  createJob('trim', `${ids.length} published copies`, jobId);
+  const signal = jobSignal(jobId);
+
+  void (async () => {
+    let done = 0;
+    let failed = 0;
+
+    for (const clipId of ids) {
+      if (signal?.aborted) break;
+      try {
+        await new CompressPublishedClipAction().execute({ clipId });
+      } catch (error) {
+        failed += 1;
+        console.error(
+          `[batch] compressing the published copy of clip ${clipId} failed:`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+      done += 1;
+      setJobProgress(jobId, (done / ids.length) * 100, `${done} of ${ids.length}`);
+      // Paced between clips rather than hammering the purge endpoint. The
+      // upload itself is the slow part, so this costs nothing on a real run
+      // and bounds the purge rate on a run of forty short clips.
+      if (done < ids.length && !signal?.aborted) await wait(PURGE_PACE_MS);
+    }
+
+    if (failed) console.warn(`[batch] ${failed} of ${ids.length} published copies were not replaced`);
+    completeJob(jobId);
+  })();
+
+  res.status(202).json({ jobId });
 }));
 
 clipsRouter.post('/batch/add-tags', asyncHandler(async (req, res) => {
@@ -728,6 +794,38 @@ clipsRouter.post('/:id/compress', asyncHandler(async (req, res) => {
     })
     .catch((error: Error) => {
       if (!signal?.aborted) console.error('Compress failed:', error);
+      failJob(jobId, error.message);
+    });
+
+  res.status(202).json({ jobId });
+}));
+
+/**
+ * Squeeze the copy behind the public link, leaving the recording alone.
+ *
+ * A different verb from the one above it, and the UI has to say so: this gets
+ * nobody any disk space back. It is for a clip published before
+ * `compressPublished` existed, or published with it off, whose public copy is
+ * the whole eighty-megabit recording coming off a home uplink every time
+ * somebody opens the link.
+ */
+clipsRouter.post('/:id/compress-published', asyncHandler(async (req, res) => {
+  const clipId = Number(req.params.id);
+  const clip = await AppDataSource.getRepository(Clip).findOneBy({ id: clipId });
+  if (!clip) return res.status(404).json({ error: 'Clip not found' });
+  if (!clip.published) return res.status(409).json({ error: 'That clip is not published' });
+
+  const jobId = randomUUID();
+  createJob('trim', clip.displayName ?? clip.filename, jobId);
+
+  void new CompressPublishedClipAction()
+    .execute({ clipId })
+    .then(async () => {
+      const after = await AppDataSource.getRepository(Clip).findOneBy({ id: clipId });
+      completeJob(jobId, after ? ClipDTO.fromEntity(after) : undefined);
+    })
+    .catch((error: Error) => {
+      console.error('Compressing the published copy failed:', error);
       failJob(jobId, error.message);
     });
 
