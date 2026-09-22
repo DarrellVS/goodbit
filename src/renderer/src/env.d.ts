@@ -146,6 +146,10 @@ interface AppSettingsWire {
     height: number;
     maximized: boolean;
   };
+  /** Storage Saver: how old an unopened clip has to be. Days. */
+  unreviewedDays?: number;
+  /** Storage Saver: how close two saves have to be to be one moment. Seconds. */
+  burstWindowSec?: number;
 }
 
 interface BackupFileWire {

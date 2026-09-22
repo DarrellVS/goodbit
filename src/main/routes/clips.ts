@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { EntityNotFoundError, In } from 'typeorm';
 import { RecordClipOpenedAction } from '../actions/RecordClipOpenedAction.js';
 import { CompressClipAction } from '../actions/CompressClipAction.js';
+import { FindUnreviewedClipsAction } from '../actions/FindUnreviewedClipsAction.js';
+import { FindBurstClipsAction } from '../actions/FindBurstClipsAction.js';
 import { planSearch } from '../services/clipSearch.js';
 import { searchIndexUsable } from '../services/clipSearchIndex.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
@@ -197,6 +199,30 @@ clipsRouter.get('/', asyncHandler(async (req, res) => {
   // So a card can draw its marked ranges without asking per tile.
   await attachGoodBitRanges(dtos);
   res.json({ items: dtos, total, page: pageNum, pageSize: pageSz });
+}));
+
+/*
+ * The two Storage Saver queries, and they sit here for the same reason the
+ * batch routes below do: Express matches `/:id` against anything, so a route
+ * registered after it never runs and `/clips/unreviewed` is read as a clip
+ * whose id is the word "unreviewed".
+ */
+clipsRouter.get('/unreviewed', asyncHandler(async (req, res) => {
+  const days = Number(req.query.olderThanDays);
+  const result = await new FindUnreviewedClipsAction().execute({
+    olderThanDays: Number.isFinite(days) ? days : undefined,
+  });
+  console.log(`[storage] ${result.totalClips} unreviewed clips in ${result.groups.length} games`);
+  res.json(result);
+}));
+
+clipsRouter.get('/bursts', asyncHandler(async (req, res) => {
+  const windowSec = Number(req.query.windowSec);
+  const result = await new FindBurstClipsAction().execute({
+    windowSec: Number.isFinite(windowSec) ? windowSec : undefined,
+  });
+  console.log(`[storage] ${result.clusters.length} bursts, ${result.totalClips} clips`);
+  res.json(result);
 }));
 
 clipsRouter.get('/:id/meta', asyncHandler(async (req, res) => {

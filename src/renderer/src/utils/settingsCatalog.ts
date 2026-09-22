@@ -350,6 +350,20 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
     keywords: ['scan', 'refresh', 'reindex', 'missing clips', 'not showing', 'app'],
   },
   {
+    label: 'Call a clip forgotten after',
+    description:
+      'How long a clip can go unopened, unstarred, untagged and unmarked before Storage Saver offers it up.',
+    section: 'data',
+    keywords: ['storage', 'saver', 'space', 'disk', 'cleanup', 'unreviewed', 'old', 'forgotten'],
+  },
+  {
+    label: 'Treat saves this close as one moment',
+    description:
+      'The replay buffer holds the last few seconds, so two presses this close apart have the same footage in both files.',
+    section: 'data',
+    keywords: ['storage', 'saver', 'burst', 'duplicate', 'twice', 'space', 'disk'],
+  },
+  {
     label: 'Confirm Before Delete',
     description: 'Ask for confirmation when deleting clips',
     section: 'data',

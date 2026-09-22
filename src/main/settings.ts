@@ -166,6 +166,22 @@ export interface Settings {
    * open.
    */
   recordingQuality?: RecordingQuality;
+  /**
+   * How old a clip has to be before Storage Saver calls it abandoned. Days.
+   *
+   * A threshold rather than a rule: "never opened" is the signal, and the age
+   * is how long somebody wants to give themselves to get round to it. Thirty
+   * days by default, which is long enough that "I will get to it" has stopped
+   * being true.
+   */
+  unreviewedDays?: number;
+  /**
+   * How close together two saves have to be to be one moment. Seconds.
+   *
+   * The replay buffer holds the last thirty seconds, so two presses inside
+   * ninety seconds have overlapping footage in both files.
+   */
+  burstWindowSec?: number;
   /** Where the window was last, so it opens where you left it. */
   window?: WindowBounds;
 }
@@ -194,6 +210,8 @@ const DEFAULTS: Settings = {
   analyzeOnGameCloseSound: true,
   migratedFromWebApp: false,
   recordingQuality: DEFAULT_RECORDING_QUALITY,
+  unreviewedDays: 30,
+  burstWindowSec: 90,
 };
 
 let cached: Settings | null = null;

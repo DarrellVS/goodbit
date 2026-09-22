@@ -200,6 +200,52 @@ export async function compressClip(id: number): Promise<{ jobId: string }> {
   return data;
 }
 
+/* ── Storage Saver ─────────────────────────────────────────────────── */
+
+export interface UnreviewedGroup {
+  game: string;
+  clips: Clip[];
+  reclaimableBytes: number;
+}
+
+export interface UnreviewedResult {
+  groups: UnreviewedGroup[];
+  totalClips: number;
+  totalBytes: number;
+  /** The whole library, so a number has something to be a share of. */
+  libraryClips: number;
+  libraryBytes: number;
+}
+
+export interface BurstCluster {
+  game: string;
+  clips: Clip[];
+  spanSec: number;
+  reclaimableBytes: number;
+  /** The longest clip. A suggestion, and the screen says so. */
+  suggestedKeeperId: number;
+}
+
+export interface BurstResult {
+  clusters: BurstCluster[];
+  totalClips: number;
+  reclaimableBytes: number;
+}
+
+export async function listUnreviewedClips(olderThanDays?: number): Promise<UnreviewedResult> {
+  const { data } = await axios.get<UnreviewedResult>('/api/clips/unreviewed', {
+    params: olderThanDays === undefined ? {} : { olderThanDays },
+  });
+  return data;
+}
+
+export async function listBurstClips(windowSec?: number): Promise<BurstResult> {
+  const { data } = await axios.get<BurstResult>('/api/clips/bursts', {
+    params: windowSec === undefined ? {} : { windowSec },
+  });
+  return data;
+}
+
 export async function getClipMeta(id: number): Promise<ClipMeta> {
   const { data } = await axios.get<ClipMeta>(`/api/clips/${id}/meta`);
   return data;
