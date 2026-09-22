@@ -81,8 +81,9 @@ async function startFakePublisher(): Promise<FakePublisher> {
   // The real publisher refuses every write without this, so the fake one does
   // too: otherwise the test would pass whether or not the app sent it.
   const gate: express.RequestHandler = (req, res, next) => {
-    const given = /^Bearer\s+(.+)$/i.exec(req.header('authorization') ?? '')?.[1];
-    if (given !== TOKEN) {
+    // Compared whole rather than parsed: this is a test's fake publisher,
+    // and the exact header GoodBit sends is the thing being checked.
+    if (req.header('authorization') !== `Bearer ${TOKEN}`) {
       res.status(401).json({ message: 'Wrong or missing publish token.' });
       return;
     }

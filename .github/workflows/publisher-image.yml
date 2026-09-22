@@ -7,7 +7,7 @@ name: Publisher image
 #
 # Only when the publisher itself changes. It used to run on every release tag,
 # which rebuilt an identical image for a release that had touched nothing in
-# `publisher/` — the app and the publisher are versioned and shipped
+# `publisher/`: the app and the publisher are versioned and shipped
 # separately, and there is no reason for one to drag the other along.
 on:
   push:
@@ -16,6 +16,12 @@ on:
       - 'publisher/**'
       - '.github/workflows/publisher-image.yml'
   workflow_dispatch:
+
+# The image goes to Docker Hub with its own credentials, so the GitHub token
+# only ever reads the checkout. The layer cache does not need a scope here:
+# it authenticates with the runner's own token, not this one.
+permissions:
+  contents: read
 
 jobs:
   image:
@@ -76,7 +82,7 @@ jobs:
             ${{ secrets.PUBLISHER_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ secrets.PUBLISHER_IMAGE }}:latest
           # Layers are cached between runs, so a change to one source file does
-          # not reinstall the dependencies again — which matters most for
+          # not reinstall the dependencies again, which matters most for
           # arm64, where every command runs under emulation. Scoped by name so
           # it cannot collide with another workflow's cache in this repository.
           cache-from: type=gha,scope=publisher

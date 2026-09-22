@@ -1,6 +1,6 @@
 name: CI
 
-# Kept deliberately cheap. Typecheck only, on the branches that matter — the
+# Kept deliberately cheap. Typecheck only, on the branches that matter: the
 # end-to-end suite needs a desktop session, a GPU and ffmpeg, so it runs before
 # a release on a real machine instead (see `npm run check:pre-release`).
 on:
@@ -15,6 +15,11 @@ on:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+# Reads the code and nothing else. Without this the token gets the
+# repository's default, which can be write, for a job that only typechecks.
+permissions:
+  contents: read
 
 jobs:
   check:
