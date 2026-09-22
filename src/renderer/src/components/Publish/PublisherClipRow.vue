@@ -36,7 +36,9 @@ const title = computed(() => props.clip.displayName?.trim() || props.clip.filena
  */
 const watched = computed(() => {
   const views = props.clip.publisherViews;
-  if (views == null) return { label: '—', hint: 'not counted yet' };
+  // Words rather than a dash or a zero: a dash is not allowed anywhere in this
+  // app's UI, and a zero would claim nobody watched it.
+  if (views == null) return { label: 'n/a', hint: 'not counted yet' };
   if (views === 0) return { label: '0', hint: 'never opened' };
   return {
     label: String(views),
