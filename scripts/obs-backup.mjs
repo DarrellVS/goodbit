@@ -43,8 +43,27 @@ const EXTRAS = [
 ];
 
 const stamp = new Date().toISOString().slice(0, 10);
-const destination =
-  process.argv[2] ?? path.join(os.homedir(), 'Documents', 'GoodBit backups', `obs-${stamp}`);
+
+/*
+ * A folder of its own every run, even twice in one day.
+ *
+ * The name is the date, so a second run the same day copied into the first
+ * run's folder: its `hashes.json` and `MANIFEST.txt` were hashed as if they
+ * were OBS's own files, then rewritten, and the read back reported both as
+ * different. A verification that fails on a good backup teaches somebody to
+ * ignore it on a bad one.
+ */
+function freshFolder(base) {
+  if (!existsSync(base) && !existsSync(`${base}.zip`)) return base;
+  for (let n = 2; ; n++) {
+    const candidate = `${base}-${n}`;
+    if (!existsSync(candidate) && !existsSync(`${candidate}.zip`)) return candidate;
+  }
+}
+
+const destination = freshFolder(
+  process.argv[2] ?? path.join(os.homedir(), 'Documents', 'GoodBit backups', `obs-${stamp}`),
+);
 
 /** Every file under a directory, relative to it. */
 function walk(root, prefix = '') {
