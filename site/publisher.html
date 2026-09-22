@@ -178,6 +178,26 @@ docker build -t goodbit-publisher .</code></pre>
                   clip. Turn it off on a metered uplink.
                 </td>
               </tr>
+              <tr>
+                <td><code>DISCORD_WEBHOOK_URL</code></td>
+                <td>
+                  Optional. A Discord channel webhook, from the channel's Integrations settings.
+                  A clip's first publish posts a card there with its name, its game, its marks and
+                  its poster; a takedown posts a short note. Re-uploading a clip under the same
+                  name is silent, and so is a trim. <strong>Treat it like the publish token</strong>:
+                  anybody holding it can post in that channel. Discord fetches the link and the
+                  poster to draw the card, so your address will appear in its logs.
+                </td>
+              </tr>
+              <tr>
+                <td><code>VIEWS_FILE</code></td>
+                <td>
+                  Optional. Where the view counts are kept, <code>/data/views.json</code> in the
+                  image. Outside the served folder on purpose, so it is never public. Mount
+                  <code>/data</code> rather than <code>/data/public</code> or the counts start again
+                  every time the container is recreated.
+                </td>
+              </tr>
             </tbody>
           </table>
 

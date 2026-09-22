@@ -4,6 +4,7 @@ import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { posterPathFor, posterUrlFor } from '../utils/posterPath.js';
 import { forgetViews } from '../services/viewCounter.js';
+import { noteUnpublished } from '../services/discordWebhook.js';
 
 export interface UnpublishClipInput {
   filePath: string;
@@ -17,6 +18,13 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
   async execute(input: UnpublishClipInput): Promise<UnpublishClipOutput> {
     const filename = path.basename(input.filePath);
     const uploadDir = path.dirname(input.filePath);
+
+    // Read before the sidecar is deleted below, so the takedown message can
+    // name the clip the way the channel saw it named.
+    const displayName = await fs
+      .readFile(path.join(uploadDir, `${filename}.meta.json`), 'utf-8')
+      .then((raw) => (JSON.parse(raw)?.displayName as string) || null)
+      .catch(() => null);
     
     // Delete the main video file
     try {
@@ -53,6 +61,10 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
      * be at that name.
      */
     forgetViews(filename);
+
+    // Held for a grace period, because a trim unpublishes and re-publishes
+    // under the same name within seconds. See `services/discordWebhook.ts`.
+    noteUnpublished(filename, displayName);
 
     // Purge Cloudflare cache for all related URLs
     const base = process.env.PUBLIC_BASE_URL || '';

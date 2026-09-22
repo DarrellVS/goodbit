@@ -54,6 +54,7 @@ node scripts/clip-audio-check.mjs  # prove muting a track mutes it, through the 
 node scripts/compress-check.mjs   # squeeze a real recording and read back what landed
 node scripts/toast-button-check.mjs  # press the overlay card's button and see where the app goes
 node scripts/publisher-views-check.mjs  # run the real publisher and see what it counts
+node scripts/discord-webhook-check.mjs  # run the publisher against a fake Discord and read what it sent
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -853,6 +854,15 @@ by name, or every clip would start life with one view.
 **The sidecars are no longer served**, and the rule sits *before* `express.static` rather than after
 it, which is the difference between a rule and a comment. `scripts/publisher-views-check.mjs` caught
 it returning 200.
+
+**A Discord card is sent when the poster lands, not when the clip does.** The clip and its poster
+arrive in separate requests, and Discord fetches an embed's image once and keeps what it got, so a
+card sent at publish time is pictureless for ever. `StoreThumbnailAction` fires it; a clip whose
+poster never comes is announced after a grace period without one. **Only a first publish is news**
+(a sidecar that already existed means a re-upload), and **a takedown waits five minutes**, because a
+trim of a published clip unpublishes and publishes again within seconds and would otherwise post
+two messages per trim. The webhook URL is a secret in the same class as `PUBLISH_TOKEN` and is never
+logged; `scripts/discord-webhook-check.mjs` greps the log for it.
 
 `cachePrewarm.ts` asks for a clip's own public URLs once after publishing, so the first viewer, who
 is usually whoever just pressed Publish, does not pay for the miss. It waits for the purge in front

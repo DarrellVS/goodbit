@@ -7,7 +7,7 @@ import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { reportTokenState } from './middlewares/requireToken.js';
 import { posterPathFor, posterUrlFor } from './utils/posterPath.js';
-import { parseGoodBits, type PublishedGoodBit } from './utils/goodBits.js';
+import { goodBitLabel, parseGoodBits, type PublishedGoodBit } from './utils/goodBits.js';
 import { flushViewCounts, loadViewCounts, recordView } from './services/viewCounter.js';
 
 dotenv.config();
@@ -215,7 +215,7 @@ app.get('/:filename', (req, res) => {
   // same moment.
   const labelled = goodBits.map((bit, index) => ({
     ...bit,
-    label: bit.name || bit.reason || `GoodBit ${index + 1}`,
+    label: goodBitLabel(bit, index),
   }));
 
   // The page names a date and a size. Both come off the file itself rather
