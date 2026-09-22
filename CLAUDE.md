@@ -890,6 +890,14 @@ trim of a published clip unpublishes and publishes again within seconds and woul
 two messages per trim. The webhook URL is a secret in the same class as `PUBLISH_TOKEN` and is never
 logged; `scripts/discord-webhook-check.mjs` greps the log for it.
 
+**Rate limits key on a header, never on `req.ip`.** The publisher runs behind a reverse proxy and
+often Cloudflare, so `req.ip` is the proxy for every request, and a limit keyed on it is one bucket
+for the whole internet. `middlewares/rateLimits.ts` reads `CF-Connecting-IP`, then the first
+`X-Forwarded-For` hop. The embed page allows 300 a minute; the API counts **only failures**, 60 a
+minute, because a batch publish over a LAN is several successful requests a second and a ceiling on
+those would eventually refuse the owner. `/media` is not limited: a seeking video is a burst of
+Range requests.
+
 `cachePrewarm.ts` asks for a clip's own public URLs once after publishing, so the first viewer, who
 is usually whoever just pressed Publish, does not pay for the miss. It waits for the purge in front
 of it, it drains the body because an edge that has not finished receiving an object does not store

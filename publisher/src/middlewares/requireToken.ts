@@ -22,8 +22,15 @@ function digest(value: string): Buffer {
 
 function presented(header: string | undefined, fallback: string | undefined): string | null {
   if (header) {
-    const bearer = /^Bearer\s+(.+)$/i.exec(header.trim());
-    if (bearer) return bearer[1].trim();
+    // Read by hand rather than with `/^Bearer\s+(.+)$/`, where `\s+` and `.+`
+    // can both take the same spaces and a long run of them is quadratic. This
+    // header is the one part of a request anybody on the internet can send.
+    const value = header.trim();
+    const scheme = value.slice(0, 6);
+    if (scheme.toLowerCase() === 'bearer' && /\s/.test(value.charAt(6))) {
+      const token = value.slice(7).trim();
+      if (token) return token;
+    }
   }
   return fallback?.trim() || null;
 }

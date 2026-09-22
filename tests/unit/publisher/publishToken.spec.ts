@@ -152,3 +152,31 @@ describe('what an upload gets once the token is set', () => {
     expect(fakeExchange().sent.status).toBe(401);
   });
 });
+
+describe('reading the bearer header by hand', () => {
+  beforeEach(() => {
+    process.env.PUBLISH_TOKEN = 'the-real-token';
+  });
+
+  it('takes any case and any run of whitespace after the scheme', () => {
+    expect(fakeExchange({ authorization: 'bearer the-real-token' }).next).toHaveBeenCalledOnce();
+    expect(fakeExchange({ authorization: 'Bearer\tthe-real-token' }).next).toHaveBeenCalledOnce();
+    expect(fakeExchange({ authorization: '  Bearer    the-real-token  ' }).next).toHaveBeenCalledOnce();
+  });
+
+  it('does not read a scheme glued to the token', () => {
+    expect(fakeExchange({ authorization: 'Bearerthe-real-token' }).sent.status).toBe(401);
+  });
+
+  it('falls back to the other header when the bearer is empty', () => {
+    const { next } = fakeExchange({ authorization: 'Bearer   ', 'x-publish-token': 'the-real-token' });
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('is linear on the header that made the regex quadratic', () => {
+    const hostile = `Bearer${' '.repeat(100_000)}x${' '.repeat(100_000)}`;
+    const started = performance.now();
+    expect(fakeExchange({ authorization: hostile }).sent.status).toBe(401);
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+});
