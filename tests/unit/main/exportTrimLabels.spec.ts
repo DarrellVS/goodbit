@@ -11,8 +11,8 @@ import { labelKind } from '../../../src/main/services/highlights/labels.js';
  * What a montage teaches the suggestion model.
  *
  * Nothing in the editor wrote a label before this, which meant
- * `trimAllToHighlights()` — a bulk accept-or-correct of the app's own
- * suggestions — was invisible to the model that made them.
+ * `trimAllToHighlights()`, a bulk accept-or-correct of the app's own
+ * suggestions, was invisible to the model that made them.
  *
  * The rules that matter here are the ones about *what counts as a decision*,
  * because the label table is training data and a wrong row is worse than a

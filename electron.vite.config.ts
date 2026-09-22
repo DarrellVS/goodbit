@@ -64,7 +64,7 @@ export default defineConfig({
          * The toast overlay runs with `sandbox: true`, and Electron loads a
          * sandboxed preload as CommonJS only: an ESM one throws on its first
          * `import` and is dropped **silently**, which is exactly how it
-         * presented — the card rendered its button and `window.goodbitToast`
+         * presented: the card rendered its button and `window.goodbitToast`
          * was undefined.
          *
          * Both entries rather than one, because two formats out of one rollup
