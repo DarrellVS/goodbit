@@ -47,6 +47,10 @@ export interface AppSettings {
    * disk, and it only lands when the OBS profile is next written.
    */
   recordingQuality?: RecordingQuality;
+  /** Storage Saver: how old an unopened clip has to be. Days, 30 unset. */
+  unreviewedDays?: number;
+  /** Storage Saver: how close two saves are to be one moment. Seconds, 90 unset. */
+  burstWindowSec?: number;
 }
 
 const EMPTY: AppSettings = {

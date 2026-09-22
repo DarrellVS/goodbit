@@ -1,0 +1,145 @@
+<script setup lang="ts">
+import { Icon } from '@iconify/vue';
+import {
+  BUTTON,
+  BUTTON_SMALL,
+  ICON_BOX,
+  ICON_BOX_LG,
+  SECTION_HEADER,
+} from '@renderer/components/Base/geometry';
+import StorageClipTile from './StorageClipTile.vue';
+import ReclaimSummary from './ReclaimSummary.vue';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import { useFormat } from '@renderer/composables/ui/useFormat';
+import type { UnreviewedResult } from '@renderer/services/clips';
+import type { Clip } from '@renderer/types/clip';
+
+/**
+ * The clips nobody ever did anything with.
+ *
+ * Never opened, never starred, never tagged, never marked by hand, and old
+ * enough that it is not going to happen. Grouped by game, because that is how
+ * somebody decides: "I am never going to watch any of the Rocket League" is a
+ * sentence, and "I am never going to watch clip 41 of 190" is not.
+ *
+ * Nothing here is ticked to begin with. This screen deletes recordings, and a
+ * page that opens with 190 clips already selected is a page where the button
+ * is pressed before the list is read.
+ */
+interface Props {
+  data: UnreviewedResult | null;
+  loading?: boolean;
+  deleting?: boolean;
+  selected: Set<number>;
+  days: number;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  (e: 'toggle', clipId: number): void;
+  (e: 'toggle-group', game: string): void;
+  (e: 'delete'): void;
+}>();
+
+const { formatBytes } = useFormat();
+
+function groupSelected(clips: Clip[]): boolean {
+  return clips.length > 0 && clips.every((clip) => props.selected.has(clip.id));
+}
+</script>
+
+<template>
+  <section>
+    <div :class="SECTION_HEADER">
+      <h2 class="text-base font-medium text-foreground">Never opened</h2>
+      <span class="text-sm text-muted-500">
+        Older than {{ days }} days, never watched, never starred, never tagged, never marked
+      </span>
+    </div>
+
+    <div v-if="loading" class="flex justify-center py-10">
+      <BaseSpinner />
+    </div>
+
+    <!--
+      Warmly, not as an empty grid. Somebody opening this screen has usually
+      just been told they are low on disk space, and "nothing here" is good
+      news that should read like it rather than like a failed search.
+    -->
+    <div
+      v-else-if="!data?.groups.length"
+      class="rounded-lg border border-border/60 px-4 py-8 text-center"
+    >
+      <Icon
+        icon="material-symbols:check-circle-outline"
+        :class="[ICON_BOX_LG, 'mx-auto mb-2 text-success']"
+      />
+      <p class="text-sm text-foreground">Nothing has been forgotten</p>
+      <p class="mt-1 text-sm text-muted-500">
+        Every clip older than {{ days }} days has been opened, starred, tagged or marked.
+      </p>
+    </div>
+
+    <template v-else>
+      <ReclaimSummary
+        :bytes="data.totalBytes"
+        :clips="data.totalClips"
+        :library-bytes="data.libraryBytes"
+        :library-clips="data.libraryClips"
+      />
+
+      <div v-for="group in data.groups" :key="group.game" class="mt-6">
+        <div :class="SECTION_HEADER">
+          <h3 class="text-sm font-medium text-foreground">{{ group.game }}</h3>
+          <span class="font-mono text-xs tabular-nums text-muted-400">
+            {{ group.clips.length }} · {{ formatBytes(group.reclaimableBytes) }}
+          </span>
+          <button
+            type="button"
+            :class="[BUTTON_SMALL, 'ml-auto']"
+            @click="emit('toggle-group', group.game)"
+          >
+            {{ groupSelected(group.clips) ? 'Clear' : 'Select all' }}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <StorageClipTile
+            v-for="clip in group.clips"
+            :key="clip.id"
+            :clip="clip"
+            :selected="selected.has(clip.id)"
+            @toggle="emit('toggle', clip.id)"
+          />
+        </div>
+      </div>
+
+      <!--
+        The delete, written here beside the sentence explaining what it
+        destroys rather than reached for from a shared danger token. There is
+        deliberately no danger button in `geometry.ts` for exactly that reason:
+        making one easy to reach for is how it ends up on the wrong button.
+      -->
+      <div
+        v-if="selected.size"
+        class="sticky bottom-4 mt-6 flex items-center gap-3 rounded-lg border border-line-strong bg-card px-4 py-3 shadow-pop"
+      >
+        <span class="text-sm text-foreground">
+          {{ selected.size }} selected
+        </span>
+        <button
+          type="button"
+          :class="[
+            BUTTON,
+            'ml-auto border-danger text-danger-ink hover:bg-danger/10',
+          ]"
+          :disabled="deleting"
+          @click="emit('delete')"
+        >
+          <Icon icon="material-symbols:delete-outline" :class="ICON_BOX" />
+          Delete selected
+        </button>
+      </div>
+    </template>
+  </section>
+</template>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
+import SettingSelect from './SettingSelect.vue';
 import BackupsCard from './BackupsCard.vue';
 import RescanCard from './RescanCard.vue';
 import SettingAnchor from './SettingAnchor.vue';
@@ -20,6 +22,33 @@ import SettingToggle from './SettingToggle.vue';
  * stops the loss happening.
  */
 const config = useConfiguration();
+const { settings, save: saveSettings } = useAppSettings();
+
+/*
+ * The two thresholds Storage Saver reads.
+ *
+ * They live here rather than on that screen for the same reason the delete
+ * confirmation does: they are not what somebody is doing there, they are how
+ * strict it should be, and a control that changes what a destructive list
+ * contains does not belong beside the button that acts on it.
+ *
+ * Fixed choices rather than a number field. Both of these are "about a month"
+ * and "about a minute and a half" rather than exact values, and a box taking
+ * any integer invites 1, which would offer to delete everything recorded
+ * yesterday.
+ */
+const AGES = [
+  { value: 7, label: 'A week' },
+  { value: 30, label: 'A month' },
+  { value: 90, label: 'Three months' },
+  { value: 365, label: 'A year' },
+];
+
+const WINDOWS = [
+  { value: 30, label: '30 seconds' },
+  { value: 90, label: '90 seconds' },
+  { value: 180, label: '3 minutes' },
+];
 </script>
 
 <template>
@@ -42,6 +71,24 @@ const config = useConfiguration();
       v-model="config.public.value.confirmBeforeDelete"
       label="Confirm Before Delete"
       description="Ask for confirmation when deleting clips"
+    />
+
+    <h3 class="setting-subhead">Storage Saver</h3>
+
+    <SettingSelect
+      label="Call a clip forgotten after"
+      description="How long a clip can go unopened, unstarred, untagged and unmarked before Storage Saver offers it up."
+      :model-value="settings.unreviewedDays ?? 30"
+      :options="AGES"
+      @update:model-value="saveSettings({ unreviewedDays: Number($event) })"
+    />
+
+    <SettingSelect
+      label="Treat saves this close as one moment"
+      description="The replay buffer holds the last few seconds, so two presses this close apart have the same footage in both files."
+      :model-value="settings.burstWindowSec ?? 90"
+      :options="WINDOWS"
+      @update:model-value="saveSettings({ burstWindowSec: Number($event) })"
     />
   </section>
 </template>

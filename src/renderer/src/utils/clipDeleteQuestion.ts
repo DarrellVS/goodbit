@@ -70,6 +70,67 @@ export function clipDeleteQuestion(facts: ClipDeleteFacts): string {
 }
 
 /**
+ * The same question about a pile of clips.
+ *
+ * A batch cannot name what each one carries, so it counts instead: how many
+ * clips, how much space, and how many of them hold something that only exists
+ * in GoodBit. The counting matters for the same reason the single version
+ * names things conditionally. "This will delete 47 clips" is a number nobody
+ * checks; "12 of them have tags, notes or names you wrote" is the sentence
+ * that makes somebody look again, and it is only shown when it is true.
+ *
+ * The space is said out loud because on this screen it is the reason somebody
+ * is here. It is also the one number that argues *for* pressing the button,
+ * which is why it is stated plainly rather than buried.
+ */
+export interface BatchDeleteFacts {
+  clipCount: number;
+  /** Reclaimed from disk, formatted by the caller, which owns `useFormat`. */
+  freedLabel?: string;
+  /** How many of them carry a name, tags, notes or marks. */
+  withMetadataCount?: number;
+  /** How many are behind a public link, which deleting takes down. */
+  publishedCount?: number;
+}
+
+export function batchDeleteQuestion(facts: BatchDeleteFacts): string {
+  const { clipCount } = facts;
+  const clips = `${clipCount} ${pluralize(clipCount, 'clip')}`;
+
+  const parts: string[] = [
+    facts.freedLabel
+      ? `${clips}, freeing ${facts.freedLabel}.`
+      : `${clips}.`,
+    RECOVERABLE,
+  ];
+
+  const carrying = facts.withMetadataCount ?? 0;
+  if (carrying > 0) {
+    // Deliberately not "some of them". A number is checkable and a hedge is
+    // not, and the difference between 1 and 40 is the whole decision.
+    const them = carrying === 1 ? 'it' : 'them';
+    parts.push(
+      `${carrying} of ${clipCount === carrying ? 'them' : `the ${clips}`} ` +
+        `${carrying === 1 ? 'has' : 'have'} a name, tags, notes or marks that live only ` +
+        `in GoodBit, and putting the ${carrying === 1 ? 'file' : 'files'} back does not bring ` +
+        `${them} back.`,
+    );
+  }
+
+  const published = facts.publishedCount ?? 0;
+  if (published > 0) {
+    // The one consequence that reaches outside this machine. A link somebody
+    // has already shared stops working, and no Recycle Bin covers that.
+    parts.push(
+      `${published} of them ${published === 1 ? 'is' : 'are'} published, so ` +
+        `${published === 1 ? 'its link' : 'their links'} will stop working.`,
+    );
+  }
+
+  return parts.join(' ');
+}
+
+/**
  * What to call this clip in a sentence.
  *
  * The name somebody gave it, because that is what they will recognise, and the

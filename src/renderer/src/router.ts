@@ -4,6 +4,7 @@ import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { useCollectionDetail } from '@renderer/composables/library/useCollectionDetail';
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
+import StorageSaverPage from './views/StorageSaverPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';
 import SettingsPage from './views/SettingsPage.vue';
 import EditorPage from './views/EditorPage.vue';
@@ -63,6 +64,19 @@ export const router = createRouter({
             // in the tag popover, and only for words you have written.
             subtitle: 'Words that offer a tag when you open the tag box on a clip'
           }
+        },
+        {
+          path: 'storage',
+          name: 'storage',
+          component: StorageSaverPage,
+          meta: {
+            title: 'Storage Saver',
+            // Says what it finds rather than what it does. "Free up space" is
+            // a promise about the disk; these two sentences are what it will
+            // actually offer to delete, which is the thing worth reading
+            // before opening a screen whose verb is destructive.
+            subtitle: 'Clips you never opened, and the ones you saved twice',
+          },
         },
         {
           path: 'stats',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   andList,
+  batchDeleteQuestion,
   clipDeleteQuestion,
   clipTitle,
 } from '../../../src/renderer/src/utils/clipDeleteQuestion';
@@ -94,5 +95,60 @@ describe('clipTitle', () => {
 
   it('has something to say about a clip that has not loaded yet', () => {
     expect(clipTitle(null)).toBe('this clip');
+  });
+});
+
+describe('batchDeleteQuestion', () => {
+  it('leads with the number and the space, which is why somebody is here', () => {
+    const question = batchDeleteQuestion({ clipCount: 47, freedLabel: '48.2 GB' });
+
+    expect(question).toContain('47 clips');
+    expect(question).toContain('48.2 GB');
+    expect(question).toContain('Recycle Bin');
+  });
+
+  it('counts what is about to be lost rather than hedging about it', () => {
+    // "Some of them have tags" is not checkable and 1 against 40 is the whole
+    // decision, so the number is stated.
+    const question = batchDeleteQuestion({
+      clipCount: 47,
+      freedLabel: '48.2 GB',
+      withMetadataCount: 12,
+    });
+
+    expect(question).toContain('12 of the 47 clips');
+    expect(question).toContain('have a name, tags, notes or marks');
+  });
+
+  it('says nothing about metadata when none of them carries any', () => {
+    // The same rule as the single-clip question: a warning that does not apply
+    // is what teaches somebody to press Confirm without reading.
+    const question = batchDeleteQuestion({ clipCount: 9, freedLabel: '2 GB' });
+
+    expect(question).not.toContain('tags');
+    expect(question).not.toContain('notes');
+  });
+
+  it('names the one consequence no Recycle Bin covers', () => {
+    // A published clip has a link somebody may already have shared, and
+    // deleting it locally takes that link down for everybody.
+    const question = batchDeleteQuestion({ clipCount: 4, publishedCount: 2 });
+
+    expect(question).toContain('2 of them are published');
+    expect(question).toContain('their links will stop working');
+  });
+
+  it('reads correctly for one of everything', () => {
+    const question = batchDeleteQuestion({
+      clipCount: 1,
+      freedLabel: '900 MB',
+      withMetadataCount: 1,
+      publishedCount: 1,
+    });
+
+    expect(question).toContain('1 clip,');
+    expect(question).toContain('1 of them has a name');
+    expect(question).toContain('putting the file back');
+    expect(question).toContain('its link will stop working');
   });
 });
