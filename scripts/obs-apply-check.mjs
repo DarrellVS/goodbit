@@ -44,6 +44,29 @@ await page.evaluate((root) => window.goodbit.saveSettings({ videosRoot: root }),
 await page.waitForTimeout(400);
 
 /*
+ * Nothing here works while OBS is open, and it used to pretend otherwise.
+ *
+ * `ApplyObsSetupAction` refuses outright when OBS is running, which is right:
+ * OBS rewrites its settings file from memory when it closes, so anything
+ * written underneath it is thrown away. But this bench went on to print
+ * `MISSING` for every file and a list of failures, which reads like the setup
+ * is broken rather than like the bench was never allowed to run. On a machine
+ * where GoodBit starts OBS at login, which is the setup this app writes, that
+ * is the normal state.
+ *
+ * The redirect does not help: `GOODBIT_OBS_DIR` moves the files, and the
+ * running check looks at the real process, which is the one that would
+ * overwrite them.
+ */
+if ((await call('GET', '/obs/status')).body?.running) {
+  console.error('OBS is running. Close it and run this again.');
+  console.error('Nothing can be written to an OBS profile while OBS is open, so every');
+  console.error('check below would read back a file that was never written.');
+  await app.close();
+  process.exit(2);
+}
+
+/*
  * Several devices, because one is the case that changes nothing.
  *
  * The routing is only interesting with something to separate: one device is
@@ -114,4 +137,55 @@ console.log(
   ),
 );
 
+/*
+ * The recording quality, both values, read back out of the profile.
+ *
+ * `[SimpleOutput] RecQuality` is the one key here whose effect cannot be
+ * undone after the fact: it decides what lands in the file, so a mapping that
+ * writes the wrong token degrades every recording made afterwards and no
+ * amount of re-encoding brings the picture back. It is also the key where the
+ * two values GoodBit deliberately does not offer would be actively harmful,
+ * `Lossless` turning the replay buffer off being the one that would stop the
+ * app working at all, so this checks what was not written as well as what was.
+ */
+console.log('\n--- recording quality ---');
+const recQuality = () => {
+  const text = existsSync(profile) ? readFileSync(profile, 'utf-8') : '';
+  return text.match(/^RecQuality=(.*)$/m)?.[1]?.trim() ?? null;
+};
+
+let qualityFailures = 0;
+for (const [choice, expected] of [
+  ['balanced', 'Small'],
+  ['indistinguishable', 'HQ'],
+  // Sent as nothing, which is what every caller that is not asking the
+  // question sends. It must leave the setting alone rather than reset it.
+  [undefined, 'HQ'],
+]) {
+  await call('POST', '/obs/apply', {
+    audioDeviceIds: chosen,
+    ...(choice === undefined ? {} : { recordingQuality: choice }),
+  });
+  const landed = recQuality();
+  const after = (await call('GET', '/obs/status')).body.recordingQuality;
+  const good = landed === expected && after === expected;
+  if (!good) qualityFailures++;
+  console.log(
+    `${good ? 'ok  ' : 'FAIL'}  ${String(choice ?? '(not asked)').padEnd(18)} wrote ${landed}, status says ${after}, wanted ${expected}`,
+  );
+}
+
+const neverWritten = ['Lossless', 'Stream'];
+const wrote = recQuality();
+const safe = !neverWritten.includes(wrote);
+if (!safe) qualityFailures++;
+console.log(
+  `${safe ? 'ok  ' : 'FAIL'}  never writes ${neverWritten.join(' or ')}, which would turn the replay buffer off or record at a streaming bitrate`,
+);
+
 await app.close();
+
+if (qualityFailures) {
+  console.error(`\n${qualityFailures} recording quality check(s) failed`);
+  process.exit(1);
+}

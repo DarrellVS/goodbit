@@ -5,6 +5,11 @@ import ObsSetupStepToggle from './ObsSetupStepToggle.vue';
 import type { ComboBoxOption } from '@renderer/components/Base/types';
 import type { SetupStep } from '@renderer/composables/obs/useObsSetup';
 import { OBS_HOTKEYS, readableHotkey } from '@renderer/utils/obsSetupWizard';
+import {
+  RECORDING_QUALITY_DESCRIPTIONS,
+  RECORDING_QUALITY_LABELS,
+  type RecordingQuality,
+} from '@shared/index';
 
 /**
  * How much to keep, and which key writes it out.
@@ -25,11 +30,13 @@ interface Props {
   currentHotkey: string | null;
   bufferStep: SetupStep | null;
   hotkeyStep: SetupStep | null;
+  quality: RecordingQuality;
 }
 
 interface Emits {
   (e: 'update:bufferSeconds', value: number): void;
   (e: 'update:hotkey', value: string): void;
+  (e: 'update:quality', value: RecordingQuality): void;
   (e: 'toggle-step', key: SetupStep['key'], enabled: boolean): void;
 }
 
@@ -59,6 +66,30 @@ const key = computed<string>({
 });
 
 const readableKey = computed(() => readableHotkey(props.hotkey));
+
+/**
+ * How hard OBS compresses the recording.
+ *
+ * Asked here rather than left to Settings because it is the one answer on this
+ * page that cannot be given retroactively: everything else on this screen can
+ * be changed tonight and every clip already recorded is fine, and this one is
+ * baked into the file. Two of OBS's four values; `Stream` is a bitrate for an
+ * uplink that does not exist here and `Lossless` turns the replay buffer off,
+ * which is the only way clips are made. See
+ * `shared/constants/obsRecordingQuality.ts`.
+ */
+const qualityOptions: ComboBoxOption[] = (
+  ['balanced', 'indistinguishable'] as RecordingQuality[]
+).map((value) => ({
+  value,
+  label: RECORDING_QUALITY_LABELS[value],
+  description: RECORDING_QUALITY_DESCRIPTIONS[value],
+}));
+
+const recordingQuality = computed<RecordingQuality>({
+  get: () => props.quality,
+  set: (value) => emit('update:quality', value),
+});
 </script>
 
 <template>
@@ -87,6 +118,19 @@ const readableKey = computed(() => readableHotkey(props.hotkey));
       <BaseComboBox v-model="key" label="Save with" class="w-full" :options="hotkeyOptions" />
     </label>
   </div>
+
+  <label class="p-4 rounded-md border border-border block">
+    <span class="block text-xs text-muted-500 mb-1.5">Recording quality</span>
+    <BaseComboBox
+      v-model="recordingQuality"
+      label="Recording quality"
+      class="w-full"
+      :options="qualityOptions"
+    />
+    <span class="block text-xs text-muted-500 mt-2">
+      Baked into the file. Unlike everything else here, it cannot be put right later.
+    </span>
+  </label>
 
   <ObsSetupStepToggle
     v-if="bufferStep"

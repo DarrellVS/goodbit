@@ -38,6 +38,14 @@ export interface ObsProfile {
    * catching, and nothing else would notice.
    */
   recTracks: number | null;
+  /**
+   * `[SimpleOutput] RecQuality`, raw.
+   *
+   * Raw rather than mapped because a person can set this in OBS itself, to a
+   * value GoodBit deliberately does not offer, and the status has to be able
+   * to say so. Null when the key is absent, which OBS treats as `Stream`.
+   */
+  recQuality: string | null;
 }
 
 export interface ObsScriptEntry {
@@ -174,6 +182,7 @@ export function readProfile(folder: string): ObsProfile | null {
     colorSpace: iniValue(ini, 'Video', 'ColorSpace'),
     colorFormat: iniValue(ini, 'Video', 'ColorFormat'),
     recTracks: numberOrNull(iniValue(ini, section, 'RecTracks')),
+    recQuality: iniValue(ini, 'SimpleOutput', 'RecQuality'),
   };
 }
 

@@ -245,6 +245,7 @@ export class CheckObsSetupAction extends BaseAction<void, ObsStatus> {
       videosRoot,
       recordingPath: profile?.recordingPath ?? null,
       replayBufferSeconds: profile?.replayBufferSeconds ?? null,
+      recordingQuality: profile?.recQuality ?? null,
       hotkey: profile?.saveReplayKey ?? null,
       audioDeviceIds: capturedDevices,
       multiTrackAudio,

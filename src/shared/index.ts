@@ -60,3 +60,7 @@ export * from './dtos/obs/ObsDTO.js';
 // Which sound lands on which OBS track, agreed once so the preview in the
 // window and the bitmask written into the scene collection cannot disagree
 export * from './constants/obsAudioTracks.js';
+
+// How hard OBS compresses a recording, for the same reason: the wizard shows
+// the choice while somebody is making it and the setup writes it
+export * from './constants/obsRecordingQuality.js';

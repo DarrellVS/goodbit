@@ -189,11 +189,35 @@ describe('each page puts its cards where the dialog can space them', () => {
       currentHotkey: null,
       bufferStep: step({ key: 'enableReplayBuffer', label: 'Turn the replay buffer on' }),
       hotkeyStep: step({ key: 'bindHotkey', label: 'Bind a key to Save Replay' }),
+      quality: 'indistinguishable',
     });
 
-    expect(cards(body)).toHaveLength(4);
+    // Five: the seconds, the key, the quality, and one per switch.
+    expect(cards(body)).toHaveLength(5);
     expect(body.textContent).toContain('F8 will save a replay.');
     expect(body.textContent).toContain('OBS has nothing bound at the moment.');
+  });
+
+  it('asks for the recording quality, since it is the one answer that cannot be given later', () => {
+    // Everything else on this step can be changed tonight and every clip
+    // already recorded is fine. This one is baked into the file, which is why
+    // it is asked at setup rather than left to be found in Settings.
+    const body = mount(ObsSetupRecordingStep, {
+      bufferSeconds: 30,
+      hotkey: 'OBS_KEY_F8',
+      currentHotkey: null,
+      bufferStep: null,
+      hotkeyStep: null,
+      quality: 'balanced',
+    });
+
+    expect(body.textContent).toContain('Recording quality');
+    expect(body.textContent).toContain('High quality, medium file size');
+    // The two of OBS's four that are not offered, and the reason: `Stream` is
+    // a bitrate for an uplink that does not exist here, and lossless turns the
+    // replay buffer off, which is the only way a clip is ever made.
+    expect(body.textContent).not.toContain('Lossless');
+    expect(body.textContent).not.toContain('Same as stream');
   });
 
   it('keeps the microphones apart from what is playing', () => {

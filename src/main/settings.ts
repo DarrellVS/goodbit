@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { DEFAULT_RECORDING_QUALITY, type RecordingQuality } from '@shared/index.js';
 
 /**
  * The handful of things the app needs to know before it can do anything.
@@ -154,6 +155,17 @@ export interface Settings {
    * whoever opens the link most of the download.
    */
   compressPublished?: boolean;
+  /**
+   * How hard OBS compresses what it records.
+   *
+   * Not one of the three things in this app that sound like it. `compressTrims`
+   * and `compressPublished` are GoodBit re-encoding a clip it already has; this
+   * is what OBS writes in the first place, and it cannot change a file already
+   * on disk. It also does not take effect when it is changed: the OBS profile
+   * is rewritten by `ApplyObsSetupAction`, which refuses to run while OBS is
+   * open.
+   */
+  recordingQuality?: RecordingQuality;
   /** Where the window was last, so it opens where you left it. */
   window?: WindowBounds;
 }
@@ -181,6 +193,7 @@ const DEFAULTS: Settings = {
   analyzeOnGameCloseToast: true,
   analyzeOnGameCloseSound: true,
   migratedFromWebApp: false,
+  recordingQuality: DEFAULT_RECORDING_QUALITY,
 };
 
 let cached: Settings | null = null;
@@ -268,6 +281,18 @@ export function saveSettings(patch: Partial<Settings>): Settings {
 }
 
 /** Whether a trim is re-encoded to share size. Unset means no. */
+/**
+ * What OBS should be told to record at.
+ *
+ * Falls back to the default rather than to whatever is in the file, because a
+ * settings.json written by hand could carry anything and the value goes
+ * straight into another program's configuration.
+ */
+export function recordingQuality(): RecordingQuality {
+  const stored = loadSettings().recordingQuality;
+  return stored === 'balanced' || stored === 'indistinguishable' ? stored : DEFAULT_RECORDING_QUALITY;
+}
+
 export function compressTrims(): boolean {
   return loadSettings().compressTrims === true;
 }

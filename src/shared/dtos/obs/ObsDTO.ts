@@ -25,6 +25,8 @@
  * re-exported out of it.
  */
 
+import type { RecordingQuality } from '../../constants/obsRecordingQuality.js';
+
 /* ── Reading an existing OBS ─────────────────────────────────────────────── */
 
 export type FindingLevel = 'ok' | 'warning' | 'blocker';
@@ -107,6 +109,15 @@ export interface ObsStatus {
    */
   audioTracks: ObsAudioTrack[];
   setupWrittenAt: string | null;
+  /**
+   * What the profile records at, in OBS's own vocabulary.
+   *
+   * `Small`, `HQ`, `Lossless`, `Stream`, or null when the key is absent. Raw
+   * rather than mapped: the setting offers two of those four, and somebody who
+   * set one of the other two by hand should be told that rather than shown a
+   * dropdown quietly disagreeing with their own OBS.
+   */
+  recordingQuality: string | null;
 }
 
 /* ── Planning, and what a plan is allowed to say ─────────────────────────── */
@@ -168,6 +179,14 @@ export interface ObsSetupRequest {
   bindHotkey?: boolean;
   hotkey?: string;
   createScene?: boolean;
+  /**
+   * How hard OBS compresses the recording.
+   *
+   * Absent means "whatever Settings says", which is what the wizard sends on
+   * every step but its own: the setup is re-applied from several places and
+   * only one of them is asking the question.
+   */
+  recordingQuality?: RecordingQuality;
 }
 
 export interface ObsSetupResult {
