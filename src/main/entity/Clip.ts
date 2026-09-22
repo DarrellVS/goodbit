@@ -119,6 +119,25 @@ export class Clip {
   @Column({ type: 'integer', nullable: true })
   suggestedCount?: number | null;
 
+  /**
+   * Rendered by the editor rather than recorded by OBS.
+   *
+   * An export lands in its own game's folder now, so it appears in the library
+   * beside the recordings it was cut from, which is where somebody looking for
+   * it would look. In every other respect it is a clip: it scans, it has a
+   * thumbnail, it can be trimmed, tagged and published. This is the one thing
+   * left to say about it, and the card says it.
+   *
+   * Set by `ExportTimelineAction` when it writes the row, and inferred from
+   * the path by the scan, so an export that arrived before its row, or after a
+   * restore, is still labelled. `RenderGoodBitAction` does not set it: a
+   * rendered GoodBit lands in the source clip's own folder and is deliberately
+   * indistinguishable from a recording, because it is a moment from that
+   * session rather than an edit of several.
+   */
+  @Column({ type: 'boolean', default: false })
+  isExport!: boolean;
+
   @ManyToMany(() => Tag, { cascade: ['insert'] })
   @JoinTable()
   tags!: Tag[];

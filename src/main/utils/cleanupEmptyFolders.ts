@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { EXPORTS_FOLDER } from '@shared/constants/videoFiles.js';
 
 /**
  * Recursively removes empty directories
@@ -25,6 +26,11 @@ async function removeEmptyDirectory(dirPath: string): Promise<boolean> {
         // `.goodbit-incoming` is where OBS writes a replay before GoodBit
         // files it, and deleting it left OBS pointed at nothing.
         if (entry.name.startsWith('.')) continue;
+        // A game's exports folder, for the same reason with a shorter fuse:
+        // the export creates it, renders into a temp directory, and only then
+        // renames the finished file in. A sweep in that window removes the
+        // folder the rename is about to land in.
+        if (entry.name.toLowerCase() === EXPORTS_FOLDER.toLowerCase()) continue;
         const subDirPath = path.join(dirPath, entry.name);
         const wasRemoved = await removeEmptyDirectory(subDirPath);
         if (wasRemoved) {

@@ -38,6 +38,13 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
    * looked. Written by the sweep when a game closes; see the entity.
    */
   suggestedCount?: number | null;
+  /**
+   * Rendered by the editor rather than recorded by OBS.
+   *
+   * An export sits in its own game's folder and is a clip in every other
+   * respect, so this is the one thing the card has to say about it.
+   */
+  isExport!: boolean;
   tags?: string[]; // Tag names array
 
   /**
@@ -89,6 +96,7 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
       : (entity.lastOpenedAt ?? null);
     dto.openCount = entity.openCount ?? 0;
     dto.suggestedCount = entity.suggestedCount ?? null;
+    dto.isExport = entity.isExport ?? false;
     
     // Extract tag names if tags relation is loaded
     if (entity.tags && Array.isArray(entity.tags)) {

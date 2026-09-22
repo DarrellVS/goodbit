@@ -39,16 +39,74 @@ export function isVideoFile(filePath: string): boolean {
 }
 
 /**
+ * The folder a timeline export lands in, inside its game's own folder.
+ *
+ * Here rather than in the export action because it is the one name that nests:
+ * the glob below has to allow it and the export has to write it, and two
+ * spellings of it is a file that is written and never indexed.
+ */
+export const EXPORTS_FOLDER = 'Exports';
+
+/**
+ * Where a clip is allowed to sit, relative to the videos root.
+ *
+ * A top level folder name *is* a game name in this app, so the library is one
+ * level deep by definition: `<Game>/clip.mp4`. Exactly one thing nests, and it
+ * is allow-listed rather than allowed by depth: `<Game>/Exports/clip.mp4`.
+ *
+ * **Not a general depth of 2.** That would index every folder anybody has ever
+ * made inside a game folder, and the first ones it would find are somebody's
+ * own `Renders` or `Old` directory, whose contents would be adopted as clips
+ * of that game and then be swept, thumbnailed and shown. An allow list is the
+ * narrow version of the same change.
+ */
+const CLIP_DIRECTORIES = ['*', `*/${EXPORTS_FOLDER}`] as const;
+
+/**
  * Glob patterns for a library laid out as a game folder per game.
  *
  * Built from the list rather than written out, so the scan cannot fall behind
  * the watcher again. fast-glob matches case sensitively on Windows unless told
  * otherwise, and `caseSensitiveMatch: false` covers the casing instead of the
  * four hand-written variants it replaces.
+ *
+ * `depth` overrides the layout entirely and exists for a caller that wants a
+ * flat answer at one level; the default is the layout above.
  */
-export function videoGlobPatterns(depth = 1): string[] {
-  const prefix = '*/'.repeat(depth);
-  return VIDEO_EXTENSIONS.map((extension) => `${prefix}*${extension}`);
+export function videoGlobPatterns(depth?: number): string[] {
+  const directories =
+    depth === undefined ? [...CLIP_DIRECTORIES] : ['*/'.repeat(depth).slice(0, -1) || '.'];
+
+  return directories.flatMap((directory) =>
+    VIDEO_EXTENSIONS.map((extension) => `${directory}/*${extension}`),
+  );
+}
+
+/**
+ * Whether the scan would index a path, asked of the layout rather than of a
+ * separator count.
+ *
+ * The watcher and the scan disagreed about this and nothing held them
+ * together: chokidar runs one level deeper than the scan globs, so it
+ * announced files the scan would never create a row for. Both read this now.
+ *
+ * `rel` is relative to the videos root, in either separator.
+ */
+export function isClipLayout(rel: string): boolean {
+  const parts = rel.split(/[\\/]/).filter(Boolean);
+  if (parts.length < 2 || !isVideoFile(parts[parts.length - 1])) return false;
+  // A dot folder is the staging area or a cache, and is never a clip's home.
+  if (parts.some((part) => part.startsWith('.'))) return false;
+
+  if (parts.length === 2) return true;
+  if (parts.length === 3) return parts[1].toLowerCase() === EXPORTS_FOLDER.toLowerCase();
+  return false;
+}
+
+/** Whether a path sits in a game's own exports folder. */
+export function isExportPath(rel: string): boolean {
+  const parts = rel.split(/[\\/]/).filter(Boolean);
+  return parts.length === 3 && parts[1].toLowerCase() === EXPORTS_FOLDER.toLowerCase();
 }
 
 /** Extensions without the dot, for an Electron file dialog filter. */

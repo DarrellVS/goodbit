@@ -18,6 +18,10 @@ import { Icon } from '@iconify/vue';
  * Top left, because the published badge owns the top right and a clip can be
  * both. Over the picture, so it reads on any frame: `on-video` and `scrim` are
  * the two tokens fixed in both palettes for exactly this.
+ *
+ * The corner itself belongs to the card, which stacks this under the export
+ * badge: two things can be true of one clip, and each positioning itself
+ * absolutely in the same corner is how they end up on top of each other.
  */
 interface Props {
   count?: number | null;
@@ -27,17 +31,14 @@ defineProps<Props>();
 </script>
 
 <template>
-  <div v-if="count && count > 0" class="absolute top-2 left-2 z-10">
-    <span
-      class="inline-flex items-center gap-1 rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video"
-      :title="
-        count === 1
-          ? '1 GoodBit found in this clip'
-          : `${count} GoodBits found in this clip`
-      "
-    >
-      <Icon icon="material-symbols:auto-awesome-rounded" class="size-3 shrink-0 block" />
-      <span class="tabular-nums">{{ count }}</span>
-    </span>
-  </div>
+  <span
+    v-if="count && count > 0"
+    class="inline-flex items-center gap-1 rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video"
+    :title="
+      count === 1 ? '1 GoodBit found in this clip' : `${count} GoodBits found in this clip`
+    "
+  >
+    <Icon icon="material-symbols:auto-awesome-rounded" class="size-3 shrink-0 block" />
+    <span class="tabular-nums">{{ count }}</span>
+  </span>
 </template>

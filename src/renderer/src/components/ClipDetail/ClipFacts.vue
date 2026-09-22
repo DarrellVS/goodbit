@@ -88,6 +88,17 @@ const picture = computed(() => {
       <span class="text-xs text-muted-600 text-right">{{ picture }}</span>
     </div>
 
+    <!--
+      Said here as a fact rather than shown as a badge, because by the time
+      somebody has a clip open they are deciding what to do with it, and what
+      this changes is exactly that: a recording is the only copy of a moment,
+      and an export can be rendered again from the timeline it came from.
+    -->
+    <div v-if="clip.isExport" class="flex items-baseline justify-between gap-3">
+      <span class="text-xs text-muted-500 shrink-0">Made</span>
+      <span class="text-xs text-muted-600 text-right">In the editor</span>
+    </div>
+
     <div class="flex items-baseline justify-between gap-3">
       <span class="text-xs text-muted-500 shrink-0">Size</span>
       <span class="text-xs text-muted-600">{{ formatBytes(clip.sizeBytes) }}</span>

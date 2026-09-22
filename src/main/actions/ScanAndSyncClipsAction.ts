@@ -6,7 +6,7 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { Game } from '../entity/Game.js';
 import { probeDurationSec } from '../services/encoders.js';
-import { videoGlobPatterns } from '@shared/constants/videoFiles.js';
+import { isExportPath, videoGlobPatterns } from '@shared/constants/videoFiles.js';
 
 export type ScanResult = {
   added: number;
@@ -112,6 +112,10 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       gamesFound.add(game);
       const filename = path.basename(absPath);
       const extension = path.extname(filename).slice(1);
+      // Read off the path rather than trusted to the row that wrote it, so an
+      // export that arrived before its row, or came back with a restore, or
+      // was copied in by hand, is still labelled as one.
+      const isExport = isExportPath(rel);
       const stat = await fs.stat(absPath);
 
       const existing =
@@ -138,6 +142,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           // is to when the moment happened. Never written again after this.
           recordedAt: stat.mtime,
           displayName: null,
+          isExport,
         });
         await clipRepo.save(clip);
         added += 1;
@@ -148,7 +153,8 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           existing.relPath !== rel ||
           existing.filename !== filename ||
           existing.extension !== extension ||
-          existing.game !== game
+          existing.game !== game ||
+          existing.isExport !== isExport
         ) {
           existing.sizeBytes = stat.size;
           // The file moved or changed, so whatever length was recorded for it
@@ -159,6 +165,7 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
           existing.filename = filename;
           existing.extension = extension;
           existing.game = game;
+          existing.isExport = isExport;
           await clipRepo.save(existing);
           updated += 1;
         }

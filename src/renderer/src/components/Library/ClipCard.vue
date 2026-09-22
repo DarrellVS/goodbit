@@ -20,6 +20,7 @@ import ClipGoodBitPips from './ClipGoodBitPips.vue';
 import ClipActionsMenu from './ClipActionsMenu.vue';
 import ClipStarButton from './ClipStarButton.vue';
 import ClipPublishedBadge from './ClipPublishedBadge.vue';
+import ClipExportBadge from '@renderer/components/Library/ClipExportBadge.vue';
 import ClipSuggestedBadge from './ClipSuggestedBadge.vue';
 import ClipNameInput from './ClipNameInput.vue';
 import ClipMetadata from './ClipMetadata.vue';
@@ -357,7 +358,17 @@ function handleCardClick(event: MouseEvent) {
     </div>
 
     <ClipPublishedBadge :published="clip.published" />
-    <ClipSuggestedBadge :count="clip.suggestedCount" />
+
+    <!--
+      The top left corner, as one column rather than two badges each claiming
+      it. A clip can be an export that the sweep also found something in, and
+      two absolutely positioned chips in one corner is how they end up on top
+      of each other.
+    -->
+    <div class="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
+      <ClipExportBadge :is-export="clip.isExport" />
+      <ClipSuggestedBadge :count="clip.suggestedCount" />
+    </div>
 
     <div
       ref="previewEl"
