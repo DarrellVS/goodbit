@@ -7,12 +7,11 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 
 import { Clip } from '../entity/Clip.js';
 import { BaseAction } from './BaseAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
 import { GetClipAudioTracksAction } from './GetClipAudioTracksAction.js';
 import type { ClipAudioSelection, ClipAudioTrack } from '@shared/index.js';
 import { setJobProgress } from '../services/jobs.js';
-import { runFfmpeg } from '../services/ffmpegRun.js';
+import { ffmpegCommand, ffprobeJson, runFfmpeg, type FfmpegCommand } from '../services/ffmpegProcess.js';
 import { detectEncoders, decodeArgs, probeVideo } from '../services/encoders.js';
 import {
   buildCutCommand,
@@ -28,7 +27,6 @@ import {
   type SourceContext,
 } from '../services/exportPlan.js';
 import type { ExportFormat, ProjectTimelineTransition } from '@shared/index.js';
-import type { FfmpegCommand } from 'fluent-ffmpeg';
 
 /**
  * Where renders land, one level under the videos root.
@@ -392,7 +390,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     outputPath: string,
     opts: { signal?: AbortSignal; durationSec: number; onProgress?: (fraction: number) => void },
   ): Promise<void> {
-    let built: FfmpegCommand = ffmpegConfigured();
+    let built: FfmpegCommand = ffmpegCommand();
     for (const input of command.inputs) {
       built = built.input(input.path).inputOptions(input.options);
     }
@@ -413,7 +411,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     signal?: AbortSignal,
   ): Promise<void> {
     return runFfmpeg(
-      ffmpegConfigured()
+      ffmpegCommand()
         .input(concatListPath)
         .inputOptions(['-f concat', '-safe 0'])
         .outputOptions(['-c copy', '-movflags +faststart', '-y'])
@@ -423,12 +421,9 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
   }
 
   private hasAudioStream(filePath: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      ffmpegConfigured.ffprobe(filePath, (err, data) => {
-        if (err) return resolve(false);
-        resolve((data?.streams ?? []).some((stream) => stream.codec_type === 'audio'));
-      });
-    });
+    return ffprobeJson(filePath)
+      .then((data) => (data.streams ?? []).some((stream) => stream.codec_type === 'audio'))
+      .catch(() => false);
   }
 
   /**
@@ -447,7 +442,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
   ): Promise<void> {
     const videoHasAudio = await this.hasAudioStream(videoPath);
 
-    let command: FfmpegCommand = ffmpegConfigured(videoPath);
+    let command: FfmpegCommand = ffmpegCommand(videoPath);
     const filters: string[] = [];
     const mixLabels: string[] = videoHasAudio ? ['[0:a]'] : [];
 
@@ -528,7 +523,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     }
 
     await runFfmpeg(
-      ffmpegConfigured(inputPath)
+      ffmpegCommand(inputPath)
         .outputOptions([
           '-map 0:v:0',
           '-map 0:a:0',

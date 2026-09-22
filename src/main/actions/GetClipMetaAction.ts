@@ -1,5 +1,5 @@
 import { BaseAction } from './BaseAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
+import { ffprobeJson } from '../services/ffmpegProcess.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 
@@ -15,12 +15,7 @@ export class GetClipMetaAction extends BaseAction<{ clipId: number }, ClipMeta> 
   async execute({ clipId }: { clipId: number }): Promise<ClipMeta> {
     const repo = AppDataSource.getRepository(Clip);
     const clip = await repo.findOneByOrFail({ id: clipId });
-    const meta = await new Promise<any>((resolve, reject) => {
-      ffmpegConfigured.ffprobe(clip.filePath, (err: any, data: any) => {
-        if (err) return reject(err);
-        resolve(data);
-      });
-    });
+    const meta = await ffprobeJson(clip.filePath);
     const format = meta.format || ({} as any);
     const streams = meta.streams || [];
     const v = streams.find((s: any) => s.codec_type === 'video') as any;

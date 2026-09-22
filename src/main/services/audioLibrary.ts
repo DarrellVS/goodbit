@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { AUDIO_ROOT } from '../data-source.js';
-import { ffmpegConfigured } from './ffmpeg.js';
+import { ffprobeJson } from './ffmpegProcess.js';
 
 /**
  * Music the editor can lay under a timeline lives in one flat folder. There is
@@ -78,12 +78,9 @@ export async function probeDurationSec(filePath: string, cacheKey: string): Prom
   const cached = durationCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
-  const duration = await new Promise<number>((resolve) => {
-    ffmpegConfigured.ffprobe(filePath, (err, data) => {
-      if (err) return resolve(0);
-      resolve(Number(data?.format?.duration) || 0);
-    });
-  });
+  const duration = await ffprobeJson(filePath)
+    .then((data) => Number(data.format?.duration) || 0)
+    .catch(() => 0);
 
   durationCache.set(cacheKey, duration);
   return duration;

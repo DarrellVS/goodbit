@@ -1,5 +1,5 @@
 import { BaseAction } from './BaseAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
+import { CancelledError, ffmpegCommand, runFfmpeg } from '../services/ffmpegProcess.js';
 import { withTimeout } from '../utils/withTimeout.js';
 import { Cancelled } from '../services/mediaQueue.js';
 import { detectEncoders, decodeArgs, probeVideo, TONEMAP_FILTER } from '../services/encoders.js';
@@ -103,29 +103,22 @@ export class GenerateThumbnailAction extends BaseAction<GenerateThumbnailInput, 
     for (const plan of plans) {
       try {
         await withTimeout(
-          new Promise<void>((resolve, reject) => {
-            const command = ffmpegConfigured(inputPath)
+          runFfmpeg(
+            ffmpegCommand(inputPath)
               .inputOptions(plan.input)
               .frames(1)
               .seekInput(seekSec)
               .outputOptions([`-q:v ${quality}`, '-vf', plan.filters.join(',')])
-              .output(outputPath)
-              .on('end', () => resolve())
-              .on('error', (e: unknown) => reject(e));
-
+              .output(outputPath),
             // A thumbnail of a clip that is about to be rewritten is worth
             // less than the rename it is blocking.
-            signal?.addEventListener('abort', () => {
-              command.kill('SIGKILL');
-              reject(new Cancelled());
-            });
-
-            command.run();
-          }),
+            { signal },
+          ),
         );
         return;
       } catch (error) {
         if (error instanceof Cancelled) throw error;
+        if (error instanceof CancelledError) throw new Cancelled();
         lastError = error;
       }
     }

@@ -12,6 +12,6 @@ import { promisify } from 'node:util';
  * Note this is for reading a program's output, ffprobe and ffmpeg's own
  * `-list` style queries. Long ffmpeg work does not come through here: it goes
  * through `services/mediaQueue.ts`, which caps how many run at once, and
- * `services/ffmpegRun.ts`.
+ * `services/ffmpegProcess.ts`.
  */
 export const execFileAsync = promisify(execFile);

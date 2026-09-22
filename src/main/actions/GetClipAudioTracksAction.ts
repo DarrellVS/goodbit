@@ -1,5 +1,5 @@
 import { BaseAction } from './BaseAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
+import { ffprobeJson } from '../services/ffmpegProcess.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { readManifest } from '../services/obs/setup.js';
@@ -26,12 +26,7 @@ export class GetClipAudioTracksAction extends BaseAction<{ clipId: number }, Cli
   async execute({ clipId }: { clipId: number }): Promise<ClipAudioTrack[]> {
     const clip = await AppDataSource.getRepository(Clip).findOneByOrFail({ id: clipId });
 
-    const probed = await new Promise<{ streams?: unknown[] }>((resolve, reject) => {
-      ffmpegConfigured.ffprobe(clip.filePath, (error: unknown, data: { streams?: unknown[] }) => {
-        if (error) return reject(error);
-        resolve(data);
-      });
-    });
+    const probed = await ffprobeJson(clip.filePath);
 
     const streams = ((probed.streams ?? []) as Array<ProbedAudioStream & { codec_type?: string }>)
       .filter((stream) => stream.codec_type === 'audio');

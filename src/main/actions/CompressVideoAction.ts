@@ -1,7 +1,6 @@
 import fsPromises from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
-import { runFfmpeg } from '../services/ffmpegRun.js';
+import { ffmpegCommand, runFfmpeg } from '../services/ffmpegProcess.js';
 import {
   decodeArgs,
   detectEncoders,
@@ -54,7 +53,7 @@ export class CompressVideoAction extends BaseAction<CompressVideoInput, Compress
     const endSec = input.endSec ?? info.durationSec;
     const duration = Math.max(0.05, endSec - startSec);
 
-    let command = ffmpegConfigured(inputPath).inputOptions([...(await decodeArgs(encoders, inputPath))]);
+    let command = ffmpegCommand(inputPath).inputOptions([...(await decodeArgs(encoders, inputPath))]);
     // Only seek when asked: `-ss 0 -t <whole file>` on a stream whose duration
     // is rounded can drop the last frame.
     if (input.startSec !== undefined || input.endSec !== undefined) {
@@ -72,13 +71,10 @@ export class CompressVideoAction extends BaseAction<CompressVideoInput, Compress
      */
     let videoMap = '-map 0:v:0';
     if (audioPlan.filterComplex && info.isHdr) {
-      command = command.outputOptions([
-        '-filter_complex',
-        `[0:v:0]${TONEMAP_FILTER}[v];${audioPlan.filterComplex}`,
-      ]);
+      command = command.complexFilter([`[0:v:0]${TONEMAP_FILTER}[v]`, audioPlan.filterComplex]);
       videoMap = '-map [v]';
     } else if (audioPlan.filterComplex) {
-      command = command.outputOptions(['-filter_complex', audioPlan.filterComplex]);
+      command = command.complexFilter([audioPlan.filterComplex]);
     } else if (info.isHdr) {
       // An HDR source read as if it were sRGB is what made exports look grey.
       command = command.outputOptions([`-vf ${TONEMAP_FILTER}`]);

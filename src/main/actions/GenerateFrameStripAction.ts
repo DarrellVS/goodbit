@@ -1,5 +1,5 @@
 import { BaseAction } from './BaseAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
+import { CancelledError, ffmpegCommand, runFfmpeg } from '../services/ffmpegProcess.js';
 import { withTimeout } from '../utils/withTimeout.js';
 import { Cancelled } from '../services/mediaQueue.js';
 import { detectEncoders, decodeArgs, probeVideo, TONEMAP_FILTER } from '../services/encoders.js';
@@ -115,14 +115,11 @@ export class GenerateFrameStripAction extends BaseAction<GenerateFrameStripInput
     for (const plan of plans) {
       try {
         await withTimeout(
-          new Promise<void>((resolve, reject) => {
-            const command = ffmpegConfigured(inputPath)
+          runFfmpeg(
+            ffmpegCommand(inputPath)
               .inputOptions(plan.input)
               .outputOptions(['-frames:v', '1', '-vf', plan.filters.join(','), '-y'])
-              .output(outputPath)
-              .on('end', () => resolve())
-              .on('error', (e: unknown) => reject(e));
-
+              .output(outputPath),
             /*
              * Killed, not awaited, when the clip is about to be replaced.
              *
@@ -130,18 +127,14 @@ export class GenerateFrameStripAction extends BaseAction<GenerateFrameStripInput
              * stops the trim renaming the file. Waiting for a strip of a clip
              * that is about to stop existing is the worst of both.
              */
-            signal?.addEventListener('abort', () => {
-              command.kill('SIGKILL');
-              reject(new Cancelled());
-            });
-
-            command.run();
-          }),
+            { signal },
+          ),
           5 * 60_000,
         );
         return;
       } catch (error) {
         if (error instanceof Cancelled) throw error;
+        if (error instanceof CancelledError) throw new Cancelled();
         lastError = error;
       }
     }

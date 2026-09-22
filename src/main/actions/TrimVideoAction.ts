@@ -3,8 +3,7 @@ import fsPromises from 'node:fs/promises';
 import { FFPROBE_PATH } from '../services/binaries.js';
 import { BaseAction } from './BaseAction.js';
 import { CompressVideoAction } from './CompressVideoAction.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
-import { runFfmpeg } from '../services/ffmpegRun.js';
+import { ffmpegCommand, runFfmpeg } from '../services/ffmpegProcess.js';
 import {
   detectEncoders,
   decodeArgs,
@@ -85,9 +84,7 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
      * made possible.
      */
     const audioPlan = planTrimAudio(input.audioTracks ?? [], input.audio ?? []);
-    const audioFilter = audioPlan.filterComplex
-      ? ['-filter_complex', audioPlan.filterComplex]
-      : [];
+    const audioFilterComplex = audioPlan.filterComplex ? [audioPlan.filterComplex] : [];
 
     if (mode === 'lossless') {
       const snapped = await this.nearestKeyframeAtOrBefore(inputPath, startSec);
@@ -112,7 +109,7 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
 
       try {
         await runFfmpeg(
-          ffmpegConfigured(inputPath)
+          ffmpegCommand(inputPath)
             .inputOptions([`-ss ${seek.toFixed(3)}`])
             .outputOptions([
               `-t ${(duration + lead).toFixed(3)}`,
@@ -120,13 +117,13 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
               // rebuilt here, and only when somebody asked for a track to go.
               '-map 0:v:0',
               '-c:v copy',
-              ...audioFilter,
               ...audioPlan.args,
               // No `-avoid_negative_ts make_zero` here. It rewrites the
               // timestamps that `-t` is measured against, which silently
               // stretched a three second cut into nearly five.
               '-y',
             ])
+            .complexFilter(audioFilterComplex)
             .output(staged),
           { signal, onProgress, durationSec: duration + lead, timeoutMs: 10 * 60_000 },
         );
@@ -162,7 +159,7 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
     // An HDR source read as if it were sRGB is what made exports look grey.
     if (info.isHdr) filters.push(TONEMAP_FILTER);
 
-    let command = ffmpegConfigured(inputPath)
+    let command = ffmpegCommand(inputPath)
       .inputOptions([...(await decodeArgs(encoders, inputPath)), `-ss ${startSec.toFixed(3)}`])
       .outputOptions([`-t ${duration.toFixed(3)}`]);
 
@@ -176,13 +173,13 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
      */
     const videoMap: string[] = ['-map 0:v:0'];
     if (audioPlan.filterComplex && filters.length) {
-      command = command.outputOptions([
-        '-filter_complex',
-        `[0:v:0]${filters.join(',')}[v];${audioPlan.filterComplex}`,
+      command = command.complexFilter([
+        `[0:v:0]${filters.join(',')}[v]`,
+        audioPlan.filterComplex,
       ]);
       videoMap[0] = '-map [v]';
     } else if (audioPlan.filterComplex) {
-      command = command.outputOptions(['-filter_complex', audioPlan.filterComplex]);
+      command = command.complexFilter([audioPlan.filterComplex]);
     } else if (filters.length) {
       command = command.outputOptions([`-vf ${filters.join(',')}`]);
     }
@@ -221,7 +218,7 @@ export class TrimVideoAction extends BaseAction<TrimVideoInput, TrimVideoOutput>
    */
   private async dropPreroll(staged: string, outputPath: string, signal?: AbortSignal): Promise<void> {
     await runFfmpeg(
-      ffmpegConfigured(staged)
+      ffmpegCommand(staged)
         .outputOptions([
           '-c copy',
           '-map 0:v:0',

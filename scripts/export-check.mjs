@@ -226,7 +226,16 @@ writeFileSync(
     "  getVersion: () => '0.0.0-export-check',",
     "  getName: () => 'GoodBit',",
     '};',
-    'export default { app };',
+    // Reached transitively: the export asks for a clip's audio tracks, which
+    // reads the OBS manifest, which sits in a module that also enumerates
+    // displays. Nothing in this bench calls it, but esbuild still has to
+    // resolve the import, and a shim missing a name fails the whole bundle
+    // rather than the one path that uses it.
+    'export const screen = {',
+    "  getPrimaryDisplay: () => ({ id: 0, label: '' }),",
+    '  getAllDisplays: () => [],',
+    '};',
+    'export default { app, screen };',
     '',
   ].join('\n'),
   'utf-8',
