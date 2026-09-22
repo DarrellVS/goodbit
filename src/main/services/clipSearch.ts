@@ -28,6 +28,8 @@
  * module chose, and nothing the user types is ever an operator.
  */
 
+import { trimChar } from '../utils/trimChar.js';
+
 /**
  * A search that will not be run as a query.
  *
@@ -201,7 +203,7 @@ function termsOf(raw: string | undefined | null): string[] {
 
   return raw
     .split(/[^\p{L}\p{N}']+/u)
-    .map((term) => term.replace(/^'+|'+$/g, ''))
+    .map((term) => trimChar(term, "'"))
     .filter((term) => term.length >= MIN_TERM_LENGTH)
     .slice(0, MAX_TERMS);
 }

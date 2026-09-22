@@ -1,4 +1,5 @@
 import { BaseDTO } from '../BaseDTO.js';
+import { tagPatternProblem } from '../../constants/tagPatternRules.js';
 
 export type TagCategory = 'Gameplay' | 'Weapons' | 'Maps' | 'Modes' | 'Quality' | 'General';
 
@@ -53,13 +54,10 @@ export class TagPatternDTO extends BaseDTO<TagPatternDTO> {
     }
 
     // An expression that cannot compile would throw at match time, on every
-    // clip, for as long as it stays saved.
+    // clip, for as long as it stays saved; one that backtracks would hang there.
     for (const source of this.patterns ?? []) {
-      try {
-        new RegExp(source, 'i');
-      } catch {
-        errors.push(`"${source}" is not a valid expression`);
-      }
+      const problem = tagPatternProblem(source);
+      if (problem) errors.push(problem);
     }
 
     return { isValid: errors.length === 0, errors: errors.length ? errors : undefined };

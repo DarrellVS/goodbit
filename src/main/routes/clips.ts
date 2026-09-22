@@ -67,6 +67,7 @@ import {
 } from '../actions/BatchOperationsAction.js';
 import { ImportFilesAction } from '../actions/ImportFilesAction.js';
 import { MoveClipToGameAction } from '../actions/MoveClipToGameAction.js';
+import { gameFolderProblem } from '../services/gameFolder.js';
 import { ExportAudioAction } from '../actions/ExportAudioAction.js';
 import { GetClipCollectionsAction } from '../actions/GetClipCollectionsAction.js';
 import { OpenFileInExplorerAction } from '../actions/OpenFileInExplorerAction.js';
@@ -432,6 +433,9 @@ clipsRouter.post('/:id/move-to-game', asyncHandler(async (req, res) => {
   if (!targetGame || targetGame.trim().length === 0) {
     return res.status(400).json({ error: 'targetGame is required' });
   }
+
+  const problem = gameFolderProblem(targetGame.trim());
+  if (problem) return res.status(400).json({ error: problem });
 
   const action = new MoveClipToGameAction();
   const { clip } = await action.execute({ clipId: id, targetGame: targetGame.trim() });
