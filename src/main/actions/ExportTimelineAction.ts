@@ -6,6 +6,8 @@ import { In } from 'typeorm';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 
 import { Clip } from '../entity/Clip.js';
+import { GoodBit, type GoodBitSource } from '../entity/GoodBit.js';
+import { planExportedMarks } from '../services/exportMarks.js';
 import { BaseAction } from './BaseAction.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
 import { GetClipAudioTracksAction } from './GetClipAudioTracksAction.js';
@@ -352,6 +354,49 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
       });
 
       const savedClip = await clipRepo.save(newClip);
+
+      /*
+       * The marks come with it.
+       *
+       * A GoodBit says where the good part of a recording is, and a movie is
+       * usually cut *out of* the good parts, so an export that lost them would
+       * be the one clip in the library that cannot say where anything in it
+       * happens. `planExportedMarks` reads the offsets off the plan rather
+       * than off the timeline, because a dissolve is taken out of both its
+       * neighbours and every mark after it slides.
+       *
+       * Failing here does not fail the export. The movie is rendered and
+       * indexed at this point; a missing band is worth a log line, not
+       * throwing away a file that took a minute to make.
+       */
+      try {
+        const sourceMarks = await AppDataSource.getRepository(GoodBit).find({
+          where: { clipId: In(clips.map((timelineClip) => timelineClip.clipId)) },
+        });
+
+        const carried = planExportedMarks(plan.steps, sourceMarks);
+        if (carried.length) {
+          await AppDataSource.getRepository(GoodBit).save(
+            carried.map((entry) =>
+              AppDataSource.getRepository(GoodBit).create({
+                clipId: savedClip.id,
+                startSec: entry.startSec,
+                endSec: entry.endSec,
+                name: entry.name ?? null,
+                source: (entry.source as GoodBitSource | null) ?? 'manual',
+                reason: entry.reason ?? null,
+                confidence: entry.confidence ?? null,
+              }),
+            ),
+          );
+          console.log(`[export] carried ${carried.length} marks onto ${outputFilename}`);
+        }
+      } catch (error) {
+        console.error(
+          '[export] the movie was written but its marks were not:',
+          error instanceof Error ? error.message : String(error),
+        );
+      }
 
       await fs.rm(tempDir, { recursive: true, force: true });
       progress(100, 'Done');

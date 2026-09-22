@@ -5,6 +5,7 @@ import { Icon } from '@iconify/vue';
 import { formatTime } from '@renderer/utils/timeFormat';
 import { frameStripUrl } from '@renderer/utils/mediaUrl';
 import type { TimelineClip } from '@renderer/types/editor';
+import TimelineClipMarks from './TimelineClipMarks.vue';
 
 interface Props {
   clip: TimelineClip;
@@ -185,6 +186,17 @@ onBeforeUnmount(stopDrag);
       >
         {{ formatTime(clip.duration) }}
       </span>
+
+      <!--
+        The marks, along the bottom edge. Drawn after the labels so a band is
+        never hidden under one, and before the controls so the remove button
+        still takes its clicks.
+      -->
+      <TimelineClipMarks
+        :marks="clip.goodBits"
+        :trim-start="clip.trimStart"
+        :trim-end="clip.trimEnd"
+      />
 
       <Icon
         v-if="clip.muted"

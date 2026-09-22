@@ -19,7 +19,8 @@ export function useTimeline() {
     name: string,
     videoUrl: string,
     thumbnailUrl: string,
-    originalDuration: number
+    originalDuration: number,
+    goodBits?: readonly { startSec: number; endSec: number }[],
   ): void {
     const clip: TimelineClip = {
       id: uuidv4(),
@@ -34,6 +35,7 @@ export function useTimeline() {
       videoUrl,
       thumbnailUrl,
       originalDuration,
+      goodBits,
     };
     
     clips.value = [...clips.value, clip];

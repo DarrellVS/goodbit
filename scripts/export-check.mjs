@@ -247,6 +247,7 @@ writeFileSync(
   [
     "export { initDatabase, AppDataSource } from '../../src/main/data-source.js';",
     "export { Clip } from '../../src/main/entity/Clip.js';",
+    "export { GoodBit } from '../../src/main/entity/GoodBit.js';",
     "export { ExportTimelineAction } from '../../src/main/actions/ExportTimelineAction.js';",
     "export { isClipLayout } from '../../src/shared/constants/videoFiles.js';",
     '',
@@ -277,7 +278,7 @@ writeFileSync(
   'utf-8',
 );
 
-const { initDatabase, Clip, ExportTimelineAction, isClipLayout } = await import(
+const { initDatabase, Clip, GoodBit, ExportTimelineAction, isClipLayout } = await import(
   pathToFileURL(BUNDLE).href,
 );
 
@@ -590,6 +591,52 @@ if (discarded === 0) {
     across.filter(isGreen).map((picture) => `${picture.at}s`).join(', '),
   );
 }
+
+/* -------------------------------------------------- the marks it carried over */
+
+/*
+ * A GoodBit says where the good part of a recording is, and a movie is cut out
+ * of the good parts, so an export that lost them would be the one clip in the
+ * library that cannot say where anything in it happens.
+ *
+ * The offsets are the part worth checking against a real render rather than
+ * only in a unit test: they are computed from the plan, and the plan is what
+ * actually decides where each segment landed.
+ */
+console.log('\nthe marks it carried');
+
+const marks = dataSource.getRepository(GoodBit);
+// On the second clip of the timeline, two seconds into its trim. With three
+// five second segments that is 5 + 2 = 7 seconds into the movie.
+const MARK_IN_CLIP = TRIM_START + 2;
+await marks.save(
+  marks.create({
+    clipId: rows[1].id,
+    startSec: MARK_IN_CLIP,
+    endSec: MARK_IN_CLIP + 1,
+    name: 'the good bit',
+    source: 'manual',
+  }),
+);
+
+const marked = await render(`export-check-marks-${Date.now()}`, []);
+const carried = await marks.find({ where: { clipId: marked.clip.id } });
+
+console.log(`  source mark   ${MARK_IN_CLIP.toFixed(1)}s into clip 2`);
+for (const entry of carried) {
+  console.log(`  on the movie  ${entry.startSec.toFixed(3)}s to ${entry.endSec.toFixed(3)}s  ${entry.name ?? ''}`);
+}
+
+ok('a mark on a source clip reaches the exported clip', carried.length === 1, `${carried.length} marks`);
+ok(
+  'and sits where that clip landed in the movie',
+  carried.length === 1 && Math.abs(carried[0].startSec - TRIM_LENGTH - 2) < 0.05,
+  carried.length ? `${carried[0].startSec.toFixed(3)}s, wanted ${(TRIM_LENGTH + 2).toFixed(3)}s` : '',
+);
+ok(
+  'and keeps its own name and source',
+  carried.length === 1 && carried[0].name === 'the good bit' && carried[0].source === 'manual',
+);
 
 /* ------------------------------------------- where the movie actually landed */
 
