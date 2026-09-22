@@ -201,6 +201,49 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     );
   }
 
+  /**
+   * Shrink the published copies, leaving the recordings alone.
+   *
+   * Only the clips that are actually published, because the rest have no
+   * public copy to shrink and asking about them would be a question with a
+   * wrong number in it.
+   *
+   * One request rather than one per clip, unlike the local compress above: the
+   * server runs them serially with a pause, because every one is a real
+   * Cloudflare purge and forty at once is forty purges in a second.
+   */
+  function handleBatchCompressPublished(): void {
+    const published = selectedClips.value.filter((clip) => clip.published);
+    const count = published.length;
+
+    if (!count) {
+      toastStore.info('None of the selected clips is published');
+      return;
+    }
+
+    confirmAction(
+      `The copies behind ${count === 1 ? 'the public link' : 'the public links'} are replaced ` +
+        `with share-sized ones, at the same ${count === 1 ? 'address' : 'addresses'}, so links ` +
+        'you have already sent keep working. The recordings on your own disk are not touched, ' +
+        'so this frees no space here.',
+      () => {
+        void clipsService
+          .batchCompressPublished(getValidClipIds(published))
+          .catch((error) => {
+            console.error('Could not start:', error);
+            toastStore.error('Please try again.', 'Could not start');
+          });
+        toastStore.info(
+          `${count} ${pluralize(count, 'copy', 'copies')} queued, one at a time`,
+          'Shrinking the published copies',
+        );
+        exitAndCleanup(batchStore);
+      },
+      `Shrink ${count} published ${pluralize(count, 'copy', 'copies')}?`,
+      { confirmLabel: 'Shrink them' },
+    );
+  }
+
   async function handleBatchPublish(): Promise<void> {
     const clipsToPublish = selectedClips.value.filter(clip => !clip.published);
     
@@ -394,6 +437,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
     handleSelectAll,
     handleBatchDelete,
     handleBatchCompress,
+    handleBatchCompressPublished,
     handleBatchPublish,
     handleBatchUnpublish,
     handleBatchStar,

@@ -200,7 +200,7 @@ export async function compressClip(id: number): Promise<{ jobId: string }> {
   return data;
 }
 
-/* ── Storage Saver ─────────────────────────────────────────────────── */
+/* ── Storage Saver ────────────────────────────────────────── */
 
 export interface UnreviewedGroup {
   game: string;
@@ -242,6 +242,24 @@ export async function listUnreviewedClips(olderThanDays?: number): Promise<Unrev
 export async function listBurstClips(windowSec?: number): Promise<BurstResult> {
   const { data } = await axios.get<BurstResult>('/api/clips/bursts', {
     params: windowSec === undefined ? {} : { windowSec },
+  });
+  return data;
+}
+
+/**
+ * Squeeze the copy behind the public link, leaving the recording alone.
+ *
+ * A different verb from `compressClip`, and the button says so: this gets
+ * nobody any disk space back.
+ */
+export async function compressPublishedClip(id: number): Promise<{ jobId: string }> {
+  const { data } = await axios.post<{ jobId: string }>(`/api/clips/${id}/compress-published`);
+  return data;
+}
+
+export async function batchCompressPublished(clipIds: number[]): Promise<{ jobId: string }> {
+  const { data } = await axios.post<{ jobId: string }>('/api/clips/batch/compress-published', {
+    clipIds,
   });
   return data;
 }

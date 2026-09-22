@@ -29,10 +29,13 @@ interface Emits {
   (e: 'add-tags'): void;
   (e: 'open-in-editor'): void;
   (e: 'compress'): void;
+  (e: 'compress-published'): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const anyPublished = computed(() => props.selectedClips.some((clip) => clip.published));
 
 const allPublished = computed(() => 
   props.selectedClips.every(clip => clip.published)
@@ -156,6 +159,20 @@ const someStarred = computed(() =>
             >
               <Icon icon="material-symbols:folder-delete" class="size-4 shrink-0 block text-muted-400" />
               <span>Remove from Collection</span>
+            </DropdownMenuItem>
+
+            <!--
+              Only when something is selected that has a public copy to shrink.
+              Offered on a selection of unpublished clips it would be a row
+              that can only answer "none of these is published".
+            -->
+            <DropdownMenuItem
+              v-if="anyPublished"
+              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              @click="emit('compress-published')"
+            >
+              <Icon icon="material-symbols:cloud-sync" class="size-4 shrink-0 block text-muted-400" />
+              <span>Shrink published copies</span>
             </DropdownMenuItem>
 
             <!--

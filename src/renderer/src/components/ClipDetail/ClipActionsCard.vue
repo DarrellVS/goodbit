@@ -8,6 +8,9 @@ import ClipStarButton from '@renderer/components/Library/ClipStarButton.vue';
 import ClipActionsMenu from '@renderer/components/Library/ClipActionsMenu.vue';
 import type { Clip } from '@renderer/types/clip';
 import { prefetchFrameStrip } from '@renderer/utils/mediaUrl';
+import { compressPublishedClip } from '@renderer/services/clips';
+import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import { clipTitle } from '@renderer/utils/clipDeleteQuestion';
 
 /**
  * What you can do with this clip, at the top of the sidebar where the actions
@@ -51,6 +54,42 @@ const { onTrim, onAdvancedEdit } = createClipActionHandlers({
   router,
 });
 
+const { confirm: confirmAction } = useConfirm();
+
+/**
+ * Shrink what is behind the public link.
+ *
+ * Only offered on a published clip, and only worth pressing on one published
+ * before `compressPublished` existed or with it switched off: those went up as
+ * the whole eighty-megabit recording, and every viewer pulls all of it down a
+ * home uplink.
+ *
+ * The question says the thing somebody will otherwise get wrong, which is that
+ * this frees no disk space. Compressing the recording is a different button in
+ * a different menu.
+ */
+function compressPublic(): void {
+  confirmAction(
+    `The copy behind the public link is replaced with a share-sized one, at the same ` +
+      `address, so any link you have already sent keeps working. ` +
+      `${clipTitle(props.clip)} on your own disk is not touched, so this frees no space here. ` +
+      `Somebody watching right now may see the old file for a few more minutes.`,
+    async () => {
+      try {
+        await compressPublishedClip(props.clip.id);
+        toastStore.info('It will finish in the background', 'Shrinking the public copy');
+      } catch (error) {
+        console.error('Could not start:', error);
+        toastStore.error('Please try again.', 'Could not start');
+      }
+    },
+    'Shrink the published copy?',
+    // Not `danger`: nothing is destroyed here. The recording is untouched and
+    // the link keeps working; only the bytes behind it get smaller.
+    { confirmLabel: 'Shrink it', tone: 'normal' },
+  );
+}
+
 async function copyPublicUrl(): Promise<void> {
   if (!props.clip.publishedUrl) return;
   try {
@@ -91,6 +130,21 @@ const CLIP_ACTION_ROW =
         Copy link
       </button>
     </div>
+
+    <!--
+      Inside the published block, because it is meaningless anywhere else, and
+      quiet, because most published clips already went up share-sized and this
+      is for the ones that did not.
+    -->
+    <button
+      v-if="clip.published && clip.publishedUrl"
+      type="button"
+      :class="CLIP_ACTION_ROW"
+      @click="compressPublic"
+    >
+      <Icon icon="material-symbols:compress" class="size-5 shrink-0 block text-muted-500" />
+      <span class="text-sm font-medium text-foreground">Shrink the published copy</span>
+    </button>
 
     <!--
       The one filled control in this column, and the reason the four under it
