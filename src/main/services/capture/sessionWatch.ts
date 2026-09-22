@@ -328,14 +328,6 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
    * was worth drawing because it says why the machine is busy; this half is
    * only worth drawing when it resolves into something.
    */
-  /*
-   * The clips, so the card can offer to open them.
-   *
-   * Every clip in the session, not only the ones something was found in. The
-   * person asked for the session, and a clip the detector could not read is
-   * the one most likely to be worth watching by hand: 76 of the 174 clips in
-   * the reference library hold nothing the screen can name.
-   */
-  if (found > 0) await showSweepFinished(found, clips.length, clips.map((clip) => clip.id));
+  if (found > 0) await showSweepFinished(found, clips.length);
   else dismissClipToast();
 }
