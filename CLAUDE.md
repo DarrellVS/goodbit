@@ -69,6 +69,41 @@ Keep `npm run typecheck` green, `build` runs it first and fails otherwise.
 build that passed while the app keeps running the previous bundle. `npm run build > out.log 2>&1;
 echo "exit=$?"`.
 
+## Stacked pull requests
+
+`gh stack`, the `github/gh-stack` extension, with the agent skill of the same name installed
+alongside it (`gh extension install github/gh-stack`, `gh skill install github/gh-stack`). Needs
+`gh` 2.90 or newer; this machine has it.
+
+**A stack is a single linear chain, so it is for work that genuinely depends on earlier work, and
+nothing else.** Stacking independent PRs invents an order that does not exist and then enforces it:
+a middle PR cannot merge on its own, ever, because everything below it merges with it. Four
+unrelated features in one stack means the slowest one holds the other three.
+
+So the test before stacking anything: *would I have to rebase this PR onto that one anyway?* If
+yes, stack it. If no, branch it off `main` like any other PR.
+
+- `gh stack init`, then `gh stack add <branch>` from the top of the stack for each layer, then
+  `gh stack submit`. `gh stack view` prints the chain, `gh stack up` / `down` / `top` / `bottom`
+  move through it.
+- **Fixing a lower layer is the whole point, and it has a shape**: `gh stack down`, edit, commit,
+  `gh stack rebase --upstack`, `gh stack push`, `gh stack top`. Pushing to a lower branch without
+  rebasing breaks the chain's linear history and GitHub blocks the merge until it is repaired.
+- **Rebase from the CLI, not the website**, whenever the repository ever starts requiring signed
+  commits. GitHub's own *Rebase stack* button force-pushes every branch with **unsigned** commits.
+  It does not matter today, `main` carries only `deletion` and `non_fast_forward` rules, but it is
+  the kind of thing that is discovered at the worst moment.
+- **Merging is bottom-up and atomic.** `gh stack merge` takes everything up to your chosen PR in
+  one all-or-nothing operation, and the survivors above it are automatically retargeted and
+  rebased onto the stack base. Squash works and gives one commit per PR, so the house preference
+  for a readable history survives.
+- **Auto-merge does not work on a stack**, and the legacy merge endpoint cannot merge one. Nothing
+  here uses either, but a bot added later would have to use the asynchronous merge API.
+- Same repository only, no forks, and the CLI's shell alias helper does not work on Windows. Both
+  are fine here.
+
+The feature is in public preview and needs no repository setting turned on.
+
 ## Where things live at runtime
 
 `%APPDATA%/GoodBit/`: `goodbit.db`, `settings.json`, `backups/`. Derived caches

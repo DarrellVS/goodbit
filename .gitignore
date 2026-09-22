@@ -202,3 +202,12 @@ server/
 # contract, the annotated defects and the audits live. This folder stays on
 # disk as the working reference.
 /design-prototypes/
+
+# Release planning documents.
+#
+# Working notes for a bundled minor release: an orchestrator plan and one
+# document per issue, written against the codebase before any of it is built.
+# They go stale the moment the code lands and the issues themselves are the
+# shared record, so these stay local rather than becoming a second source of
+# truth somebody has to keep in step.
+.planning/
