@@ -248,6 +248,7 @@ writeFileSync(
     "export { initDatabase, AppDataSource } from '../../src/main/data-source.js';",
     "export { Clip } from '../../src/main/entity/Clip.js';",
     "export { ExportTimelineAction } from '../../src/main/actions/ExportTimelineAction.js';",
+    "export { isClipLayout } from '../../src/shared/constants/videoFiles.js';",
     '',
   ].join('\n'),
   'utf-8',
@@ -276,7 +277,9 @@ writeFileSync(
   'utf-8',
 );
 
-const { initDatabase, Clip, ExportTimelineAction } = await import(pathToFileURL(BUNDLE).href);
+const { initDatabase, Clip, ExportTimelineAction, isClipLayout } = await import(
+  pathToFileURL(BUNDLE).href,
+);
 
 // The data source itself, not the module's `AppDataSource` binding. That one is
 // null until `initDatabase` assigns it, and destructuring an ESM export takes a
@@ -313,16 +316,16 @@ const timeline = rows.map((row, index) => ({
   muted: false,
 }));
 
-async function render(outputName, transitions) {
+async function render(outputName, transitions, clipsOverride) {
   const started = Date.now();
   const { clip } = await new ExportTimelineAction().execute({
-    clips: timeline,
+    clips: clipsOverride ?? timeline,
     transitions,
     outputName,
     format: 'original',
     framePos: 0.5,
   });
-  return { path: clip.filePath, took: (Date.now() - started) / 1000 };
+  return { path: clip.filePath, clip, took: (Date.now() - started) / 1000 };
 }
 
 /* ---------------------------------------- 1. the shape it always produced */
@@ -587,6 +590,70 @@ if (discarded === 0) {
     across.filter(isGreen).map((picture) => `${picture.at}s`).join(', '),
   );
 }
+
+/* ------------------------------------------- where the movie actually landed */
+
+/*
+ * A movie cut from one game belongs to that game.
+ *
+ * This is the half that cannot be checked by looking at the file: the render
+ * is identical either way, and what changed is the path it was written to and
+ * the row that describes it. Getting it wrong is silent in exactly the way
+ * that matters, because `ScanAndSyncClipsAction` globs a fixed set of shapes:
+ * a file written one level deeper than the scan looks is never indexed at all,
+ * and the export disappears from the library it was just added to.
+ */
+console.log('\nwhere it landed');
+
+const homeRel = cuts.clip.relPath.split(/[\\/]/);
+console.log(`  single game   ${cuts.clip.relPath}`);
+console.log(`  game on row   ${cuts.clip.game}`);
+console.log(`  flagged       isExport=${cuts.clip.isExport}`);
+
+ok(
+  'a timeline from one game lands in that game own exports folder',
+  homeRel.length === 3 && homeRel[0] === game && homeRel[1] === 'Exports',
+  cuts.clip.relPath,
+);
+ok('and the row says which game it belongs to', cuts.clip.game === game, cuts.clip.game);
+ok('and is flagged as an export', cuts.clip.isExport === true);
+// The scan writes it without the dot. Written with one, every export failed
+// the equality check on the very next sweep and was rewritten and re-probed.
+ok(
+  'and its extension is spelled the way the scan spells it',
+  cuts.clip.extension === 'mp4',
+  cuts.clip.extension,
+);
+ok(
+  'and the scan would actually index it',
+  isClipLayout(cuts.clip.relPath),
+  cuts.clip.relPath,
+);
+
+/*
+ * A montage of several games has no one game folder to claim it.
+ *
+ * Picking the first clip's game would be a guess, and a wrong one is a file
+ * filed under a game it is mostly not. So a mixed timeline keeps the flat
+ * top level folder, exactly as before.
+ */
+const otherGame = `${game} II`;
+mkdirSync(join(library, otherGame), { recursive: true });
+const moved = rows[rows.length - 1];
+const movedTo = join(library, otherGame, moved.filename);
+copyFileSync(moved.filePath, movedTo);
+moved.filePath = movedTo;
+moved.relPath = movedTo.slice(library.length + 1);
+moved.game = otherGame;
+await repo.save(moved);
+
+const mixed = await render(`export-check-mixed-${Date.now()}`, []);
+console.log(`  two games     ${mixed.clip.relPath}`);
+ok(
+  'a timeline spanning two games keeps the flat exports folder',
+  mixed.clip.relPath.split(/[\\/]/).length === 2 && mixed.clip.game === 'Exports',
+  `${mixed.clip.relPath}, game ${mixed.clip.game}`,
+);
 
 /* ----------------------------------------------------------------- tidy up */
 

@@ -27,15 +27,7 @@ import {
   type SourceContext,
 } from '../services/exportPlan.js';
 import type { ExportFormat, ProjectTimelineTransition } from '@shared/index.js';
-
-/**
- * Where renders land, one level under the videos root.
- *
- * A top level folder is a game name in this app, so whatever this is called
- * shows up in the sidebar beside the real games. It should at least not be
- * called the same thing as a screen.
- */
-const EXPORTS_FOLDER = 'Exports';
+import { EXPORTS_FOLDER } from '@shared/constants/videoFiles.js';
 
 
 interface TimelineClipData {
@@ -134,16 +126,42 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     // folder is carried over once, if it is there and the new one is not, so a
     // library that already has renders in it ends up with one folder rather
     // than two.
-    const editorDir = path.join(VIDEOS_ROOT, EXPORTS_FOLDER);
+    const sharedDir = path.join(VIDEOS_ROOT, EXPORTS_FOLDER);
     const legacyDir = path.join(VIDEOS_ROOT, 'Editor');
-    if (!existsSync(editorDir) && existsSync(legacyDir)) {
+    if (!existsSync(sharedDir) && existsSync(legacyDir)) {
       try {
-        await fs.rename(legacyDir, editorDir);
+        await fs.rename(legacyDir, sharedDir);
         console.log(`[export] renamed the Editor folder to ${EXPORTS_FOLDER}`);
       } catch (error) {
         console.error('[export] could not rename the Editor folder:', error);
       }
     }
+
+    /*
+     * A movie cut from one game belongs to that game.
+     *
+     * `<videosRoot>/<Game>/Exports/` when every clip on the timeline came from
+     * the same game, and the old top level `Exports/` when they did not,
+     * because a montage of four games has no one game folder to claim it and
+     * picking the first would be a guess.
+     *
+     * The game is taken from the rows rather than from the timeline, since the
+     * timeline carries ids and a clip can have been moved between games since
+     * it was put on there. A single-clip timeline counts as single-game; that
+     * is not a special case, it is the general rule with one element.
+     */
+    const timelineGames = new Set(
+      clips.map((timelineClip) => clipMap.get(timelineClip.clipId)?.game).filter(Boolean),
+    );
+    const homeGame = timelineGames.size === 1 ? [...timelineGames][0]! : null;
+    // Never into the pseudo-game the flat folder already is: a montage of
+    // montages would otherwise land in `Exports/Exports/`.
+    const ownGame = homeGame && homeGame !== EXPORTS_FOLDER ? homeGame : null;
+
+    const editorDir = ownGame
+      ? path.join(VIDEOS_ROOT, ownGame, EXPORTS_FOLDER)
+      : sharedDir;
+    const relDir = ownGame ? path.join(ownGame, EXPORTS_FOLDER) : EXPORTS_FOLDER;
     await fs.mkdir(editorDir, { recursive: true });
 
     /*
@@ -173,7 +191,7 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
     const concatListPath = path.join(tempDir, `concat_${Date.now()}.txt`);
     const outputFilename = `${outputName}.mp4`;
     const outputPath = path.join(editorDir, outputFilename);
-    const relPath = path.join(EXPORTS_FOLDER, outputFilename);
+    const relPath = path.join(relDir, outputFilename);
 
     try {
       const encoders = await detectEncoders();
@@ -316,11 +334,19 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
         filePath: outputPath,
         relPath,
         filename: outputFilename,
-        extension: '.mp4',
+        // Without the dot, which is what the scan writes
+        // (`path.extname(filename).slice(1)`). Written with one here, so every
+        // export failed the equality check on the very next sweep and was
+        // rewritten and re-probed for ever.
+        extension: 'mp4',
         displayName: outputName,
-        game: EXPORTS_FOLDER,
+        game: ownGame ?? EXPORTS_FOLDER,
         sizeBytes: stats.size,
         fileModifiedAt: stats.mtime,
+        // The row and the scan have to agree about this, or the first sweep
+        // after an export would decide the row had changed.
+        recordedAt: stats.mtime,
+        isExport: true,
         published: false,
         starred: false,
       });
