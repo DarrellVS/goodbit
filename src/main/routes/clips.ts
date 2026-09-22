@@ -256,6 +256,15 @@ clipsRouter.get('/:id', asyncHandler(async (req, res) => {
   }
 
   const dto = ClipDTO.fromEntity(clip);
+  /*
+   * The marks, with the clip.
+   *
+   * The editor resolves clips one at a time through this route, so without
+   * them here putting twenty clips on a timeline would mean twenty extra
+   * round trips just to draw the bands. The list route already attaches them
+   * for exactly the same reason, in one query for the whole page.
+   */
+  await attachGoodBitRanges([dto]);
   res.json(dto);
 }));
 

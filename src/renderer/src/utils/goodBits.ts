@@ -231,6 +231,46 @@ export function assignLanes<T extends Span>(
  * is the trade: the card says *there are good bits and roughly where*, and the
  * timeline is where a range is actually read.
  */
+/**
+ * Where a mark sits on a timeline block, which shows a window of its clip.
+ *
+ * `bandPosition` maps a range against the whole recording, which is what a
+ * library card shows. A timeline block shows `trimStart..trimEnd` of the same
+ * source, so the same mark belongs at a different place on it, and at a
+ * different width: a five second mark on a thirty second recording is a sixth
+ * of a card and the whole of a block trimmed to those five seconds.
+ *
+ * **A mark that straddles a handle is kept and clamped**, not dropped. That is
+ * the rule `services/goodBitsAfterTrim.ts` already settled for the trimmer:
+ * cutting two seconds off a five second mark leaves three seconds of the thing
+ * that was marked, and dropping it throws away a decision over an edge the
+ * person dragging the handle can see. A second rule here that disagreed with
+ * the trimmer's would be two answers to one question.
+ *
+ * Returns null for a mark with no footage left inside the window, so a caller
+ * draws nothing rather than a zero-width band at one end.
+ */
+export function markOnTrimmedBlock(
+  range: Span,
+  trimStart: number,
+  trimEnd: number,
+): { leftPercent: number; widthPercent: number } | null {
+  const window = trimEnd - trimStart;
+  if (!Number.isFinite(window) || window <= 0) return null;
+
+  const start = Math.max(range.startSec, trimStart);
+  const end = Math.min(range.endSec, trimEnd);
+  // `<=` rather than `<`: a mark that only touches a handle shares no footage
+  // with what the block is showing.
+  if (end <= start) return null;
+
+  const clamp = (value: number): number => Math.max(0, Math.min(100, value));
+  const left = clamp(((start - trimStart) / window) * 100);
+  const right = clamp(((end - trimStart) / window) * 100);
+
+  return { leftPercent: left, widthPercent: Math.max(0, right - left) };
+}
+
 export const MIN_PIP_PX = 3;
 
 /**

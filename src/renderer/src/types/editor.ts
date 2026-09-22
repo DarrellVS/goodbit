@@ -81,6 +81,18 @@ export interface TimelineClip {
   videoUrl: string;
   thumbnailUrl: string;
   originalDuration: number;
+  /**
+   * The clip's marked ranges, in the *source* clip's own seconds.
+   *
+   * Source seconds rather than block-relative ones, deliberately: the block
+   * shows `trimStart..trimEnd` and both handles move, so anything stored
+   * relative to the block would have to be rewritten on every drag. The
+   * mapping is `markOnTrimmedBlock`, which is cheap and has no state.
+   *
+   * Absent on a clip whose marks were never loaded, which is not the same as
+   * a clip with none.
+   */
+  goodBits?: readonly { startSec: number; endSec: number }[];
 }
 
 /**

@@ -43,6 +43,7 @@ import { draftAsResumable } from '@renderer/utils/draftResume';
 import type { DraftFilePayload } from '@renderer/utils/draftFile';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import { clipGoodBitRanges } from '@renderer/utils/goodBits';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -266,7 +267,14 @@ async function addClipsToTimeline(clips: Clip[]): Promise<void> {
 
   if (prepared.length > 0) record();
   for (const item of prepared) {
-    addClip(item.clip.id, clipLabel(item.clip), item.videoUrl, item.thumbnailUrl, item.videoDuration);
+    addClip(
+      item.clip.id,
+      clipLabel(item.clip),
+      item.videoUrl,
+      item.thumbnailUrl,
+      item.videoDuration,
+      clipGoodBitRanges(item.clip),
+    );
   }
 }
 
@@ -361,6 +369,10 @@ async function restoreDraft(draft: ResumableDraft): Promise<void> {
           muted: entry.muted,
           videoUrl: videoUrlFor(clip.id, clip.fileModifiedAt),
           thumbnailUrl: getThumbUrl(clip),
+          // Read off the clip rather than stored in the draft: a mark added
+          // since the draft was saved should appear when it is reopened, and
+          // one deleted since should not.
+          goodBits: clipGoodBitRanges(clip),
         };
       });
 
