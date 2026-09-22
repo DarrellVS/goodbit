@@ -8,6 +8,14 @@ import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { GoodBit, type GoodBitSource } from '../entity/GoodBit.js';
 import { planExportedMarks } from '../services/exportMarks.js';
+import { EnsureClipSuggestionsAction } from './EnsureClipSuggestionsAction.js';
+import { recordTrim } from '../services/highlights/labels.js';
+import {
+  planTimelineLabels,
+  summariseLabels,
+  type SuggestionFacts,
+  type TimelineTrim,
+} from '../services/highlights/timelineLabels.js';
 import { BaseAction } from './BaseAction.js';
 import { resolveAudioPath } from '../services/audioLibrary.js';
 import { GetClipAudioTracksAction } from './GetClipAudioTracksAction.js';
@@ -401,10 +409,71 @@ export class ExportTimelineAction extends BaseAction<ExportTimelineInput, { clip
       await fs.rm(tempDir, { recursive: true, force: true });
       progress(100, 'Done');
 
+      // Off the critical path, deliberately. See `recordTimelineTrims`.
+      void this.recordTimelineTrims(clips, clipMap);
+
       return { clip: savedClip };
     } catch (error) {
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
       throw error;
+    }
+  }
+
+  /**
+   * Keep what this montage said about the app's own suggestions.
+   *
+   * **After the render, never before.** A failed export is not a decision, and
+   * `EnsureClipSuggestionsAction` is only a cache read for a clip that has
+   * been analysed; for a twenty clip montage of never-analysed clips it is
+   * twenty listens, which must not sit in front of somebody waiting for their
+   * movie.
+   *
+   * Everything here swallows its own errors, the same way `labels.ts` does.
+   * A render that worked has worked whether or not a row was written about it,
+   * and an export is far more expensive to lose than a trim.
+   */
+  private async recordTimelineTrims(
+    clips: TimelineClipData[],
+    clipMap: Map<number, Clip>,
+  ): Promise<void> {
+    try {
+      const trims: TimelineTrim[] = [];
+      const suggestions = new Map<number, SuggestionFacts | null>();
+
+      for (const timelineClip of clips) {
+        const clip = clipMap.get(timelineClip.clipId);
+        if (!clip) continue;
+
+        trims.push({
+          clipId: clip.id,
+          game: clip.game,
+          trimStart: timelineClip.trimStart,
+          trimEnd: timelineClip.trimEnd,
+        });
+
+        // One read per distinct clip, not one per block: a clip placed three
+        // times is one analysis and three labels.
+        if (suggestions.has(clip.id)) continue;
+        suggestions.set(
+          clip.id,
+          await new EnsureClipSuggestionsAction()
+            .execute({ clipId: clip.id })
+            .catch(() => null),
+        );
+      }
+
+      const labels = planTimelineLabels(trims, suggestions);
+      for (const label of labels) await recordTrim(label);
+
+      if (labels.length) {
+        const { accepted, trim } = summariseLabels(labels);
+        console.log(`[export] recorded ${accepted} accepted and ${trim} corrected from this montage`);
+      }
+    } catch (error) {
+      console.error(
+        '[export] the movie was written but nothing was learned from it:',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 

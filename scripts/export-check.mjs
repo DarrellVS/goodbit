@@ -248,6 +248,7 @@ writeFileSync(
     "export { initDatabase, AppDataSource } from '../../src/main/data-source.js';",
     "export { Clip } from '../../src/main/entity/Clip.js';",
     "export { GoodBit } from '../../src/main/entity/GoodBit.js';",
+    "export { HighlightLabel } from '../../src/main/entity/HighlightLabel.js';",
     "export { ExportTimelineAction } from '../../src/main/actions/ExportTimelineAction.js';",
     "export { isClipLayout } from '../../src/shared/constants/videoFiles.js';",
     '',
@@ -278,7 +279,7 @@ writeFileSync(
   'utf-8',
 );
 
-const { initDatabase, Clip, GoodBit, ExportTimelineAction, isClipLayout } = await import(
+const { initDatabase, Clip, GoodBit, HighlightLabel, ExportTimelineAction, isClipLayout } = await import(
   pathToFileURL(BUNDLE).href,
 );
 
@@ -702,7 +703,59 @@ ok(
   `${mixed.clip.relPath}, game ${mixed.clip.game}`,
 );
 
+/* ------------------------------------- what the montage taught the model */
+
+/*
+ * Nothing in the editor wrote a label before this, so a montage, which is a
+ * person choosing a range on every clip in it, told the suggestion model
+ * nothing at all. The rows are written after the render and off the critical
+ * path, so this waits for them rather than assuming they are there.
+ */
+console.log('\nwhat it learned');
+
+const labels = dataSource.getRepository(HighlightLabel);
+const deadline = Date.now() + 20_000;
+let written = [];
+while (Date.now() < deadline) {
+  written = await labels.find();
+  if (written.length >= CLIP_COUNT) break;
+  await new Promise((resolve) => setTimeout(resolve, 500));
+}
+
+for (const label of written.slice(0, 4)) {
+  console.log(
+    `  clip ${label.clipId}  ${label.chosenStartSec.toFixed(1)}s to ${label.chosenEndSec.toFixed(1)}s  ${label.source}`,
+  );
+}
+console.log(`  ${written.length} labels from ${CLIP_COUNT} clips per export`);
+
+ok(
+  'an export records what was chosen on every clip in it',
+  written.length >= CLIP_COUNT,
+  `${written.length} labels`,
+);
+ok(
+  'and each one carries the range that was actually cut',
+  written.every((label) => Math.abs(label.chosenEndSec - label.chosenStartSec - TRIM_LENGTH) < 0.01),
+);
+
 /* ----------------------------------------------------------------- tidy up */
+
+/*
+ * Let the last export finish learning before the database is closed.
+ *
+ * `recordTimelineTrims` is deliberately fire-and-forget, so the render that
+ * just finished is still writing rows when this script reaches its end.
+ * `labels.ts` swallows the failure, which is right in the app and is noise
+ * here: it printed a stack trace under an OK. Settled by waiting for the count
+ * to stop moving rather than by a fixed sleep.
+ */
+for (let quiet = 0, last = -1; quiet < 2; ) {
+  const now = await labels.count();
+  quiet = now === last ? quiet + 1 : 0;
+  last = now;
+  await new Promise((resolve) => setTimeout(resolve, 750));
+}
 
 await dataSource.destroy();
 rmSync(library, { recursive: true, force: true });
