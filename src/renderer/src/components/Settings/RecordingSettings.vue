@@ -11,6 +11,14 @@ import {
 } from '@renderer/components/Base/geometry';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
+import type { ComboBoxOption } from '@renderer/components/Base/types';
+import {
+  DEFAULT_RECORDING_QUALITY,
+  obsRecQuality,
+  RECORDING_QUALITY_DESCRIPTIONS,
+  RECORDING_QUALITY_LABELS,
+  type RecordingQuality,
+} from '@shared/index';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import { useObsSetup } from '@renderer/composables/obs/useObsSetup';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
@@ -40,7 +48,7 @@ const setup = useObsSetup();
 const { status, loading, working } = setup;
 const toast = useToastStore();
 const router = useRouter();
-const { settings, load: loadSettings, save: saveSettings } = useAppSettings();
+const { settings, load: loadSettings, save: saveSettings, closeObs } = useAppSettings();
 /* The cards here carry their own name from `utils/settingsCatalog.ts`. */
 const { settingRing } = useSettingsSearch();
 
@@ -60,6 +68,54 @@ const { settingRing } = useSettingsSearch();
 function runOnboarding(): void {
   void router.push({ name: 'welcome' });
 }
+
+/**
+ * How hard OBS compresses what it records.
+ *
+ * Two of OBS's four values, and the other two are left out for reasons that
+ * are not taste: `Stream` records at a streaming bitrate for an uplink that
+ * does not exist here, and OBS's own words about `Lossless` are "Replay
+ * buffer is unavailable when using lossless quality", which would make this
+ * the setting that stops the replay key producing clips. See
+ * `shared/constants/obsRecordingQuality.ts`.
+ */
+const QUALITIES: ComboBoxOption[] = (
+  ['balanced', 'indistinguishable'] as RecordingQuality[]
+).map((value) => ({
+  value,
+  label: RECORDING_QUALITY_LABELS[value],
+  description: RECORDING_QUALITY_DESCRIPTIONS[value],
+}));
+
+const quality = computed<RecordingQuality>(
+  () => settings.value.recordingQuality ?? DEFAULT_RECORDING_QUALITY,
+);
+
+/**
+ * Whether OBS is actually recording at what the dropdown says.
+ *
+ * The setting is a wish; `[SimpleOutput] RecQuality` in the profile is the
+ * fact. They come apart the moment somebody changes this, because nothing may
+ * be written to that profile while OBS is running, and a dropdown that
+ * silently did nothing is worse than no dropdown. Read off the profile rather
+ * than remembered in a flag, so it is still right after a restart, and still
+ * right if somebody sets it in OBS itself.
+ */
+const qualityPending = computed(() => {
+  const current = status.value?.recordingQuality;
+  if (!status.value?.goodbitProfileExists || !current) return false;
+  return current !== obsRecQuality(quality.value);
+});
+
+/** What OBS is on now, when it is one of the two this offers. */
+const qualityInObs = computed(() => {
+  const current = status.value?.recordingQuality;
+  if (current === 'Small') return RECORDING_QUALITY_LABELS.balanced;
+  if (current === 'HQ') return RECORDING_QUALITY_LABELS.indistinguishable;
+  if (current === 'Lossless') return 'Lossless, which turns the replay buffer off';
+  if (current === 'Stream') return 'the streaming bitrate';
+  return null;
+});
 
 const CORNERS = [
   { value: 'top-right', label: 'Top right' },
@@ -162,6 +218,25 @@ function undo(): void {
     },
     'Undo the OBS setup?',
   );
+}
+
+/**
+ * Ask OBS to close, so the new quality can be written.
+ *
+ * The same polite close the clips folder uses, and the same warning when it is
+ * refused: OBS asks before closing while the replay buffer is running, which
+ * looks from here exactly like a close that did not happen.
+ */
+async function closeObsForQuality(): Promise<void> {
+  toast.info('Asking OBS to close');
+  if (!(await closeObs())) {
+    toast.error(
+      'OBS is still open. It asks before closing while the replay buffer is running, so answer that and try again.',
+      'Could not close OBS',
+    );
+    return;
+  }
+  await setup.refresh();
 }
 
 function openGuide(): void {
@@ -299,6 +374,56 @@ function openGuide(): void {
         <button type="button" :class="BUTTON" @click="runOnboarding">Start it</button>
       </div>
     </div>
+
+    <!--
+      What OBS records at, which is not what either of the two Compress
+      settings under Publishing does. Those re-encode a clip GoodBit already
+      has; this decides what lands on disk in the first place, and it can
+      never improve a recording already made.
+
+      It sits directly under the OBS card because it is the same subject, and
+      because the card above is where the state it depends on is shown: this
+      cannot take effect until the profile is next written, and the profile
+      cannot be written while OBS is open.
+    -->
+    <template v-if="status?.installed">
+      <SettingSelect
+        label="Recording quality"
+        description="How hard OBS compresses what it records. It cannot change clips you already have."
+        :model-value="quality"
+        :options="QUALITIES"
+        :disabled="working"
+        @update:model-value="saveSettings({ recordingQuality: $event as RecordingQuality })"
+      />
+
+      <!--
+        A setting that silently does nothing is the failure to avoid here, so
+        the gap between what was chosen and what OBS is on is said out loud,
+        with the one action that closes it. `ApplyObsSetupAction` refuses to
+        run while OBS is open, so the offer depends on that.
+      -->
+      <div v-if="qualityPending" class="setting-block flex items-start justify-between gap-6">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-muted-500 max-w-[62ch]">
+            OBS is still recording at
+            <span class="text-foreground">{{ qualityInObs ?? 'something else' }}</span
+            >. This lands the next time the setup is written, which cannot happen while OBS is
+            open.
+          </p>
+        </div>
+        <button
+          v-if="!status?.running"
+          type="button"
+          :class="[BUTTON, 'shrink-0']"
+          @click="openSetup"
+        >
+          Write it to OBS
+        </button>
+        <button v-else type="button" :class="[BUTTON, 'shrink-0']" :disabled="working" @click="closeObsForQuality">
+          Close OBS
+        </button>
+      </div>
+    </template>
 
     <ClipsFolderCard />
 

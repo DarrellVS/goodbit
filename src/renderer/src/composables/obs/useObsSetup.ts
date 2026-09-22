@@ -16,6 +16,8 @@ import {
   type CaptureDisplay,
   type ObsStatus,
 } from '@renderer/services/obs';
+import { DEFAULT_RECORDING_QUALITY, type RecordingQuality } from '@shared/index';
+import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 
 /**
  * Everything the OBS setup needs, in one place.
@@ -38,6 +40,7 @@ export interface SetupStep {
 }
 
 export function useObsSetup() {
+  const { settings } = useAppSettings();
   const status = ref<ObsStatus | null>(null);
   const plan = ref<ObsSetupPlan | null>(null);
   const installPlan = ref<ObsInstallPlan | null>(null);
@@ -157,10 +160,20 @@ export function useObsSetup() {
     ];
   }
 
+  /**
+   * How hard OBS compresses the recording.
+   *
+   * Seeded from Settings rather than defaulted, because the wizard is walked
+   * again by people who already have a setup, and answering a question they
+   * are not being shown is how a second run quietly undoes the first.
+   */
+  const quality = ref<RecordingQuality>(DEFAULT_RECORDING_QUALITY);
+
   const request = computed<ObsSetupRequest>(() => {
     const selected: ObsSetupRequest = {
       replayBufferSeconds: bufferSeconds.value,
       hotkey: hotkey.value,
+      recordingQuality: quality.value,
       ...(displayId.value === null ? {} : { displayId: displayId.value }),
       audioDeviceIds: [...audioIds.value],
     };
@@ -178,6 +191,13 @@ export function useObsSetup() {
       status.value = current;
       if (!steps.value.length) steps.value = buildSteps(current);
       if (current.replayBufferSeconds) bufferSeconds.value = current.replayBufferSeconds;
+      // The profile's own value first, the saved setting second. A profile
+      // says what tonight's recording will actually be; the setting says what
+      // was asked for, and they differ exactly while OBS has not been written
+      // to yet.
+      if (current.recordingQuality === 'Small') quality.value = 'balanced';
+      else if (current.recordingQuality === 'HQ') quality.value = 'indistinguishable';
+      else quality.value = settings.value.recordingQuality ?? DEFAULT_RECORDING_QUALITY;
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : String(cause);
     } finally {
@@ -311,6 +331,7 @@ export function useObsSetup() {
     steps,
     bufferSeconds,
     hotkey,
+    quality,
     displays,
     displayId,
     display,

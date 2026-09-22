@@ -105,6 +105,23 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
     ],
   },
   {
+    label: 'Recording quality',
+    description:
+      'How hard OBS compresses what it records. It cannot change clips you already have.',
+    section: 'recording',
+    keywords: [
+      'quality',
+      'compression',
+      'bitrate',
+      'file size',
+      'obs',
+      'recqual',
+      'lossless',
+      'size',
+    ],
+    shownWhen: 'OBS is installed',
+  },
+  {
     label: 'Start OBS with GoodBit',
     description:
       'Minimised, with the replay buffer running, so your key works after a restart without opening anything.',

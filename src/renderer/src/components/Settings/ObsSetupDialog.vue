@@ -82,6 +82,7 @@ const {
   installPlan,
   bufferSeconds,
   hotkey,
+  quality,
   displays,
   displayId,
   display,
@@ -230,8 +231,10 @@ function notNow(): void {
           :current-hotkey="status?.hotkey ?? null"
           :buffer-step="bufferStep"
           :hotkey-step="hotkeyStep"
+          :quality="quality"
           @update:buffer-seconds="bufferSeconds = $event"
           @update:hotkey="hotkey = $event"
+          @update:quality="quality = $event"
           @toggle-step="wizard.setStepEnabled"
         />
 

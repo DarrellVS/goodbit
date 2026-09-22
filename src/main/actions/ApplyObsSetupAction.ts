@@ -16,7 +16,7 @@ import {
   type ObsSetupChoices,
   type ObsSetupPlan,
 } from '../services/obs/setup.js';
-import { loadSettings, saveSettings } from '../settings.js';
+import { loadSettings, recordingQuality, saveSettings } from '../settings.js';
 
 /* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
 import type { ObsSetupPlanResponse, ObsSetupRequest, ObsSetupResult } from '@shared/index.js';
@@ -73,6 +73,16 @@ async function resolveChoices(request: ObsSetupRequest): Promise<ObsSetupChoices
      * fine. Sound mixed down to one track at record time is mixed for ever.
      */
     multiTrackAudio: request.multiTrackAudio !== false,
+    /*
+     * Settings holds the answer; the request only overrides it.
+     *
+     * The setup is re-applied from several places, and only the wizard's
+     * recording step is asking the question. Everywhere else sending nothing
+     * has to mean "leave it as it is" rather than "put it back to the
+     * default", or fixing a folder path would quietly re-encode every
+     * recording made afterwards.
+     */
+    recordingQuality: request.recordingQuality ?? recordingQuality(),
   };
 }
 

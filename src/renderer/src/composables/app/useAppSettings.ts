@@ -1,4 +1,5 @@
 import { readonly, ref } from 'vue';
+import type { RecordingQuality } from '@shared/index';
 
 /**
  * The settings main owns: where the clips are, autostart, the publisher.
@@ -37,6 +38,15 @@ export interface AppSettings {
   compressTrims?: boolean;
   /** Send a share-sized copy to the publisher. Unset means on. */
   compressPublished?: boolean;
+  /**
+   * How hard OBS compresses what it records. Unset means indistinguishable.
+   *
+   * The third thing here that sounds like the two above it, and the only one
+   * that is not GoodBit re-encoding a clip it already has. This one governs
+   * the recording itself, which means it cannot change a file already on
+   * disk, and it only lands when the OBS profile is next written.
+   */
+  recordingQuality?: RecordingQuality;
 }
 
 const EMPTY: AppSettings = {

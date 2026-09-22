@@ -14,6 +14,7 @@ import { userDataDir } from '../../settings.js';
 
 /* The shape is agreed in `src/shared`; re-exported so callers here are unchanged. */
 import type { ChangeKind, PlannedChange, ObsSetupPlan, ObsAudioTrack } from '@shared/index.js';
+import { obsRecQuality, RECORDING_QUALITY_LABELS, type RecordingQuality } from '@shared/index.js';
 export type { ChangeKind, PlannedChange, ObsSetupPlan, ObsAudioTrack };
 
 /**
@@ -90,6 +91,16 @@ export interface ObsSetupChoices {
    * screen, and game capture still takes over when a game is running.
    */
   captureDesktop: boolean;
+  /**
+   * How hard OBS compresses the recording.
+   *
+   * `[SimpleOutput] RecQuality`, which is the control OBS already has for
+   * this. Simple output mode, deliberately: the CQP and CRF keys live in
+   * Advanced mode, which takes raw encoder ids with no safety net, and the
+   * whole class of "OBS refuses to start the replay buffer and blames your
+   * drivers" failures lives there.
+   */
+  recordingQuality: RecordingQuality;
 }
 
 function profileDir(): string {
@@ -245,10 +256,16 @@ export function profileEdits(choices: ObsSetupChoices): IniEdit[] {
   if (choices.encoder) {
     edits.push(
       { section: 'SimpleOutput', key: 'RecEncoder', value: choices.encoder.encoder },
-      // Not the default. OBS's own default for a new profile is `Stream`,
-      // which records at the streaming bitrate and looks like it: a clip you
-      // are going to trim and share deserves better than a twitch preset.
-      { section: 'SimpleOutput', key: 'RecQuality', value: 'HQ' },
+      // Never OBS's own default for a new profile, which is `Stream`: that
+      // records at the streaming bitrate and looks like it, and a clip you are
+      // going to trim and share deserves better than a twitch preset. The two
+      // values this can be, and the two of OBS's four that are not offered at
+      // all, are in `shared/constants/obsRecordingQuality.ts`.
+      {
+        section: 'SimpleOutput',
+        key: 'RecQuality',
+        value: obsRecQuality(choices.recordingQuality),
+      },
     );
   }
 
