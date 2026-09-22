@@ -4,6 +4,9 @@ import {
   VIDEO_DIALOG_EXTENSIONS,
   VIDEO_EXTENSIONS,
   videoGlobPatterns,
+  isClipLayout,
+  isExportPath,
+  EXPORTS_FOLDER,
 } from '../../../src/shared/constants/videoFiles.js';
 
 /**
@@ -68,6 +71,40 @@ describe('the patterns the scan walks', () => {
     }
   });
 
+  it('agrees with the predicate the watcher asks', () => {
+    /*
+     * The bug this pair exists to stop.
+     *
+     * chokidar watches one level deeper than the scan globs, so it used to
+     * announce `clip-added` for a file in a folder of somebody's own inside a
+     * game folder and the scan that followed created nothing. A phantom the
+     * library reacted to, with no row behind it, and a row that somehow did
+     * exist would have been counted missing and deleted on the next sweep.
+     */
+    expect(isClipLayout('Battlefield 6/clip.mp4')).toBe(true);
+    expect(isClipLayout('Battlefield 6\\clip.mp4')).toBe(true);
+    expect(isClipLayout(`Battlefield 6/${EXPORTS_FOLDER}/montage.mp4`)).toBe(true);
+    expect(isClipLayout('Battlefield 6/exports/montage.mp4')).toBe(true);
+
+    // Somebody's own folder, which is the case that must stay out.
+    expect(isClipLayout('Battlefield 6/Old/clip.mp4')).toBe(false);
+    expect(isClipLayout(`Battlefield 6/${EXPORTS_FOLDER}/Old/clip.mp4`)).toBe(false);
+    // A loose file at the root has no game.
+    expect(isClipLayout('clip.mp4')).toBe(false);
+    // Staging, where OBS writes a replay before GoodBit files it.
+    expect(isClipLayout('.goodbit-incoming/clip.mp4')).toBe(false);
+    expect(isClipLayout('Battlefield 6/.filmpje-cache/thumb.mp4')).toBe(false);
+    expect(isClipLayout('Battlefield 6/notes.txt')).toBe(false);
+  });
+
+  it('knows an export from a recording by where it sits', () => {
+    expect(isExportPath(`Battlefield 6/${EXPORTS_FOLDER}/montage.mp4`)).toBe(true);
+    expect(isExportPath('Battlefield 6/clip.mp4')).toBe(false);
+    // The old flat folder, which is a game called Exports rather than a game's
+    // own exports, and stays exactly as it is.
+    expect(isExportPath(`${EXPORTS_FOLDER}/montage.mp4`)).toBe(false);
+  });
+
   it('covers every extension the watcher accepts', () => {
     // The regression, as an assertion. These two answers drifted apart once
     // and the app deleted rows over it.
@@ -77,7 +114,20 @@ describe('the patterns the scan walks', () => {
       expect(patterns.some((pattern) => pattern.endsWith(extension))).toBe(true);
     }
 
-    expect(patterns).toHaveLength(VIDEO_EXTENSIONS.length);
+    // Two shapes now: the game folder itself and its exports folder.
+    expect(patterns).toHaveLength(VIDEO_EXTENSIONS.length * 2);
+  });
+
+  it('allows exactly one nested folder, by name', () => {
+    // A general depth of 2 would adopt the contents of somebody's own
+    // `Renders` or `Old` folder as clips of that game. The allow list is the
+    // narrow version of the same change.
+    const patterns = videoGlobPatterns();
+
+    for (const extension of VIDEO_EXTENSIONS) {
+      expect(patterns).toContain(`*/${EXPORTS_FOLDER}/*${extension}`);
+    }
+    expect(patterns.some((pattern) => pattern.startsWith('*/*/'))).toBe(false);
   });
 
   it('can be asked for a deeper library', () => {

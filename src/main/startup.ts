@@ -18,7 +18,7 @@ import {
   stopWatchingIncoming,
   watchIncoming,
 } from './services/capture/incoming.js';
-import { isVideoFile } from '@shared/constants/videoFiles.js';
+import { isClipLayout, isVideoFile } from '@shared/constants/videoFiles.js';
 
 /**
  * What the background service does, and keeps doing.
@@ -145,6 +145,26 @@ function gameFromPath(filePath: string): string | null {
 }
 
 /**
+ * Whether the scan would actually index this path.
+ *
+ * The watcher and the scan disagreed about depth, and the watcher was the
+ * deeper of the two: chokidar runs at `depth: 2` while
+ * `ScanAndSyncClipsAction` globs one level down. So a file somebody dropped in
+ * `<videosRoot>/<Game>/Old/clip.mp4` was announced as a new clip,
+ * `clip-added` was emitted, the library refreshed, and the scan that followed
+ * created nothing: a phantom the UI reacted to with nothing behind it. Worse,
+ * had a row existed, the same scan would have counted it missing and deleted
+ * it, taking its tags, notes, stars and marks.
+ *
+ * `isClipLayout` is the shared answer, so the two cannot come apart again.
+ */
+function scanWouldIndex(filePath: string): boolean {
+  const rel = relative(VIDEOS_ROOT, filePath);
+  if (!rel || rel.startsWith('..')) return false;
+  return isClipLayout(rel);
+}
+
+/**
  * A clip GoodBit filed itself, indexed at once rather than in eight seconds.
  *
  * The library watcher would find this file eventually, behind another four
@@ -249,7 +269,16 @@ function startWatching(): void {
   if (!root) return;
 
   watcher = chokidar.watch(root, {
-    // Game folders sit one level down; nothing deeper is a clip.
+    /*
+     * One level deeper than a clip sits, deliberately.
+     *
+     * A game folder is one level down, so `depth: 1` would find every clip.
+     * The extra level is what notices a *folder* appearing inside a game
+     * folder, which is how a newly created `Exports` directory is seen at all,
+     * and it costs one more level of inotify handles rather than a recursive
+     * walk. What the watcher may announce is `scanWouldIndex`'s decision, not
+     * this number's.
+     */
     depth: 2,
     ignoreInitial: true,
     // The derived caches, the app's own working files, and anything a trim
@@ -268,6 +297,11 @@ function startWatching(): void {
     if (!isVideoFile(path)) return;
     const game = gameFromPath(path);
     if (!game) return;
+    // Announced only if the scan behind it will produce a row. See
+    // `scanWouldIndex`: chokidar watches one level deeper than the scan globs,
+    // so without this a file in a folder of somebody's own inside a game
+    // folder is reported as a new clip that never appears.
+    if (!scanWouldIndex(path)) return;
 
     console.log(`[service] new clip in ${game}: ${basename(path)}`);
     emit({ type: 'clip-added', filePath: path, game });
