@@ -264,6 +264,29 @@ export async function batchCompressPublished(clipIds: number[]): Promise<{ jobId
   return data;
 }
 
+/* ── Publisher insights ──────────────────────────────────────── */
+
+export interface PublisherStats {
+  /** The published clips, with their view counts already on them. */
+  clips: Clip[];
+  updated: number;
+  totals: { clips: number; bytes: number; views: number };
+  /** When the publisher started counting. Null means it never has. */
+  countingSince: string | null;
+}
+
+/**
+ * Ask the publisher what it has, and mirror the numbers onto the rows.
+ *
+ * A POST because it writes. Called when the Publisher screen opens, never on a
+ * timer: this is the one screen in the app that reads a remote service, and a
+ * number nobody is looking at is not worth a request over a home uplink.
+ */
+export async function syncPublisherStats(): Promise<PublisherStats> {
+  const { data } = await axios.post<PublisherStats>('/api/stats/publisher/sync');
+  return data;
+}
+
 export async function getClipMeta(id: number): Promise<ClipMeta> {
   const { data } = await axios.get<ClipMeta>(`/api/clips/${id}/meta`);
   return data;

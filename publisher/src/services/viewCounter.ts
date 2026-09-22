@@ -66,6 +66,21 @@ let dirty = false;
 let timer: ReturnType<typeof setInterval> | null = null;
 
 /**
+ * When this publisher first started counting, ever.
+ *
+ * Written into the counters file on the first run and never changed. It is the
+ * one thing that makes "0 views" readable: a clip published two years ago and
+ * one published this morning both read zero on the day this ships, and without
+ * a start date anything that suggests a cleanup would confidently offer up the
+ * entire library.
+ *
+ * Deliberately not derived from the oldest count. A publisher that has been
+ * running for a year and has never had a viewer has been counting for a year,
+ * and deriving it would say it had never started.
+ */
+let startedAt: string | null = null;
+
+/**
  * What is not a viewer.
  *
  * The pre-warm asks for the page on purpose, as a reachability check, so
@@ -77,9 +92,14 @@ const NOT_A_VIEWER = /GoodBit-Publisher\/cache-prewarm/i;
 export function loadViewCounts(): void {
   try {
     const raw = fs.readFileSync(VIEWS_FILE, 'utf-8');
-    const parsed = JSON.parse(raw) as Record<string, ViewRecord>;
+    const parsed = JSON.parse(raw) as {
+      startedAt?: string;
+      clips?: Record<string, ViewRecord>;
+    };
 
-    for (const [filename, record] of Object.entries(parsed ?? {})) {
+    startedAt = typeof parsed?.startedAt === 'string' ? parsed.startedAt : null;
+
+    for (const [filename, record] of Object.entries(parsed?.clips ?? {})) {
       if (!filename || typeof record?.views !== 'number') continue;
       counts.set(filename, {
         views: Math.max(0, Math.floor(record.views)),
@@ -93,6 +113,15 @@ export function loadViewCounts(): void {
     if (code !== 'ENOENT') {
       console.warn(`[views] could not read ${VIEWS_FILE}:`, (error as Error).message);
     }
+  }
+
+  if (!startedAt) {
+    // First run. Recorded now and written out immediately, so a publisher that
+    // is restarted before anybody visits still knows when it began.
+    startedAt = new Date().toISOString();
+    dirty = true;
+    flushViewCounts();
+    console.log(`[views] counting from ${startedAt}`);
   }
 
   if (!timer) {
@@ -145,8 +174,9 @@ export function forgetViews(filename: string): void {
 export function flushViewCounts(): void {
   if (!dirty) return;
 
-  const payload: Record<string, ViewRecord> = {};
-  for (const [filename, record] of counts) payload[filename] = record;
+  const clips: Record<string, ViewRecord> = {};
+  for (const [filename, record] of counts) clips[filename] = record;
+  const payload = { startedAt, clips };
 
   const temporary = `${VIEWS_FILE}.tmp`;
   try {
@@ -166,9 +196,12 @@ export function flushViewCounts(): void {
   }
 }
 
-/** Every clip with a count, for the stats endpoint. */
-export function allViewCounts(): Record<string, ViewRecord> {
-  const out: Record<string, ViewRecord> = {};
-  for (const [filename, record] of counts) out[filename] = record;
-  return out;
+/**
+ * When counting began, or null on a publisher that has somehow never started.
+ *
+ * The honest answer to "0 views" on an old clip, and the thing anything
+ * suggesting a cleanup has to wait for.
+ */
+export function countingSince(): string | null {
+  return startedAt;
 }
