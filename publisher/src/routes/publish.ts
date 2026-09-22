@@ -7,7 +7,7 @@ import { clipsService } from '../services/clipsService.js';
 import { StoreThumbnailAction } from '../actions/StoreThumbnailAction.js';
 import { UpdateMetadataAction } from '../actions/UpdateMetadataAction.js';
 import { parseGoodBits } from '../utils/goodBits.js';
-import { allViewCounts, viewsFor } from '../services/viewCounter.js';
+import { countingSince, viewsFor } from '../services/viewCounter.js';
 
 const uploadDest = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'public');
 const storage = multer.diskStorage({
@@ -85,21 +85,6 @@ publishRouter.get('/stats', asyncHandler(async (_req, res) => {
     countingSince: countingSince(),
   });
 }));
-
-/**
- * When this publisher started counting at all.
- *
- * The oldest `lastViewedAt` it holds, which is the best available answer: the
- * counter keeps no birthday of its own, and an empty file is indistinguishable
- * from one that has never seen a viewer.
- */
-function countingSince(): string | null {
-  const dates = Object.values(allViewCounts())
-    .map((record) => record.lastViewedAt)
-    .filter(Boolean)
-    .sort();
-  return dates[0] ?? null;
-}
 
 publishRouter.post('/', upload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Missing file' });

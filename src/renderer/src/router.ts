@@ -5,6 +5,7 @@ import { useCollectionDetail } from '@renderer/composables/library/useCollection
 import TodaysClipsPage from './views/TodaysClipsPage.vue';
 import StatsPage from './views/StatsPage.vue';
 import StorageSaverPage from './views/StorageSaverPage.vue';
+import PublisherPage from './views/PublisherPage.vue';
 import TagPatternsPage from './views/TagPatternsPage.vue';
 import SettingsPage from './views/SettingsPage.vue';
 import EditorPage from './views/EditorPage.vue';
@@ -64,6 +65,18 @@ export const router = createRouter({
             // in the tag popover, and only for words you have written.
             subtitle: 'Words that offer a tag when you open the tag box on a clip'
           }
+        },
+        {
+          path: 'publisher',
+          name: 'publisher',
+          component: PublisherPage,
+          meta: {
+            title: 'Publisher',
+            // Says whose disk, because a storage figure on a screen in this
+            // app reads as this machine's drive and this one is the server
+            // the clips were uploaded to.
+            subtitle: 'What is behind a public link, and what nobody has opened',
+          },
         },
         {
           path: 'storage',

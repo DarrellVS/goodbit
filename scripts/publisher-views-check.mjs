@@ -144,6 +144,15 @@ async function start() {
   return child;
 }
 
+/** The counters file as it is right now, or null if it is not there yet. */
+function saved() {
+  try {
+    return JSON.parse(readFileSync(viewsFile, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
 /** Poll until something is true, or give up. */
 async function until(condition, ms) {
   const deadline = Date.now() + ms;
@@ -258,6 +267,15 @@ ok(
   'the sidecar is not listed as a clip',
   seen.clips.every((clip) => !clip.filename.endsWith('.meta.json')),
 );
+/*
+ * When counting began, which is what makes "0 views" readable.
+ *
+ * On the day this ships every clip reads zero, so anything suggesting a
+ * cleanup has to know how long the counter has actually been watching. A
+ * publisher running for a year with no viewers has still been counting for a
+ * year, which is why this is recorded rather than derived from the counts.
+ */
+ok('it says when counting began', Boolean(seen.countingSince), String(seen.countingSince));
 
 /* ------------------------------------------------------- the sidecar leak */
 
@@ -267,24 +285,34 @@ ok('is no longer served', leaked.status === 404, String(leaked.status));
 
 /* ---------------------------------------------------------- across a restart */
 
+// Noted before the restart, because the point of the last check below is that
+// this does not move: a start date that reset on every restart would make the
+// dashboard's warm-up clause permanent and no suggestion would ever appear.
+const firstStarted = seen.countingSince;
+
 console.log('\nacross a restart');
-server.kill('SIGTERM');
-await new Promise((resolve) => server.on('exit', resolve));
 
 /*
- * Waited for rather than asserted on the instant the process is told to stop.
+ * Waited for by content, and before the stop rather than after it.
  *
- * On Windows a spawned process is killed outright and no shutdown handler
- * runs, so what puts the counts on disk here is the flush timer, which is
- * asynchronous with respect to the kill. The property worth testing is that
- * the counts reach disk, not that they reach it in zero milliseconds.
+ * The file appears immediately, because the first thing the counter does is
+ * write down when it started, so `existsSync` proves nothing about the counts:
+ * an earlier version of this passed on a file holding `"clips": {}`.
+ *
+ * And the wait comes first because on Windows a spawned process is killed
+ * outright and no shutdown handler runs, so what puts counts on disk here is
+ * the flush timer. The shutdown flush is real and is what matters in the
+ * container on Linux; it is simply not the thing this machine can test.
  */
-const written = await until(() => existsSync(viewsFile), 4000);
+const written = await until(() => saved()?.clips?.['clip.mp4']?.views === 2, 5000);
 ok('the counts were written out', written, viewsFile);
-if (existsSync(viewsFile)) {
-  const saved = JSON.parse(readFileSync(viewsFile, 'utf-8'));
-  console.log(`  ${JSON.stringify(saved)}`);
-  ok('with the right number in them', saved['clip.mp4']?.views === 2);
+await stop(server);
+
+const onDisk = saved();
+if (onDisk) {
+  console.log(`  ${JSON.stringify(onDisk)}`);
+  ok('with the right number in them', onDisk.clips?.['clip.mp4']?.views === 2);
+  ok('and the date counting began', Boolean(onDisk.startedAt), String(onDisk.startedAt));
 }
 
 server = await start();
@@ -294,6 +322,9 @@ ok('and are still there afterwards', seen.clips[0].views === 2, String(seen.clip
 await fetch(`${base}/clip.mp4`);
 seen = await stats();
 ok('and carry on from where they were', seen.clips[0].views === 3, String(seen.clips[0].views));
+// The start date is written once and never moved, or the warm-up clause on the
+// dashboard would reset itself on every restart and never let a suggestion through.
+ok('and counting still began when it began', seen.countingSince === firstStarted, String(seen.countingSince));
 
 await stop(server);
 

@@ -43,6 +43,8 @@ const MAIN = [
 ];
 
 const UTILITY = [
+  // Directly above Smart Tags, as the issue asked.
+  { to: '/publisher', icon: 'material-symbols:cloud-done', label: 'Publisher' },
   { to: '/tag-patterns', icon: 'material-symbols:auto-awesome', label: 'Smart Tags' },
   { to: '/storage', icon: 'material-symbols:hard-drive', label: 'Storage Saver' },
   { to: '/stats', icon: 'material-symbols:bar-chart', label: 'Stats' },

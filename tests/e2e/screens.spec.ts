@@ -27,6 +27,7 @@ const ROUTES = [
   { hash: '#/stats', name: 'stats' },
   { hash: '#/tag-patterns', name: 'tag-patterns' },
   { hash: '#/storage', name: 'storage' },
+  { hash: '#/publisher', name: 'publisher' },
   /*
    * All six settings sections, by their real names.
    *

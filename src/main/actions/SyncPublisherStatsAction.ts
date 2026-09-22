@@ -3,6 +3,7 @@ import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { publisherAuthHeaders, publisherBaseUrl } from '../services/publisherConfig.js';
+import { ClipDTO } from '@shared/index.js';
 
 export interface PublisherClipStat {
   filename: string;
@@ -13,6 +14,15 @@ export interface PublisherClipStat {
 }
 
 export interface SyncPublisherStatsOutput {
+  /**
+   * The published clips, with their numbers already on them.
+   *
+   * Returned rather than left for a second request: this action loads exactly
+   * those rows to write the counts, so handing them back costs nothing and
+   * saves the screen a round trip and the list route a `published` filter it
+   * has no other use for.
+   */
+  clips: ClipDTO[];
   /** How many rows had their numbers changed. */
   updated: number;
   totals: { clips: number; bytes: number; views: number };
@@ -46,6 +56,7 @@ export interface SyncPublisherStatsOutput {
 export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStatsOutput> {
   async execute(): Promise<SyncPublisherStatsOutput> {
     const empty: SyncPublisherStatsOutput = {
+      clips: [],
       updated: 0,
       totals: { clips: 0, bytes: 0, views: 0 },
       countingSince: null,
@@ -85,18 +96,20 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
     }
 
     const stats = new Map((payload.clips ?? []).map((stat) => [stat.filename, stat]));
-    if (!stats.size) {
-      return {
-        updated: 0,
-        totals: payload.totals ?? empty.totals,
-        countingSince: payload.countingSince ?? null,
-      };
-    }
 
     const repo = AppDataSource.getRepository(Clip);
     // Only the published ones. The publisher knows nothing about the rest, and
     // writing null over null is a save per row for no change.
     const clips = await repo.find({ where: { published: true } });
+
+    if (!stats.size) {
+      return {
+        clips: clips.map((clip) => ClipDTO.fromEntity(clip)),
+        updated: 0,
+        totals: payload.totals ?? empty.totals,
+        countingSince: payload.countingSince ?? null,
+      };
+    }
 
     let updated = 0;
     for (const clip of clips) {
@@ -117,6 +130,7 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
     if (updated) console.log(`[publisher] view counts updated on ${updated} clips`);
 
     return {
+      clips: clips.map((clip) => ClipDTO.fromEntity(clip)),
       updated,
       totals: payload.totals ?? empty.totals,
       countingSince: payload.countingSince ?? null,
