@@ -263,8 +263,10 @@ test.describe('measurements for 2.0', () => {
     );
     console.log(`MEASURED  export finished as: ${finished.message || 'no message'}`);
 
-    // The render lands in the library as a clip of its own, under Exports.
-    const exports = await clipsIn('Exports');
+    // The render lands in the library as a clip of its own. Every clip on this
+    // timeline is from one game, so it belongs to that game, in its own
+    // `Exports/` folder, rather than to the flat top level one.
+    const exports = await clipsIn(game);
     expect(exports.items.some((clip) => clip.filename.startsWith('measure-bench'))).toBe(true);
   });
 });
