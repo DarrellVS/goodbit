@@ -29,8 +29,20 @@ export async function recordTrim(label: TrimLabel): Promise<void> {
     ...label,
     // A trim that lands on the suggestion is an acceptance of it, and a trim
     // somewhere else is a correction. Both are useful; the difference matters.
-    source: agrees(label) ? 'accepted' : 'trim',
+    source: labelKind(label),
   });
+}
+
+/**
+ * Whether a chosen range counts as taking the suggestion or correcting it.
+ *
+ * Exported so the classification can be asserted without a database. It is the
+ * one number in this file that is a judgement rather than a record: 0.4s at
+ * both ends, which is loose enough that nudging a handle by a frame is still
+ * agreement and tight enough that cutting somewhere else is not.
+ */
+export function labelKind(label: TrimLabel): 'accepted' | 'trim' {
+  return agrees(label) ? 'accepted' : 'trim';
 }
 
 /** Someone was shown a suggestion and said it was wrong. */

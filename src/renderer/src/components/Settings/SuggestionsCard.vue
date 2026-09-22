@@ -125,9 +125,10 @@ onMounted(refresh);
   <div class="setting-card">
     <h3>Suggestions learn from your trims</h3>
     <p>
-      Every trim records where you cut and what GoodBit had suggested. Once there are enough, it
-      fits a small model to those decisions and uses it instead of the built-in rule, then keeps
-      refitting as you go. Nothing leaves this machine.
+      Every trim records where you cut and what GoodBit had suggested, on the trim screen and on
+      each clip of a montage when you export one. Once there are enough, it fits a small model to
+      those decisions and uses it instead of the built-in rule, then keeps refitting as you go.
+      Nothing leaves this machine.
     </p>
 
     <template v-if="summary">
