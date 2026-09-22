@@ -44,11 +44,6 @@ export interface FindBurstClipsOutput {
  * Clips with no date are excluded rather than guessed at, and clips already
  * published carry their badge into the cluster, so nobody deletes the one with
  * a live link by accident.
- *
- * One filter is missing on purpose and should be added when #17 merges: an
- * export is not a burst, two montages rendered a minute apart being two
- * deliberate acts rather than copies of each other. `clip.isExport` is the
- * column that says so and it does not exist on this branch.
  */
 export class FindBurstClipsAction extends BaseAction<FindBurstClipsInput, FindBurstClipsOutput> {
   async execute(input: FindBurstClipsInput): Promise<FindBurstClipsOutput> {
@@ -56,6 +51,16 @@ export class FindBurstClipsAction extends BaseAction<FindBurstClipsInput, FindBu
 
     const rows = await AppDataSource.getRepository(Clip)
       .createQueryBuilder('clip')
+      /*
+       * An export is not a burst.
+       *
+       * Two montages rendered a minute apart are two deliberate acts and
+       * neither is a copy of the other, but they land in the game's own folder
+       * now and so appear in the library beside the recordings they were cut
+       * from. Without this, rendering three versions of one edit would be
+       * offered up as duplicate footage to delete.
+       */
+      .where('clip.isExport = 0')
       .orderBy('COALESCE(clip.recordedAt, clip.fileModifiedAt)', 'ASC')
       .getMany();
 
