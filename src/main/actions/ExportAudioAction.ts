@@ -1,7 +1,7 @@
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource, AUDIO_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
+import { ffmpegCommand, runFfmpeg } from '../services/ffmpegProcess.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 
@@ -37,19 +37,21 @@ export class ExportAudioAction extends BaseAction<ExportAudioInput, ExportAudioO
     };
   }
 
-  private extractAudio(inputPath: string, outputPath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      ffmpegConfigured(inputPath)
-        .outputOptions([
-          '-vn',                    // No video
-          '-acodec libmp3lame',     // MP3 codec
-          '-q:a 2',                 // High quality (0-9, lower is better)
-        ])
-        .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err: Error) => reject(new Error(`Failed to extract audio: ${err.message}`)))
-        .run();
-    });
+  private async extractAudio(inputPath: string, outputPath: string): Promise<void> {
+    try {
+      await runFfmpeg(
+        ffmpegCommand(inputPath)
+          .outputOptions([
+            '-vn',                    // No video
+            '-acodec libmp3lame',     // MP3 codec
+            '-q:a 2',                 // High quality (0-9, lower is better)
+          ])
+          .output(outputPath),
+        { timeoutMs: 30 * 60_000 },
+      );
+    } catch (error) {
+      throw new Error(`Failed to extract audio: ${(error as Error).message}`);
+    }
   }
 }
 

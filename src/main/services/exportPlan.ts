@@ -288,8 +288,8 @@ export function buildRenderPlan(
  * One ffmpeg invocation, as values rather than as a built command.
  *
  * Kept as plain arrays so the whole thing can be read back in a test. The
- * action turns it into a `FfmpegCommand`; nothing here knows fluent-ffmpeg
- * exists.
+ * action turns it into an argument list; nothing here knows how ffmpeg is
+ * spawned.
  */
 export interface SegmentCommand {
   inputs: Array<{ path: string; options: string[] }>;

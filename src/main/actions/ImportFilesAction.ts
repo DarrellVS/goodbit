@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource, VIDEOS_ROOT } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
-import { ffmpegConfigured } from '../services/ffmpeg.js';
+import { ffmpegCommand, runFfmpeg } from '../services/ffmpegProcess.js';
 
 export interface ImportFilesInput {
   files: Array<{
@@ -133,8 +133,8 @@ export class ImportFilesAction extends BaseAction<ImportFilesInput, ImportFilesO
   }
 
   private async convertToMp4(inputPath: string, outputPath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      ffmpegConfigured(inputPath)
+    await runFfmpeg(
+      ffmpegCommand(inputPath)
         .outputOptions([
           '-c:v libx264',           // H.264 video codec
           '-preset medium',         // Encoding speed/quality balance
@@ -144,11 +144,9 @@ export class ImportFilesAction extends BaseAction<ImportFilesInput, ImportFilesO
           '-movflags +faststart',   // Optimize for streaming
           '-pix_fmt yuv420p',       // Ensure compatibility
         ])
-        .output(outputPath)
-        .on('end', () => resolve())
-        .on('error', (err: Error) => reject(err))
-        .run();
-    });
+        .output(outputPath),
+      { timeoutMs: 60 * 60_000 },
+    );
   }
 }
 
