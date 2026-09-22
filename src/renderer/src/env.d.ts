@@ -98,6 +98,20 @@ interface GoodBitBridge {
   onServiceEvent: (listener: (event: unknown) => void) => () => void;
 }
 
+/**
+ * Every key `settings.json` can hold, as it crosses the bridge.
+ *
+ * This is the wire shape of main's own `Settings`, and it had fallen six keys
+ * behind it: `clipToast*`, `analyzeOnGameClose*`, `gameOverrides`, `mcp*`,
+ * `window` and `schemaVersion` all existed in main and none of them here. It
+ * is not cosmetic. `saveSettings` takes a `Partial<AppSettingsWire>`, so a key
+ * missing from this interface cannot be written from the window at all
+ * without a cast, and a whole settings screen can be built against a type that
+ * says the thing it is editing does not exist.
+ *
+ * Whatever is added to `src/main/settings.ts` is added here, in the same
+ * change.
+ */
 interface AppSettingsWire {
   videosRoot: string;
   audioRoot: string;
@@ -106,10 +120,32 @@ interface AppSettingsWire {
   startAtLogin: boolean;
   keepRunningInTray: boolean;
   startObsWithGoodbit?: boolean;
+  /** A person's own correction to what a folder's game is called. */
+  gameOverrides?: Record<string, string>;
+  clipToast?: boolean;
+  clipToastSound?: boolean;
+  clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  clipToastVolume?: number;
+  analyzeOnGameClose?: boolean;
+  analyzeOnGameCloseToast?: boolean;
+  analyzeOnGameCloseSound?: boolean;
+  mcpEnabled?: boolean;
+  mcpPort?: number;
+  mcpToken?: string;
   migratedFromWebApp: boolean;
+  /** The app version that last booted against this database. Main's, not the window's. */
+  schemaVersion?: string;
   learnFromTrims?: boolean;
   compressTrims?: boolean;
   compressPublished?: boolean;
+  recordingQuality?: 'balanced' | 'indistinguishable';
+  window?: {
+    x?: number;
+    y?: number;
+    width: number;
+    height: number;
+    maximized: boolean;
+  };
 }
 
 interface BackupFileWire {
