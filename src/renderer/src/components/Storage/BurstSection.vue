@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
-import { ICON_BOX_LG, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import { SECTION_HEADER } from '@renderer/components/Base/geometry';
+import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
 import BurstClusterCard from './BurstCluster.vue';
 import ReclaimSummary from './ReclaimSummary.vue';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
@@ -43,19 +43,15 @@ const emit = defineEmits<{
       <BaseSpinner />
     </div>
 
-    <div
+    <BaseEmptyState
       v-else-if="!data?.clusters.length"
-      class="rounded-lg border border-border/60 px-4 py-8 text-center"
+      size="panel"
+      tone="success"
+      icon="material-symbols:check-circle-outline"
+      title="No duplicates of one moment"
     >
-      <Icon
-        icon="material-symbols:check-circle-outline"
-        :class="[ICON_BOX_LG, 'mx-auto mb-2 text-success']"
-      />
-      <p class="text-sm text-foreground">No duplicates of one moment</p>
-      <p class="mt-1 text-sm text-muted-500">
-        Nothing was saved twice within {{ windowSec }} seconds.
-      </p>
-    </div>
+      Nothing was saved twice within {{ windowSec }} seconds.
+    </BaseEmptyState>
 
     <template v-else>
       <ReclaimSummary :bytes="data.reclaimableBytes" :clips="data.totalClips" />

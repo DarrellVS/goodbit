@@ -4,7 +4,8 @@ import { Icon } from '@iconify/vue';
 import { useShortcutCustomization } from '@renderer/composables/settings/useShortcutCustomization';
 import { useShortcutEditor } from '@renderer/composables/settings/useShortcutEditor';
 import { getKeyDisplayName, SHORTCUT_ACTIONS, type ShortcutKey } from '@renderer/constants/shortcuts';
-import { BUTTON_SMALL, ICON_BOX } from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /** A key, drawn the same way wherever one is shown. */
 const KEY_CAP =
@@ -91,13 +92,12 @@ function getActionLabel(actionId: string): string {
 
           <div v-if="editingActionId === action.id" class="flex items-center gap-2 shrink-0">
             <span class="text-sm text-accent-ink">Press a key</span>
-            <button
-              type="button"
-              :class="BUTTON_SMALL"
+            <BaseButton
+              size="sm"
               @click="editor.cancelEditing"
             >
               Cancel
-            </button>
+            </BaseButton>
           </div>
 
           <div v-else class="flex items-center gap-2 shrink-0">
@@ -112,19 +112,19 @@ function getActionLabel(actionId: string): string {
             >
               {{ getKeyDisplayName(shortcuts.getActionKey(action.id)!) }}
             </kbd>
-            <button type="button" :class="BUTTON_SMALL" @click="editor.startEditing(action.id)">
+            <BaseButton size="sm" @click="editor.startEditing(action.id)">
               Change
-            </button>
-            <button
+            </BaseButton>
+            <BaseButton
               v-if="shortcuts.customShortcuts.value[action.id]"
-              type="button"
-              :class="[BUTTON_SMALL, '!px-2']"
+              size="sm"
+              class="px-2"
               title="Put this one back to its default"
               aria-label="Put this one back to its default"
               @click="editor.assignKey(action.id, null)"
             >
               <Icon icon="material-symbols:restart-alt" :class="ICON_BOX" />
-            </button>
+            </BaseButton>
           </div>
         </div>
       </section>

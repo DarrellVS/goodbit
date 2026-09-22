@@ -1,14 +1,12 @@
 <script setup lang="ts">
+import { statusDotVariants } from '@renderer/components/Base/variants';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import ObsSetupDialog from './ObsSetupDialog.vue';
 import ClipsFolderCard from './ClipsFolderCard.vue';
-import {
-  BUTTON,
-  BUTTON_STRONG,
-  ICON_BOX,
-} from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
 import type { ComboBoxOption } from '@renderer/components/Base/types';
@@ -266,11 +264,7 @@ function openGuide(): void {
       -->
       <div class="flex items-center gap-2">
         <BaseSpinner v-if="!status" class="size-3.5 shrink-0 block text-muted-400" />
-        <span
-          v-else
-          class="size-1.5 rounded-full shrink-0"
-          :class="status.ready ? 'bg-success' : 'bg-accent'"
-        />
+        <span v-else :class="statusDotVariants({ tone: status.ready ? 'ok' : 'waiting' })" />
         <h3>{{ headline }}</h3>
       </div>
       <p>{{ subhead }}</p>
@@ -299,8 +293,7 @@ function openGuide(): void {
             class="flex items-start gap-2.5 py-3 border-t border-border"
           >
             <span
-              class="size-1.5 rounded-full shrink-0 mt-2"
-              :class="finding.level === 'blocker' ? 'bg-danger' : 'bg-muted-300'"
+              :class="[statusDotVariants({ tone: finding.level === 'blocker' ? 'blocker' : 'quiet' }), 'mt-2']"
             />
             <div class="min-w-0">
               <p class="text-sm font-medium text-foreground">{{ finding.title }}</p>
@@ -310,9 +303,8 @@ function openGuide(): void {
         </ul>
 
         <div class="flex flex-wrap items-center gap-2 mt-4">
-          <button
-            type="button"
-            :class="BUTTON_STRONG"
+          <BaseButton
+            tone="strong"
             :disabled="loading || working"
             @click="openSetup"
           >
@@ -325,11 +317,11 @@ function openGuide(): void {
                     ? 'Change the setup'
                     : 'Set up OBS for me'
             }}
-          </button>
+          </BaseButton>
 
-          <button v-if="status.ready" type="button" :class="BUTTON" @click="launch">
+          <BaseButton v-if="status.ready" @click="launch">
             {{ status.running ? 'OBS is running' : 'Start OBS' }}
-          </button>
+          </BaseButton>
 
           <button
             type="button"
@@ -371,7 +363,7 @@ function openGuide(): void {
         setup. Nothing is reset, and every step shows what is already set.
       </p>
       <div class="mt-4">
-        <button type="button" :class="BUTTON" @click="runOnboarding">Start it</button>
+        <BaseButton @click="runOnboarding">Start it</BaseButton>
       </div>
     </div>
 
@@ -411,17 +403,16 @@ function openGuide(): void {
             open.
           </p>
         </div>
-        <button
+        <BaseButton
           v-if="!status?.running"
-          type="button"
-          :class="[BUTTON, 'shrink-0']"
+          class="shrink-0"
           @click="openSetup"
         >
           Write it to OBS
-        </button>
-        <button v-else type="button" :class="[BUTTON, 'shrink-0']" :disabled="working" @click="closeObsForQuality">
+        </BaseButton>
+        <BaseButton v-else class="shrink-0" :disabled="working" @click="closeObsForQuality">
           Close OBS
-        </button>
+        </BaseButton>
       </div>
     </template>
 
@@ -550,9 +541,9 @@ function openGuide(): void {
             Shows the card and plays the chime, without recording anything
           </p>
         </div>
-        <button type="button" :class="[BUTTON, 'shrink-0']" @click="previewToast">
+        <BaseButton class="shrink-0" @click="previewToast">
           Show me
-        </button>
+        </BaseButton>
       </div>
 
       <!-- The one thing that can make this look broken, said once and quietly. -->
@@ -603,9 +594,9 @@ function openGuide(): void {
             Shows both halves, without reading anything
           </p>
         </div>
-        <button type="button" :class="[BUTTON, 'shrink-0']" @click="previewSweep">
+        <BaseButton class="shrink-0" @click="previewSweep">
           Show me
-        </button>
+        </BaseButton>
       </div>
     </template>
 

@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from 'reka-ui';
 import type { Clip } from '@renderer/types/clip';
+import { menuItemVariants } from '@renderer/components/Base/variants';
+import { MENU_CONTENT, MENU_ICON, MENU_SEPARATOR } from '@renderer/components/Base/geometry';
 
 interface Props {
   selectedCount: number;
@@ -108,56 +110,56 @@ const someStarred = computed(() =>
         </DropdownMenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuContent
-            class="min-w-[232px] bg-card rounded-md p-1.5 shadow-pop border border-border outline-hidden z-50"
+            :class="MENU_CONTENT"
             :side-offset="8"
           >
             <!-- Open in Advanced Editor -->
             <DropdownMenuItem
-              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+              :class="menuItemVariants()"
               @click="emit('open-in-editor')"
             >
-              <Icon icon="material-symbols:movie-edit" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:movie-edit" :class="MENU_ICON" />
               <span>Open in the editor</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />
+            <DropdownMenuSeparator :class="MENU_SEPARATOR" />
 
             <!-- Publish/Unpublish -->
             <DropdownMenuItem
               v-if="!allPublished"
-              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+              :class="menuItemVariants()"
               @click="emit('publish')"
             >
-              <Icon icon="material-symbols:cloud-upload" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:cloud-upload" :class="MENU_ICON" />
               <span>Publish</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               v-if="somePublished"
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
+              :class="menuItemVariants({ tone: 'danger' })"
               @click="emit('unpublish')"
             >
-              <Icon icon="material-symbols:cloud-off" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:cloud-off" :class="MENU_ICON" />
               <span>Unpublish</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />
+            <DropdownMenuSeparator :class="MENU_SEPARATOR" />
 
             <!-- Add to Collection -->
             <DropdownMenuItem
-              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none text-foreground"
+              :class="menuItemVariants()"
               @click="emit('add-to-collection')"
             >
-              <Icon icon="material-symbols:create-new-folder" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:create-new-folder" :class="MENU_ICON" />
               <span>Add to Collection</span>
             </DropdownMenuItem>
 
             <!-- Remove from Collection (if in collection view) -->
             <DropdownMenuItem
               v-if="collectionId"
-              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-accent-ink hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              :class="menuItemVariants({ tone: 'accent' })"
               @click="emit('remove-from-collection')"
             >
-              <Icon icon="material-symbols:folder-delete" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:folder-delete" :class="MENU_ICON" />
               <span>Remove from Collection</span>
             </DropdownMenuItem>
 
@@ -168,10 +170,10 @@ const someStarred = computed(() =>
             -->
             <DropdownMenuItem
               v-if="anyPublished"
-              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              :class="menuItemVariants()"
               @click="emit('compress-published')"
             >
-              <Icon icon="material-symbols:cloud-sync" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:cloud-sync" :class="MENU_ICON" />
               <span>Shrink published copies</span>
             </DropdownMenuItem>
 
@@ -182,21 +184,21 @@ const someStarred = computed(() =>
               quality is spent, so it is not the same kind of act as deleting.
             -->
             <DropdownMenuItem
-              class="flex items-center gap-2.5 h-[34px] px-2.5 text-sm rounded-sm text-foreground hover:bg-muted-100 outline-hidden cursor-pointer select-none"
+              :class="menuItemVariants()"
               @click="emit('compress')"
             >
-              <Icon icon="material-symbols:compress" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:compress" :class="MENU_ICON" />
               <span>Compress</span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="h-px bg-border my-1.5 mx-2" />
+            <DropdownMenuSeparator :class="MENU_SEPARATOR" />
 
             <!-- Delete -->
             <DropdownMenuItem
-              class="flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-danger/8 text-danger-ink outline-hidden cursor-pointer select-none"
+              :class="menuItemVariants({ tone: 'danger' })"
               @click="emit('delete')"
             >
-              <Icon icon="material-symbols:delete" class="size-4 shrink-0 block text-muted-400" />
+              <Icon icon="material-symbols:delete" :class="MENU_ICON" />
               <span>Delete</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

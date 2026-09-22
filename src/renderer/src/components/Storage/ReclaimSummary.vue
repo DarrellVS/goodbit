@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BasePanel from '@renderer/components/Base/BasePanel.vue';
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { ICON_BOX_LG } from '@renderer/components/Base/geometry';
@@ -33,7 +34,7 @@ const share = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3.5">
+  <BasePanel class="flex items-center gap-3">
     <Icon icon="material-symbols:hard-drive" :class="[ICON_BOX_LG, 'text-muted-400']" />
     <div class="min-w-0">
       <div class="font-mono text-lg tabular-nums text-foreground">{{ formatBytes(bytes) }}</div>
@@ -41,5 +42,5 @@ const share = computed(() => {
         across {{ clips }} {{ clips === 1 ? 'clip' : 'clips' }}<template v-if="share">, {{ share }}</template>
       </p>
     </div>
-  </div>
+  </BasePanel>
 </template>

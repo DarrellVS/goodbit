@@ -6,12 +6,8 @@ import { useFormat } from '@renderer/composables/ui/useFormat';
 import { formatDate } from '@renderer/helpers/dateFormat';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
-import {
-  BUTTON,
-  BUTTON_SMALL,
-  BUTTON_STRONG,
-  ICON_BOX,
-} from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -146,9 +142,9 @@ onMounted(() => {
           timestamps is easy enough to misread without adding a second step
           that hides which one is selected.
         -->
-        <button
-          type="button"
-          :class="[BUTTON_SMALL, 'shrink-0']"
+        <BaseButton
+          size="sm"
+          class="shrink-0"
           :disabled="!!restoring || working"
           title="Replace the current library with this copy and restart"
           @click="restore(backup)"
@@ -156,23 +152,23 @@ onMounted(() => {
           <BaseSpinner v-if="restoring === backup.path" :class="ICON_BOX" />
           <Icon v-else icon="material-symbols:history" :class="ICON_BOX" />
           {{ restoring === backup.path ? 'Restoring' : 'Restore' }}
-        </button>
+        </BaseButton>
       </div>
     </div>
 
     <p v-else class="!mt-4">No copies yet.</p>
 
     <div class="flex flex-wrap gap-2 mt-4">
-      <button type="button" :class="BUTTON_STRONG" :disabled="working" @click="backUpNow">
+      <BaseButton tone="strong" :disabled="working" @click="backUpNow">
         <BaseSpinner v-if="working" :class="ICON_BOX" />
         <Icon v-else icon="material-symbols:backup" :class="ICON_BOX" />
         {{ working ? 'Copying' : 'Back up now' }}
-      </button>
+      </BaseButton>
 
-      <button type="button" :class="BUTTON" @click="reveal">
+      <BaseButton @click="reveal">
         <Icon icon="material-symbols:folder-open" :class="ICON_BOX" />
         Show me the files
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

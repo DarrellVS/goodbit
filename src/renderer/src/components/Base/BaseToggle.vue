@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { switchThumbVariants, switchTrackVariants } from './variants';
+
 /**
  * The on/off switch, wherever the app has one.
  *
@@ -51,13 +53,7 @@ function toggle(): void {
       filling with the accent's colour at the accent's weight rather than by
       becoming a block of it.
     -->
-    <span
-      class="absolute left-px h-6 w-11 rounded-full border transition-colors duration-150"
-      :class="modelValue ? 'bg-accent-sunk border-accent' : 'bg-muted-100 border-line-strong'"
-    />
-    <span
-      class="absolute left-[5px] size-4 rounded-full transition-[transform,background-color] duration-150"
-      :class="modelValue ? 'translate-x-5 bg-accent' : 'translate-x-0 bg-muted-400'"
-    />
+    <span :class="switchTrackVariants({ on: modelValue })" />
+    <span :class="switchThumbVariants({ on: modelValue })" />
   </button>
 </template>

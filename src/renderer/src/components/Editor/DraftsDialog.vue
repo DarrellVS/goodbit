@@ -16,6 +16,7 @@ import { useToastStore } from '@renderer/stores/toast';
 import { downloadDraft, parseDraftFile, type DraftFilePayload } from '@renderer/utils/draftFile';
 import type { EditorDraft } from '@renderer/types/editor';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 interface Props {
   open: boolean;
@@ -267,15 +268,16 @@ watch(
               >
                 Open
               </button>
-              <button
-                type="button"
-                class="size-8 shrink-0 inline-flex items-center justify-center rounded-md text-muted-500 hover:text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
+              <BaseButton
+                tone="quiet"
+                size="sm"
+                icon-only
                 title="Export to a file"
                 aria-label="Export this draft to a file"
                 @click="downloadDraft(draft)"
               >
                 <Icon icon="material-symbols:download" class="size-4 shrink-0 block" />
-              </button>
+              </BaseButton>
               <button
                 class="p-1.5 rounded-lg text-muted-500 hover:text-danger-ink hover:bg-danger/8 transition-colors"
                 title="Delete draft"

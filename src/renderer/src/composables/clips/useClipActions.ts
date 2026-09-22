@@ -1,6 +1,12 @@
 import { computed, MaybeRefOrGetter, ref, toValue, watch, type Ref } from 'vue';
 import type { Clip } from '@renderer/types/clip';
-import type { PopoverAction } from '@renderer/components/Base/types';
+/** One thing a clip's menu can do. `useClipActionsHandlers` reads the handlers and the busy flag. */
+interface ClipAction {
+  key: string;
+  label: string;
+  disabled?: boolean;
+  onClick: () => void | Promise<void>;
+}
 import { createClipActionHandlers } from '@renderer/helpers/clipActionHandlers';
 
 export function useClipActions(opts: {
@@ -24,25 +30,24 @@ export function useClipActions(opts: {
         opts.router.push(`/editor?clip=${clip.id}`);
     }
 
-    const actions = computed<PopoverAction[]>(() => {
+    const actions = computed<ClipAction[]>(() => {
         const clip = toValue(opts.clip);
-        const list: PopoverAction[] = [];
+        const list: ClipAction[] = [];
 
         list.push(
-            { key: 'trim', label: 'Trim', onClick: onTrim, variant: 'muted' },
-            { key: 'edit', label: 'Advanced Edit', onClick: onAdvancedEdit, variant: 'muted' },
-            { key: 'reveal', label: 'Reveal in Explorer', onClick: onReveal, variant: 'muted' },
+            { key: 'trim', label: 'Trim', onClick: onTrim },
+            { key: 'edit', label: 'Advanced Edit', onClick: onAdvancedEdit },
+            { key: 'reveal', label: 'Reveal in Explorer', onClick: onReveal },
         );
 
         if (clip.published) {
             if (clip.publishedUrl) {
-                list.push({ key: 'copy', label: 'Copy URL', variant: 'muted', onClick: onCopyUrl });
+                list.push({ key: 'copy', label: 'Copy URL', onClick: onCopyUrl });
             }
 
             list.push({
                 key: 'unpublish',
                 label: isPublishing.value ? 'Unpublishing…' : 'Unpublish',
-                variant: 'danger',
                 disabled: isPublishing.value,
                 onClick: onUnpublish,
             });
@@ -50,14 +55,13 @@ export function useClipActions(opts: {
             list.push({
                 key: 'publish',
                 label: isPublishing.value ? 'Publishing…' : 'Publish',
-                variant: 'muted',
                 disabled: isPublishing.value,
                 onClick: onPublish,
             });
         }
 
         list.push(
-            { key: 'delete', label: 'Delete', variant: 'danger', onClick: onDelete, disabled: isPublishing.value },
+            { key: 'delete', label: 'Delete', onClick: onDelete, disabled: isPublishing.value },
         );
 
         return list;

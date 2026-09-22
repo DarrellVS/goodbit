@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { statusDotVariants } from '@renderer/components/Base/variants';
 import { computed, onMounted, ref } from 'vue';
 import SettingToggle from './SettingToggle.vue';
 import PublisherCard from './PublisherCard.vue';
 import StreamDeckCard from './StreamDeckCard.vue';
 import { useToastStore } from '@renderer/stores/toast';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
-import { BUTTON_SMALL } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /**
  * The two programs GoodBit talks to, and nothing else.
@@ -194,10 +195,7 @@ async function copyCommand(): Promise<void> {
           address it is answering on.
         -->
         <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
-          <span
-            class="size-1.5 rounded-full shrink-0"
-            :class="state.running ? 'bg-success' : 'bg-accent'"
-          />
+          <span :class="statusDotVariants({ tone: state.running ? 'ok' : 'waiting' })" />
           <span class="text-foreground">{{ state.running ? 'Listening' : 'Not listening' }}</span>
           <code class="font-mono text-xs text-muted-400 truncate">{{ state.url }}</code>
         </div>
@@ -232,22 +230,19 @@ async function copyCommand(): Promise<void> {
               </p>
               <p v-if="client.note" class="text-sm text-muted-500 mt-1">{{ client.note }}</p>
             </div>
-            <button
+            <BaseButton
               v-if="client.writable"
-              type="button"
-              :class="[
-                BUTTON_SMALL,
-                'shrink-0',
-                client.registered ? '!border-success/40 !text-success hover:!bg-success/10' : '',
-              ]"
+              size="sm"
+              :tone="client.registered ? 'success' : 'default'"
+              class="shrink-0"
               :disabled="working || !state.running"
               @click="toggleRegistration(!client.registered, client.id)"
             >
               {{ client.registered ? 'Connected' : 'Connect' }}
-            </button>
-            <button v-else type="button" :class="[BUTTON_SMALL, 'shrink-0']" @click="copyAddress">
+            </BaseButton>
+            <BaseButton v-else size="sm" class="shrink-0" @click="copyAddress">
               Copy address
-            </button>
+            </BaseButton>
           </div>
         </template>
 
@@ -266,10 +261,10 @@ async function copyCommand(): Promise<void> {
           </p>
           <code class="block font-mono text-xs text-muted-600 break-all">{{ shownCommand }}</code>
           <div class="flex items-center gap-2 pt-0.5">
-            <button type="button" :class="BUTTON_SMALL" @click="copyCommand">Copy</button>
-            <button type="button" :class="BUTTON_SMALL" @click="showToken = !showToken">
+            <BaseButton size="sm" @click="copyCommand">Copy</BaseButton>
+            <BaseButton size="sm" @click="showToken = !showToken">
               {{ showToken ? 'Hide the token' : 'Show the token' }}
-            </button>
+            </BaseButton>
           </div>
         </div>
 

@@ -3,7 +3,8 @@ import { computed, toRef } from 'vue';
 import { useLoadMoreWhenSeen } from '@renderer/composables/library/useLoadMoreWhenSeen';
 import { pluralize } from '@renderer/utils/pluralize';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
-import { BUTTON, ICON_BOX } from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import { Icon } from '@iconify/vue';
 
 /**
@@ -76,16 +77,14 @@ const sentinel = useLoadMoreWhenSeen({
     <div ref="sentinel" class="h-px -mb-px" aria-hidden="true"></div>
 
     <div v-if="hasMore" class="flex flex-col items-center gap-3 py-6">
-      <button
-        type="button"
-        :class="BUTTON"
+      <BaseButton
         :disabled="loading"
         @click="emit('load-more')"
       >
         <BaseSpinner v-if="loading" :class="ICON_BOX" />
         <Icon v-else icon="material-symbols:expand-more" :class="ICON_BOX" />
         {{ loading ? 'Loading' : 'Load more' }}
-      </button>
+      </BaseButton>
 
       <p class="font-mono text-xs tabular-nums text-muted-400">
         {{ loaded }} of {{ total }}

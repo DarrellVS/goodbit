@@ -4,12 +4,8 @@ import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useToastStore } from '@renderer/stores/toast';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
-import {
-  BUTTON,
-  BUTTON_QUIET,
-  BUTTON_STRONG,
-  ICON_BOX,
-} from '@renderer/components/Base/geometry';
+import { ICON_BOX } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import {
   fitSuggestionModel,
   forgetSuggestionModel,
@@ -217,9 +213,8 @@ onMounted(refresh);
     </template>
 
     <div class="flex flex-wrap items-center gap-2 mt-4">
-      <button
-        type="button"
-        :class="BUTTON_STRONG"
+      <BaseButton
+        tone="strong"
         :disabled="working || !ready"
         :title="
           ready
@@ -231,29 +226,27 @@ onMounted(refresh);
         <BaseSpinner v-if="working" :class="ICON_BOX" />
         <Icon v-else icon="material-symbols:model-training" :class="ICON_BOX" />
         {{ summary?.model ? 'Learn from them again' : 'Learn from them now' }}
-      </button>
+      </BaseButton>
 
-      <button
+      <BaseButton
         v-if="summary?.model"
-        type="button"
-        :class="BUTTON"
         :disabled="working"
         @click="revert"
       >
         <Icon icon="material-symbols:undo" :class="ICON_BOX" />
         Back to the built-in rule
-      </button>
+      </BaseButton>
 
-      <button
-        type="button"
-        :class="[BUTTON_QUIET, 'ml-auto']"
+      <BaseButton
+        tone="quiet"
+        class="ml-auto"
         :disabled="!summary?.total"
         title="Save your trim decisions as a file, for building something of your own offline"
         @click="exportLabels"
       >
         <Icon icon="material-symbols:download" :class="ICON_BOX" />
         Export decisions
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

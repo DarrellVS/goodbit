@@ -7,6 +7,7 @@ import type { ComboBoxValue } from '@renderer/components/Base/types';
 import { QUIET_CONTROL_HEIGHT } from '@renderer/components/Base/geometry';
 import { useTheme } from '@renderer/composables/ui/useTheme';
 import ClipFilterPopover from './ClipFilterPopover.vue';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /**
  * One row that describes the list below it, and chooses what to act on.
@@ -226,9 +227,10 @@ function onSortChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
         {{ totalCount }} {{ totalCount === 1 ? 'clip' : 'clips' }}
       </div>
 
-      <button
-        type="button"
-        class="size-8 inline-flex items-center justify-center shrink-0 rounded-md text-muted-600 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:focus-ring transition-colors duration-150"
+      <BaseButton
+        tone="quiet"
+        size="sm"
+        icon-only
         :aria-pressed="isDark"
         :title="isDark ? 'Switch to the light palette' : 'Switch to the dark palette'"
         :aria-label="isDark ? 'Switch to the light palette' : 'Switch to the dark palette'"
@@ -238,7 +240,7 @@ function onSortChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
           :icon="isDark ? 'material-symbols:light-mode-outline' : 'material-symbols:dark-mode-outline'"
           class="size-4 shrink-0 block"
         />
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

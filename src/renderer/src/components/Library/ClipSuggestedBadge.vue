@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseChip from '@renderer/components/Base/BaseChip.vue';
 import { Icon } from '@iconify/vue';
 
 /**
@@ -31,14 +32,13 @@ defineProps<Props>();
 </script>
 
 <template>
-  <span
+  <BaseChip
     v-if="count && count > 0"
-    class="inline-flex items-center gap-1 rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video"
     :title="
       count === 1 ? '1 GoodBit found in this clip' : `${count} GoodBits found in this clip`
     "
   >
     <Icon icon="material-symbols:auto-awesome-rounded" class="size-3 shrink-0 block" />
     <span class="tabular-nums">{{ count }}</span>
-  </span>
+  </BaseChip>
 </template>

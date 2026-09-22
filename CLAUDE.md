@@ -1074,6 +1074,36 @@ lined up were each given their own padding by hand, and drifted. The rules that 
 - **Motion is 120 to 180ms**, opacity and transform, nothing bouncing. `prefers-reduced-motion` is
   honoured once in `styles.css`, not per component.
 
+### Variants, and where a look is written down
+
+**Anything that comes in kinds is a `cva` recipe in `Base/variants.ts`; anything with one look is a
+constant in `Base/geometry.ts`.** That is the whole rule, and it is decided once so it is not
+decided per file. Buttons, menu rows, panels, chips, empty states, status dots, wizard steps, the
+switch and the editor's toolbar toggles are recipes; heights, the icon box, the focus ring, the menu
+frame and the section header are constants.
+
+- **One button.** `BaseButton` on `buttonVariants`: `tone` (`default | strong | quiet | danger |
+  success`), `size` (`md | sm | dense`), `icon-only`, `reserve-icon`. The `BUTTON*` strings that
+  used to sit in `geometry.ts` beside a `BaseButton` with a hand-written `switch` are gone; the two
+  disagreed about danger. An icon-only button is `BaseButton icon-only`, not a second component.
+- **`strong` is the only filled accent**, one per region. **`danger` is outlined, never filled**:
+  a filled red button beside the filled accent is two primaries, and what keeps a destructive press
+  honest is `useConfirm` and the sentence beside it, not the colour.
+- **A caller's `class` goes through `cn`** (`clsx` plus `tailwind-merge`), because `BaseButton`
+  turns `inheritAttrs` off for exactly that: `class="px-2"` on a recipe that says `px-3.5` means
+  `px-2`, not both with the stylesheet deciding.
+- **A recipe is exported as well as its component**, so something that must look like a button
+  and is not a `<button>` (a Reka trigger) calls the recipe. Menu rows are `menuItemVariants` on
+  Reka's own `MenubarItem` or `DropdownMenuItem`, since Reka owns their keyboard and focus, and
+  `:disabled` on the item replaces the `opacity-50 pointer-events-none` each row used to carry.
+- **A ternary in `:class` is a variant only when it names a state of the thing it styles**
+  (selected, pressed, on, reached, a tone). Layout switches (`compact`, `flush`, `block`),
+  animation states (`open ? 'rotate-180'`, a collapsing `grid-rows`) and one-off emphasis stay
+  where they are, because a variant nobody else will ever ask for is a second place to look.
+- **An empty state is `BaseEmptyState`**, `size="page"` for a whole screen and `size="panel"` for
+  one section of a busier one, with an `actions` slot. Six were hand-rolled in 3.5.0 and one first
+  shipped with no button at all.
+
 ## Testing
 
 Two suites, three orders of magnitude apart, and the split is by what a test needs rather than by
@@ -1128,7 +1158,7 @@ These do not run in CI (they need a desktop session, a GPU and ffmpeg). `build:w
 - TypeScript strict, ESM everywhere. Main imports need the `.js` extension on relative paths.
 - Vue: `<script setup lang="ts">`, typed `defineProps`/`defineEmits`, `ref` over `reactive`.
 - Tailwind utilities over custom CSS; tokens over literals.
-- Feedback through the toast store; destructive actions use `toastStore.confirm`.
+- Feedback through the toast store; destructive actions ask through `useConfirm`, never the toast.
 - Long work runs as a job (`services/jobs.ts`) with progress, an ETA and an `AbortController`,
   never awaited inside a handler.
 

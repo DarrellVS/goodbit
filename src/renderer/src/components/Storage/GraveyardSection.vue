@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
-import {
-  BUTTON,
-  BUTTON_SMALL,
-  ICON_BOX,
-  ICON_BOX_LG,
-  SECTION_HEADER,
-} from '@renderer/components/Base/geometry';
+import { ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
+import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
 import StorageClipTile from './StorageClipTile.vue';
 import ReclaimSummary from './ReclaimSummary.vue';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
@@ -66,19 +62,15 @@ function groupSelected(clips: Clip[]): boolean {
       just been told they are low on disk space, and "nothing here" is good
       news that should read like it rather than like a failed search.
     -->
-    <div
+    <BaseEmptyState
       v-else-if="!data?.groups.length"
-      class="rounded-lg border border-border/60 px-4 py-8 text-center"
+      size="panel"
+      tone="success"
+      icon="material-symbols:check-circle-outline"
+      title="Nothing has been forgotten"
     >
-      <Icon
-        icon="material-symbols:check-circle-outline"
-        :class="[ICON_BOX_LG, 'mx-auto mb-2 text-success']"
-      />
-      <p class="text-sm text-foreground">Nothing has been forgotten</p>
-      <p class="mt-1 text-sm text-muted-500">
-        Every clip older than {{ days }} days has been opened, starred, tagged or marked.
-      </p>
-    </div>
+      Every clip older than {{ days }} days has been opened, starred, tagged or marked.
+    </BaseEmptyState>
 
     <template v-else>
       <ReclaimSummary
@@ -94,13 +86,13 @@ function groupSelected(clips: Clip[]): boolean {
           <span class="font-mono text-xs tabular-nums text-muted-400">
             {{ group.clips.length }} · {{ formatBytes(group.reclaimableBytes) }}
           </span>
-          <button
-            type="button"
-            :class="[BUTTON_SMALL, 'ml-auto']"
+          <BaseButton
+            size="sm"
+            class="ml-auto"
             @click="emit('toggle-group', group.game)"
           >
             {{ groupSelected(group.clips) ? 'Clear' : 'Select all' }}
-          </button>
+          </BaseButton>
         </div>
 
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -127,18 +119,15 @@ function groupSelected(clips: Clip[]): boolean {
         <span class="text-sm text-foreground">
           {{ selected.size }} selected
         </span>
-        <button
-          type="button"
-          :class="[
-            BUTTON,
-            'ml-auto border-danger text-danger-ink hover:bg-danger/10',
-          ]"
+        <BaseButton
+          tone="danger"
+          class="ml-auto"
           :disabled="deleting"
           @click="emit('delete')"
         >
           <Icon icon="material-symbols:delete-outline" :class="ICON_BOX" />
           Delete selected
-        </button>
+        </BaseButton>
       </div>
     </template>
   </section>

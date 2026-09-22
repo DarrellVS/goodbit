@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue';
 import { starClip, unstarClip } from '@renderer/services/clips';
 import type { Clip } from '@renderer/types/clip';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 interface Props {
   clip: Clip;
@@ -63,10 +64,12 @@ async function handleToggleStar(): Promise<void> {
     rather than over a frame that does not, and `on-video` white on it would be
     the one literal colour in the app sitting on the wrong ground.
   -->
-  <button
+  <BaseButton
     v-else
-    type="button"
-    class="size-8 inline-flex items-center justify-center shrink-0 rounded-sm text-muted-500 hover:text-foreground hover:bg-muted-100 outline-none focus-visible:focus-ring transition-[opacity,color,background-color] duration-150"
+    tone="quiet"
+    size="sm"
+    icon-only
+    class="transition-[opacity,color,background-color]"
     :class="clip.starred ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'"
     :title="clip.starred ? 'Unstar' : 'Star'"
     :aria-label="clip.starred ? 'Unstar this clip' : 'Star this clip'"
@@ -77,5 +80,5 @@ async function handleToggleStar(): Promise<void> {
       class="size-4 shrink-0 block"
       :class="clip.starred ? 'text-accent' : ''"
     />
-  </button>
+  </BaseButton>
 </template>

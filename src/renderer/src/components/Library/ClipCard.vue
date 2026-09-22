@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { sharedCardHeight } from '@renderer/composables/media/useNearViewport';
 import { Icon } from '@iconify/vue';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import { useDragAndDrop } from '@renderer/composables/editor/useDragAndDrop';
 import { beginOsDrag } from '@renderer/composables/clips/useOsDrag';
 import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
@@ -495,17 +496,19 @@ function handleCardClick(event: MouseEvent) {
             already an HTML5 drag source aimed at the collections above the
             grid, and `webContents.startDrag` cannot share an element with one.
           -->
-          <button
-            type="button"
+          <BaseButton
+            tone="quiet"
+            size="dense"
+            icon-only
+            class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-[opacity,color,background-color] cursor-grab active:cursor-grabbing"
             draggable="true"
-            class="size-7 inline-flex items-center justify-center shrink-0 rounded-md text-muted-500 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-muted-100 hover:text-foreground outline-none focus-visible:opacity-100 focus-visible:focus-ring transition-opacity duration-150 cursor-grab active:cursor-grabbing"
             title="Drag the file out, into Discord or a folder"
             aria-label="Drag the file out of GoodBit"
             @click.stop
             @dragstart.stop="handleDragOut"
           >
             <Icon icon="material-symbols:drag-indicator" class="size-4 shrink-0 block" />
-          </button>
+          </BaseButton>
 
           <ClipStarButton :clip="clip" @updated="emit('updated', $event)" />
 

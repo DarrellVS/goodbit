@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { statusDotVariants } from '@renderer/components/Base/variants';
 import { onMounted, ref } from 'vue';
 import SettingToggle from './SettingToggle.vue';
 import { useToastStore } from '@renderer/stores/toast';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
-import { BUTTON_SMALL } from '@renderer/components/Base/geometry';
+import BaseButton from '@renderer/components/Base/BaseButton.vue';
 
 /**
  * The Stream Deck plugin's door into the library.
@@ -95,19 +96,16 @@ async function copy(value: string, what: string): Promise<void> {
 
     <template v-if="state?.enabled">
       <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
-        <span
-          class="size-1.5 rounded-full shrink-0"
-          :class="state.running ? 'bg-success' : 'bg-accent'"
-        />
+        <span :class="statusDotVariants({ tone: state.running ? 'ok' : 'waiting' })" />
         <span class="text-foreground">{{ state.running ? 'Listening' : 'Not listening' }}</span>
         <code class="font-mono text-xs text-muted-400 truncate">{{ state.url }}</code>
-        <button
-          type="button"
-          :class="[BUTTON_SMALL, 'ml-auto shrink-0']"
+        <BaseButton
+          size="sm"
+          class="ml-auto shrink-0"
           @click="copy(state.url, 'Address')"
         >
           Copy address
-        </button>
+        </BaseButton>
       </div>
 
       <!-- The token is a password. It is not printed until somebody asks for it. -->
@@ -116,16 +114,16 @@ async function copy(value: string, what: string): Promise<void> {
         <code class="font-mono text-xs text-foreground truncate">
           {{ showToken ? state.token : '•'.repeat(16) }}
         </code>
-        <button
-          type="button"
-          :class="[BUTTON_SMALL, 'ml-auto shrink-0']"
+        <BaseButton
+          size="sm"
+          class="ml-auto shrink-0"
           @click="showToken = !showToken"
         >
           {{ showToken ? 'Hide' : 'Show' }}
-        </button>
-        <button type="button" :class="[BUTTON_SMALL, 'shrink-0']" @click="copy(state.token, 'Token')">
+        </BaseButton>
+        <BaseButton size="sm" class="shrink-0" @click="copy(state.token, 'Token')">
           Copy token
-        </button>
+        </BaseButton>
       </div>
 
       <SettingToggle

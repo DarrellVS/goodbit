@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { stepVariants } from '@renderer/components/Base/variants';
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useObsSetup } from '@renderer/composables/obs/useObsSetup';
@@ -184,8 +185,7 @@ function notNow(): void {
         <li
           v-for="(entry, index) in pages"
           :key="entry.id"
-          class="h-1 flex-1 rounded-full transition-colors"
-          :class="index <= at ? 'bg-accent' : 'bg-muted-100'"
+          :class="stepVariants({ reached: index <= at })"
           :title="entry.title"
         ></li>
       </ol>

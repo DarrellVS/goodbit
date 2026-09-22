@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseChip from '@renderer/components/Base/BaseChip.vue';
 import { Icon } from '@iconify/vue';
 
 /**
@@ -27,12 +28,11 @@ defineProps<Props>();
 </script>
 
 <template>
-  <span
+  <BaseChip
     v-if="isExport"
-    class="inline-flex items-center gap-1 rounded-full bg-scrim px-2 py-0.5 text-[11px] font-medium text-on-video"
     title="Made in the editor, from clips in this game"
   >
     <Icon icon="material-symbols:movie-edit-outline-rounded" class="size-3 shrink-0 block" />
     Export
-  </span>
+  </BaseChip>
 </template>
