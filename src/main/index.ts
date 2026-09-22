@@ -129,7 +129,7 @@ function createWindow(): BrowserWindow {
       height: TITLEBAR_HEIGHT,
     },
     webPreferences: {
-      preload: join(import.meta.dirname, '../preload/index.mjs'),
+      preload: join(import.meta.dirname, '../preload/index.cjs'),
       sandbox: false,
       // The renderer is ours, but it also renders filenames and notes that came
       // off disk; there is no reason for it to reach Node directly.
@@ -363,6 +363,23 @@ app.whenReady().then(async () => {
     if (event.type !== 'scan-started') void refreshTrayMenu();
   });
   onSettingsChange(() => void refreshTrayMenu());
+
+  /*
+   * The card's one button, wired to the same opener the tray uses.
+   *
+   * Registered here rather than inside the toast, because a toast reaching for
+   * a window opener on its own is the wrong direction: that module is also
+   * loaded by the preview in Settings and by benches, neither of which has a
+   * window to show. `openIn` already handles a closed, a minimised and an
+   * already-open window.
+   */
+  void (async () => {
+    const { listenForToastActions } = await import('./services/clipToast.js');
+    // The path is resolved here rather than in the toast: that module is a
+    // dynamic import and lands in a chunk, so its own `import.meta.dirname`
+    // points at `out/main/chunks`. This file is always `out/main/index.js`.
+    listenForToastActions(openIn, join(import.meta.dirname, '../preload/toast.cjs'));
+  })();
 
   // A first run with nowhere to look for clips still opens, so the window can
   // ask for a folder. Only a configured install starts watching.

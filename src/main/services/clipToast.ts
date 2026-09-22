@@ -1,4 +1,6 @@
-import { BrowserWindow, screen } from 'electron';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { BrowserWindow, ipcMain, screen } from 'electron';
 import { loadSettings } from '../settings.js';
 
 /**
@@ -110,6 +112,87 @@ let overlay: BrowserWindow | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
+ * What the card currently on screen is offering, if anything.
+ *
+ * A token and the route it stands for. The route never leaves main: the page
+ * is handed the token alone, so the one message it can send names something
+ * main already decided to allow rather than somewhere the page chose.
+ *
+ * Cleared when the card goes, so a token cannot be redeemed after the card
+ * that carried it has faded.
+ */
+let pending: { token: string; route: string } | null = null;
+
+/** Set once, by `listenForToastActions`, and read to route a press. */
+let onAction: ((route: string) => void) | null = null;
+
+/**
+ * Where the overlay's preload is, handed in rather than worked out here.
+ *
+ * This module is reached by a dynamic import, so electron-vite emits it as
+ * `out/main/chunks/clipToast-*.js` and `import.meta.dirname` is the chunks
+ * folder: `'../preload/toast.cjs'` from here resolved to
+ * `out/main/preload/toast.cjs`, which does not exist. `app.getAppPath()` is
+ * `out/main`, so that is no better.
+ *
+ * Electron says **nothing at all** about a preload it cannot find, which is
+ * how this presented: the card drew its button, the click did nothing, and
+ * `window.goodbitToast` was undefined with no error anywhere. So the path
+ * comes from `index.ts`, which is the one file whose own location is stable.
+ *
+ * Null until then, and a window built before it is simply the card as it was:
+ * no bridge, and `showSweepFinished` offers no button because nothing could
+ * press it.
+ */
+let preloadPath: string | null = null;
+
+/**
+ * Wire up the card's one button.
+ *
+ * Called from boot with whatever knows how to open a route, which is
+ * `openIn` in `index.ts`. Kept as a callback rather than importing that
+ * directly, because this file is also loaded by the preview in Settings and by
+ * benches, and a window opener is not something a toast should reach for on
+ * its own.
+ */
+export function listenForToastActions(
+  open: (route: string) => void,
+  preload: string,
+): void {
+  onAction = open;
+  preloadPath = preload;
+
+  /*
+   * The pointer is over the button, or it is not.
+   *
+   * The window ignores the mouse with `forward: true`, so this is the only
+   * signal that the pointer is somewhere clickable. Anything else the page
+   * might say is ignored: `over` is a boolean and the window either takes the
+   * mouse or does not.
+   */
+  ipcMain.on('toast:hover', (event, over: unknown) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win !== overlay || win.isDestroyed()) return;
+    // Never take the mouse for a card that is not offering anything, whatever
+    // the page says.
+    win.setIgnoreMouseEvents(!(over === true && pending !== null), { forward: true });
+  });
+
+  ipcMain.on('toast:action', (event, token: unknown) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win !== overlay || win.isDestroyed()) return;
+    if (!pending || typeof token !== 'string' || token !== pending.token) return;
+
+    const route = pending.route;
+    // One press per offer. A second click on a card that is fading out should
+    // not open a second window.
+    pending = null;
+    dismissClipToast();
+    onAction?.(route);
+  });
+}
+
+/**
  * The whole overlay, as one page.
  *
  * A data URL rather than a file, because this is the only thing in the app that
@@ -164,6 +247,33 @@ function page(): string {
                     transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
       }
       #card.in { opacity: 1; transform: translateY(0) scale(1); }
+
+      /*
+        The only interactive rectangle on the card.
+
+        Sized and placed like any other button, but its geometry is what the
+        hover forwarding is measured against: the window ignores the mouse
+        everywhere, and only turns that off while the pointer is inside this
+        element. So it has to be a real box with real bounds rather than
+        anything that overflows or animates its size.
+      */
+      #action {
+        flex: 0 0 auto;
+        margin-left: 2px;
+        padding: 7px 12px;
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
+      #action:hover { background: rgba(255, 255, 255, 0.16); }
+      #action[hidden] { display: none; }
 
       /* The badge holds both states and crossfades between them, so the card
          does not jump when the spinner becomes a tick. */
@@ -300,6 +410,11 @@ function page(): string {
         <div id="title"></div>
         <div id="sub"></div>
       </div>
+      <!--
+        The one thing on this card that can be pressed, and it is hidden unless
+        main offered it. Everything else here is a receipt.
+      -->
+      <button id="action" type="button" hidden></button>
       <div id="bar"></div>
     </div>
     <script>
@@ -434,6 +549,68 @@ function page(): string {
         if (withSound) chime(state, volume);
       };
 
+      /*
+       * Hover forwarding, which is the whole reason a click can land here.
+       *
+       * The window ignores the mouse with forwarding on, so clicks pass
+       * straight through the card to the game behind it and the page still
+       * receives mousemove. That makes the page the only thing that knows when
+       * the pointer is over the button, so it says so, and main turns the
+       * ignoring off for exactly that long.
+       *
+       * No backticks anywhere in this page, as the note above says: the whole
+       * thing is a template literal in clipToast.ts and one in a comment ends
+       * the string.
+       *
+       * Without this the choice would be a card that swallows clicks during a
+       * game or a button that cannot be pressed.
+       */
+      const action = document.getElementById('action');
+      let over = false;
+
+      function setOver(next) {
+        if (next === over) return;
+        over = next;
+        window.goodbitToast?.hover(next);
+      }
+
+      document.addEventListener('mousemove', (event) => {
+        if (action.hidden) return setOver(false);
+        const box = action.getBoundingClientRect();
+        setOver(
+          event.clientX >= box.left && event.clientX <= box.right &&
+          event.clientY >= box.top && event.clientY <= box.bottom,
+        );
+      });
+
+      // The pointer can leave the window without a final mousemove inside it.
+      document.addEventListener('mouseleave', () => setOver(false));
+
+      action.addEventListener('click', () => {
+        const token = action.dataset.token;
+        if (token) window.goodbitToast?.action(token);
+      });
+
+      /**
+       * Offer a button, or take it away.
+       *
+       * Called from main beside window.toast, rather than as part of it, so
+       * every existing card keeps its shape and only the one that has
+       * something to offer grows a control.
+       */
+      window.offer = (label, token) => {
+        if (!label || !token) {
+          action.hidden = true;
+          action.textContent = '';
+          delete action.dataset.token;
+          setOver(false);
+          return;
+        }
+        action.textContent = label;
+        action.dataset.token = token;
+        action.hidden = false;
+      };
+
       window.dismiss = () => {
         card.classList.remove('in');
         // Cleared so the next clip arrives with a fresh card rather than
@@ -442,6 +619,9 @@ function page(): string {
           document.getElementById('title').textContent = '';
           document.getElementById('sub').textContent = '';
           card.classList.remove('saved');
+          // The offer goes with the card. A button left behind on a hidden
+          // window is a rectangle that still takes the mouse.
+          window.offer(null, null);
         }, 240);
       };
     </script>
@@ -466,14 +646,41 @@ function build(): BrowserWindow {
     hasShadow: false,
     // Never takes focus. A window that alt-tabs somebody out of a firefight to
     // tell them their clip saved has done more harm than the clip was worth.
+    //
+    // **Still false now that the card has a button.** A non-focusable window
+    // does receive mouse events, so the button works without this being
+    // relaxed, and relaxing it is the one change here that could put somebody
+    // back at their desktop mid-match.
     focusable: false,
     alwaysOnTop: true,
-    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      /*
+       * Two functions, and nothing else. See `src/preload/toast.ts`.
+       *
+       * This window had no preload on purpose. The button is what changed
+       * that, and the bridge is deliberately not `window.goodbit`: a sandboxed
+       * page sitting over somebody's game should not be handed the API that
+       * deletes clips.
+       */
+      ...(preloadPath ? { preload: preloadPath } : {}),
+    },
   });
 
   // Above a maximised game, not merely above ordinary windows.
   win.setAlwaysOnTop(true, 'screen-saver');
-  win.setIgnoreMouseEvents(true);
+  /*
+   * Clicks pass through, `mousemove` does not.
+   *
+   * `forward: true` is the documented arrangement for a window that has one
+   * clickable thing on it: the card stays transparent to the pointer, so a
+   * click during a game lands on the game, while the page still sees the
+   * pointer and can say when it is over the button. `toast:hover` then turns
+   * the ignoring off for exactly as long as that is true.
+   */
+  win.setIgnoreMouseEvents(true, { forward: true });
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   void win.loadURL(page());
 
@@ -549,13 +756,23 @@ interface RenderOptions {
    * `analyzeOnGameCloseToast` for a sweep.
    */
   enabled: boolean;
+  /**
+   * A button on the card, and what pressing it does.
+   *
+   * The route is held **here**, in main, and never given to the page. The
+   * window gets an opaque token it can hand back; it cannot name a
+   * destination. Same rule `deeplink.ts` applies to a `goodbit://` link, and
+   * for the same reason: anything that can reach that channel should not get
+   * to choose what it does.
+   */
+  offer?: { label: string; route: string };
 }
 
 async function render(
   state: ToastState,
   title: string,
   subtitle: string,
-  { sound = false, lingerMs, enabled }: RenderOptions,
+  { sound = false, lingerMs, enabled, offer }: RenderOptions,
 ): Promise<void> {
   const began = Date.now();
   const settings = loadSettings();
@@ -583,6 +800,13 @@ async function render(
     `window.toast(${JSON.stringify(state)}, ${JSON.stringify(title)}, ${JSON.stringify(subtitle)}, ${sound}, ${Number(settings.clipToastVolume ?? 75)});`,
   );
 
+  // A new card retires whatever the last one offered, so a token cannot be
+  // pressed after the card that carried it has gone.
+  pending = offer ? { token: randomUUID(), route: offer.route } : null;
+  await win.webContents.executeJavaScript(
+    `window.offer(${JSON.stringify(offer?.label ?? null)}, ${JSON.stringify(pending?.token ?? null)});`,
+  );
+
   // The one number worth watching in this file. Everything above is arranged
   // around it, so it says out loud whether the arrangement is working.
   console.log(`[toast] ${state} in ${Date.now() - began}ms`);
@@ -602,6 +826,9 @@ async function render(
         if (!win.isDestroyed()) win.hide();
       }
     })();
+    // The offer dies with the card it was on.
+    pending = null;
+    if (!win.isDestroyed()) win.setIgnoreMouseEvents(true, { forward: true });
   }, linger);
 }
 
@@ -673,16 +900,41 @@ export async function showSweepStarted(
  * interruption with no payload. The promise half is still worth drawing while
  * the work runs: it says why the machine is busy.
  */
-export async function showSweepFinished(found: number, clips: number): Promise<void> {
+export async function showSweepFinished(
+  found: number,
+  clips: number,
+  clipIds: number[] = [],
+): Promise<void> {
   try {
     const settings = loadSettings();
     const title = `Found ${found} ${found === 1 ? 'GoodBit' : 'GoodBits'}`;
     const subtitle = `in ${clips} ${clips === 1 ? 'clip' : 'clips'}, ready to trim`;
 
+    /*
+     * The one card in the app that is worth pressing.
+     *
+     * It arrives when a game has closed, which is the moment somebody is most
+     * likely to want a montage and least likely to go looking for one, and the
+     * session's clips are already in hand. `cut=highlights` is what turns it
+     * from "open these" into "open these, already cut".
+     *
+     * Only on this card. The opening one fires as somebody closes a game, and
+     * is often the moment they get up.
+     */
+    // No bridge, no button. A control that cannot report a press is worse
+    // than no control: it looks broken rather than absent.
+    const offer = clipIds.length && preloadPath
+      ? {
+          label: 'Open in the editor',
+          route: `/editor?clips=${clipIds.join(',')}&cut=highlights`,
+        }
+      : undefined;
+
     await render('found', title, subtitle, {
       sound: settings.analyzeOnGameCloseSound !== false,
       enabled:
         settings.analyzeOnGameClose !== false && settings.analyzeOnGameCloseToast !== false,
+      offer,
     });
   } catch (error) {
     console.error('[toast]', error instanceof Error ? error.message : error);
@@ -727,7 +979,34 @@ export async function previewClipToast(): Promise<void> {
 export async function previewSweepToast(): Promise<void> {
   await showSweepStarted(12, 'Battlefield 6', 8000);
   await new Promise((resolve) => setTimeout(resolve, 1900));
-  await showSweepFinished(4, 12);
+
+  /*
+   * The preview shows the real card, button and all.
+   *
+   * With the newest few clips behind it, so pressing it does what the real one
+   * does rather than opening an editor full of clips that do not exist. On an
+   * empty library there is nothing to offer and the card appears without a
+   * button, which is also what the real one does.
+   */
+  const latest = await latestClipIds(3);
+  await showSweepFinished(4, 12, latest);
+}
+
+/** The newest few clip ids, for the preview. Never throws: it is a preview. */
+async function latestClipIds(count: number): Promise<number[]> {
+  try {
+    const { AppDataSource } = await import('../data-source.js');
+    const { Clip } = await import('../entity/Clip.js');
+    if (!AppDataSource?.isInitialized) return [];
+
+    const rows = await AppDataSource.getRepository(Clip).find({
+      order: { recordedAt: 'DESC', id: 'DESC' },
+      take: count,
+    });
+    return rows.map((clip) => clip.id);
+  } catch {
+    return [];
+  }
 }
 
 export function closeClipToast(): void {

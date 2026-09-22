@@ -716,6 +716,24 @@ async function loadClipsFromQuery(): Promise<void> {
   if (missing > 0) {
     toastStore.warning(`${missing} ${pluralize(missing, 'clip')} could not be loaded`);
   }
+
+  /*
+   * Arrive already cut, when the caller asked for that and only then.
+   *
+   * The post-game card opens a whole session this way: a montage is then one
+   * press from closing a game. Every other caller of `?clips=` opens the
+   * editor from the library, where somebody expects their clips whole, so this
+   * is a flag rather than a default.
+   *
+   * `trimAllToHighlights` unchanged, which matters for two reasons it already
+   * gets right: a clip with no confident highlight is left **whole** rather
+   * than dropped, and it takes the undo snapshot once before trimming, so the
+   * first Ctrl+Z after landing here undoes the whole auto-cut rather than one
+   * clip of it.
+   */
+  if (resolved.length > 0 && route.query.cut === 'highlights') {
+    await trimAllToHighlights();
+  }
 }
 
 useKeyboardShortcuts({
@@ -780,7 +798,7 @@ onMounted(async () => {
 });
 
 watch(
-  () => [route.query.clip, route.query.clips],
+  () => [route.query.clip, route.query.clips, route.query.cut],
   () => loadClipsFromQuery()
 );
 </script>
