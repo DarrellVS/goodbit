@@ -52,6 +52,7 @@ node scripts/foreground-track-check.mjs  # prove the helper tells a running proc
 node scripts/trim-check.mjs  # run the shipped trim on a real clip and check where it landed
 node scripts/clip-audio-check.mjs  # prove muting a track mutes it, through the real ffmpeg
 node scripts/compress-check.mjs   # squeeze a real recording and read back what landed
+node scripts/toast-button-check.mjs  # press the overlay card's button and see where the app goes
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -571,6 +572,30 @@ clip takes seconds to reach the library. **Off by opting out**, in Settings, Rec
 - **A game in exclusive fullscreen owns the display** and nothing another window draws reaches it.
   Borderless windowed, the default in most modern games and what OBS display capture wants anyway,
   is fine. The Settings text says so.
+
+**The card can be pressed, in exactly one rectangle.** The sweep's card offers *Open in the editor*,
+which opens the session already cut. That undoes three of the rules above, narrowly, and each
+narrowing is the load-bearing part:
+
+- `setIgnoreMouseEvents(true, { forward: true })`, so clicks still pass through the card to the game
+  and the page still sees the pointer. The page says when the pointer is over the button and main
+  turns the ignoring off for exactly that long. Blanket-enabling the mouse would put a window in
+  front of a game that can swallow a click.
+- **`focusable: false` stays.** A non-focusable window still receives mouse events, so nothing here
+  needs it relaxed, and relaxing it is the one change that could put somebody at their desktop
+  mid-match.
+- A preload, which this window deliberately did not have. `src/preload/toast.ts`, two functions, and
+  **not** `window.goodbit`: a sandboxed page over somebody's game has no business with the API that
+  deletes clips. Main holds the route and hands the page an opaque token, so the window cannot
+  choose what the button does, which is the same rule `deeplink.ts` applies to a `goodbit://` link.
+
+**Preloads are CommonJS, `.cjs`, and both facts are load-bearing.** A sandboxed preload must be
+CommonJS or it dies on its first `import`, and `out/` sits under a `"type": "module"` package, so a
+`.js` file there is read as ESM whatever is inside it. **Electron reports neither failure**: the
+card drew its button, the click did nothing, and `window.goodbitToast` was undefined with nothing in
+any log. The path is handed in from `index.ts` for the same class of reason: `clipToast.ts` is a
+dynamic import, so it lands in `out/main/chunks/` and its own `import.meta.dirname` is not where it
+looks like it is.
 
 Both windows are real, so **`BrowserWindow.getAllWindows()[0]` is no longer the app**, and neither
 is Playwright's `firstWindow()`. `tests/e2e/app.ts` and `window-state.spec.ts` pick the window whose

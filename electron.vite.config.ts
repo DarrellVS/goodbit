@@ -45,7 +45,45 @@ export default defineConfig({
     build: {
       rollupOptions: {
         external: ['electron'],
-        input: { index: resolve('src/preload/index.ts') },
+        /*
+         * Two bridges, deliberately.
+         *
+         * `index` is the whole `window.goodbit` API, for the app's own window.
+         * `toast` is two functions for the overlay card that sits over
+         * somebody's game, which had no preload at all until it grew a button.
+         * Handing that sandboxed page the app's API to use two of its calls
+         * would be the opposite of what that window is for.
+         */
+        input: {
+          index: resolve('src/preload/index.ts'),
+          toast: resolve('src/preload/toast.ts'),
+        },
+        /*
+         * CommonJS, and that is not a preference.
+         *
+         * The toast overlay runs with `sandbox: true`, and Electron loads a
+         * sandboxed preload as CommonJS only: an ESM one throws on its first
+         * `import` and is dropped **silently**, which is exactly how it
+         * presented — the card rendered its button and `window.goodbitToast`
+         * was undefined.
+         *
+         * Both entries rather than one, because two formats out of one rollup
+         * build is not a thing, and CJS is the form that works in a sandboxed
+         * preload and an unsandboxed one alike. `src/main/index.ts` points at
+         * `.js` accordingly.
+         */
+        output: {
+          format: 'cjs',
+          /*
+           * `.cjs`, not `.js`.
+           *
+           * The root `package.json` says `type: module`, and `out/` sits under
+           * it, so a `.js` file there is read as ESM whatever is inside it and
+           * a CommonJS preload dies on its first `require`. The extension is
+           * the only thing that overrides that.
+           */
+          entryFileNames: '[name].cjs',
+        },
       },
     },
   },
