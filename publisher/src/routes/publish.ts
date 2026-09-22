@@ -7,6 +7,7 @@ import { clipsService } from '../services/clipsService.js';
 import { StoreThumbnailAction } from '../actions/StoreThumbnailAction.js';
 import { UpdateMetadataAction } from '../actions/UpdateMetadataAction.js';
 import { parseGoodBits } from '../utils/goodBits.js';
+import { allViewCounts, viewsFor } from '../services/viewCounter.js';
 
 const uploadDest = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'public');
 const storage = multer.diskStorage({
@@ -30,6 +31,75 @@ publishRouter.get('/', asyncHandler(async (_req, res) => {
   const files = dir.filter(d => d.isFile()).map(d => d.name);
   res.json({ files });
 }));
+
+/**
+ * What each published clip weighs and how often it has been opened.
+ *
+ * One document rather than a route per clip: every question the insights
+ * screen asks is an aggregate, and the desktop mirrors the answer onto its own
+ * rows so the library stays one query.
+ *
+ * Token-protected like the rest of this router. The counts are not secret, but
+ * they are a list of what somebody has published and how popular each one is,
+ * which is theirs rather than the internet's.
+ *
+ * **Counts start at zero on upgrade.** Nothing was recorded before this, so a
+ * two-year-old clip and one published this morning both read 0 on day one.
+ * `countingSince` is here so a reader can tell "nobody watched it" from
+ * "nothing was counting yet", and anything suggesting a cleanup has to respect
+ * that or it will confidently recommend deleting the whole library the first
+ * time it is opened.
+ */
+publishRouter.get('/stats', asyncHandler(async (_req, res) => {
+  const entries = await fs.readdir(uploadDest, { withFileTypes: true });
+  const names = entries
+    .filter((entry) => entry.isFile() && !entry.name.endsWith('.meta.json'))
+    .map((entry) => entry.name)
+    .filter((name) => /\.(mp4|mov|mkv)$/i.test(name));
+
+  const clips = [];
+  let totalBytes = 0;
+  let totalViews = 0;
+
+  for (const filename of names) {
+    let sizeBytes = 0;
+    let publishedAt = '';
+    try {
+      const stat = await fs.stat(path.join(uploadDest, filename));
+      sizeBytes = stat.size;
+      publishedAt = stat.mtime.toISOString();
+    } catch {
+      // Vanished between the readdir and the stat. Not an error worth a 500.
+      continue;
+    }
+
+    const { views, lastViewedAt } = viewsFor(filename);
+    totalBytes += sizeBytes;
+    totalViews += views;
+    clips.push({ filename, sizeBytes, publishedAt, views, lastViewedAt });
+  }
+
+  res.json({
+    clips,
+    totals: { clips: clips.length, bytes: totalBytes, views: totalViews },
+    countingSince: countingSince(),
+  });
+}));
+
+/**
+ * When this publisher started counting at all.
+ *
+ * The oldest `lastViewedAt` it holds, which is the best available answer: the
+ * counter keeps no birthday of its own, and an empty file is indistinguishable
+ * from one that has never seen a viewer.
+ */
+function countingSince(): string | null {
+  const dates = Object.values(allViewCounts())
+    .map((record) => record.lastViewedAt)
+    .filter(Boolean)
+    .sort();
+  return dates[0] ?? null;
+}
 
 publishRouter.post('/', upload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Missing file' });

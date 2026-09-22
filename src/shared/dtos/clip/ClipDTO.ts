@@ -45,6 +45,13 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
    * respect, so this is the one thing the card has to say about it.
    */
   isExport!: boolean;
+  /**
+   * How often the published copy has been opened, and when last.
+   *
+   * Null means nobody has counted, which is not zero. See the entity.
+   */
+  publisherViews?: number | null;
+  publisherLastViewedAt?: string | null;
   tags?: string[]; // Tag names array
 
   /**
@@ -97,6 +104,10 @@ export class ClipDTO extends BaseDTO<ClipDTO, any> {
     dto.openCount = entity.openCount ?? 0;
     dto.suggestedCount = entity.suggestedCount ?? null;
     dto.isExport = entity.isExport ?? false;
+    dto.publisherViews = entity.publisherViews ?? null;
+    dto.publisherLastViewedAt = entity.publisherLastViewedAt instanceof Date
+      ? entity.publisherLastViewedAt.toISOString()
+      : (entity.publisherLastViewedAt ?? null);
     
     // Extract tag names if tags relation is loaded
     if (entity.tags && Array.isArray(entity.tags)) {

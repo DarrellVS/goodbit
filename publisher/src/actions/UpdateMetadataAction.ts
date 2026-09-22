@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { parseGoodBits, sameGoodBits, type PublishedGoodBit } from '../utils/goodBits.js';
+import { writeJsonAtomic } from '../utils/writeJsonAtomic.js';
 
 export interface UpdateMetadataInput {
   filename: string;
@@ -64,7 +65,9 @@ export class UpdateMetadataAction extends BaseAction<UpdateMetadataInput, Update
       
       // Only update and purge if changed
       if (hasChanged) {
-        await fs.writeFile(metaPath, JSON.stringify(newMeta, null, 2), 'utf-8');
+        // Atomic, so a crash mid-write cannot leave a sidecar the reader
+        // silently treats as a clip with no name and no marks.
+        await writeJsonAtomic(metaPath, newMeta);
         
         // Purge Cloudflare cache for both the page and media URLs
         const base = process.env.PUBLIC_BASE_URL || '';

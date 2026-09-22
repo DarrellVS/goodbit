@@ -75,9 +75,10 @@
     environment:
       PUBLIC_BASE_URL: "${v.url}"
       UPLOAD_DIR: "/data/public"
+      VIEWS_FILE: "/data/views.json"
       PUBLISH_TOKEN: "${v.token}"
     volumes:
-      - "${v.data}:/data/public"`;
+      - "${v.data}:/data"`;
 
   const caddy = (v) => `${v.domain} {
   reverse_proxy ${v.lan}:${v.port}

@@ -54,9 +54,13 @@ RUN npm ci --omit=dev --ignore-scripts
 FROM node:20-alpine
 WORKDIR /app
 
+# `VIEWS_FILE` is outside `UPLOAD_DIR` on purpose: everything in that directory
+# is served at /media, so a counters file beside the clips would be public and
+# would be listed by the API. One level up, inside the same volume.
 ENV NODE_ENV=production \
     PORT=5555 \
-    UPLOAD_DIR=/data/public
+    UPLOAD_DIR=/data/public \
+    VIEWS_FILE=/data/views.json
 
 # `package.json` is not optional here: it carries `"type": "module"`, and
 # without it Node reads `dist/index.js` as CommonJS and refuses the imports.
@@ -64,9 +68,18 @@ COPY --from=deps /app/package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=compile /app/dist ./dist
 
-# Data volume for uploads
+# The data volume is /data, not /data/public.
+#
+# The clips are in /data/public and the view counts are at /data/views.json,
+# deliberately not inside the served directory. Declaring only the inner one
+# would leave the counts in the container layer, so they would start again at
+# zero every time the container is recreated.
+#
+# An existing deployment that binds a host folder to /data/public keeps working
+# exactly as it did; it just does not persist its counts until that mount is
+# moved up one level.
 RUN mkdir -p /data/public
-VOLUME ["/data/public"]
+VOLUME ["/data"]
 
 EXPOSE 5555
 CMD ["node", "dist/index.js"]

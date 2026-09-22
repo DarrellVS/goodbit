@@ -132,8 +132,12 @@ docker build -t goodbit-publisher .</code></pre>
               <tr>
                 <td><code>UPLOAD_DIR</code></td>
                 <td>
-                  Where clips are written. Defaults to <code>/data/public</code>, which is the
-                  declared volume. Mount it somewhere with room.
+                  Where clips are written. Defaults to <code>/data/public</code>, inside the
+                  declared <code>/data</code> volume. Mount <code>/data</code> somewhere with room,
+                  rather than <code>/data/public</code>: the view counts live at
+                  <code>/data/views.json</code>, outside the directory that is served, and
+                  mounting only the inner folder means they start again at zero every time the
+                  container is recreated.
                 </td>
               </tr>
               <tr>

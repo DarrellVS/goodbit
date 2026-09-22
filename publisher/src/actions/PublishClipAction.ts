@@ -4,6 +4,7 @@ import { BaseAction } from './BaseAction.js';
 import { PurgeCloudflareCacheAction } from './PurgeCloudflareCacheAction.js';
 import { prewarmClip } from '../services/cachePrewarm.js';
 import type { PublishedGoodBit } from '../utils/goodBits.js';
+import { writeJsonAtomic } from '../utils/writeJsonAtomic.js';
 
 export interface PublishClipInput {
   filePath: string;
@@ -57,7 +58,10 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
     };
 
     try {
-      await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
+      // Through a temporary file and a rename: a crash mid-write used to leave
+      // truncated JSON, and the reader falls back silently, so the clip simply
+      // appeared to have no display name and no marks.
+      await writeJsonAtomic(metaPath, meta);
     } catch (err) {
       console.error('Failed to save metadata:', err);
     }
