@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { reportTokenState } from './middlewares/requireToken.js';
+import { pageLimit } from './middlewares/rateLimits.js';
 import { posterPathFor, posterUrlFor } from './utils/posterPath.js';
 import { goodBitLabel, parseGoodBits, type PublishedGoodBit } from './utils/goodBits.js';
 import { flushViewCounts, loadViewCounts, recordView } from './services/viewCounter.js';
@@ -131,7 +132,7 @@ app.use('/media', express.static(UPLOAD_DIR, {
 
 
 // Video embed page with Open Graph meta tags for Discord/social media
-app.get('/:filename', (req, res) => {
+app.get('/:filename', pageLimit, (req: express.Request<{ filename: string }>, res) => {
   /*
    * `path.basename`, because a route parameter is not a filename.
    *

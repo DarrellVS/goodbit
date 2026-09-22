@@ -326,6 +326,37 @@ ok('and carry on from where they were', seen.clips[0].views === 3, String(seen.c
 // dashboard would reset itself on every restart and never let a suggestion through.
 ok('and counting still began when it began', seen.countingSince === firstStarted, String(seen.countingSince));
 
+/*
+ * A ceiling on guessing. The API allows 60 failures a minute per visitor, and a
+ * wrong token is one, since the limit runs before the token check. A
+ * different visitor, by Cloudflare's header, still gets in: a limit keyed on
+ * the proxy would be one bucket for the whole internet.
+ */
+console.log('\nrate limits');
+let lastGuess = 0;
+for (let i = 0; i < 61; i++) {
+  const response = await fetch(`${base}/api/publish/stats`, {
+    headers: { Authorization: 'Bearer wrong', 'CF-Connecting-IP': '203.0.113.9' },
+  });
+  lastGuess = response.status;
+  await response.body?.cancel();
+}
+ok('the 61st wrong guess in a minute is a 429', lastGuess === 429, String(lastGuess));
+const otherVisitor = await fetch(`${base}/api/publish/stats`, {
+  headers: { Authorization: `Bearer ${TOKEN}`, 'CF-Connecting-IP': '203.0.113.10' },
+});
+ok('and somebody else is not locked out by it', otherVisitor.status === 200, String(otherVisitor.status));
+// The owner's own traffic never counts, or a batch publish would lock them out.
+let lastOwn = 0;
+for (let i = 0; i < 80; i++) {
+  const response = await fetch(`${base}/api/publish/stats`, {
+    headers: { Authorization: `Bearer ${TOKEN}`, 'CF-Connecting-IP': '203.0.113.10' },
+  });
+  lastOwn = response.status;
+  await response.body?.cancel();
+}
+ok('and eighty good requests in a row are all answered', lastOwn === 200, String(lastOwn));
+
 await stop(server);
 
 if (failures.length) {

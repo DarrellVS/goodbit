@@ -39,7 +39,9 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
       await fs.unlink(thumbPath);
     } catch (err: any) {
       if (err?.code !== 'ENOENT') {
-        console.warn(`Failed to delete thumbnail ${thumbPath}:`, err.message);
+        // The path carries the uploaded filename, so it goes in as an argument:
+        // as the first one, a `%s` in a filename would be read as a directive.
+        console.warn('Failed to delete thumbnail %s: %s', thumbPath, err.message);
       }
     }
 
@@ -49,7 +51,7 @@ export class UnpublishClipAction extends BaseAction<UnpublishClipInput, Unpublis
       await fs.unlink(metaPath);
     } catch (err: any) {
       if (err?.code !== 'ENOENT') {
-        console.warn(`Failed to delete metadata ${metaPath}:`, err.message);
+        console.warn('Failed to delete metadata %s: %s', metaPath, err.message);
       }
     }
 
