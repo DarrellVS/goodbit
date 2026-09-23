@@ -27,6 +27,7 @@ defineProps<Props>();
 const emit = defineEmits<{
   (e: 'keep', clusterIndex: number, clipId: number): void;
   (e: 'delete', clips: Clip[]): void;
+  (e: 'renamed', clip: Clip): void;
 }>();
 </script>
 
@@ -73,6 +74,7 @@ const emit = defineEmits<{
           :deleting="deleting"
           @keep="emit('keep', index, $event)"
           @delete="emit('delete', $event)"
+          @renamed="emit('renamed', $event)"
         />
       </div>
     </template>

@@ -35,6 +35,7 @@ const emit = defineEmits<{
   (e: 'toggle', clipId: number): void;
   (e: 'toggle-group', game: string): void;
   (e: 'delete'): void;
+  (e: 'renamed', clip: Clip): void;
 }>();
 
 const { formatBytes } = useFormat();
@@ -110,6 +111,7 @@ function groupSelected(clips: Clip[]): boolean {
             :clip="clip"
             :selected="selected.has(clip.id)"
             @toggle="emit('toggle', clip.id)"
+            @renamed="emit('renamed', $event)"
           />
         </div>
       </div>

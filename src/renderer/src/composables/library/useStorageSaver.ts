@@ -230,9 +230,40 @@ export function useStorageSaver() {
     }
   }
 
+  /**
+   * Put a changed row in place of the old one, and nothing else.
+   *
+   * For a rename typed on a tile: the tile has to show the new name, and the
+   * list must not move under somebody who may be about to fix a typo in it.
+   * A named clip does not belong on this screen, but taking it away is the
+   * reader's call, made from the toast, not something that happens mid-edit.
+   */
+  function patch(changed: Clip): void {
+    const swap = (clips: Clip[]): Clip[] => clips.map((clip) => (clip.id === changed.id ? { ...clip, ...changed } : clip));
+    if (unreviewed.value) {
+      unreviewed.value = {
+        ...unreviewed.value,
+        groups: unreviewed.value.groups.map((group) => ({ ...group, clips: swap(group.clips) })),
+      };
+    }
+    if (bursts.value) {
+      bursts.value = {
+        ...bursts.value,
+        clusters: bursts.value.clusters.map((cluster) => ({ ...cluster, clips: swap(cluster.clips) })),
+      };
+    }
+  }
+
+  /** Take every clip that has since been named or noted off the screen. */
+  async function refreshAll(): Promise<void> {
+    await Promise.all([loadUnreviewed(), loadBursts()]);
+  }
+
   return {
     unreviewed,
     refresh,
+    patch,
+    refreshAll,
     bursts,
     loadingUnreviewed,
     loadingBursts,
