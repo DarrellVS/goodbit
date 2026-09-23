@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
-import { ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import { computed } from 'vue';
+import { SECTION_HEADER } from '@renderer/components/Base/geometry';
 import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
 import StorageClipTile from './StorageClipTile.vue';
@@ -38,6 +38,14 @@ const emit = defineEmits<{
 }>();
 
 const { formatBytes } = useFormat();
+
+/** What the ticked clips weigh, for the bar that deletes them. */
+const selectedBytes = computed(() =>
+  (props.data?.groups ?? [])
+    .flatMap((group) => group.clips)
+    .filter((clip) => props.selected.has(clip.id))
+    .reduce((sum, clip) => sum + (clip.sizeBytes ?? 0), 0),
+);
 
 function groupSelected(clips: Clip[]): boolean {
   return clips.length > 0 && clips.every((clip) => props.selected.has(clip.id));
@@ -107,10 +115,9 @@ function groupSelected(clips: Clip[]): boolean {
       </div>
 
       <!--
-        The delete, written here beside the sentence explaining what it
-        destroys rather than reached for from a shared danger token. There is
-        deliberately no danger button in `geometry.ts` for exactly that reason:
-        making one easy to reach for is how it ends up on the wrong button.
+        The delete, outlined in danger and never filled, and it says how much
+        it frees as well as how many: the whole screen is about space, and the
+        count alone made somebody add up sizes by eye.
       -->
       <div
         v-if="selected.size"
@@ -118,14 +125,17 @@ function groupSelected(clips: Clip[]): boolean {
       >
         <span class="text-sm text-foreground">
           {{ selected.size }} selected
+          <span class="font-mono text-xs tabular-nums text-muted-500">
+            · {{ formatBytes(selectedBytes) }}
+          </span>
         </span>
         <BaseButton
           tone="danger"
+          icon="material-symbols:delete-outline"
           class="ml-auto"
           :disabled="deleting"
           @click="emit('delete')"
         >
-          <Icon icon="material-symbols:delete-outline" :class="ICON_BOX" />
           Delete selected
         </BaseButton>
       </div>

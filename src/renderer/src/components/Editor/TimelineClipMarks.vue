@@ -64,14 +64,18 @@ const laneHeightPercent = 100 / MAX_BAND_LANES;
 
 <template>
   <!--
-    Along the bottom edge, above the duration label's line but below the
-    controls, and never taking a pointer: the block underneath is draggable on
+    Along the bottom edge, on a ground of its own, and never taking a pointer.
+    It was a six pixel strip split three ways straight over the thumbnail
+    strip, so one mark was a two pixel line that disappeared into whatever
+    frame happened to be under it; twelve pixels on the card colour make each
+    row four and legible over any picture. The duration label sits above it.
+    Never taking a pointer: the block underneath is draggable on
     its whole surface and a band that swallowed a mousedown would make part of
     the clip unmovable.
   -->
   <div
     v-if="bands.length"
-    class="absolute left-0 right-0 bottom-0 h-1.5 pointer-events-none"
+    class="absolute left-0 right-0 bottom-0 h-3 bg-card/80 pointer-events-none"
     aria-hidden="true"
   >
     <div

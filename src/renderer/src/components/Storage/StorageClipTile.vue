@@ -52,20 +52,37 @@ const title = computed(() => props.clip.displayName?.trim() || props.clip.filena
   <button
     type="button"
     :class="[
-      'group relative block w-full text-left rounded-md overflow-hidden border',
+      'group relative block w-full text-left rounded-md overflow-hidden border border-border',
       FOCUS_RING,
       MOTION,
+      /*
+       * Picked is a ring, painted as a shadow outside the box, rather than a
+       * border colour: a one pixel hairline turning red was the only sign a
+       * tile had been picked, and across a grid of forty it did not read.
+       */
       keeper
-        ? 'border-accent'
+        ? 'ring-2 ring-accent'
         : selected
-          ? 'border-danger'
-          : 'border-border hover:border-line-strong',
+          ? 'ring-2 ring-danger'
+          : 'hover:border-line-strong',
     ]"
     :aria-pressed="mode === 'keep' ? keeper : selected"
     @click="emit('toggle')"
   >
     <div class="aspect-21/9 bg-video-bed relative">
-      <img :src="thumbnailUrl(clip.id)" :alt="title" class="size-full object-cover" />
+      <!--
+        The ones about to go are dimmed, so the one being kept is the picture
+        the eye lands on. Opacity only, which is the one property allowed to
+        move with a state.
+      -->
+      <img
+        :src="thumbnailUrl(clip.id)"
+        :alt="title"
+        :class="[
+          'size-full object-cover transition-opacity duration-150',
+          mode === 'keep' && !keeper ? 'opacity-50' : '',
+        ]"
+      />
 
       <!--
         The one thing that reaches outside this machine. A published clip has a
@@ -101,16 +118,22 @@ const title = computed(() => props.clip.displayName?.trim() || props.clip.filena
         />
         {{ keeper ? 'Keeping' : 'Deleting' }}
       </BaseChip>
-      <Icon
+      <!--
+        On a scrim of its own. White on the frame vanished into every bright
+        thumbnail, which is a lot of them: the box to press was the one thing on
+        the tile that could not always be seen.
+      -->
+      <span
         v-else
-        :icon="
-          selected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'
-        "
-        :class="[
-          'absolute top-1.5 left-1.5 size-5 block drop-shadow',
-          selected ? 'text-danger' : 'text-on-video',
-        ]"
-      />
+        class="absolute top-1.5 left-1.5 inline-flex rounded-sm bg-scrim p-0.5"
+      >
+        <Icon
+          :icon="
+            selected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'
+          "
+          :class="['size-5 block', selected ? 'text-danger' : 'text-on-video']"
+        />
+      </span>
     </div>
 
     <div class="px-2 py-1.5">

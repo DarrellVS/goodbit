@@ -51,7 +51,7 @@ function toggleGroup(game: string): void {
 </script>
 
 <template>
-  <div class="space-y-10 pb-16">
+  <div class="px-12 py-6 space-y-10 pb-16">
     <p v-if="saver.error.value" class="text-sm text-danger-ink">{{ saver.error.value }}</p>
 
     <GraveyardSection
