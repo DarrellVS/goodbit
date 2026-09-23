@@ -214,6 +214,24 @@ export const useClipsStore = defineStore('clips', {
       if (clip) clip.suggestedCount = suggestedCount;
     },
 
+    /**
+     * Fresh view counts onto the rows already on screen.
+     *
+     * Two fields assigned rather than whole rows replaced, and never a
+     * refetch: the grid would jump, and a list load here would race the
+     * abort-and-requestId pattern above. A clip not on screen gets the count
+     * when it is next fetched, because the sync wrote it to the row.
+     */
+    applyPublisherViews(published: ReadonlyArray<Pick<Clip, 'id' | 'publisherViews' | 'publisherLastViewedAt'>>): void {
+      const byId = new Map(published.map((row) => [row.id, row]));
+      for (const clip of this.items) {
+        const fresh = byId.get(clip.id);
+        if (!fresh) continue;
+        clip.publisherViews = fresh.publisherViews ?? null;
+        clip.publisherLastViewedAt = fresh.publisherLastViewedAt ?? null;
+      }
+    },
+
     updateClip(updatedClip: Clip): void {
       const index = this.items.findIndex(clip => clip.id === updatedClip.id);
       if (index !== -1) {

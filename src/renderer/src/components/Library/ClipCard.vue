@@ -443,6 +443,8 @@ function handleCardClick(event: MouseEvent) {
         :duration-sec="clip.durationSec"
         :game="gameDisplayName"
         :recorded-at="clip.recordedAt ?? clip.fileModifiedAt ?? clip.createdAt"
+        :views="clip.published ? clip.publisherViews : null"
+        :last-viewed-at="clip.publisherLastViewedAt"
       />
 
       <ClipTags :clip="clip" @updated="emit('updated', $event)" />

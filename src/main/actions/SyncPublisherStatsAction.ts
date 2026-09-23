@@ -5,6 +5,7 @@ import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
 import { publisherAuthHeaders, publisherBaseUrl } from '../services/publisherConfig.js';
 import { ClipDTO } from '@shared/index.js';
+import { statsAreStale } from '../services/publisherStatsFreshness.js';
 
 export interface PublisherClipStat {
   filename: string;
@@ -45,16 +46,38 @@ export interface SyncPublisherStatsOutput {
    * state never appeared. Null when the publisher answered.
    */
   problem: PublisherStatsProblem | null;
+  /**
+   * True when nothing was asked because the last attempt is recent enough.
+   *
+   * The rest of the answer is then empty and means nothing; a caller patching
+   * rows on screen must leave them alone rather than read "no clips".
+   */
+  skipped: boolean;
 }
+
+export interface SyncPublisherStatsInput {
+  /**
+   * Ask only if the last attempt is older than this. Omitted means ask now,
+   * which is what boot and the Publisher screen want.
+   */
+  maxAgeMs?: number;
+}
+
+/** When the publisher was last asked, by anyone. See `statsAreStale`. */
+let lastAttemptAt: number | null = null;
+/** One request at a time: a second caller waits for the one already out. */
+let inFlight: Promise<SyncPublisherStatsOutput> | null = null;
 
 
 /**
  * Bring the publisher's view counts back onto the rows.
  *
- * **Pulled, not polled.** On app start and when the Publisher screen opens. A
- * background timer refreshing a number that only matters while somebody is
- * looking at it is cost with no reader, and every refresh is a request over
- * somebody's home uplink to their own server.
+ * **Pulled, not polled.** On app start, when the Publisher screen opens, and
+ * when the library is looked at, throttled by `maxAgeMs` so the library's
+ * cards stay current without asking on every alt-tab. A background timer
+ * refreshing a number that only matters while somebody is looking at it is
+ * cost with no reader, and every refresh is a request over somebody's home
+ * uplink to their own server.
  *
  * Mirrored onto `clip` rather than fetched per tile for the same reason
  * `suggestedCount` is: the library is one query per page, and a remote lookup
@@ -65,15 +88,27 @@ export interface SyncPublisherStatsOutput {
  * are "no numbers today" rather than an error, because nothing the user asked
  * for has failed.
  */
-export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStatsOutput> {
-  async execute(): Promise<SyncPublisherStatsOutput> {
-    const empty: SyncPublisherStatsOutput = {
-      clips: [],
-      updated: 0,
-      totals: { clips: 0, bytes: 0, views: 0 },
-      countingSince: null,
-      problem: null,
-    };
+export class SyncPublisherStatsAction extends BaseAction<
+  SyncPublisherStatsInput | void,
+  SyncPublisherStatsOutput
+> {
+  async execute(input: SyncPublisherStatsInput | void): Promise<SyncPublisherStatsOutput> {
+    if (inFlight) return inFlight;
+
+    const maxAgeMs = input?.maxAgeMs;
+    if (maxAgeMs != null && !statsAreStale(lastAttemptAt, Date.now(), maxAgeMs)) {
+      return { ...emptyOutput(), skipped: true };
+    }
+
+    lastAttemptAt = Date.now();
+    inFlight = this.sync().finally(() => {
+      inFlight = null;
+    });
+    return inFlight;
+  }
+
+  private async sync(): Promise<SyncPublisherStatsOutput> {
+    const empty = emptyOutput();
 
     const baseUrl = publisherBaseUrl();
     if (!baseUrl) return empty;
@@ -122,6 +157,7 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
         totals: payload.totals ?? empty.totals,
         countingSince: payload.countingSince ?? null,
         problem: null,
+        skipped: false,
       };
     }
 
@@ -149,6 +185,18 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
       totals: payload.totals ?? empty.totals,
       countingSince: payload.countingSince ?? null,
       problem: null,
+      skipped: false,
     };
   }
+}
+
+function emptyOutput(): SyncPublisherStatsOutput {
+  return {
+    clips: [],
+    updated: 0,
+    totals: { clips: 0, bytes: 0, views: 0 },
+    countingSince: null,
+    problem: null,
+    skipped: false,
+  };
 }
