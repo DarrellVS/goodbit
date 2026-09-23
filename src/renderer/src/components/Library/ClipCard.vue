@@ -273,7 +273,11 @@ function handleCardClick(event: MouseEvent) {
       </button>
     </div>
 
-    <ClipPublishedBadge :published="clip.published" />
+    <ClipPublishedBadge
+      :published="clip.published"
+      :views="clip.publisherViews"
+      :last-viewed-at="clip.publisherLastViewedAt"
+    />
 
     <!--
       The top left corner, as one column rather than two badges each claiming
@@ -443,8 +447,6 @@ function handleCardClick(event: MouseEvent) {
         :duration-sec="clip.durationSec"
         :game="gameDisplayName"
         :recorded-at="clip.recordedAt ?? clip.fileModifiedAt ?? clip.createdAt"
-        :views="clip.published ? clip.publisherViews : null"
-        :last-viewed-at="clip.publisherLastViewedAt"
       />
 
       <ClipTags :clip="clip" @updated="emit('updated', $event)" />
