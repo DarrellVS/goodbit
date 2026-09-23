@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import express from 'express';
 import multer from 'multer';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * The marks on a clip, on their way to a public link.
@@ -140,7 +140,7 @@ test.describe('the marks that go up with a published clip', () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'MarkGame', 1, 4);
     await saveSettings({ publisherBaseUrl: publisher.url, publisherToken: publisher.token });
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 1);
   });
 
   test.afterAll(async () => {

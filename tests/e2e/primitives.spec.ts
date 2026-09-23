@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * The four headless primitive families this app is built out of, each opened
@@ -34,7 +34,7 @@ test.describe('the headless primitives still work', () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 3, 3);
     // The scan has to have found them before a card can be opened.
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -109,7 +109,7 @@ test.describe('the headless primitives still work', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     const card = ctx.page.locator('article.clip-card').first();
     await card.waitFor({ timeout: 20_000 });
@@ -131,7 +131,7 @@ test.describe('the headless primitives still work', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(500);
+    await settle(ctx.page);
 
     const raised = await ctx.page.evaluate(() => {
       // The store is the app's only route to a toast, and it is what every
@@ -163,7 +163,7 @@ test.describe('the headless primitives still work', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/settings?section=data';
     });
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     const rescan = ctx.page.getByRole('button', { name: /Rescan/i });
     await expect(rescan.first()).toBeVisible({ timeout: 15_000 });

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * Nothing scrolls sideways that was not built to.
@@ -127,7 +127,7 @@ test.describe('nothing scrolls sideways that should not', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 3);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -150,7 +150,7 @@ test.describe('nothing scrolls sideways that should not', () => {
       );
       win?.setBounds({ x: 0, y: 0, width: w, height: 1100 });
     }, width);
-    await ctx.page.waitForTimeout(500);
+    await settle(ctx.page);
   }
 
   test('every screen, and the two modals', async () => {
@@ -205,7 +205,7 @@ test.describe('nothing scrolls sideways that should not', () => {
         await ctx.page.evaluate((hash) => {
           window.location.hash = hash;
         }, route.hash);
-        await ctx.page.waitForTimeout(700);
+        await settle(ctx.page);
         await look(`${width}px ${route.name}`);
       }
 

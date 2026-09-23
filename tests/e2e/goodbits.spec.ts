@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { existsSync, statSync, utimesSync } from 'node:fs';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * A clip can hold more than one GoodBit.
@@ -100,7 +100,7 @@ test.describe('GoodBits', () => {
      * across would pass whether or not anything carried it.
      */
     for (const file of seeded) utimesSync(file, RECORDED_AT, RECORDED_AT);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 2);
   });
 
   test.afterAll(async () => {

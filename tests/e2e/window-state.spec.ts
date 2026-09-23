@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { launchApp } from './app';
+import { launchApp, settle } from './app';
 
 /**
  * The window opens where it was left.
@@ -18,7 +18,7 @@ test.describe('window state', () => {
     let asked: { width: number; height: number } | undefined;
 
     try {
-      await first.page.waitForTimeout(1500);
+      await settle(first.page);
 
       // A size nothing would pick by accident.
       await first.app.evaluate(({ BrowserWindow, screen }) => {
@@ -110,7 +110,7 @@ test.describe('window state', () => {
     // Relaunch into the same profile and check it was actually read back.
     const second = await launchApp({ dataDir });
     try {
-      await second.page.waitForTimeout(1500);
+      await settle(second.page);
 
       const bounds = await second.app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()
@@ -133,7 +133,7 @@ test.describe('window state', () => {
     });
 
     try {
-      await ctx.page.waitForTimeout(1500);
+      await settle(ctx.page);
 
       const bounds = await ctx.app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()

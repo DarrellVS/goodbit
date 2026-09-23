@@ -15,9 +15,24 @@ import type { BrowserWindow } from 'electron';
  */
 export const invisibleForTests = process.env.GOODBIT_TEST_INVISIBLE === '1';
 
+/**
+ * No motion under the suite.
+ *
+ * Every transition here is 120 to 180 ms, so a test that hovers something and
+ * then measures it had to sleep through the transition first, and the suite
+ * slept through thousands of them. Sizes do not change between a transition's
+ * first and last frame (that is a rule of this app), so switching motion off
+ * changes nothing a test measures, only how long it has to wait for it.
+ */
+const NO_MOTION =
+  '*, *::before, *::after { transition: none !important; animation: none !important; caret-color: auto; }';
+
 /** Show a window, the invisible way when the suite asked for it. */
 export function showForTests(window: BrowserWindow): boolean {
   if (!invisibleForTests) return false;
+  const still = (): void => void window.webContents.insertCSS(NO_MOTION);
+  window.webContents.on('did-finish-load', still);
+  still();
   window.setOpacity(0);
   window.setSkipTaskbar(true);
   window.showInactive();

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, settle } from './app';
 
 /**
  * A clip recorded while the window is open has to appear in it.
@@ -31,7 +31,7 @@ test.describe('the window keeps up with the watcher', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     // Nothing yet.
     const before = await ctx.page.evaluate(async () => {
