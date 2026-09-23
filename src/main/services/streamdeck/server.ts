@@ -48,16 +48,22 @@ export function streamDeckRunning(): boolean {
 
 type Handler = (body: Record<string, unknown>) => Promise<KeyResult>;
 
-const ROUTES: Record<string, Handler> = {
-  'GET /v1/health': () => health(),
-  'GET /v1/stats': () => stats(),
-  'POST /v1/latest/tag': (body) => tagLatest(body),
-  'POST /v1/latest/publish': () => publishLatest(),
-  'POST /v1/latest/discard': (body) => discardLatest(body),
-  'POST /v1/replay/save': () => saveReplayFromKey(),
-  'GET /v1/latest/preview': () => latestPreview(),
-  'POST /v1/publish/status': (body) => publishStatus(body),
-};
+/*
+ * A Map, not an object literal. The key is built from the request, and an
+ * object lookup would also find everything objects inherit, so `GET
+ * constructor`-shaped requests reach a function nobody listed. A Map holds
+ * exactly the entries put in it.
+ */
+const ROUTES = new Map<string, Handler>([
+  ['GET /v1/health', () => health()],
+  ['GET /v1/stats', () => stats()],
+  ['POST /v1/latest/tag', (body) => tagLatest(body)],
+  ['POST /v1/latest/publish', () => publishLatest()],
+  ['POST /v1/latest/discard', (body) => discardLatest(body)],
+  ['POST /v1/replay/save', () => saveReplayFromKey()],
+  ['GET /v1/latest/preview', () => latestPreview()],
+  ['POST /v1/publish/status', (body) => publishStatus(body)],
+]);
 
 async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   if (req.method !== 'POST') return {};
@@ -90,10 +96,7 @@ export async function startStreamDeck(): Promise<void> {
       };
 
       const path = (req.url ?? '').split('?')[0];
-      // An own property only: the key comes from the request, and a bare lookup
-      // would also find what every object inherits.
-      const key = `${req.method} ${path}`;
-      const route = Object.hasOwn(ROUTES, key) ? ROUTES[key] : undefined;
+      const route = ROUTES.get(`${req.method} ${path}`);
       if (!route) return send(404, { error: 'No such key' });
 
       void readBody(req)
