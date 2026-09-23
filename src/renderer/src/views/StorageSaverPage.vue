@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue';
 import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
+import { useToastStore } from '@renderer/stores/toast';
 import { useStorageSaver } from '@renderer/composables/library/useStorageSaver';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import GraveyardSection from '@renderer/components/Storage/GraveyardSection.vue';
@@ -46,6 +47,26 @@ watch(openClipId, (now, before) => {
   if (now === null && before !== null && before !== undefined) void saver.refresh(before);
 });
 
+/*
+ * A clip renamed on its tile keeps its place until the reader says otherwise.
+ *
+ * Refreshing on save would pull the tile away from somebody who pressed Enter
+ * on a typo and was about to fix it. So the new name shows at once, the list
+ * stays still, and the toast says why the clip will go and offers to do it.
+ */
+const toast = useToastStore();
+function renamed(clip: Clip): void {
+  saver.patch(clip);
+  if (!clip.displayName?.trim()) return;
+  toast.show({
+    type: 'success',
+    title: 'Renamed',
+    description: 'A clip with a name is one you want, so it leaves this list when you refresh it.',
+    duration: 8000,
+    action: { label: 'Refresh list', onClick: () => void saver.refreshAll() },
+  });
+}
+
 function deleteSelected(): void {
   void saver.remove(saver.selectedClips.value, 'Delete these clips?');
 }
@@ -73,6 +94,7 @@ function toggleGroup(game: string): void {
       @toggle="saver.toggle"
       @toggle-group="toggleGroup"
       @delete="deleteSelected"
+      @renamed="renamed"
     />
 
     <BurstSection
@@ -83,6 +105,7 @@ function toggleGroup(game: string): void {
       :window-sec="windowSec"
       @keep="saver.keep"
       @delete="deleteCluster"
+      @renamed="renamed"
     />
   </div>
 </template>

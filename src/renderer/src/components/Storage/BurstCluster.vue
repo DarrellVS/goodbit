@@ -31,6 +31,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'keep', clipId: number): void;
   (e: 'delete', clips: Clip[]): void;
+  (e: 'renamed', clip: Clip): void;
 }>();
 
 const { formatBytes } = useFormat();
@@ -70,6 +71,7 @@ const publishedDoomed = computed(() => doomed.value.filter((clip) => clip.publis
         mode="keep"
         :keeper="clip.id === keeperId"
         @toggle="emit('keep', clip.id)"
+        @renamed="emit('renamed', $event)"
       />
     </div>
 

@@ -12,6 +12,7 @@ import ClipGoodBitPips from '@renderer/components/Library/ClipGoodBitPips.vue';
 import { clipGoodBitRanges } from '@renderer/utils/goodBits';
 import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { formatRelativeTime } from '@renderer/helpers/dateFormat';
+import ClipNameInput from '@renderer/components/Library/ClipNameInput.vue';
 import type { Clip } from '@renderer/types/clip';
 
 /**
@@ -33,8 +34,8 @@ import type { Clip } from '@renderer/types/clip';
  *   library card, from the same `useHoverScrub` and the same setting, and
  *   pressing it opens the clip itself, full size, where it plays and can be
  *   trimmed or deleted.
- * - **The box and the caption are the choice.** The checkbox in the corner and
- *   the name and size underneath tick it, or in a burst, keep it.
+ * - **The corner box is the choice.** It ticks the clip, or in a burst, keeps
+ *   it. The name under the picture is a field: it renames the clip in place.
  *
  * The size is the loudest number on it, deliberately: it is the reason
  * somebody is looking at this list.
@@ -49,7 +50,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { mode: 'select' });
-const emit = defineEmits<{ (e: 'toggle'): void }>();
+const emit = defineEmits<{
+  (e: 'toggle'): void;
+  /** Renamed in place. The row is handed up so the tile shows the new name at once. */
+  (e: 'renamed', clip: Clip): void;
+}>();
 
 const { formatBytes } = useFormat();
 const config = useConfiguration();
@@ -235,19 +240,21 @@ const frame = computed(() => [
       </span>
     </button>
 
-    <!-- The caption is part of the choice too: the name and the size, pressed, pick it. -->
-    <button
-      type="button"
-      :class="['block w-full px-2 py-1.5 text-left', FOCUS_RING]"
-      :aria-label="choiceLabel"
-      @click="emit('toggle')"
-    >
-      <div class="truncate text-xs text-foreground">{{ title }}</div>
+    <!--
+      The name can be changed right here, with the same field a library card
+      uses: it saves on Enter or on leaving it, never while somebody is typing.
+      Picking is the corner box's job alone, so a click on the name edits it
+      rather than ticking the clip behind somebody's back.
+    -->
+    <div class="px-2 py-1.5">
+      <div class="flex text-xs">
+        <ClipNameInput :clip="clip" @updated="emit('renamed', $event)" />
+      </div>
       <div class="flex items-center gap-1.5 font-mono text-[11px] text-muted-400">
         <span class="tabular-nums">{{ formatBytes(clip.sizeBytes) }}</span>
         <span aria-hidden="true">·</span>
         <span class="truncate">{{ age }}</span>
       </div>
-    </button>
+    </div>
   </div>
 </template>
