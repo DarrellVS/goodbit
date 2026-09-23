@@ -90,7 +90,10 @@ export async function startStreamDeck(): Promise<void> {
       };
 
       const path = (req.url ?? '').split('?')[0];
-      const route = ROUTES[`${req.method} ${path}`];
+      // An own property only: the key comes from the request, and a bare lookup
+      // would also find what every object inherits.
+      const key = `${req.method} ${path}`;
+      const route = Object.hasOwn(ROUTES, key) ? ROUTES[key] : undefined;
       if (!route) return send(404, { error: 'No such key' });
 
       void readBody(req)

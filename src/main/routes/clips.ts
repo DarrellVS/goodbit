@@ -329,8 +329,11 @@ clipsRouter.post('/batch/compress-published', asyncHandler(async (req, res) => {
         await new CompressPublishedClipAction().execute({ clipId });
       } catch (error) {
         failed += 1;
+        // The id is from the request, so it is an argument, never part of the
+        // format string, where a `%s` would be read as a directive.
         console.error(
-          `[batch] compressing the published copy of clip ${clipId} failed:`,
+          '[batch] compressing the published copy of clip %s failed: %s',
+          String(clipId),
           error instanceof Error ? error.message : String(error),
         );
       }
