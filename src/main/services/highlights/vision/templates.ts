@@ -15,8 +15,11 @@
 export interface Template {
   width: number;
   height: number;
-  /** Row-major grey values, 0-255. */
-  data: Uint8Array;
+  /**
+   * Row-major grey values, 0-255 as decoded; a derived template (see
+   * `highPass`) holds signed values instead, which the matcher does not mind.
+   */
+  data: Uint8Array | Float64Array;
 }
 
 function decode(width: number, height: number, parts: string[]): Template {

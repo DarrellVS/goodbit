@@ -121,6 +121,44 @@ export function glyphSaturation(
   return counted ? total / counted : 0;
 }
 
+/**
+ * A greyscale plane minus its own local mean, over a square `radius` pixels
+ * either side.
+ *
+ * Keeps strokes and drops the ground they are drawn on. Correlation already
+ * ignores how bright a window is overall, but not what else is in it: white
+ * HUD glyphs over sunlit sand or rock share the window with texture of about
+ * their own brightness, and that texture carries most of the variance the
+ * match normalises by. Taking the local mean out first leaves the thin bright
+ * strokes and flattens the broad lumps of scenery, so the shape counts again.
+ *
+ * Run over a template too, with the same radius in its own pixels, or the two
+ * sides of the correlation are not the same kind of picture.
+ */
+export function highPass(plane: ArrayLike<number>, width: number, height: number, radius: number): Float64Array {
+  const stride = width + 1;
+  const sums = new Float64Array(stride * (height + 1));
+  for (let y = 0; y < height; y++) {
+    let row = 0;
+    for (let x = 0; x < width; x++) {
+      row += plane[y * width + x];
+      sums[(y + 1) * stride + x + 1] = sums[y * stride + x + 1] + row;
+    }
+  }
+  const out = new Float64Array(width * height);
+  for (let y = 0; y < height; y++) {
+    const y0 = Math.max(0, y - radius);
+    const y1 = Math.min(height, y + radius + 1);
+    for (let x = 0; x < width; x++) {
+      const x0 = Math.max(0, x - radius);
+      const x1 = Math.min(width, x + radius + 1);
+      const total = sums[y1 * stride + x1] - sums[y0 * stride + x1] - sums[y1 * stride + x0] + sums[y0 * stride + x0];
+      out[y * width + x] = plane[y * width + x] - total / ((y1 - y0) * (x1 - x0));
+    }
+  }
+  return out;
+}
+
 /** Copy a box out of a greyscale plane. */
 export function crop(
   plane: Float64Array,
