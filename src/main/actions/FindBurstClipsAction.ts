@@ -61,6 +61,17 @@ export class FindBurstClipsAction extends BaseAction<FindBurstClipsInput, FindBu
        * offered up as duplicate footage to delete.
        */
       .where('clip.isExport = 0')
+      /*
+       * A clip somebody gave a title to, or wrote a note on, is never offered
+       * up. Naming a clip is the most deliberate thing anyone does with one,
+       * and it is the one part the Recycle Bin cannot give back: the file can
+       * be fetched again, the row with its name cannot. Same rule as the
+       * Stream Deck's discard key (`discardableFromAKey`). Left out before
+       * clustering, so a named save is never in a burst, and the unnamed
+       * saves around it are still offered as each other's duplicates.
+       */
+      .andWhere("TRIM(COALESCE(clip.displayName, '')) = ''")
+      .andWhere("TRIM(COALESCE(clip.notes, '')) = ''")
       .orderBy('COALESCE(clip.recordedAt, clip.fileModifiedAt)', 'ASC')
       .getMany();
 

@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import {
   batchDelete,
+  getClip,
   listBurstClips,
   listUnreviewedClips,
   type BurstCluster,
@@ -178,8 +179,60 @@ export function useStorageSaver() {
     confirm(question, go, title);
   }
 
+  /**
+   * Bring one clip up to date after it was opened from here.
+   *
+   * Not a reload, deliberately. Opening a clip is what "never opened" is
+   * about, so a reload would take away the clip somebody just watched in order
+   * to decide, before they could press delete. The clip stays where it is
+   * with whatever changed (a trim makes it smaller), and only goes if it was
+   * deleted from the clip's own panel, or given a name or a note, which is
+   * the rule for being on this screen at all.
+   */
+  async function refresh(clipId: number): Promise<void> {
+    let fresh: Clip | null = null;
+    try {
+      fresh = await getClip(clipId);
+    } catch {
+      fresh = null;
+    }
+    const gone = !fresh || Boolean(fresh.displayName?.trim()) || Boolean(fresh.notes?.trim());
+    const swap = (clips: Clip[]): Clip[] =>
+      gone ? clips.filter((clip) => clip.id !== clipId) : clips.map((clip) => (clip.id === clipId ? fresh! : clip));
+
+    if (unreviewed.value) {
+      const groups = unreviewed.value.groups
+        .map((group) => {
+          const clips = swap(group.clips);
+          return {
+            ...group,
+            clips,
+            reclaimableBytes: clips.reduce((sum, clip) => sum + (clip.sizeBytes || 0), 0),
+          };
+        })
+        .filter((group) => group.clips.length > 0);
+      unreviewed.value = {
+        ...unreviewed.value,
+        groups,
+        totalClips: groups.reduce((sum, group) => sum + group.clips.length, 0),
+        totalBytes: groups.reduce((sum, group) => sum + group.reclaimableBytes, 0),
+      };
+    }
+    // A burst is only a burst with two in it, so one that lost a member is
+    // worked out again rather than patched.
+    if (gone && bursts.value?.clusters.some((cluster) => cluster.clips.some((clip) => clip.id === clipId))) {
+      await loadBursts();
+    }
+    if (gone && selected.value.has(clipId)) {
+      const next = new Set(selected.value);
+      next.delete(clipId);
+      selected.value = next;
+    }
+  }
+
   return {
     unreviewed,
+    refresh,
     bursts,
     loadingUnreviewed,
     loadingBursts,
