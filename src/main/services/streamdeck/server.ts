@@ -46,24 +46,47 @@ export function streamDeckRunning(): boolean {
   return http !== null;
 }
 
-type Handler = (body: Record<string, unknown>) => Promise<KeyResult>;
-
 /*
- * A Map, not an object literal. The key is built from the request, and an
- * object lookup would also find everything objects inherit, so `GET
- * constructor`-shaped requests reach a function nobody listed. A Map holds
- * exactly the entries put in it.
+ * A switch, not a table of functions. The key is built from the request, and
+ * any lookup that returns a function lets the request choose what is called:
+ * an object literal also finds everything objects inherit, and even a Map
+ * checked with `typeof` was still flagged by code scanning, because the check
+ * and the call sat either side of a promise. A switch calls only functions
+ * named here, so there is nothing for a request to choose.
  */
-const ROUTES = new Map<string, Handler>([
-  ['GET /v1/health', () => health()],
-  ['GET /v1/stats', () => stats()],
-  ['POST /v1/latest/tag', (body) => tagLatest(body)],
-  ['POST /v1/latest/publish', () => publishLatest()],
-  ['POST /v1/latest/discard', (body) => discardLatest(body)],
-  ['POST /v1/replay/save', () => saveReplayFromKey()],
-  ['GET /v1/latest/preview', () => latestPreview()],
-  ['POST /v1/publish/status', (body) => publishStatus(body)],
+const ROUTE_KEYS = new Set([
+  'GET /v1/health',
+  'GET /v1/stats',
+  'POST /v1/latest/tag',
+  'POST /v1/latest/publish',
+  'POST /v1/latest/discard',
+  'POST /v1/replay/save',
+  'GET /v1/latest/preview',
+  'POST /v1/publish/status',
 ]);
+
+function dispatch(key: string, body: Record<string, unknown>): Promise<KeyResult> {
+  switch (key) {
+    case 'GET /v1/health':
+      return health();
+    case 'GET /v1/stats':
+      return stats();
+    case 'POST /v1/latest/tag':
+      return tagLatest(body);
+    case 'POST /v1/latest/publish':
+      return publishLatest();
+    case 'POST /v1/latest/discard':
+      return discardLatest(body);
+    case 'POST /v1/replay/save':
+      return saveReplayFromKey();
+    case 'GET /v1/latest/preview':
+      return latestPreview();
+    case 'POST /v1/publish/status':
+      return publishStatus(body);
+    default:
+      return Promise.resolve({ status: 404, body: { error: 'No such key' } });
+  }
+}
 
 async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   if (req.method !== 'POST') return {};
@@ -96,14 +119,12 @@ export async function startStreamDeck(): Promise<void> {
       };
 
       const path = (req.url ?? '').split('?')[0];
-      const route = ROUTES.get(`${req.method} ${path}`);
-      // Only ever something this file put there, and checked to be callable
-      // before it is called, which is the guard code scanning asks for when a
-      // request chooses what runs.
-      if (typeof route !== 'function') return send(404, { error: 'No such key' });
+      const key = `${req.method} ${path}`;
+      // Refused before the body is read, so an unknown key costs nothing.
+      if (!ROUTE_KEYS.has(key)) return send(404, { error: 'No such key' });
 
       void readBody(req)
-        .then((body) => route(body))
+        .then((body) => dispatch(key, body))
         .then((result) => send(result.status, result.body))
         .catch((error: unknown) => {
           console.error('[streamdeck]', error instanceof Error ? error.message : error);
