@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 
 /**
@@ -27,6 +27,8 @@ interface Props {
   /** `danger` paints the action red. Anything that deletes or replaces. */
   tone?: 'danger' | 'normal';
   icon?: string;
+  /** A part of the description to set in bold, the first place it appears. */
+  emphasis?: string;
 }
 
 interface Emits {
@@ -38,6 +40,17 @@ const props = withDefaults(defineProps<Props>(), {
   confirmLabel: 'Confirm',
   tone: 'danger',
   icon: 'material-symbols:warning-rounded',
+});
+
+/** The description around its emphasised part. Plain text either side, never HTML. */
+const descriptionParts = computed(() => {
+  const at = props.emphasis ? props.description.indexOf(props.emphasis) : -1;
+  if (at < 0 || !props.emphasis) return { before: '', bold: '', after: '' };
+  return {
+    before: props.description.slice(0, at),
+    bold: props.emphasis,
+    after: props.description.slice(at + props.emphasis.length),
+  };
 });
 
 const emit = defineEmits<Emits>();
@@ -167,7 +180,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onEscape, true));
                   {{ title }}
                 </h2>
                 <p class="mt-1 text-sm text-muted-500 whitespace-pre-line">
-                  {{ description }}
+                  <template v-if="descriptionParts.bold"
+                    >{{ descriptionParts.before
+                    }}<strong class="font-semibold text-foreground">{{ descriptionParts.bold }}</strong
+                    >{{ descriptionParts.after }}</template
+                  >
+                  <template v-else>{{ description }}</template>
                 </p>
               </div>
             </div>

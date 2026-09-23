@@ -1,6 +1,6 @@
+import { MoveFileToTrashAction } from './MoveFileToTrashAction.js';
 import path from 'node:path';
 import fsPromises from 'node:fs/promises';
-import { shell } from 'electron';
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
 import { Clip } from '../entity/Clip.js';
@@ -160,8 +160,11 @@ export class CompressClipAction extends BaseAction<CompressClipInput, CompressCl
 
       await cancelSource(clip.filePath);
       // The bin rather than an overwrite, so a compression somebody regrets is
-      // recoverable outside this app. Never `unlink`.
-      await shell.trashItem(clip.filePath);
+      // recoverable outside this app. Never `unlink`. Through the one helper
+      // that normalises the path: rows store forward slashes, and
+      // `shell.trashItem` refuses those with "Failed to parse path", which
+      // left every compression in a real library failing after the encode.
+      await new MoveFileToTrashAction().execute({ filePath: clip.filePath });
       await fsPromises.rename(staged, clip.filePath);
 
       const now = await fsPromises.stat(clip.filePath);

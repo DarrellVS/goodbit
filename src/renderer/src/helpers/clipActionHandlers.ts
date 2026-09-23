@@ -11,6 +11,7 @@ import { useGamesStore } from '@renderer/stores/games';
 import { useCollectionsStore } from '@renderer/stores/collections';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
 import { clipTitle } from '@renderer/utils/clipDeleteQuestion';
+import { useCompressionResult } from '@renderer/composables/clips/useCompressionResult';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -31,6 +32,7 @@ export function createClipActionHandlers(params: {
   
   // Helper to always get the current clip value
   const getClip = () => toValue(params.clip);
+  const compression = useCompressionResult();
   
   /**
    * Three entry points rather than one with a flag: each is bound straight to a
@@ -231,16 +233,20 @@ export function createClipActionHandlers(params: {
         'picture it is now will be gone. The recording goes to the Recycle Bin, so you can ' +
         'still get the original back from there. Its marks, tags and notes are untouched.',
       async () => {
+        let jobId: string;
         try {
-          await compressClip(clip.id);
-          toastStore.info('It will finish in the background', 'Compressing');
+          ({ jobId } = await compressClip(clip.id));
         } catch (error) {
           console.error('Failed to start compression:', error);
           toastStore.error('Please try again.', 'Could not start');
+          return;
         }
+        toastStore.info('The card updates when it is done.', 'Compressing');
+        const { clip: fresh } = await compression.follow(jobId, clip);
+        if (fresh) params.emitUpdated(fresh);
       },
       'Compress this clip?',
-      { confirmLabel: 'Compress', tone: 'danger' },
+      { confirmLabel: 'Compress', tone: 'danger', emphasis: clipTitle(clip) },
     );
   }
 

@@ -291,6 +291,16 @@ notes**, which is the one place somebody wrote down what happened in a clip.
 Every non-trivial operation is a class in `src/main/actions/` extending `BaseAction<TInput, TOutput>`
 with a single `execute(input)`. **Add new business logic as an Action**, not inline in a route.
 
+**Anything that sends a file to the Recycle Bin goes through `MoveFileToTrashAction`**, which
+normalises the path. Rows store forward slashes (fast-glob's spelling) and `shell.trashItem` refuses
+those with "Failed to parse path"; compressing a clip called it directly and failed, after the encode,
+on every clip in a real library. `compress-check.mjs`'s shell stub now refuses a forward slash too.
+
+**A second row for one file is retired by the scan when it holds nothing of its own**
+(`services/duplicateRows.ts`). Older builds indexed some files under both slash spellings; the scan
+stopped making new ones but never removed an old one, so the clip showed twice. Only the row goes,
+never the file, and a duplicate that carries anything its twin lacks is left and logged.
+
 `ScanAndSyncClipsAction` has a **prune guard**: it refuses to delete rows when the videos folder looks
 empty or when one scan would remove more than half the library. A clip row carries the only copy of
 its tags, notes, display name, collections and stars, and an unmounted drive makes every file look

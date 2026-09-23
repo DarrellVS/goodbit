@@ -109,14 +109,17 @@ const isGreen = ({ rgb: [r, g, b] }) => g > 60 && g - r > 40 && g - b > 40;
 /* ------------------------------------------------------------ the source */
 
 announceRoot(ROOT);
-const dir = join(ROOT, game);
+// A file instead of a game folder runs the bench on that exact recording,
+// which is how a clip somebody reports as not compressing gets reproduced.
+const givenFile = VIDEO.test(game) && existsSync(game) ? game : null;
+const dir = givenFile ? join(givenFile, '..') : join(ROOT, game);
 if (!existsSync(dir)) {
   console.error(`no such folder: ${dir}`);
   process.exit(2);
 }
 
-let source = null;
-for (const name of readdirSync(dir).filter((f) => VIDEO.test(f) && !f.startsWith('.'))) {
+let source = givenFile;
+for (const name of givenFile ? [] : readdirSync(dir).filter((f) => VIDEO.test(f) && !f.startsWith('.'))) {
   const candidate = join(dir, name);
   if ((await seconds(candidate)) >= MIN_SOURCE_SEC) {
     source = candidate;
@@ -133,10 +136,11 @@ mkdirSync(TMP, { recursive: true });
 
 const library = join(tmpdir(), `goodbit-compress-check-${Date.now()}`);
 const profile = join(library, '.profile');
-mkdirSync(join(library, game), { recursive: true });
+const folder = givenFile ? 'Clips' : game;
+mkdirSync(join(library, folder), { recursive: true });
 mkdirSync(profile, { recursive: true });
 
-const working = join(library, game, source.split(/[\\/]/).pop());
+const working = join(library, folder, source.split(/[\\/]/).pop());
 copyFileSync(source, working);
 
 /*
@@ -176,7 +180,9 @@ writeFileSync(
     // The real one moves a file to the Recycle Bin. There is no bin to check
     // here and leaving the original in place would make the rename fail, so it
     // is deleted, and the bench asserts the sequence rather than the bin.
-    'export const shell = { trashItem: (p) => rm(p, { force: true }) };',
+    // Refuses a forward-slash path exactly as the real one does on Windows, which is
+    // how every compression in a real library failed while this bench passed.
+    'export const shell = { trashItem: async (p) => { if (process.platform === "win32" && p.includes("/")) throw new Error("Failed to parse path"); await rm(p, { force: true }); } };',
     "export const screen = { getPrimaryDisplay: () => ({ id: 0, label: '' }), getAllDisplays: () => [] };",
     'export default { app, shell, screen };',
     '',
@@ -220,11 +226,12 @@ const before = {
 
 const clip = await repo.save(
   repo.create({
-    filePath: working,
+    // Stored the way a real library stores it: fast-glob hands back forward slashes.
+    filePath: working.split(String.fromCharCode(92)).join("/"),
     relPath: working.slice(library.length + 1),
     filename: working.split(/[\\/]/).pop(),
     extension: 'mp4',
-    game,
+    game: folder,
     sizeBytes: before.bytes,
     durationSec: before.seconds,
     fileModifiedAt: before.mtime,
@@ -309,7 +316,7 @@ ok('and the picture has colour in it', middle.saturation > 3, middle.saturation.
 /* ---------------------------------------- a clip that is already small */
 
 console.log('\na clip already smaller than the preset aims for');
-const small = join(library, game, 'already-small.mp4');
+const small = join(library, folder, 'already-small.mp4');
 await execFileAsync(ffmpeg, [
   '-v', 'error', '-y',
   '-f', 'lavfi', '-i', 'testsrc=size=640x360:rate=30:duration=4',
@@ -324,7 +331,7 @@ const smallRow = await repo.save(
     relPath: small.slice(library.length + 1),
     filename: 'already-small.mp4',
     extension: 'mp4',
-    game,
+    game: folder,
     sizeBytes: statSync(small).size,
     durationSec: 4,
     fileModifiedAt: statSync(small).mtime,
