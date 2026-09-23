@@ -31,6 +31,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The Stream Deck plugin ships inside the installer (extraResources in
+      # electron-builder.yml), so it is built and packed here too. Without it
+      # the package step has a resource that does not exist.
+      - name: Build the Stream Deck plugin
+        run: npm run build:streamdeck
+
       # One release for the artefacts to attach to, made before anything
       # uploads.
       #
