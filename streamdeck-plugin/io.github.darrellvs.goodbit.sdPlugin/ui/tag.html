@@ -2,20 +2,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <!--
+      Only the tag. The connection needs no settings any more: GoodBit tells
+      the plugin which pipe to use when it installs it.
+    -->
     <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
   </head>
   <body>
     <sdpi-item label="Tag">
       <sdpi-textfield setting="tag" placeholder="clutch" maxlength="60"></sdpi-textfield>
     </sdpi-item>
-    <sdpi-item label="Address">
-      <sdpi-textfield setting="url" global placeholder="http://127.0.0.1:43120"></sdpi-textfield>
-    </sdpi-item>
-    <sdpi-item label="Token">
-      <sdpi-password setting="token" global></sdpi-password>
-    </sdpi-item>
-    <p style="font-size: 12px; opacity: 0.7; margin: 8px 0 0 100px">
-      The address and token are in GoodBit, Settings, Connections, Stream Deck.
-    </p>
   </body>
 </html>

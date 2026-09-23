@@ -1,4 +1,5 @@
 import streamDeck from '@elgato/streamdeck';
+import { request } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,83 +7,88 @@ import { fileURLToPath } from 'node:url';
 /**
  * The one place this plugin talks to GoodBit.
  *
- * GoodBit listens on `127.0.0.1` behind a bearer token, off until somebody
- * switches it on in Settings, Connections.
+ * **Over a named pipe, with no token.** GoodBit serves its Stream Deck API on
+ * `\\.\pipe\goodbit-streamdeck`, which a browser cannot reach and Windows only
+ * lets the signed-in account write to, so there is nothing to paste and
+ * nothing secret to keep. It is still HTTP, spoken over the pipe with
+ * `socketPath`, so the routes and replies are the ones they always were.
  *
- * **Where the address and token come from.** GoodBit's *Install the plugin*
- * button writes them into `connection.json` in this plugin's own folder, so
- * nobody has to paste a forty character token. What is pasted into a key's
- * settings wins over the file, so a hand-set connection is never overwritten
- * by a GoodBit that happens to be running a different profile.
+ * **Which pipe.** GoodBit writes `connection.json` beside `bin/` when it
+ * installs this plugin and whenever its server starts, naming the pipe for
+ * the profile it runs; a dev build beside the installed app has its own.
+ * Without the file this uses the installed app's pipe.
  *
  * **Every call has a short timeout.** A key that waits thirty seconds for an
  * app that is not running looks exactly like a broken key, so after four
  * seconds it gives up and shows the alert triangle instead.
  */
 
-export interface GoodBitSettings {
-  [key: string]: string | undefined;
-  url?: string;
-  token?: string;
-}
-
 export interface GoodBitReply {
   status: number;
   body: Record<string, unknown>;
 }
 
-const DEFAULT_URL = 'http://127.0.0.1:43120';
+const DEFAULT_PIPE = String.raw`\\.\pipe\goodbit-streamdeck`;
 const TIMEOUT_MS = 4000;
 
-/** `connection.json`, written by GoodBit beside `bin/`. Read on every press, so a new token is picked up at once. */
-function fromFile(): GoodBitSettings {
+/** Read on every press, so a GoodBit started on another profile is picked up at once. */
+function pipe(): string {
   try {
     const here = dirname(fileURLToPath(import.meta.url));
-    return JSON.parse(readFileSync(join(here, '..', 'connection.json'), 'utf-8')) as GoodBitSettings;
+    const file = JSON.parse(readFileSync(join(here, '..', 'connection.json'), 'utf-8')) as {
+      pipe?: string;
+    };
+    return file.pipe || DEFAULT_PIPE;
   } catch {
-    return {};
+    return DEFAULT_PIPE;
   }
 }
 
-async function connection(): Promise<{ url: string; token: string }> {
-  const settings = await streamDeck.settings.getGlobalSettings<GoodBitSettings>();
-  const file = fromFile();
-  return {
-    url: (settings.url || file.url || DEFAULT_URL).replace(/\/$/, ''),
-    token: settings.token || file.token || '',
-  };
-}
-
-export async function goodbit(
+export function goodbit(
   path: string,
   options: { method?: 'GET' | 'POST'; body?: Record<string, unknown>; timeoutMs?: number } = {},
 ): Promise<GoodBitReply> {
-  const { url, token } = await connection();
-  if (!token) return { status: 0, body: { error: 'No token set' } };
+  const payload = options.body ? JSON.stringify(options.body) : undefined;
 
-  try {
-    const response = await fetch(`${url}${path}`, {
-      method: options.method ?? 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+  return new Promise((resolve) => {
+    const req = request(
+      {
+        socketPath: pipe(),
+        path,
+        method: options.method ?? 'GET',
+        headers: payload
+          ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+          : {},
+        timeout: options.timeoutMs ?? TIMEOUT_MS,
       },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: AbortSignal.timeout(options.timeoutMs ?? TIMEOUT_MS),
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          let body: Record<string, unknown> = {};
+          try {
+            body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as Record<string, unknown>;
+          } catch {
+            /* no body */
+          }
+          resolve({ status: res.statusCode ?? 0, body });
+        });
+      },
+    );
+    // Not running, switched off, or on another profile. All read the same
+    // from a key, and the log says which.
+    const fail = (why: string): void => {
+      streamDeck.logger.warn(`GoodBit did not answer: ${why}`);
+      resolve({ status: 0, body: { error: 'GoodBit is not listening' } });
+    };
+    req.on('timeout', () => {
+      req.destroy();
+      fail('timeout');
     });
-    let body: Record<string, unknown> = {};
-    try {
-      body = (await response.json()) as Record<string, unknown>;
-    } catch {
-      /* no body */
-    }
-    return { status: response.status, body };
-  } catch (error) {
-    // Not running, switched off, or the wrong port. All read the same from a
-    // key, and the log says which.
-    streamDeck.logger.warn(`GoodBit did not answer: ${(error as Error).name}`);
-    return { status: 0, body: { error: 'GoodBit is not listening' } };
-  }
+    req.on('error', (error) => fail(error.name));
+    if (payload) req.write(payload);
+    req.end();
+  });
 }
 
 /** Whether a reply means the thing worked. 202 counts: publishing runs on. */

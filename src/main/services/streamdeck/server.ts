@@ -1,27 +1,25 @@
 /**
- * A small HTTP server the Stream Deck plugin talks to.
+ * A small HTTP server the Stream Deck plugin talks to, on a named pipe.
  *
- * Off by default, and when it is on, it is the same shape as the MCP server
- * because that is the precedent for opening a port in this app honestly:
+ * Off by default. HTTP because it is the simplest request and reply there is
+ * and Node serves it on a pipe as happily as on a port; a pipe rather than a
+ * port because a browser cannot reach one and Windows only lets this account
+ * write to it. See `pipe.ts` for why that retired the token and the Host and
+ * Origin checks the port needed.
  *
- * - **127.0.0.1 only**, never `0.0.0.0`. Nothing off this machine can reach it.
- * - **Host and Origin checked by hand** (`auth.ts`), which the MCP server gets
- *   from its SDK and a plain HTTP server does not. Without them a web page the
- *   user merely has open can post to this port.
- * - **A bearer token**, generated once and kept in settings, checked before a
- *   request reaches a handler.
- * - **Never throws**: a server that will not start is a feature that is off,
- *   not a reason for the library not to open.
+ * **Never throws**: a server that will not start is a feature that is off,
+ * not a reason for the library not to open. That includes the pipe name
+ * already being taken, which is what a second GoodBit on the same profile, or
+ * a program squatting the name, looks like.
  *
  * The routes are versioned (`/v1/...`) because the plugin ships separately and
  * will be a version behind the app sooner or later.
  */
 import { writePluginConnection } from './plugin.js';
 import { prepareReplayKey } from '../obs/saveReplay.js';
+import { streamDeckPipeName } from './pipe.js';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
-import { randomBytes } from 'node:crypto';
 import { loadSettings, saveSettings } from '../../settings.js';
-import { checkRequest } from './auth.js';
 import {
   discardLatest,
   health,
@@ -32,25 +30,14 @@ import {
   type KeyResult,
 } from './actions.js';
 
-const DEFAULT_PORT = 43120;
 /** A key sends a few bytes. Anything bigger is not the plugin. */
 const BODY_LIMIT = 4 * 1024;
 
 let http: Server | null = null;
-let listeningOn: number | null = null;
 
-export function streamDeckToken(): string {
-  const settings = loadSettings();
-  if (settings.streamDeckToken) return settings.streamDeckToken;
-
-  const token = randomBytes(24).toString('base64url');
-  saveSettings({ streamDeckToken: token });
-  return token;
-}
-
-export function streamDeckUrl(): string {
-  const port = listeningOn ?? loadSettings().streamDeckPort ?? DEFAULT_PORT;
-  return `http://127.0.0.1:${port}`;
+/** The pipe for this profile. See `pipe.ts`. */
+export function streamDeckPipe(): string {
+  return streamDeckPipeName(process.env.GOODBIT_USER_DATA);
 }
 
 export function streamDeckRunning(): boolean {
@@ -89,8 +76,7 @@ export async function startStreamDeck(): Promise<void> {
   const settings = loadSettings();
   if (!settings.streamDeckEnabled) return;
 
-  const token = streamDeckToken();
-  const port = settings.streamDeckPort ?? DEFAULT_PORT;
+  const pipe = streamDeckPipe();
 
   try {
     http = createServer((req, res) => {
@@ -98,19 +84,6 @@ export async function startStreamDeck(): Promise<void> {
         res.writeHead(status, { 'content-type': 'application/json' });
         res.end(JSON.stringify(body));
       };
-
-      // Before anything else, including routing, so an unauthenticated caller
-      // learns nothing about which paths exist.
-      const verdict = checkRequest(
-        {
-          method: req.method ?? '',
-          host: req.headers.host,
-          origin: req.headers.origin,
-          authorization: req.headers.authorization,
-        },
-        { token, port },
-      );
-      if (!verdict.ok) return send(verdict.status, { error: verdict.error });
 
       const path = (req.url ?? '').split('?')[0];
       const route = ROUTES[`${req.method} ${path}`];
@@ -127,16 +100,13 @@ export async function startStreamDeck(): Promise<void> {
 
     await new Promise<void>((resolve, reject) => {
       http?.once('error', reject);
-      // 127.0.0.1, never 0.0.0.0: nothing off this machine, ever.
-      http?.listen(port, '127.0.0.1', resolve);
+      http?.listen(pipe, resolve);
     });
 
-    listeningOn = port;
-    if (settings.streamDeckPort !== port) saveSettings({ streamDeckPort: port });
-    console.log(`[streamdeck] listening on ${streamDeckUrl()}`);
-    // An installed plugin learns the address and token from GoodBit itself,
-    // and the key helper is compiled now rather than on the first press.
-    writePluginConnection({ url: streamDeckUrl(), token });
+    console.log(`[streamdeck] listening on ${pipe}`);
+    // An installed plugin learns which pipe from GoodBit itself, and the key
+    // helper is compiled now rather than on the first press.
+    writePluginConnection({ pipe });
     prepareReplayKey();
   } catch (error) {
     console.error('[streamdeck] could not start:', error instanceof Error ? error.message : error);
@@ -147,7 +117,6 @@ export async function startStreamDeck(): Promise<void> {
 export async function stopStreamDeck(): Promise<void> {
   const closing = http;
   http = null;
-  listeningOn = null;
   await new Promise<void>((resolve) => (closing ? closing.close(() => resolve()) : resolve()));
 }
 

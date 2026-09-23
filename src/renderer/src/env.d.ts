@@ -49,8 +49,7 @@ interface GoodBitBridge {
   streamDeckState: () => Promise<{
     enabled: boolean;
     running: boolean;
-    url: string;
-    token: string;
+    pipe: string;
     allowDiscard: boolean;
     pluginInstalled: boolean;
     pluginAvailable: boolean;
@@ -144,8 +143,6 @@ interface AppSettingsWire {
   mcpPort?: number;
   mcpToken?: string;
   streamDeckEnabled?: boolean;
-  streamDeckPort?: number;
-  streamDeckToken?: string;
   streamDeckAllowDiscard?: boolean;
   migratedFromWebApp: boolean;
   /** The app version that last booted against this database. Main's, not the window's. */

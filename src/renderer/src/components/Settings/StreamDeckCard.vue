@@ -10,10 +10,10 @@ import BaseButton from '@renderer/components/Base/BaseButton.vue';
 /**
  * The Stream Deck plugin's door into the library.
  *
- * Built the way the Claude block beside it is, because it is the same kind of
- * thing: a server on this machine only, behind a token, off until somebody
- * turns it on, with the address and the token shown so they can be pasted into
- * the plugin.
+ * Off until somebody turns it on. It used to show an address and a token to
+ * paste into the plugin; the connection is a named pipe now, which Windows
+ * only lets this account write to and which GoodBit tells the plugin about
+ * itself, so there is nothing to copy and nothing secret to show.
  *
  * **Discard is its own switch, and it starts off.** A key pressed mid-game by
  * somebody not looking at a screen has no room for a confirmation, so even
@@ -25,8 +25,7 @@ import BaseButton from '@renderer/components/Base/BaseButton.vue';
 interface DeckState {
   enabled: boolean;
   running: boolean;
-  url: string;
-  token: string;
+  pipe: string;
   allowDiscard: boolean;
   pluginInstalled: boolean;
   pluginAvailable: boolean;
@@ -38,7 +37,6 @@ const { save } = useAppSettings();
 
 const state = ref<DeckState | null>(null);
 const working = ref(false);
-const showToken = ref(false);
 
 async function load(): Promise<void> {
   state.value = (await window.goodbit?.streamDeckState()) ?? null;
@@ -86,15 +84,6 @@ async function toggleDiscard(allow: boolean): Promise<void> {
   await save({ streamDeckAllowDiscard: allow });
   await load();
 }
-
-async function copy(value: string, what: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(value);
-    toast.success(`${what} copied`);
-  } catch {
-    toast.error(`Could not copy the ${what.toLowerCase()}`);
-  }
-}
 </script>
 
 <template>
@@ -107,8 +96,9 @@ async function copy(value: string, what: string): Promise<void> {
         nothing in OBS changes.
       </p>
       <p class="text-sm text-muted-400 mt-1.5 max-w-[76ch]">
-        It listens on this machine only, behind a token. The token stops web pages and other
-        machines; anything already running as you could read it from the plugin's settings.
+        It listens on this computer only, through a named pipe that web pages cannot reach and
+        other Windows accounts cannot write to. There is no token to copy: GoodBit tells the plugin
+        where to find it.
       </p>
     </div>
 
@@ -156,33 +146,12 @@ async function copy(value: string, what: string): Promise<void> {
 
       <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
         <span :class="statusDotVariants({ tone: state.running ? 'ok' : 'waiting' })" />
-        <span class="text-foreground">{{ state.running ? 'Listening' : 'Not listening' }}</span>
-        <code class="font-mono text-xs text-muted-400 truncate">{{ state.url }}</code>
-        <BaseButton
-          size="sm"
-          class="ml-auto shrink-0"
-          @click="copy(state.url, 'Address')"
-        >
-          Copy address
-        </BaseButton>
-      </div>
-
-      <!-- The token is a password. It is not printed until somebody asks for it. -->
-      <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
-        <span class="text-muted-500 shrink-0">Token</span>
-        <code class="font-mono text-xs text-foreground truncate">
-          {{ showToken ? state.token : '•'.repeat(16) }}
+        <span class="text-foreground">
+          {{ state.running ? 'Listening, on this computer only' : 'Not listening' }}
+        </span>
+        <code class="ml-auto font-mono text-xs text-muted-400 truncate" :title="state.pipe">
+          {{ state.pipe }}
         </code>
-        <BaseButton
-          size="sm"
-          class="ml-auto shrink-0"
-          @click="showToken = !showToken"
-        >
-          {{ showToken ? 'Hide' : 'Show' }}
-        </BaseButton>
-        <BaseButton size="sm" class="shrink-0" @click="copy(state.token, 'Token')">
-          Copy token
-        </BaseButton>
       </div>
 
       <SettingToggle

@@ -1,96 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import {
-  bearerMatches,
-  checkRequest,
-  discardableFromAKey,
-} from '../../../src/main/services/streamdeck/auth.js';
+import { discardableFromAKey } from '../../../src/main/services/streamdeck/auth.js';
+import { streamDeckPipeName } from '../../../src/main/services/streamdeck/pipe.js';
 
 /**
- * Who may reach the Stream Deck server.
+ * The Stream Deck connection, and the rule a discard key has to pass.
  *
- * This reopens a port the internal API was moved off on purpose, so every
- * case here is a way for something that is not the plugin to drive a library
- * that holds the only copy of somebody's tags and notes.
+ * The connection is a named pipe now, so what is left to hold here is which
+ * pipe a profile gets and what a key is allowed to throw away.
  */
 
-const PORT = 43111;
-const TOKEN = 'a-token-that-is-long-enough-to-matter';
-const expected = { token: TOKEN, port: PORT };
-
-const good = {
-  method: 'POST',
-  host: `127.0.0.1:${PORT}`,
-  authorization: `Bearer ${TOKEN}`,
-};
-
-describe('checkRequest', () => {
-  it('lets the plugin through', () => {
-    // The plugin is a Node process inside the Stream Deck app: no Origin.
-    expect(checkRequest(good, expected)).toEqual({ ok: true });
-    expect(checkRequest({ ...good, host: `localhost:${PORT}` }, expected)).toEqual({ ok: true });
+describe('streamDeckPipeName', () => {
+  it('is the plain name for the default profile, which an installed plugin assumes', () => {
+    expect(streamDeckPipeName(undefined)).toBe(String.raw`\\.\pipe\goodbit-streamdeck`);
+    expect(streamDeckPipeName(null)).toBe(streamDeckPipeName(''));
   });
 
-  it('refuses a request with no token, before anything else is looked at', () => {
-    expect(checkRequest({ ...good, authorization: undefined }, expected)).toMatchObject({
-      ok: false,
-      status: 401,
-    });
+  it('is its own for a moved profile, so a dev build never answers for the installed app', () => {
+    const dev = streamDeckPipeName(String.raw`C:\Users\me\GoodBit-dev-test`);
+    expect(dev).toMatch(/^\\\\\.\\pipe\\goodbit-streamdeck-[0-9a-f]{10}$/);
+    expect(dev).not.toBe(streamDeckPipeName(undefined));
+    expect(dev).not.toBe(streamDeckPipeName(String.raw`C:\Users\me\Other`));
   });
 
-  it('refuses the wrong token, and a token of the wrong shape', () => {
-    expect(checkRequest({ ...good, authorization: 'Bearer nope' }, expected)).toMatchObject({
-      status: 401,
-    });
-    expect(checkRequest({ ...good, authorization: TOKEN }, expected)).toMatchObject({
-      status: 401,
-    });
-    expect(checkRequest({ ...good, authorization: `Basic ${TOKEN}` }, expected)).toMatchObject({
-      status: 401,
-    });
-  });
-
-  it('refuses a web page, even one holding the token', () => {
-    // A browser always sends an Origin on a cross-origin request. The plugin
-    // never does, so any foreign Origin is a page and is refused first.
-    expect(
-      checkRequest({ ...good, origin: 'https://evil.example' }, expected),
-    ).toMatchObject({ ok: false, status: 403 });
-  });
-
-  it('refuses DNS rebinding, where the Host is a name that now points here', () => {
-    // A page on evil.example re-points its own name at 127.0.0.1, and its
-    // request then arrives here with that name in the Host header.
-    expect(checkRequest({ ...good, host: `evil.example:${PORT}` }, expected)).toMatchObject({
-      status: 403,
-    });
-    expect(checkRequest({ ...good, host: undefined }, expected)).toMatchObject({ status: 403 });
-  });
-
-  it('refuses the right host on the wrong port', () => {
-    expect(checkRequest({ ...good, host: '127.0.0.1:80' }, expected)).toMatchObject({
-      status: 403,
-    });
-  });
-
-  it('refuses every method but GET and POST', () => {
-    expect(checkRequest({ ...good, method: 'DELETE' }, expected)).toMatchObject({ status: 405 });
-    expect(checkRequest({ ...good, method: 'PUT' }, expected)).toMatchObject({ status: 405 });
-  });
-
-  it('refuses everything when no token has been made', () => {
-    // An empty token must not mean "Bearer " with nothing after it gets in.
-    expect(
-      checkRequest({ ...good, authorization: 'Bearer ' }, { token: '', port: PORT }),
-    ).toMatchObject({ status: 401 });
-  });
-});
-
-describe('bearerMatches', () => {
-  it('matches only the exact token', () => {
-    expect(bearerMatches(`Bearer ${TOKEN}`, TOKEN)).toBe(true);
-    expect(bearerMatches(`Bearer ${TOKEN}x`, TOKEN)).toBe(false);
-    expect(bearerMatches(`Bearer ${TOKEN.slice(0, -1)}`, TOKEN)).toBe(false);
-    expect(bearerMatches(undefined, TOKEN)).toBe(false);
+  it('ignores the case of the folder, as Windows does', () => {
+    expect(streamDeckPipeName(String.raw`C:\A\B`)).toBe(streamDeckPipeName(String.raw`c:\a\b`));
   });
 });
 

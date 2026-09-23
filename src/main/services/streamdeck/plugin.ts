@@ -11,15 +11,11 @@ import path from 'node:path';
  * handing the `.streamDeckPlugin` to Windows, which gives it to the Stream
  * Deck app, which asks the user. There is no other install API.
  *
- * Then GoodBit writes `connection.json`, the address and the token, into the
- * folder the Stream Deck app unpacked the plugin into. The plugin reads it on
- * every press, so nobody pastes a forty character token and a new port or
- * token reaches it at once. What is typed into a key's own settings still
- * wins, so a hand-set connection is never overwritten.
- *
- * The token in that file is readable by anything running as the user, which
- * is exactly as true of the plugin's own settings store, and is the limit the
- * Settings text already states.
+ * Then GoodBit writes `connection.json`, which pipe to use, into the folder
+ * the Stream Deck app unpacked the plugin into. The plugin reads it on every
+ * press. There is no secret in it: the pipe is the whole connection, and
+ * Windows decides who may write to it (see `pipe.ts`). Without the file the
+ * plugin uses the default profile's pipe, which is the installed app's.
  */
 
 export const PLUGIN_UUID = 'io.github.darrellvs.goodbit';
@@ -51,7 +47,7 @@ export function pluginPackage(): string | null {
 }
 
 /** Write the address and token where the installed plugin reads them. False when it is not installed. */
-export function writePluginConnection(connection: { url: string; token: string }): boolean {
+export function writePluginConnection(connection: { pipe: string }): boolean {
   const dir = installedPluginDir();
   if (!existsSync(dir)) return false;
   try {
@@ -72,7 +68,7 @@ export function writePluginConnection(connection: { url: string; token: string }
  * Deck server writes the file anyway.
  */
 export async function installPlugin(
-  connection: () => { url: string; token: string },
+  connection: () => { pipe: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const file = pluginPackage();
   if (!file) return { ok: false, error: 'This build of GoodBit does not carry the Stream Deck plugin.' };

@@ -20,9 +20,8 @@ says why: *OBS off*, *No key in OBS*, *Key not supported* (a mouse button), or *
 
 1. In GoodBit: **Settings, Connections, Stream Deck**, turn on *Let the Stream Deck reach this
    library*, then press **Install the plugin**. The Stream Deck app asks; say yes.
-2. Drag GoodBit keys onto the Stream Deck. GoodBit writes the address and the token into the plugin's
-   own folder (`connection.json`), so there is nothing to paste. Anything you do paste into a key's
-   settings wins over that file.
+2. Drag GoodBit keys onto the Stream Deck. There is nothing to set up: GoodBit tells the plugin which
+   pipe to use by writing `connection.json` into the plugin's own folder.
 
 ## Discard, and why it is careful
 
@@ -35,12 +34,12 @@ A key pressed mid-game by somebody not looking at a screen has no room for a con
   tags, notes and marks cannot, and at that point somebody already decided the clip was worth
   keeping.
 
-## What the token is, and is not
+## How it reaches GoodBit
 
-GoodBit listens on `127.0.0.1` only, so nothing off this computer can reach it, and it refuses any
-request that comes from a web page. The token stops web pages and other machines. It lives in this
-plugin's settings, so **anything already running as you can read it**: that is the honest limit of
-what a desktop app can promise, and the same as the Claude connection beside it.
+Over a named pipe, `\\.\pipe\goodbit-streamdeck`, speaking plain HTTP. No port and no token: a web
+page cannot open a pipe, and Windows lets only your own account write to it. Anything already
+running as you can reach it, which was just as true of the token it replaced, since that lived in
+this plugin's settings.
 
 ## Building
 
