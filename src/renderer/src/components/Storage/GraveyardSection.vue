@@ -13,7 +13,7 @@ import type { Clip } from '@renderer/types/clip';
 /**
  * The clips nobody ever did anything with.
  *
- * Never opened, never starred, never tagged, never marked by hand, and old
+ * Never opened, never named, never starred, never tagged, never marked by hand, and old
  * enough that it is not going to happen. Grouped by game, because that is how
  * somebody decides: "I am never going to watch any of the Rocket League" is a
  * sentence, and "I am never going to watch clip 41 of 190" is not.
@@ -57,7 +57,7 @@ function groupSelected(clips: Clip[]): boolean {
     <div :class="SECTION_HEADER">
       <h2 class="text-base font-medium text-foreground">Never opened</h2>
       <span class="text-sm text-muted-500">
-        Older than {{ days }} days, never watched, never starred, never tagged, never marked
+        Older than {{ days }} days, and never watched, named, starred, tagged or marked
       </span>
     </div>
 
@@ -77,7 +77,7 @@ function groupSelected(clips: Clip[]): boolean {
       icon="material-symbols:check-circle-outline"
       title="Nothing has been forgotten"
     >
-      Every clip older than {{ days }} days has been opened, starred, tagged or marked.
+      Every clip older than {{ days }} days has been opened, named, starred, tagged or marked.
     </BaseEmptyState>
 
     <template v-else>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
+import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { useStorageSaver } from '@renderer/composables/library/useStorageSaver';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import GraveyardSection from '@renderer/components/Storage/GraveyardSection.vue';
@@ -34,6 +35,15 @@ onMounted(async () => {
   // library and a list that visibly changes under somebody's hands.
   await loadSettings();
   await Promise.all([saver.loadUnreviewed(), saver.loadBursts()]);
+});
+
+/*
+ * A tile's picture opens the clip itself. When that panel closes, the one
+ * clip is brought up to date rather than the list reloaded: see `refresh`.
+ */
+const { openClipId } = useClipDetail();
+watch(openClipId, (now, before) => {
+  if (now === null && before !== null && before !== undefined) void saver.refresh(before);
 });
 
 function deleteSelected(): void {
