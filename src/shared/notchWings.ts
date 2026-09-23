@@ -61,7 +61,7 @@ export const TILES: Record<TileId, TileSpec> = {
   session: {
     kind: 'large',
     name: 'Tonight',
-    description: "Today's clips from the game you played last, marked where moments were found.",
+    description: "Today's clips from the game you played last, marked where GoodBits were found.",
   },
   recent: {
     kind: 'oblong',
@@ -97,7 +97,7 @@ export const TILES: Record<TileId, TileSpec> = {
   },
   found: {
     kind: 'small',
-    name: 'Found moments',
+    name: 'Found GoodBits',
     description: "What reading today's clips found. Press it to go through them.",
   },
   drive: {

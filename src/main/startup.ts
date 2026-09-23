@@ -43,6 +43,7 @@ const RECONCILE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 let watcher: FSWatcher | null = null;
 let reconcileTimer: ReturnType<typeof setInterval> | null = null;
+let backfillTimer: ReturnType<typeof setTimeout> | null = null;
 let listeners: Array<(event: ServiceEvent) => void> = [];
 
 export type ServiceEvent =
@@ -449,10 +450,25 @@ export async function startServices(): Promise<void> {
   }
 
   reconcileTimer = setInterval(() => void reconcile(), RECONCILE_INTERVAL_MS);
+
+  // Clips read before found moments were written down as GoodBits get theirs,
+  // from the caches they already have, well clear of the boot.
+  if (backfillTimer) clearTimeout(backfillTimer);
+  backfillTimer = setTimeout(() => {
+    backfillTimer = null;
+    void import('./services/detectedGoodBits.js')
+      .then(({ markDetectedAcrossLibrary }) => markDetectedAcrossLibrary())
+      .catch((error) => console.warn('[goodbits] backfill failed:', (error as Error).message));
+  }, 20_000);
+
   console.log('[service] ready');
 }
 
 export function stopServices(): void {
+  if (backfillTimer) {
+    clearTimeout(backfillTimer);
+    backfillTimer = null;
+  }
   if (reconcileTimer) {
     clearInterval(reconcileTimer);
     reconcileTimer = null;

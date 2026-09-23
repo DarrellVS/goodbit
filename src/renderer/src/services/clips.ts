@@ -390,6 +390,8 @@ export interface ClipSuggestions {
   anchors: SuggestionEvent[];
   /** True when this game's clips get their screen read as well as heard. */
   watchesScreen: boolean;
+  /** GoodBits this answer wrote for what it found; the list is stale when this is not zero. */
+  marked?: number;
 }
 
 /**

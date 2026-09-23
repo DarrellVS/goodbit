@@ -120,6 +120,16 @@ export class Clip {
   suggestedCount?: number | null;
 
   /**
+   * The `fileModifiedAt` this clip's detected GoodBits were written for.
+   *
+   * So a detected GoodBit somebody deleted stays deleted: the analysis runs
+   * again every time the trimmer opens, and only writes marks for a version of
+   * the file it has not written them for. Null is "never written".
+   */
+  @Column({ type: 'datetime', nullable: true })
+  detectedMarkedFor?: Date | null;
+
+  /**
    * Rendered by the editor rather than recorded by OBS.
    *
    * An export lands in its own game's folder now, so it appears in the library

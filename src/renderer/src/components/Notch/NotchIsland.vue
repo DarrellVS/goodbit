@@ -107,7 +107,7 @@ const SPRING = { type: 'spring', visualDuration: 0.3, bounce: 0.12 } as const;
             v-if="island.latest.moments"
             class="shrink-0 rounded-full bg-accent-sunk px-1.5 text-[11px] font-medium text-accent-ink"
           >
-            {{ island.latest.moments }} {{ island.latest.moments === 1 ? 'moment' : 'moments' }}
+            {{ island.latest.moments }} {{ island.latest.moments === 1 ? 'GoodBit' : 'GoodBits' }} found
           </span>
         </span>
       </span>

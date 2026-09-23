@@ -233,8 +233,19 @@ content that is already there. Same footing as `displayName`.
   Reading deaths as well as kills doubled that to **14, or 8%**, which is worth having and is still
   not the story: 76 of those 174 clips hold nothing the screen can name at all.
 - **The detector still feeds it.** `decide()` used to sort events by confidence and keep `[0]`; it
-  carries every confident one as `anchors` now, best first, so a suggestion chip can be kept as a
-  GoodBit in one press. Across the real library that stops discarding eight found moments.
+  carries every confident one as `anchors` now, best first. Across the real library that stops
+  discarding eight found moments.
+- **And every moment it is sure of is written down as a GoodBit by itself**
+  (`services/detectedGoodBits.ts`, the range rule in `@shared/detectedGoodBits.ts`). Each kill or
+  death the screen read, or for a verdict made on the sound alone its loudest instant: exactly what
+  `suggestedCount` counts, so a card saying "1 GoodBit found" opens onto one. They used to wait for
+  a press, and the card and the list disagreed. **Tight around the instant**, half a second before
+  and a second after, clamped to the clip, not the six second `MIN_WINDOW_SEC` a suggested *trim*
+  gets. **Once per version of the file**: `clip.detectedMarkedFor` holds the `fileModifiedAt` the
+  marks were written for, so a detected GoodBit somebody deleted stays deleted however often the
+  trimmer opens, and an instant already inside any GoodBit is skipped. Written by the trimmer's
+  suggestions, the close-of-game sweep and a pass 20 seconds after boot over clips read before
+  this existed, never by a trim or an export, which only ask where things are.
 - **A trim moves them.** `services/goodBitsAfterTrim.ts`: marks inside the cut shift by its start,
   marks outside go, and a mark straddling a boundary is kept and clamped, because cutting two
   seconds off a five second mark leaves three seconds of the thing that was marked. Getting this
@@ -530,13 +541,12 @@ in Settings, Recording.
   otherwise.** The screen-reading half is GPU bound, so a second clip overlaps
   the first; without NVDEC it is two things being slow at each other on a
   laptop that has just finished running a game.
-- **It writes no GoodBits.** The measurement lands in the cache, keyed by
-  mtime, and the verdict is recomputed as it always was. The one thing that
-  does persist is `clip.suggestedCount`, because the library is a single query
-  and cannot open a cache file per tile; null there means "nobody has looked",
-  which is not the same as zero. Writing a band onto every confident reading
-  while nobody is watching would fill a library with marks nobody asked for,
-  and 4% of a real library holds two or more of them.
+- **It writes what it found down as GoodBits**, one short range per moment
+  (see GoodBits, above). The measurement lands in the cache, keyed by mtime,
+  and the verdict is recomputed as it always was. `clip.suggestedCount`
+  persists too, because the library is a single query and cannot open a cache
+  file per tile; null there means "nobody has looked", which is not the same as
+  zero.
 - **One card, and only when it found something.** The same overlay the clip
   toast uses, with a `finding`/`found` pair beside `saving`/`saved`. A sweep
   that turns up nothing takes its card down rather than interrupting with an

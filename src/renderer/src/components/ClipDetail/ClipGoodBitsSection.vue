@@ -108,6 +108,9 @@ const emit = defineEmits<{
 /** Whether this is the trimmer's copy, which is the one with a range. */
 const inTrimmer = computed(() => props.range !== null);
 
+/** What reading the clip found and nobody has kept yet, which the empty list has to own up to. */
+const found = computed(() => props.clip.suggestedCount ?? 0);
+
 const { show } = useClipDetail();
 
 const {
@@ -265,7 +268,18 @@ const sourceIcon: Record<string, string> = {
       :disabled="inTrimmer && (busy || !canMark)"
       @click="inTrimmer ? emit('mark') : show('trim')"
     >
-      <p class="text-sm text-muted-500">
+      <!--
+        Found is not kept. Reading the screen or the sound counts what it
+        found onto the clip (`suggestedCount`), and the notch and the card say
+        that number; nothing is written here until somebody keeps one. Said,
+        with where to keep it, or a clip showing "1 GoodBit found" elsewhere
+        opens onto a list that says nothing is marked, and reads as a bug.
+      -->
+      <p v-if="found" class="text-sm text-muted-500">
+        {{ found }} {{ found === 1 ? 'GoodBit' : 'GoodBits' }} found, not kept yet.
+        {{ inTrimmer ? 'Keep it from the suggestion under the video, or mark your own.' : 'Open the trimmer to keep it.' }}
+      </p>
+      <p v-else class="text-sm text-muted-500">
         Nothing marked yet. A GoodBit names a range and leaves the recording
         whole, unlike a trim, which replaces it.
       </p>
@@ -356,28 +370,35 @@ const sourceIcon: Record<string, string> = {
                 {{ rangeLabel(goodBit.startSec, goodBit.endSec) }}
               </span>
               <span class="shrink-0">{{ durationLabel(goodBit.durationSec) }}</span>
-
-              <!--
-                Where it came from, and what the detector said, when a detector
-                said anything. A manual GoodBit gets no badge: it is the normal
-                case, and a badge reading "manual" on nearly every row is a
-                column of noise.
-              -->
+              <!-- How sure the detector was, with the numbers rather than after the sentence, where it wrapped alone. -->
               <span
-                v-if="reasonOf(goodBit)"
-                class="inline-flex items-center gap-1 min-w-0 text-accent-ink"
+                v-if="reasonOf(goodBit) && goodBit.confidence !== null"
+                class="shrink-0 font-mono tabular-nums text-muted-400"
+                title="How sure the detector was"
               >
-                <Icon :icon="sourceIcon[goodBit.source]" class="text-sm shrink-0" />
-                <span class="truncate">{{ reasonOf(goodBit) }}</span>
-                <span v-if="goodBit.confidence !== null" class="shrink-0 text-muted-400">
-                  {{ Math.round(goodBit.confidence * 100) }}%
-                </span>
+                {{ Math.round(goodBit.confidence * 100) }}%
               </span>
 
               <span v-if="renderingId === goodBit.id" class="ml-auto shrink-0 tabular-nums">
                 Rendering {{ renderProgress }}%{{ renderEta ? `, ${renderEta} left` : '' }}
               </span>
             </div>
+
+            <!--
+              Where it came from, and what the detector said, when a detector
+              said anything. Its own line, wrapping: squeezed in beside the
+              range it was cut to "yo..." in a 336px column, and the sentence is
+              the whole reason a detected GoodBit is worth trusting. A manual
+              GoodBit gets nothing here: it is the normal case, and a badge
+              reading "manual" on nearly every row is a column of noise.
+            -->
+            <p
+              v-if="reasonOf(goodBit)"
+              class="flex items-start gap-1 px-1.5 text-xs text-accent-ink"
+            >
+              <Icon :icon="sourceIcon[goodBit.source]" class="mt-px text-sm shrink-0" />
+              <span class="min-w-0">{{ reasonOf(goodBit) }}</span>
+            </p>
           </div>
 
           <!--

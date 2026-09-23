@@ -35,9 +35,9 @@ export interface CreateGoodBitOutput {
  * Detection is filler on top. A caller with a suggestion in hand, the ranked
  * `anchors` on `ClipSuggestionsDTO`, passes `source: 'hud'` with the sentence
  * and the confidence that came with it, and the row then records that the
- * screen put it there rather than a person. Nothing writes these rows on its
- * own: a GET that stores things is a surprise, and the analysis is recomputed
- * from cache on every call, so there is nothing to lose by waiting to be asked.
+ * screen put it there rather than a person. `services/detectedGoodBits.ts`
+ * does exactly that for every moment the analysis is sure of, once per
+ * version of the file.
  *
  * Overlapping GoodBits are allowed. A ten second stretch with the punchline
  * marked inside it is two ranges somebody meant, and refusing it would need a

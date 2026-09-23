@@ -93,6 +93,8 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
 
   /** True when this game's clips get their screen read as well as heard. */
   watchesScreen!: boolean;
+  /** How many GoodBits this answer wrote for what it found. The list needs reloading when this is not zero. */
+  marked!: number;
 
   static fromAnalysis(clipId: number, a: {
     analyzed: boolean;
@@ -110,6 +112,7 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
     events?: SuggestionEvent[];
     anchors?: SuggestionEvent[];
     watchesScreen?: boolean;
+    marked?: number;
   }): ClipSuggestionsDTO {
     const dto = new ClipSuggestionsDTO();
     dto.clipId = clipId;
@@ -128,6 +131,7 @@ export class ClipSuggestionsDTO extends BaseDTO<ClipSuggestionsDTO> {
     dto.events = a.events ?? [];
     dto.anchors = a.anchors ?? [];
     dto.watchesScreen = a.watchesScreen ?? false;
+    dto.marked = a.marked ?? 0;
     return dto;
   }
 }

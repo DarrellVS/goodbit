@@ -872,7 +872,15 @@ clipsRouter.get('/:id/suggestions', asyncHandler(async (req, res) => {
   const refresh = req.query.refresh === 'true';
 
   const result = await new EnsureClipSuggestionsAction().execute({ clipId: id, windowSec, refresh });
-  res.json(ClipSuggestionsDTO.fromAnalysis(id, result));
+  // Whatever it is sure of becomes a GoodBit, once per version of the file
+  // (`services/detectedGoodBits.ts`). Said in the answer, so the trimmer can
+  // reload its list rather than showing it empty beside a suggestion.
+  const { markDetected } = await import('../services/detectedGoodBits.js');
+  const marked = await markDetected(id, result).catch((error) => {
+    console.warn(`[goodbits] could not mark clip ${id}:`, (error as Error).message);
+    return 0;
+  });
+  res.json(ClipSuggestionsDTO.fromAnalysis(id, { ...result, marked }));
 }));
 
 /**

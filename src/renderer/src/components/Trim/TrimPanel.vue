@@ -398,6 +398,8 @@ async function loadSuggestions(): Promise<void> {
   suggestionsLoading.value = true;
   try {
     suggestions.value = await getClipSuggestions(Number(props.id));
+    // Reading the clip writes what it found down as GoodBits; show them.
+    if (suggestions.value?.marked) void loadGoodBits();
 
     /*
      * Take the suggestion, rather than offering it and asking for a drag.

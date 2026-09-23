@@ -35,13 +35,13 @@ import { IDLE, stepSession, type EndedSession, type SessionState } from './sessi
  * as an argument; `foregroundHelper.ts` answers it from a held handle. This
  * file is the wiring and the sweep.
  *
- * **Nothing here writes a GoodBit.** The sweep warms the measurement cache,
- * which is what makes the Trim page instant, and records how many moments were
- * found so a library card can say there is something to look at. Writing a
- * band onto every confident reading while nobody is watching would fill a
- * library with marks nobody asked for, and 4% of a real library holds two or
- * more of them: see the note in `CLAUDE.md` about why marking by hand is the
- * primary path.
+ * **Every moment it is sure of becomes a GoodBit.** The sweep warms the
+ * measurement cache, which is what makes the Trim page instant, records how
+ * many moments were found so a library card can say there is something to
+ * look at, and writes each one down as a short GoodBit around the instant
+ * (`services/detectedGoodBits.ts`). It used to write nothing and leave keeping
+ * them to a press, which let a card say "1 GoodBit found" over a clip whose
+ * list said nothing was marked.
  */
 
 /** How long to wait after a process goes before believing it. */
@@ -293,6 +293,10 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
         found += moments;
         if (moments > 0) withMoments.push(clip.id);
         await repo.update({ id: clip.id }, { suggestedCount: moments });
+        // And each of them written down as a GoodBit, so the count on the
+        // card is a count of things that are there when it is opened.
+        const { markDetected } = await import('../detectedGoodBits.js');
+        await markDetected(clip.id, result);
 
         // The window is looking at rows that no longer match the database.
         // Said per clip rather than once at the end, so badges appear as the

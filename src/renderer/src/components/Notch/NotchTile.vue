@@ -151,18 +151,18 @@ const hoursValue = computed(() =>
       <span class="mt-1.5 truncate text-[11px] text-muted-400">
         {{ data.count }} {{ data.count === 1 ? 'clip' : 'clips' }}
         <template v-if="data.moments">
-          · <span class="text-accent-ink">{{ data.moments }} {{ data.moments === 1 ? 'moment' : 'moments' }} found</span>
+          · <span class="text-accent-ink">{{ data.moments }} {{ data.moments === 1 ? 'GoodBit' : 'GoodBits' }} found</span>
         </template>
       </span>
     </template>
 
-    <!-- Found moments: one number, and the press that goes through them. -->
+    <!-- Found GoodBits: one number, and the press that goes through them. -->
     <template v-else-if="data.id === 'found'">
       <span class="tile-label">Found today</span>
       <span class="mt-auto flex items-baseline gap-1.5">
         <span class="tile-number" :class="data.moments ? 'text-accent-ink' : 'text-muted-400'">{{ data.moments }}</span>
         <span class="truncate" :class="data.moments ? 'text-accent-ink' : 'text-muted-400'">
-          {{ data.moments === 1 ? 'moment' : 'moments' }}
+          {{ data.moments === 1 ? 'GoodBit' : 'GoodBits' }}
         </span>
       </span>
       <span class="tile-quiet">{{ data.clips ? `in ${data.clips} ${data.clips === 1 ? 'clip' : 'clips'}` : 'none yet' }}</span>

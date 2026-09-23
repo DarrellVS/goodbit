@@ -1,4 +1,5 @@
 import { LEAD_IN, TAIL_ROOM } from '@shared/constants/suggestionWindow';
+import { momentName } from '@shared/detectedGoodBits';
 import { formatTimestamp } from './timestampParser';
 import type { GoodBit, NewGoodBit } from '@renderer/types/goodbit';
 import type { SuggestionEvent } from '@renderer/services/clips';
@@ -375,10 +376,12 @@ export const ANCHOR_TAIL_SEC = TAIL_ROOM;
 /**
  * What a detected moment becomes when somebody presses keep.
  *
- * **Nothing writes a GoodBit row on its own.** The detector's readings are
- * cached measurements and a GoodBit is a decision, so keeping one is an explicit
- * `POST`, and it carries the reading's own `reason` and `confidence` so the
- * sentence shown next to it later is the one the rule wrote at the time.
+ * Main now writes every confident reading down as a GoodBit by itself
+ * (`services/detectedGoodBits.ts`), tight around the instant. This is the
+ * press for the rest: a reading somebody deleted and wants back, and the
+ * banner's own wider window. It carries the reading's own `reason` and
+ * `confidence` so the sentence shown next to it later is the one the rule
+ * wrote at the time.
  *
  * `preferred` is the window the server already placed around the strongest
  * reading, which only `anchors[0]` has. Using it where it exists keeps the chip
@@ -432,11 +435,7 @@ export function anchorToGoodBit(
  * names for one thing, arrived at separately.
  */
 export function anchorName(anchor: SuggestionEvent): string | null {
-  const kind = (anchor.kind ?? '').trim();
-  if (!kind) return null;
-
-  const words = kind.replace(/[_-]+/g, ' ').trim();
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : null;
+  return momentName(anchor.kind);
 }
 
 /** To the tenth, which is the step the handles move in. */
