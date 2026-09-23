@@ -280,6 +280,14 @@ test.describe('layout', () => {
       }, route.hash);
       await ctx.page.waitForTimeout(1200);
 
+      // Hover-revealed controls in the margin are measured every run, not
+      // only when an earlier test happened to leave the pointer over them.
+      const hanging = ctx.page.locator('[data-in-gutter]').first();
+      if (await hanging.count()) {
+        await hanging.hover({ force: true }).catch(() => {});
+        await ctx.page.waitForTimeout(300);
+      }
+
       const found = await ctx.page.evaluate(() => {
         const main = document.querySelector('main');
         // The page header sits above `main`, in the layout, not inside the page.
@@ -321,6 +329,16 @@ test.describe('layout', () => {
           }
           if (clipped) continue;
           inspected++;
+          // Controls meant to hang in the margin, like the carousel's arrows,
+          // say so. They are held to the page itself instead: fully inside
+          // `main`, never cut off by the sidebar or the window edge, which is
+          // what the arrows were, sixteen pixels behind the sidebar.
+          if (el.closest('[data-in-gutter]')) {
+            if (r.left < box.left - 1 || r.right > box.left + main.clientWidth + 1) {
+              outside.push(`${el.tagName.toLowerCase()} in the margin, cut off at ${Math.round(r.left)}..${Math.round(r.right)}`);
+            }
+            continue;
+          }
           if (r.left < left || r.right > right) {
             outside.push(`${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 40)}" at ${Math.round(r.left)}..${Math.round(r.right)}, gutter ${Math.round(left)}..${Math.round(right)}`);
           }
