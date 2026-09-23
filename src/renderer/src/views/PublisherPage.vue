@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { Icon } from '@iconify/vue';
-import { ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import { SECTION_HEADER } from '@renderer/components/Base/geometry';
 import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import BaseEmptyState from '@renderer/components/Base/BaseEmptyState.vue';
 import { useRouter } from 'vue-router';
@@ -48,6 +47,18 @@ function openPublisherSettings(): void {
  * reader's own domain and paths into every command. Same address the
  * Publisher card in Settings links to.
  */
+/** The heading and glyph for each way the publisher can fail to answer. */
+const problemView = computed(() => {
+  switch (saver.problem.value?.kind) {
+    case 'outdated':
+      return { title: 'This publisher cannot count yet', icon: 'material-symbols:update' };
+    case 'unauthorized':
+      return { title: 'The publisher refused the token', icon: 'material-symbols:lock-outline' };
+    default:
+      return { title: 'Could not reach the publisher', icon: 'material-symbols:cloud-off-outline' };
+  }
+});
+
 function openGuide(): void {
   void window.goodbit?.openExternal('https://darrellvs.github.io/goodbit/publisher.html');
 }
@@ -158,19 +169,27 @@ function unpublishSelected(): void {
         v-else-if="saver.error.value"
         size="panel"
         tone="warning"
-        icon="material-symbols:cloud-off-outline"
-        title="Could not reach the publisher"
+        :icon="problemView.icon"
+        :title="problemView.title"
         :description="saver.error.value"
       >
         <!--
-          Both ways out, because they are the two causes: the server is off or
-          asleep, which trying again fixes, or the address or token is wrong,
-          which only Settings can.
+          The way out depends on what went wrong. Off or asleep is fixed by
+          trying again; a wrong address or token only by Settings; an old
+          container only on the server, which the guide walks through.
         -->
         <template #actions>
           <BaseButton @click="saver.load()">Try again</BaseButton>
-          <BaseButton tone="quiet" @click="openPublisherSettings">
-            Check the address
+          <BaseButton
+            v-if="saver.problem.value?.kind === 'outdated'"
+            tone="quiet"
+            icon="material-symbols:open-in-new"
+            @click="openGuide"
+          >
+            How to update it
+          </BaseButton>
+          <BaseButton v-else tone="quiet" @click="openPublisherSettings">
+            {{ saver.problem.value?.kind === 'unauthorized' ? 'Check the token' : 'Check the address' }}
           </BaseButton>
         </template>
       </BaseEmptyState>
@@ -248,8 +267,7 @@ function unpublishSelected(): void {
               v-for="clip in saver.mostWatched.value.slice(0, 10)"
               :key="clip.id"
               :clip="clip"
-              :selected="selected.has(clip.id)"
-              @toggle="toggle(clip.id)"
+              :selectable="false"
             />
           </div>
         </section>
@@ -268,10 +286,10 @@ function unpublishSelected(): void {
           </span>
           <BaseButton
             class="ml-auto"
+            icon="material-symbols:cloud-off-outline"
             :disabled="working"
             @click="unpublishSelected"
           >
-            <Icon icon="material-symbols:cloud-off-outline" :class="ICON_BOX" />
             Take off the publisher
           </BaseButton>
         </div>

@@ -399,8 +399,18 @@ function openGuide(): void {
           <p class="text-sm text-muted-500 max-w-[62ch]">
             OBS is still recording at
             <span class="text-foreground">{{ qualityInObs ?? 'something else' }}</span
-            >. This lands the next time the setup is written, which cannot happen while OBS is
-            open.
+            >.
+            <!--
+              Two sentences, because the way to finish it depends on whether OBS
+              is running. It used to say "cannot happen while OBS is open" when
+              OBS was closed and the button beside it would write it right now.
+            -->
+            <template v-if="status?.running">
+              GoodBit cannot change it while OBS is open, so close OBS and write it then.
+            </template>
+            <template v-else>
+              Write it to OBS and the next recording uses it.
+            </template>
           </p>
         </div>
         <BaseButton

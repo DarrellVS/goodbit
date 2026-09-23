@@ -182,7 +182,8 @@ onBeforeUnmount(stopDrag);
       </span>
 
       <span
-        class="absolute left-2 bottom-1 font-mono text-[10.5px] text-muted-600 pointer-events-none"
+        class="absolute left-2 font-mono text-[10.5px] text-muted-600 pointer-events-none"
+        :class="clip.goodBits?.length ? 'bottom-3.5' : 'bottom-1'"
       >
         {{ formatTime(clip.duration) }}
       </span>
@@ -201,7 +202,8 @@ onBeforeUnmount(stopDrag);
       <Icon
         v-if="clip.muted"
         icon="material-symbols:volume-off"
-        class="absolute right-2 bottom-1 size-3.5 block text-muted-500 pointer-events-none"
+        class="absolute right-2 size-3.5 block text-muted-500 pointer-events-none"
+        :class="clip.goodBits?.length ? 'bottom-3.5' : 'bottom-1'"
       />
 
       <button

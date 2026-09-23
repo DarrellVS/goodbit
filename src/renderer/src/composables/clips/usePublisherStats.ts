@@ -32,6 +32,7 @@ export function usePublisherStats() {
   const clips = ref<Clip[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const problem = ref<PublisherStats['problem']>(null);
 
   const configured = computed(() => Boolean(settings.value.publisherBaseUrl));
 
@@ -49,8 +50,19 @@ export function usePublisherStats() {
        * to ask again: a second fetch would draw yesterday's numbers first and
        * then change them under the reader.
        */
-      stats.value = await syncPublisherStats();
-      clips.value = stats.value.clips ?? [];
+      const answer = await syncPublisherStats();
+      // A publisher that did not answer is said so, not drawn as an empty one:
+      // "0 published" about a server that was off is a wrong number.
+      if (answer.problem) {
+        stats.value = null;
+        clips.value = [];
+        problem.value = answer.problem;
+        error.value = answer.problem.message;
+        return;
+      }
+      problem.value = null;
+      stats.value = answer;
+      clips.value = answer.clips ?? [];
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : String(cause);
     } finally {
@@ -129,6 +141,7 @@ export function usePublisherStats() {
     clips,
     loading,
     error,
+    problem,
     configured,
     warmedUp,
     daysUntilWarm,

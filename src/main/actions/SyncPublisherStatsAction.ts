@@ -1,3 +1,4 @@
+import { describeStatsFailure, type PublisherStatsProblem } from '../services/publisherStatsProblem.js';
 import axios from 'axios';
 import { BaseAction } from './BaseAction.js';
 import { AppDataSource } from '../data-source.js';
@@ -34,7 +35,18 @@ export interface SyncPublisherStatsOutput {
    * will recommend deleting the whole library the first time it runs.
    */
   countingSince: string | null;
+  /**
+   * Why there are no numbers, when there are none for a reason.
+   *
+   * This used to answer every failure with zeros, which is the one answer that
+   * cannot be told from an empty publisher: a server that was off, a wrong
+   * address, a token that no longer matched and a container older than the
+   * counter all drew "0 published, 0 B" and the page's own "could not reach"
+   * state never appeared. Null when the publisher answered.
+   */
+  problem: PublisherStatsProblem | null;
 }
+
 
 /**
  * Bring the publisher's view counts back onto the rows.
@@ -60,6 +72,7 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
       updated: 0,
       totals: { clips: 0, bytes: 0, views: 0 },
       countingSince: null,
+      problem: null,
     };
 
     const baseUrl = publisherBaseUrl();
@@ -92,7 +105,7 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
           error instanceof Error ? error.message : String(error),
         );
       }
-      return empty;
+      return { ...empty, problem: describeStatsFailure(status, baseUrl) };
     }
 
     const stats = new Map((payload.clips ?? []).map((stat) => [stat.filename, stat]));
@@ -108,6 +121,7 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
         updated: 0,
         totals: payload.totals ?? empty.totals,
         countingSince: payload.countingSince ?? null,
+        problem: null,
       };
     }
 
@@ -134,6 +148,7 @@ export class SyncPublisherStatsAction extends BaseAction<void, SyncPublisherStat
       updated,
       totals: payload.totals ?? empty.totals,
       countingSince: payload.countingSince ?? null,
+      problem: null,
     };
   }
 }

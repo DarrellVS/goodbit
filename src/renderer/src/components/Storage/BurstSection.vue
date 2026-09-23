@@ -54,7 +54,15 @@ const emit = defineEmits<{
     </BaseEmptyState>
 
     <template v-else>
-      <ReclaimSummary :bytes="data.reclaimableBytes" :clips="data.totalClips" />
+      <!--
+        The clips that would go, not every clip in a burst: keeping one of each
+        is the point, so "1.2 MB across 3 clips" about three saves of which two
+        go was a count of the wrong thing.
+      -->
+      <ReclaimSummary
+        :bytes="data.reclaimableBytes"
+        :clips="data.totalClips - data.clusters.length"
+      />
 
       <div class="mt-6 space-y-4">
         <BurstClusterCard

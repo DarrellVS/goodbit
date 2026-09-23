@@ -273,6 +273,8 @@ export interface PublisherStats {
   totals: { clips: number; bytes: number; views: number };
   /** When the publisher started counting. Null means it never has. */
   countingSince: string | null;
+  /** Why there are no numbers, when the publisher did not answer. */
+  problem: { kind: 'unreachable' | 'unauthorized' | 'outdated'; message: string } | null;
 }
 
 /**

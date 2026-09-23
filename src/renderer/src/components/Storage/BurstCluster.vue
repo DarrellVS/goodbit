@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import BasePanel from '@renderer/components/Base/BasePanel.vue';
 import { computed } from 'vue';
-import { Icon } from '@iconify/vue';
-import { ICON_BOX, SECTION_HEADER } from '@renderer/components/Base/geometry';
+import { SECTION_HEADER } from '@renderer/components/Base/geometry';
 import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import StorageClipTile from './StorageClipTile.vue';
 import { useFormat } from '@renderer/composables/ui/useFormat';
@@ -83,11 +82,11 @@ const publishedDoomed = computed(() => doomed.value.filter((clip) => clip.publis
 
       <BaseButton
         tone="danger"
+        icon="material-symbols:delete-outline"
         class="ml-auto"
         :disabled="deleting || doomed.length === 0"
         @click="emit('delete', doomed)"
       >
-        <Icon icon="material-symbols:delete-outline" :class="ICON_BOX" />
         Delete the other {{ doomed.length }}
       </BaseButton>
     </div>

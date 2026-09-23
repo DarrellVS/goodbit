@@ -167,20 +167,27 @@ async function testPublisher(): Promise<void> {
       <p v-else-if="publisherState === 'unreachable'" class="!mt-2 !text-danger-ink">
         No answer from that address.
       </p>
-    </div>
 
-    <!--
-      A different question from compressing a trim, which is why it is a
-      different switch and now on a different page: what goes to a public link
-      is a copy, so shrinking it costs nothing on disk. Hidden when there is no
-      publisher, since a setting for a feature you do not have is noise.
-    -->
-    <SettingToggle
-      v-if="settings.publisherBaseUrl"
-      label="Compress clips when publishing"
-      description="The file on disk is untouched; only the copy behind the public link is re-encoded, so it downloads in a fifth of the time. Off uploads the recording as it is."
-      :model-value="settings.compressPublished !== false"
-      @update:model-value="saveCompressPublished($event)"
-    />
+      <!--
+        Inside the card, so the hairline under the card is under this too. It
+        sat outside it, which put the Claude heading straight under its
+        description with no rule between two unrelated things.
+      -->
+      <div class="mt-3">
+        <!--
+          A different question from compressing a trim, which is why it is a
+          different switch and now on a different page: what goes to a public link
+          is a copy, so shrinking it costs nothing on disk. Hidden when there is no
+          publisher, since a setting for a feature you do not have is noise.
+        -->
+        <SettingToggle
+          v-if="settings.publisherBaseUrl"
+          label="Compress clips when publishing"
+          description="The file on disk is untouched; only the copy behind the public link is re-encoded, so it downloads in a fifth of the time. Off uploads the recording as it is."
+          :model-value="settings.compressPublished !== false"
+          @update:model-value="saveCompressPublished($event)"
+        />
+      </div>
+    </div>
   </div>
 </template>

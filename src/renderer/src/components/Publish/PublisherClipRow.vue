@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MOTION } from '@renderer/components/Base/geometry';
+import { Icon } from '@iconify/vue';
+import { FOCUS_RING, MOTION } from '@renderer/components/Base/geometry';
 import { thumbnailUrl } from '@renderer/utils/mediaUrl';
 import { useFormat } from '@renderer/composables/ui/useFormat';
 import { formatRelativeTime } from '@renderer/helpers/dateFormat';
@@ -17,9 +18,15 @@ import type { Clip } from '@renderer/types/clip';
 interface Props {
   clip: Clip;
   selected?: boolean;
+  /**
+   * Off means the row cannot be picked at all. "Most opened" is there to be
+   * read, not cleaned up: offering to unpublish the links people actually watch
+   * put a checkbox on the one list where pressing it is the wrong idea.
+   */
+  selectable?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { selectable: true });
 const emit = defineEmits<{ (e: 'toggle'): void }>();
 
 const { formatBytes } = useFormat();
@@ -43,27 +50,44 @@ const watched = computed(() => {
   return {
     label: String(views),
     hint: props.clip.publisherLastViewedAt
-      ? `last ${formatRelativeTime(props.clip.publisherLastViewedAt)}`
+      ? `last opened ${formatRelativeTime(props.clip.publisherLastViewedAt)}`
       : '',
   };
 });
 </script>
 
 <template>
-  <label
+  <!--
+    A label when it can be picked, so pressing anywhere on the row picks it,
+    and a plain row when it cannot. The checkbox is the app's own drawing over
+    a visually hidden input: a native one is painted by Chromium in white on
+    the dark palette and matched nothing else on the screen.
+  -->
+  <component
+    :is="selectable ? 'label' : 'div'"
     :class="[
-      'grid grid-cols-[1.25rem_4rem_1fr_auto_auto] items-center gap-3 px-2 py-2 rounded-md cursor-pointer',
+      'grid items-center gap-3 px-2 py-2 rounded-md',
+      selectable ? 'grid-cols-[1.25rem_4rem_1fr_auto_auto] cursor-pointer' : 'grid-cols-[4rem_1fr_auto_auto]',
       MOTION,
-      selected ? 'bg-accent-sunk' : 'hover:bg-muted-50',
+      selected ? 'bg-accent-sunk' : selectable ? 'hover:bg-muted-50' : '',
     ]"
   >
-    <input
-      type="checkbox"
-      class="size-4"
-      :checked="selected"
-      :aria-label="`Select ${title}`"
-      @change="emit('toggle')"
-    />
+    <span v-if="selectable" class="relative inline-flex size-5 items-center justify-center">
+      <input
+        type="checkbox"
+        :class="['peer absolute inset-0 opacity-0 cursor-pointer', FOCUS_RING]"
+        :checked="selected"
+        :aria-label="`Select ${title}`"
+        @change="emit('toggle')"
+      />
+      <Icon
+        :icon="selected ? 'material-symbols:check-box' : 'material-symbols:check-box-outline-blank'"
+        :class="[
+          'size-5 block pointer-events-none rounded-sm peer-focus-visible:focus-ring',
+          selected ? 'text-accent' : 'text-muted-400',
+        ]"
+      />
+    </span>
 
     <img
       :src="thumbnailUrl(clip.id)"
@@ -80,9 +104,9 @@ const watched = computed(() => {
       {{ formatBytes(clip.sizeBytes) }}
     </div>
 
-    <div class="w-28 text-right">
+    <div class="w-36 text-right">
       <div class="font-mono text-sm tabular-nums text-foreground">{{ watched.label }}</div>
       <div class="text-[11px] text-muted-400">{{ watched.hint }}</div>
     </div>
-  </label>
+  </component>
 </template>
