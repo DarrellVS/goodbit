@@ -7,6 +7,9 @@ import { thumbnailUrl, videoUrl } from '@renderer/utils/mediaUrl';
 import { useFormat } from '@renderer/composables/ui/useFormat';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useHoverScrub } from '@renderer/composables/clips/useHoverScrub';
+import { usePreviewPlayhead } from '@renderer/composables/clips/usePreviewPlayhead';
+import ClipGoodBitPips from '@renderer/components/Library/ClipGoodBitPips.vue';
+import { clipGoodBitRanges } from '@renderer/utils/goodBits';
 import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { formatRelativeTime } from '@renderer/helpers/dateFormat';
 import type { Clip } from '@renderer/types/clip';
@@ -71,6 +74,10 @@ const { isScrubbing, scrubProgress, scrubTime, formatTime, handleMouseMove, hand
   useHoverScrub(videoEl, scrubEnabled);
 
 const src = computed(() => videoUrl(props.clip.id, props.clip.fileModifiedAt));
+
+// The line under the picture, the same one a library card draws.
+const { fillStyle } = usePreviewPlayhead(videoEl, { isScrubbing, scrubProgress });
+const goodBitRanges = computed(() => clipGoodBitRanges(props.clip));
 
 /*
  * Hover plays, like a library card, under the same setting.
@@ -173,6 +180,9 @@ const frame = computed(() => [
         link somebody may already have shared, and no Recycle Bin covers that,
         so it is said on the tile rather than only in the question.
       -->
+      <!-- Any marks it carries, as on a library card; hidden under the scrub strip. -->
+      <ClipGoodBitPips v-if="!isScrubbing" :ranges="goodBitRanges" :duration-sec="clip.durationSec" />
+
       <BaseChip v-if="clip.published" class="absolute top-1.5 right-1.5">Published</BaseChip>
 
       <BaseChip v-if="length && !isScrubbing" numeric class="absolute bottom-1.5 right-1.5">
@@ -188,6 +198,14 @@ const frame = computed(() => [
         <Icon icon="material-symbols:play-arrow-rounded" class="size-6 block" />
       </span>
     </button>
+
+    <!--
+      Where the preview has got to: flush under the picture, two pixels, no
+      clicks. Playing and scrubbing both move it, exactly as on a library card.
+    -->
+    <div class="h-0.5 bg-border/40 pointer-events-none overflow-hidden" aria-hidden="true">
+      <div class="h-full w-full bg-accent origin-left will-change-transform" :style="fillStyle" />
+    </div>
 
     <!--
       The choice, over the picture's corner. A sibling of the picture's button

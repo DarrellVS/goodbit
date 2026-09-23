@@ -9,6 +9,7 @@ import { useClipDetail } from '@renderer/composables/clips/useClipDetail';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useClipActionsHandlers } from '@renderer/composables/clips/useClipActionsHandlers';
 import { useHoverScrub, scrubBand } from '@renderer/composables/clips/useHoverScrub';
+import { usePreviewPlayhead } from '@renderer/composables/clips/usePreviewPlayhead';
 import { useBatchOperationsStore } from '@renderer/stores/batchOperations';
 import { useCollectionsStore } from '@renderer/stores/collections';
 import { useToastStore } from '@renderer/stores/toast';
@@ -133,94 +134,8 @@ const scrubStripStyle = computed(() => {
   return { bottom: `${band.bottomPx}px`, height: `${band.heightPx}px` };
 });
 
-/**
- * How far through the preview is, from 0 to 1.
- *
- * Read once per animation frame while something is playing, not from
- * `timeupdate`. That event fires about four times a second at irregular
- * intervals, so a bar driven by it steps rather than moves, and a CSS
- * transition laid over the top only smears the steps into each other.
- *
- * The loop only runs while this card's preview is actually playing, and only
- * one preview plays at a time, so this is one frame callback for the window.
- */
-const played = ref(0);
-let frame: number | null = null;
-
-function readPlayhead(): void {
-  const video = videoEl.value;
-  if (video && Number.isFinite(video.duration) && video.duration > 0) {
-    played.value = Math.min(1, video.currentTime / video.duration);
-  }
-}
-
-function follow(): void {
-  readPlayhead();
-  frame = requestAnimationFrame(follow);
-}
-
-function startFollowing(): void {
-  if (frame === null) frame = requestAnimationFrame(follow);
-}
-
-function stopFollowing(): void {
-  if (frame !== null) cancelAnimationFrame(frame);
-  frame = null;
-  // One last read, so a pause lands on the frame it paused at rather than
-  // wherever the previous tick left the bar.
-  readPlayhead();
-}
-
-/**
- * Scaled rather than resized.
- *
- * `width` is a layout property: changing it every frame makes the browser
- * reflow the card sixty times a second. A transform is handed to the
- * compositor and costs nothing.
- */
-const fillStyle = computed(() => ({
-  transform: `scaleX(${played.value})`,
-}));
-
-watch(isScrubbing, (scrubbing) => {
-  if (scrubbing) {
-    stopFollowing();
-    played.value = scrubProgress.value;
-  }
-});
-
-watch(scrubProgress, (fraction) => {
-  if (isScrubbing.value) played.value = fraction;
-});
-
-watch(videoEl, (element, previous) => {
-  if (previous) {
-    previous.removeEventListener('play', startFollowing);
-    previous.removeEventListener('playing', startFollowing);
-    previous.removeEventListener('pause', stopFollowing);
-    previous.removeEventListener('ended', stopFollowing);
-    previous.removeEventListener('seeked', readPlayhead);
-  }
-  if (element) {
-    element.addEventListener('play', startFollowing);
-    element.addEventListener('playing', startFollowing);
-    element.addEventListener('pause', stopFollowing);
-    element.addEventListener('ended', stopFollowing);
-    element.addEventListener('seeked', readPlayhead);
-    if (!element.paused) startFollowing();
-  }
-});
-
-onBeforeUnmount(() => {
-  stopFollowing();
-  const video = videoEl.value;
-  if (!video) return;
-  video.removeEventListener('play', startFollowing);
-  video.removeEventListener('playing', startFollowing);
-  video.removeEventListener('pause', stopFollowing);
-  video.removeEventListener('ended', stopFollowing);
-  video.removeEventListener('seeked', readPlayhead);
-});
+// Where the preview has got to, shared with every tile that previews a clip.
+const { fillStyle } = usePreviewPlayhead(videoEl, { isScrubbing, scrubProgress });
 
 /**
  * Drag the file itself out of the window, into Discord, Explorer, anything.
