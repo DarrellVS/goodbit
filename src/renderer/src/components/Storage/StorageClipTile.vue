@@ -160,7 +160,7 @@ const frame = computed(() => [
         data-storage-preview
         :src="src"
         :poster="thumbnailUrl(clip.id)"
-        muted
+        :muted="config.public.value.muteVideosByDefault"
         preload="none"
         :class="[
           'size-full object-cover pointer-events-none transition-opacity duration-150',
