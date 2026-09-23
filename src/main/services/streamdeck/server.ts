@@ -23,7 +23,9 @@ import { loadSettings, saveSettings } from '../../settings.js';
 import {
   discardLatest,
   health,
+  latestPreview,
   publishLatest,
+  publishStatus,
   saveReplayFromKey,
   stats,
   tagLatest,
@@ -53,6 +55,8 @@ const ROUTES: Record<string, Handler> = {
   'POST /v1/latest/publish': () => publishLatest(),
   'POST /v1/latest/discard': (body) => discardLatest(body),
   'POST /v1/replay/save': () => saveReplayFromKey(),
+  'GET /v1/latest/preview': () => latestPreview(),
+  'POST /v1/publish/status': (body) => publishStatus(body),
 };
 
 async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {

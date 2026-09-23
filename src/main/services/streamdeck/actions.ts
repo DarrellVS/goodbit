@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises';
+import { clipboard, nativeImage } from 'electron';
+import { videoService } from '../videoService.js';
 import { AppDataSource } from '../../data-source.js';
 import { Clip } from '../../entity/Clip.js';
 import { GoodBit } from '../../entity/GoodBit.js';
@@ -141,12 +143,26 @@ export async function tagLatest(input: { tag?: unknown }): Promise<KeyResult> {
 export async function publishLatest(): Promise<KeyResult> {
   const found = await latestOrRefusal();
   if (!(found instanceof Clip)) return found;
-  if (found.published) return ok({ id: found.id, title: title(found), already: true });
+  if (found.published) {
+    // Already up: the link is what somebody pressing Publish wants, so it is copied now.
+    if (found.publishedUrl) clipboard.writeText(found.publishedUrl);
+    return ok({ id: found.id, title: title(found), already: true, url: found.publishedUrl ?? null });
+  }
   if (!loadSettings().publisherBaseUrl) return refused(409, 'No publisher is set up');
 
-  void new PublishClipAction().execute({ id: found.id }).catch((error: unknown) => {
-    console.error('[streamdeck] publish failed:', error instanceof Error ? error.message : error);
-  });
+  /*
+   * The link goes on the clipboard once the upload lands, from here rather
+   * than from the plugin: a key has no clipboard, and the URL only exists at
+   * the end. The key asks `/v1/publish/status` meanwhile, so it can say when.
+   */
+  void new PublishClipAction()
+    .execute({ id: found.id })
+    .then(({ clip }) => {
+      if (clip.publishedUrl) clipboard.writeText(clip.publishedUrl);
+    })
+    .catch((error: unknown) => {
+      console.error('[streamdeck] publish failed:', error instanceof Error ? error.message : error);
+    });
   return { status: 202, body: { id: found.id, title: title(found), publishing: true } };
 }
 
@@ -168,17 +184,7 @@ export async function discardLatest(input: { confirm?: unknown }): Promise<KeyRe
   const found = await latestOrRefusal();
   if (!(found instanceof Clip)) return found;
 
-  const markCount = await AppDataSource.getRepository(GoodBit).count({
-    where: { clipId: found.id },
-  });
-  const verdict = discardableFromAKey({
-    displayName: found.displayName,
-    notes: found.notes,
-    starred: found.starred,
-    published: found.published,
-    tagCount: found.tags?.length ?? 0,
-    markCount,
-  });
+  const verdict = await discardVerdict(found);
   if (!verdict.ok) {
     return refused(409, `Kept: that clip is ${verdict.reason}`, { reason: verdict.reason });
   }
@@ -202,4 +208,62 @@ export async function saveReplayFromKey(): Promise<KeyResult> {
   if (result.saved) return ok({ saved: true, key: result.key });
   const status = result.reason === 'nothing-landed' ? 504 : result.reason === 'helper' ? 500 : 409;
   return refused(status, result.message, { reason: result.reason });
+}
+
+/** Whether a key may throw this clip away. The one rule, used by the press and by the preview. */
+async function discardVerdict(clip: Clip): Promise<ReturnType<typeof discardableFromAKey>> {
+  const markCount = await AppDataSource.getRepository(GoodBit).count({ where: { clipId: clip.id } });
+  return discardableFromAKey({
+    displayName: clip.displayName,
+    notes: clip.notes,
+    starred: clip.starred,
+    published: clip.published,
+    tagCount: clip.tags?.length ?? 0,
+    markCount,
+  });
+}
+
+/**
+ * The clip a discard would act on, before anybody presses anything.
+ *
+ * "Kept" after a five second hold was the first time somebody learned the
+ * newest clip was protected, which is the wrong moment. So the key shows the
+ * clip itself, its own thumbnail, and whether it would be kept, and the press
+ * only confirms what is already on the key. The picture is 144 pixels tall,
+ * which is the key's own height at 2x; the cached thumbnail is 1280 wide.
+ */
+export async function latestPreview(): Promise<KeyResult> {
+  if (await stillSaving()) return ok({ saving: true });
+  const clip = await latestClip();
+  if (!clip) return ok({ none: true });
+
+  let thumbnail: string | null = null;
+  try {
+    const file = await videoService.ensureThumbnail(clip);
+    const image = nativeImage.createFromPath(file);
+    if (!image.isEmpty()) {
+      thumbnail = `data:image/jpeg;base64,${image.resize({ height: 144 }).toJPEG(80).toString('base64')}`;
+    }
+  } catch {
+    // No picture is a key with a plain face, not a failed key.
+  }
+
+  const verdict = await discardVerdict(clip);
+  return ok({
+    id: clip.id,
+    title: title(clip),
+    thumbnail,
+    allowed: loadSettings().streamDeckAllowDiscard === true,
+    discardable: verdict.ok,
+    reason: verdict.ok ? null : verdict.reason,
+  });
+}
+
+/** Whether a publish started from a key has landed, and its link. */
+export async function publishStatus(input: { id?: unknown }): Promise<KeyResult> {
+  const id = Number(input.id);
+  if (!Number.isInteger(id)) return refused(400, 'Which clip?');
+  const clip = await AppDataSource.getRepository(Clip).findOneBy({ id });
+  if (!clip) return refused(404, 'That clip is gone');
+  return ok({ published: clip.published === true, url: clip.published ? clip.publishedUrl ?? null : null });
 }

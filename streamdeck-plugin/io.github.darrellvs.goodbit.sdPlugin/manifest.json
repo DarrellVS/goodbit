@@ -2,7 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "io.github.darrellvs.goodbit",
   "Name": "GoodBit",
-  "Version": "0.3.0.0",
+  "Version": "0.4.0.0",
   "Author": "GoodBit",
   "Description": "Save the replay, then tag, publish or discard the clip you just saved, and see today's count, without leaving the game. Needs GoodBit running with the Stream Deck connection switched on in Settings, Connections.",
   "URL": "https://darrellvs.github.io/goodbit/",
@@ -59,7 +59,7 @@
     {
       "UUID": "io.github.darrellvs.goodbit.publish-latest",
       "Name": "Publish the last clip",
-      "Tooltip": "Uploads the clip you just saved to your publisher.",
+      "Tooltip": "Uploads the clip you just saved to your publisher, and copies its link once it is up.",
       "Icon": "imgs/actions/publish",
       "Controllers": [
         "Keypad"
@@ -74,7 +74,7 @@
     {
       "UUID": "io.github.darrellvs.goodbit.discard-latest",
       "Name": "Discard the last clip (hold)",
-      "Tooltip": "Hold to send the clip you just saved to the Recycle Bin. Off in GoodBit until you allow it, and it keeps any clip you have tagged, named, starred, marked, noted or published.",
+      "Tooltip": "Shows the clip you just saved. Hold for a second to send it to the Recycle Bin. A lock means GoodBit keeps it: it has a name, tags, notes, marks, a star or a public link, or discarding is off in GoodBit.",
       "Icon": "imgs/actions/discard",
       "Controllers": [
         "Keypad"
@@ -97,8 +97,8 @@
       "States": [
         {
           "Image": "imgs/keys/stats",
-          "TitleAlignment": "middle",
-          "FontSize": 12
+          "TitleAlignment": "bottom",
+          "FontSize": 11
         }
       ]
     }

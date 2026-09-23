@@ -169,6 +169,14 @@ try {
   console.log(`  ${JSON.stringify(stats.body)}`);
   ok('stats name the newest clip', stats.body?.latest?.title === 'newest.mp4', stats.body?.latest?.title);
 
+  // The discard key shows the clip it would act on before anybody presses.
+  const preview = await call('/v1/latest/preview');
+  ok(
+    'the discard key can show which clip it would throw away',
+    preview.body?.title === 'newest.mp4' && String(preview.body?.thumbnail ?? '').startsWith('data:image/jpeg'),
+    `${preview.body?.title}, allowed ${preview.body?.allowed}, discardable ${preview.body?.discardable}`,
+  );
+
   const discardOff = await call('/v1/latest/discard', { method: 'POST', body: { confirm: true } });
   ok('discard is refused while it is switched off', discardOff.status === 403, String(discardOff.status));
 
