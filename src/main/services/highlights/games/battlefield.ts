@@ -1,6 +1,6 @@
 import { register, type GameEvent, type GameModule, type WatchInput } from '../registry.js';
 import { pointInRect, REFERENCE_HEIGHT, type Anchor, type Region } from '../vision/geometry.js';
-import { crop, glyphSaturation, greyscale } from '../vision/pixels.js';
+import { crop, glyphSaturation, greyscale, highPass } from '../vision/pixels.js';
 import { findTemplate } from '../vision/match.js';
 import {
   BF_KILL_LABEL,
@@ -69,6 +69,77 @@ const LABEL_MATCH = 0.74;
 
 /** Above this the icon is coloured, which in Battlefield means an assist. */
 const ASSIST_SATURATION = 0.30;
+
+/**
+ * The same banner over bright ground, read a second way.
+ *
+ * The banner is translucent white. Over sunlit sand, pale rock or bright grass
+ * the ground behind it is about as bright as the glyphs, and a real kill
+ * scored a skull of 0.81 and a KILL of 0.39 at best: `KILL` boxed and legible
+ * to anybody watching, and nowhere near either bar above. So a frame the plain
+ * reading turns down gets a second one, over `highPass` of the picture, which
+ * takes the ground out and leaves the strokes.
+ *
+ * **The skull is what separates, not the word.** Over the whole 129 clip
+ * library the high-passed KILL alone lets DAMAGE ASSIST and REVIVE banners in:
+ * any boxed word correlates with a boxed word once the ground is gone. The
+ * high-passed skull does not, because a round icon only resembles a skull
+ * while its surroundings are in the picture: the pulse on REVIVE reads 0.76 as
+ * a plain skull and 0.22 high-passed, where every real kill that reached this
+ * path read 0.46 or better. Those assist banners come back below a skull of
+ * about 0.38, and a real kill is lost above 0.48.
+ *
+ * With the skull at 0.40, the word is clean from 0.60 up and costs two real
+ * kills at 0.64, so 0.60. On the library this found five kills the plain
+ * reading missed, every one checked on a contact sheet, and nothing else. It
+ * also stopped one kill being counted as two: a banner fading over sand used
+ * to drop out for a second in the middle, and the halves were two groups.
+ *
+ * Radii are in reference pixels, the same units as the templates: about the
+ * width of a glyph's stroke for the word, and of the skull's eye for the skull.
+ */
+const BRIGHT_SKULL = 0.60;
+const BRIGHT_SKULL_HP = 0.40;
+const BRIGHT_LABEL_HP = 0.60;
+const SKULL_HP_RADIUS = 6;
+const LABEL_HP_RADIUS = 3;
+
+/** The templates, high-passed once, in their own pixels. */
+const hpTemplate = (template: Template, radius: number): Template => ({
+  width: template.width,
+  height: template.height,
+  data: highPass(template.data, template.width, template.height, radius),
+});
+let hpTemplates: { skull: Template; label: Template } | null = null;
+
+/** What one sampled frame scored, the plain reading and the high-passed one. */
+export interface FrameScores {
+  skull: number;
+  label: number;
+  /** Only read when the plain reading was not enough. */
+  skullHp?: number;
+  labelHp?: number;
+  saturation: number;
+}
+
+/**
+ * Whether one frame shows a kill banner of your own. Pure, so
+ * `tests/unit/main/battlefieldKillFrame.spec.ts` owns the thresholds.
+ */
+export function isKillFrame(s: FrameScores): boolean {
+  if (s.skull < SKULL_FLOOR || s.saturation > ASSIST_SATURATION) return false;
+  if (s.skull >= SKULL_ALONE || s.label >= LABEL_MATCH) return true;
+  return (
+    s.skull >= BRIGHT_SKULL &&
+    (s.skullHp ?? -1) >= BRIGHT_SKULL_HP &&
+    (s.labelHp ?? -1) >= BRIGHT_LABEL_HP
+  );
+}
+
+/** Whether a frame the plain reading turned down is worth the second one. */
+function worthHighPass(s: FrameScores): boolean {
+  return s.skull >= BRIGHT_SKULL && s.saturation <= ASSIST_SATURATION;
+}
 
 /**
  * A real banner holds for two or three seconds and so lands in several
@@ -260,20 +331,43 @@ function findHits({ regions, fps, frameWidth, frameHeight }: WatchInput): Hit[] 
       }).score;
     }
 
-    const convincing = skull.score >= SKULL_ALONE || label >= LABEL_MATCH;
-    if (!convincing) return;
-
     // Read the colour where the shape actually matched, not where it was
     // expected, and only off the lit pixels, see `glyphSaturation`.
-    const colour = glyphSaturation(frame, {
+    const saturation = glyphSaturation(frame, {
       x: iconBox.x + skull.x,
       y: iconBox.y + skull.y,
       w: skull.width,
       h: skull.height,
     });
-    if (colour > ASSIST_SATURATION) return;
+    const scores: FrameScores = { skull: skull.score, label, saturation };
 
-    hits.push({ index, atSec: index / fps, skull: skull.score, label });
+    if (!isKillFrame(scores) && worthHighPass(scores) && labelH >= 12) {
+      hpTemplates ??= {
+        skull: hpTemplate(BF_SKULL, SKULL_HP_RADIUS),
+        label: hpTemplate(BF_KILL_LABEL, LABEL_HP_RADIUS),
+      };
+      // Over the whole box and then cropped, so a window's edge is filtered
+      // with the pixels beside it rather than against nothing.
+      const hp = (radius: number) =>
+        highPass(grey, frame.width, frame.height, Math.max(2, Math.round(radius * frameHeight * perSourceY / REFERENCE_HEIGHT)));
+      const skullPlane = hp(SKULL_HP_RADIUS);
+      scores.skullHp = findTemplate(crop(skullPlane, frame.width, { ...iconBox, w: iconW, h: iconH }), iconW, iconH, hpTemplates.skull, {
+        expectedWidth: skullWidth,
+      }).score;
+      if (scores.skullHp >= BRIGHT_SKULL_HP) {
+        const labelPlane = hp(LABEL_HP_RADIUS);
+        scores.labelHp = findTemplate(
+          crop(labelPlane, frame.width, { x: 0, y: labelTop, w: frame.width, h: labelH }),
+          frame.width,
+          labelH,
+          hpTemplates.label,
+          { expectedWidth: labelWidth },
+        ).score;
+      }
+    }
+    if (!isKillFrame(scores)) return;
+
+    hits.push({ index, atSec: index / fps, skull: skull.score, label: Math.max(label, scores.labelHp ?? -1) });
   });
   return hits;
 }

@@ -5,6 +5,7 @@ import { ClipSearch1789563600003 } from './1789563600003-ClipSearch.js';
 import { ClipSuggestedCount1789563600004 } from './1789563600004-ClipSuggestedCount.js';
 import { ClipIsExport1789563600005 } from './1789563600005-ClipIsExport.js';
 import { ClipPublisherStats1789563600006 } from './1789563600006-ClipPublisherStats.js';
+import { ClipSuggestedCountRereadHud1789563600007 } from './1789563600007-ClipSuggestedCountRereadHud.js';
 
 /**
  * Every migration, listed by hand and in order.
@@ -33,4 +34,5 @@ export const migrations = [
   ClipSuggestedCount1789563600004,
   ClipIsExport1789563600005,
   ClipPublisherStats1789563600006,
+  ClipSuggestedCountRereadHud1789563600007,
 ];

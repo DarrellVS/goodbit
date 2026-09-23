@@ -32,8 +32,11 @@ import '../services/highlights/games/index.js';
  * new templates. Every clip anybody had already opened held a cached answer
  * that predates them, and without this the app would have gone on reporting
  * kills only for exactly the clips its owner looks at most.
+ *
+ * 3: a kill banner over bright ground gets a second, high-passed reading. The
+ * clip that prompted it had been opened, so its cached answer was the miss.
  */
-const HUD_VERSION = 2;
+const HUD_VERSION = 3;
 
 /**
  * Samples a second.

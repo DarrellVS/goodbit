@@ -238,6 +238,15 @@ for (const [table, count] of Object.entries(before)) {
     continue;
   }
 
+  /*
+   * FTS5's own segment storage, not rows anybody wrote. The update trigger on
+   * `clip` retires and re-adds a row's terms on every update, so the first
+   * migration to touch clip rows (3.8.0 clearing `suggestedCount`) grew these
+   * while the index itself was exactly right. Their counts say how the index
+   * is laid out, not what is in it; `integrity-check` below asks that instead.
+   */
+  if (/^clip_search_(data|idx)$/.test(table)) continue;
+
   ok(`${table} kept all ${count} rows`, after[table] === count, `now ${after[table]}`);
 }
 
@@ -260,6 +269,24 @@ ok('clip gained suggestedCount', clipColumns.includes('suggestedCount'));
       indexed.n === after.clip,
       `${indexed.n} indexed of ${after.clip} clips`,
     );
+
+    // And that it matches the rows it indexes. With external content, a count
+    // of `clip_search` is read from `clip` and is right whatever the index
+    // holds; rank 1 makes FTS5 compare its terms against the content table,
+    // and it throws on any drift.
+    // Spelled as an INSERT, so it needs a writable handle; this is the copy.
+    let intact = true;
+    let why = '';
+    const writable = open(upgraded, false);
+    try {
+      writable.prepare(`INSERT INTO "clip_search"("clip_search", rank) VALUES ('integrity-check', 1)`).run();
+    } catch (err) {
+      intact = false;
+      why = err.message;
+    } finally {
+      writable.close();
+    }
+    ok('the search index agrees with the clips', intact, why);
 
     // And that it answers. A populated index that cannot match is no better.
     const game = get(db, 'SELECT game FROM clip WHERE game IS NOT NULL LIMIT 1');
