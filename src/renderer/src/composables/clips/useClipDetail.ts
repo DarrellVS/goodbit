@@ -42,14 +42,29 @@ const view = ref<ClipView>('details');
  */
 const cameFrom = ref<'library' | 'details'>('details');
 
+/**
+ * Whether this opening counts as somebody watching the clip.
+ *
+ * False only when Storage Saver opens it. That screen lists the clips nobody
+ * ever opened, and a look is how somebody there decides whether to delete
+ * one, so counting it would take the clip off the list the moment it was
+ * watched: it could never be deleted from the screen that exists to delete
+ * it. Held for as long as the layer is open, so stepping to the next clip
+ * inside it does not start counting, and put back on close.
+ */
+const countsAsOpen = ref(true);
+
 export function useClipDetail() {
   return {
     openClipId,
     view,
     cameFrom,
 
+    countsAsOpen,
+
     /** Open the layer from nothing, on whichever panel was asked for. */
-    open: (id: number, as: ClipView = 'details') => {
+    open: (id: number, as: ClipView = 'details', options: { countAsOpen?: boolean } = {}) => {
+      countsAsOpen.value = options.countAsOpen ?? true;
       openClipId.value = id;
       view.value = as;
       cameFrom.value = 'library';
@@ -81,6 +96,7 @@ export function useClipDetail() {
      * to reset.
      */
     close: () => {
+      countsAsOpen.value = true;
       openClipId.value = null;
     },
   };

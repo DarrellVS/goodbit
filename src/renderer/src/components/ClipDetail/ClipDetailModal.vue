@@ -58,7 +58,7 @@ import { useClipNeighbours } from '@renderer/composables/clips/useClipNeighbours
  *   with the video, which gave real weight to the one thing nobody opens a clip
  *   to find out. Still there, and now they read as a footnote.
  */
-const { openClipId, view, close, show, back, open } = useClipDetail();
+const { openClipId, view, close, show, back, open, countsAsOpen } = useClipDetail();
 const toastStore = useToastStore();
 const collectionsStore = useCollectionsStore();
 
@@ -112,9 +112,12 @@ watch(
      * Here rather than anywhere finer grained: this watcher fires once per
      * open, where a Range request fires several times a second.
      */
-    void recordClipOpened(id).catch((error) => {
-      console.debug('Could not record that this clip was opened:', error);
-    });
+    // Not when Storage Saver opened it: see `countsAsOpen`.
+    if (countsAsOpen.value) {
+      void recordClipOpened(id).catch((error) => {
+        console.debug('Could not record that this clip was opened:', error);
+      });
+    }
 
     // A clip opened after another should not inherit the last one's expanded
     // date or a half-open sheet.
