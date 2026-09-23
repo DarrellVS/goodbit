@@ -275,17 +275,23 @@ export interface PublisherStats {
   countingSince: string | null;
   /** Why there are no numbers, when the publisher did not answer. */
   problem: { kind: 'unreachable' | 'unauthorized' | 'outdated'; message: string } | null;
+  /** Nothing was asked: the last sync is inside `maxAgeMs`. The rest is empty. */
+  skipped: boolean;
 }
 
 /**
  * Ask the publisher what it has, and mirror the numbers onto the rows.
  *
- * A POST because it writes. Called when the Publisher screen opens, never on a
- * timer: this is the one screen in the app that reads a remote service, and a
- * number nobody is looking at is not worth a request over a home uplink.
+ * A POST because it writes. Called when the Publisher screen opens, and by the
+ * library with `maxAgeMs` so main answers from the last sync when it is
+ * recent. Never on a timer: a number nobody is looking at is not worth a
+ * request over a home uplink.
  */
-export async function syncPublisherStats(): Promise<PublisherStats> {
-  const { data } = await axios.post<PublisherStats>('/api/stats/publisher/sync');
+export async function syncPublisherStats(maxAgeMs?: number): Promise<PublisherStats> {
+  const { data } = await axios.post<PublisherStats>(
+    '/api/stats/publisher/sync',
+    maxAgeMs ? { maxAgeMs } : undefined,
+  );
   return data;
 }
 
