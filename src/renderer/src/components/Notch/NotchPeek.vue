@@ -89,7 +89,11 @@ const done = computed(() => props.peek.state === 'saved' || props.peek.state ===
         :exit="{ opacity: 0, y: -4, transition: { duration: 0.1, ease: 'easeIn' } }"
       >
         <span class="text-[13px] font-semibold text-muted-900">{{ peek.title }}</span>
-        <span class="min-w-0 truncate text-[12.5px] text-muted-400">{{ peek.subtitle }}</span>
+        <!--
+          truncate clips at the glyph advance, and a final "y" inks a pixel past
+          its own: the padding gives the clip room, the margin gives it back.
+        -->
+        <span class="-mr-1 min-w-0 truncate pr-1 text-[12.5px] text-muted-400">{{ peek.subtitle }}</span>
       </motion.div>
     </AnimatePresence>
   </div>

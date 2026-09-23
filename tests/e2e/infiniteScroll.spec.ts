@@ -158,7 +158,16 @@ test.describe('the library loads as you scroll', () => {
     for (let press = 0; press < 20; press++) {
       if (!(await loadMore().count())) break;
       const shown = await cards().count();
-      await loadMore().click();
+      /*
+       * The click may never land, and that is not a failure. Scrolling the
+       * button into view crosses the sentinel, so the library can fetch the
+       * rest on its own and take the button away under the click, which then
+       * waits for a button that is never coming back. Either way the list
+       * grows, and the list growing is what this waits for.
+       */
+      await loadMore()
+        .click({ timeout: 2_000 })
+        .catch(() => {});
       // The page, not a quiet moment: the button is disabled while a page is
       // in the air and replaced when it lands, and pressing it in between is
       // a click on something that is going away.
@@ -197,8 +206,15 @@ test.describe('the library loads as you scroll', () => {
      * No `await` on the click: the point is to have a request in flight. The
      * filter is set through the sidebar's own game row, so this goes the way a
      * person would.
+     *
+     * The click is caught because it can outlive the test: the filter change
+     * takes the button away, a click still waiting for it then waits until the
+     * page closes, and that rejection is reported against this test after
+     * every assertion in it has passed.
      */
-    void loadMore().click();
+    void loadMore()
+      .click({ timeout: 2_000 })
+      .catch(() => {});
     await ctx.page.getByRole('button', { name: /OtherGame/ }).first().click();
     await settle(ctx.page);
 
