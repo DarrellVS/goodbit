@@ -1,7 +1,8 @@
 import { pluralize } from './pluralize';
 
 /**
- * What a library card says about how often a published clip has been watched.
+ * How often a published clip has been watched, as the figure on its card's
+ * chip beside Published: `37`, `1,234`. Empty means the chip is not drawn.
  *
  * **Null says nothing.** It means nobody has counted: a publisher older than
  * the counter, or no sync yet. A number there would be invented.
@@ -13,8 +14,14 @@ import { pluralize } from './pluralize';
  *
  * Grouped digits because a clip that went round a Discord can reach four.
  */
-export function viewCountLabel(views: number | null | undefined): string {
+export function viewCountFigure(views: number | null | undefined): string {
   if (views == null || !Number.isFinite(views) || views <= 0) return '';
-  const whole = Math.floor(views);
-  return `${whole.toLocaleString('en-US')} ${pluralize(whole, 'view')}`;
+  return Math.floor(views).toLocaleString('en-US');
+}
+
+/** The same count in words, for a screen reader: the chip itself is an eye and a number. */
+export function viewCountLabel(views: number | null | undefined): string {
+  const figure = viewCountFigure(views);
+  if (!figure) return '';
+  return `${figure} ${pluralize(Math.floor(views as number), 'view')}`;
 }
