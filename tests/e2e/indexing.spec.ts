@@ -1,7 +1,7 @@
 import { copyFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * What counts as a recording, and what is the app's own litter.
@@ -30,7 +30,7 @@ test.describe('indexing', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'ScanGame', 1, 2);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 1);
   });
 
   test.afterAll(async () => {

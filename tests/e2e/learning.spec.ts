@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { launchApp, seedClips, seedSpikyClip, type TestApp } from './app';
+import { launchApp, seedClips, seedSpikyClip, type TestApp, waitForClips } from './app';
 
 /**
  * The parts that let the analysis be taught: every decision is kept, and a
@@ -26,7 +26,7 @@ test.describe('learning from what you keep', () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'LearnGame', 1, 26);
     seedSpikyClip(ctx.videosRoot, 'LearnGame', 'spike');
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 2);
   });
 
   test.afterAll(async () => {
@@ -98,7 +98,7 @@ test.describe('learning from what you keep', () => {
     // The spiky clip was trimmed in the first test, so it may not be confident
     // any more; re-seed one that is.
     seedSpikyClip(ctx.videosRoot, 'LearnGame', 'spike2');
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3, { reload: false });
     const fresh = (await call('GET', '/clips', undefined, { pageSize: 50, game: 'LearnGame' })).body as {
       items: Array<{ id: number; filename: string }>;
     };

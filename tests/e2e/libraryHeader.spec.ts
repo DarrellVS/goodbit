@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * The library's one filter row, and collections above the clips.
@@ -41,14 +41,14 @@ test.describe('the library header', () => {
     mkdirSync(SHOTS, { recursive: true });
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 4, 2);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 4);
 
     // Six, so four are visible and two are behind Show all.
     for (const name of ['Clutch', 'Funny', 'Headshots', 'Fails', 'Tank', 'Heli']) {
       await call('POST', '/collections', { name });
     }
     await ctx.page.reload();
-    await ctx.page.waitForTimeout(3000);
+    await settle(ctx.page);
   });
 
   test.afterAll(async () => {
@@ -125,7 +125,7 @@ test.describe('the library header', () => {
     await ctx.page.screenshot({ path: join(SHOTS, 'collections-strip.png') });
 
     await toggle.click();
-    await ctx.page.waitForTimeout(400);
+    await settle(ctx.page);
     await expect(cards).toHaveCount(6);
     await ctx.page.screenshot({ path: join(SHOTS, 'collections-grid.png') });
 
@@ -138,7 +138,7 @@ test.describe('the library header', () => {
     console.log(`expanded grid-auto-flow: ${flow}`);
 
     await ctx.page.getByRole('button', { name: /Show less/i }).click();
-    await ctx.page.waitForTimeout(400);
+    await settle(ctx.page);
     await expect(cards).toHaveCount(4);
   });
 
@@ -166,7 +166,7 @@ test.describe('the library header', () => {
     const card = ctx.page.locator('.clip-card').first();
     await expect(card).toBeVisible({ timeout: 15_000 });
     await card.dragTo(target);
-    await ctx.page.waitForTimeout(1200);
+    await settle(ctx.page);
 
     const after = await call<Array<{ name: string; clipCount: number }>>('GET', '/collections');
     const now = after.find((collection) => collection.name === name)?.clipCount ?? 0;

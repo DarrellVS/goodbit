@@ -1,3 +1,4 @@
+import { invisibleForTests } from '../testMode.js';
 import { BrowserWindow, screen } from 'electron';
 import { loadSettings } from '../settings.js';
 
@@ -576,6 +577,7 @@ async function render(
   // makes it jump across the screen mid-sequence.
   if (!win.isVisible()) {
     place(win, (settings.clipToastCorner as Corner) ?? 'top-right');
+    if (invisibleForTests) win.setOpacity(0);
     win.showInactive();
   }
 

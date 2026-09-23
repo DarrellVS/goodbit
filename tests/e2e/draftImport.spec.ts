@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * The editor drafts migration, against a real database.
@@ -70,7 +70,7 @@ test.describe('the editor drafts migration', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 2, 2);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 2);
   });
 
   test.afterAll(async () => {

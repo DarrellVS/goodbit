@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * Notes, read as well as written, and the timestamp chip.
@@ -33,7 +33,7 @@ test.describe('notes', () => {
     mkdirSync(SHOTS, { recursive: true });
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 1, 20);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 1);
   });
 
   test.afterAll(async () => {
@@ -69,7 +69,7 @@ test.describe('notes', () => {
     await ctx.page.screenshot({ path: join(SHOTS, 'editing.png') });
 
     await dialog.getByRole('button', { name: /Save notes/i }).click();
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     // Read mode: the markdown is rendered, so the bold is a <strong> and the
     // textarea has gone.
@@ -128,7 +128,7 @@ test.describe('notes', () => {
     });
 
     await dialog.locator('.timestamp-link').nth(1).click();
-    await ctx.page.waitForTimeout(1200);
+    await settle(ctx.page);
 
     const at = await video.evaluate((element: HTMLVideoElement) => element.currentTime);
     console.log(`player moved to ${at.toFixed(2)}s`);
@@ -175,7 +175,7 @@ test.describe('notes', () => {
 
     await textarea.fill('# A heading\n\n`inline code`\n\n```\na block\n```\n\n> a quote');
     await dialog.getByRole('button', { name: /Save notes/i }).click();
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     const rendered = dialog.locator('.markdown-preview').first();
     const sizes = await rendered.evaluate((element) => {

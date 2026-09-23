@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * Recording that a clip was opened, which cannot be backfilled.
@@ -56,7 +56,7 @@ test.describe('opening a clip is remembered', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 1, 2);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 1);
   });
 
   test.afterAll(async () => {

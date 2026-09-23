@@ -8,9 +8,22 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron';
  * arguments get copied to plain data, Vue reactive proxies cannot cross the
  * contextBridge and arrive as "An object could not be cloned".
  */
+let inFlight = 0;
+
 const api = {
   /** Every data call, dispatched through the router in main. No socket. */
-  apiRequest: (request: unknown) => ipcRenderer.invoke('api:request', request),
+  apiRequest: (request: unknown) => {
+    inFlight += 1;
+    return ipcRenderer.invoke('api:request', request).finally(() => {
+      inFlight -= 1;
+    });
+  },
+  /**
+   * How many API requests are still waiting for an answer. Read by the e2e
+   * suite to know a screen has finished loading its data, instead of sleeping
+   * and hoping it had.
+   */
+  apiInFlight: () => inFlight,
 
   /** Settings main itself needs: roots, publisher, autostart. */
   getSettings: () => ipcRenderer.invoke('settings:get'),

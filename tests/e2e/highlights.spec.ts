@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, seedSpikyClip, type TestApp } from './app';
+import { launchApp, waitForClips, seedClips, seedSpikyClip, type TestApp, settle } from './app';
 
 /**
  * The path from "a day of clips" to "a montage": the library hands a whole day
@@ -16,7 +16,7 @@ test.describe('a day, edited', () => {
     // something in it.
     seedClips(ctx.videosRoot, 'DayGame', 2, 26);
     seedSpikyClip(ctx.videosRoot, 'DayGame');
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -27,12 +27,12 @@ test.describe('a day, edited', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     // Renamed from "Edit day", which read as "edit the date" beside a heading
     // that shows one.
     await ctx.page.getByRole('button', { name: /open this day in the editor/i }).first().click();
-    await ctx.page.waitForTimeout(3000);
+    await settle(ctx.page);
 
     const url = await ctx.page.evaluate(() => window.location.hash);
     expect(url).toContain('/editor?clips=');

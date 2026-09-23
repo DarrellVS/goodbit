@@ -13,6 +13,7 @@ import { ScanAndSyncClipsAction, type ScanResult } from '../actions/ScanAndSyncC
 import { GetClipMetaAction, type ClipMeta } from '../actions/GetClipMetaAction.js';
 import { OpenClipAction } from '../actions/OpenClipAction.js';
 import { MoveFileToTrashAction } from '../actions/MoveFileToTrashAction.js';
+import { cancelSource } from './mediaQueue.js';
 
 /**
  * VideoService orchestrates video-related operations using actions and helpers.
@@ -139,6 +140,12 @@ class VideoService {
       console.warn('[delete] file already gone, removing the row only:', filePath);
       return;
     }
+    // A clip that has only just arrived is still being read: its thumbnail,
+    // its frame strip. ffmpeg holds the file open while it does, and the
+    // Recycle Bin refuses an open file with "Operation was aborted", so a
+    // clip deleted in its first few seconds (the Stream Deck's discard key,
+    // pressed right after a save) failed with a 500. Same cancel a trim uses.
+    await cancelSource(filePath);
     await new MoveFileToTrashAction().execute({ filePath });
   }
 }

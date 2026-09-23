@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import ffmpegPath from 'ffmpeg-static';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
+import { expect } from '@playwright/test';
 
 /**
  * Launching GoodBit for a test, with a library it cannot damage.
@@ -137,12 +138,29 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
    */
   const packaged = process.env.GOODBIT_TEST_BINARY;
 
+  /*
+   * Silent and out of the way, always.
+   *
+   * `--mute-audio` mutes every renderer, which covers video previews, the
+   * players and the chimes the overlay card synthesises: a test run made
+   * noise on the machine it ran on. `GOODBIT_TEST_INVISIBLE` makes the
+   * windows transparent, taskbar-less and focus-less while still painting
+   * them (see `src/main/testMode.ts`), and the occlusion switch stops Chromium
+   * deciding a transparent window is hidden and pausing it.
+   * `GOODBIT_TEST_VISIBLE=1` shows them again, for watching a run.
+   */
+  const quiet = ['--mute-audio', '--disable-features=CalculateNativeWinOcclusion'];
   const app = await electron.launch({
     ...(packaged
-      ? { executablePath: packaged, args: [] }
-      : { args: ['out/main/index.js'] }),
+      ? { executablePath: packaged, args: quiet }
+      : { args: ['out/main/index.js', ...quiet] }),
     cwd: process.cwd(),
-    env: { ...process.env, GOODBIT_USER_DATA: dataDir, ...env },
+    env: {
+      ...process.env,
+      GOODBIT_USER_DATA: dataDir,
+      ...(process.env.GOODBIT_TEST_VISIBLE ? {} : { GOODBIT_TEST_INVISIBLE: '1' }),
+      ...env,
+    },
   });
 
   /*
@@ -346,4 +364,122 @@ export function seedSwellClip(videosRoot: string, game: string, name = 'menu', d
   ]);
 
   return file;
+}
+
+/**
+ * Wait until the page has stopped changing, instead of sleeping.
+ *
+ * The suite used to follow every navigation and every press with a fixed
+ * `waitForTimeout`, 113 of them and over six minutes in total, each one a
+ * guess at how long a render takes on this machine: too long almost every
+ * time, and too short on a slow one. This resolves once the DOM has been
+ * quiet for `quietMs` (it mutates while a route loads its data and draws),
+ * after two animation frames, and gives up waiting at `maxMs` rather than
+ * failing, because a page with a clock on it is never quiet.
+ *
+ * Motion is off under the suite (`src/main/testMode.ts`), so there is no
+ * transition left to wait out after this.
+ */
+export async function settle(page: Page, quietMs = 150, maxMs = 3000): Promise<void> {
+  await page.evaluate(
+    ({ quietMs, maxMs }) =>
+      new Promise<void>((resolve) => {
+        const frames = (): Promise<void> =>
+          new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+        // Quiet means no DOM change *and* no API request still out: a route
+        // that has not had its data yet can be perfectly still.
+        const busy = (): boolean => (window.goodbit?.apiInFlight?.() ?? 0) > 0;
+        void frames().then(() => {
+          let timer = window.setTimeout(finish, quietMs);
+          const deadline = performance.now() + maxMs;
+          const cap = window.setTimeout(() => {
+            observer.disconnect();
+            window.clearTimeout(timer);
+            void frames().then(resolve);
+          }, maxMs);
+          const observer = new MutationObserver(() => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(finish, quietMs);
+          });
+          observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+          function finish(): void {
+            if (busy() && performance.now() < deadline) {
+              timer = window.setTimeout(finish, 50);
+              return;
+            }
+            observer.disconnect();
+            window.clearTimeout(timer);
+            window.clearTimeout(cap);
+            void frames().then(resolve);
+          }
+        });
+      }),
+    { quietMs, maxMs },
+  );
+}
+
+/** Go to a route by hash, and wait for it to settle. */
+export async function goto(page: Page, hash: string): Promise<void> {
+  await page.evaluate((h) => {
+    window.location.hash = h;
+  }, hash);
+  await settle(page);
+}
+
+/**
+ * Wait until the library has indexed at least `count` clips, then show them.
+ *
+ * Seeding happens after launch, so the clips arrive through the watcher, which
+ * waits for a file to stop growing before it believes it. The suite used to
+ * sleep nine or ten seconds here; this asks the app instead and moves on the
+ * moment the rows are there.
+ */
+export async function waitForClips(
+  page: Page,
+  count: number,
+  options: { reload?: boolean; timeoutMs?: number } = {},
+): Promise<void> {
+  const { reload = true, timeoutMs = 30_000 } = options;
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const answer = await window.goodbit!.apiRequest({
+            method: 'GET',
+            path: '/clips',
+            query: { pageSize: 1, includeHidden: 'true' },
+          });
+          return (answer.body as { total?: number }).total ?? 0;
+        }),
+      { timeout: timeoutMs, intervals: [200] },
+    )
+    .toBeGreaterThanOrEqual(count);
+  // The rows exist; the screen learns of them through a live update that
+  // arrives when it arrives. Reloading makes it read them now, which is what
+  // a test that seeded clips before looking at anything wants. A test about
+  // the live update itself passes `reload: false`.
+  if (reload) await page.reload();
+  await settle(page);
+}
+
+/** Wait for every video on the page to know its own size. */
+export async function videosReady(page: Page, timeoutMs = 15_000): Promise<void> {
+  await page.waitForFunction(
+    // Only the players that load. A card's preview is `preload="none"` until
+    // somebody points at it, and would never report a size.
+    () =>
+      [...document.querySelectorAll('video')]
+        .filter((video) => video.preload !== 'none')
+        .every((video) => video.readyState >= 1),
+    undefined,
+    { timeout: timeoutMs },
+  );
+  await settle(page);
+}
+
+/** One painted frame: enough for a hover or a focus to have been drawn, with motion off. */
+export async function nextFrame(page: Page): Promise<void> {
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+  );
 }

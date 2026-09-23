@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * Reading what a game put on the screen.
@@ -94,7 +94,7 @@ test.describe('what the screen gives away', () => {
       if (hasRealClip) copyFileSync(REAL_CLIP, join(dir, 'bf6_kill.mp4'));
       if (hasDeathClip) copyFileSync(DEATH_CLIP, join(dir, 'bf6_death.mp4'));
     }
-    await ctx.page.waitForTimeout(12_000);
+    await waitForClips(ctx.page, 1 + Number(hasRealClip) + Number(hasDeathClip));
   });
 
   test.afterAll(async () => {

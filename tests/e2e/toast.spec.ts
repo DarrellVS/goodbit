@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, type TestApp } from './app';
+import { launchApp, type TestApp, settle } from './app';
 
 /**
  * A toast has to be readable over whatever it floats above.
@@ -28,7 +28,7 @@ test.describe('toasts', () => {
     test(`${theme}: a toast has a ground of its own`, async () => {
       await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
       await ctx.page.reload();
-      await ctx.page.waitForTimeout(1000);
+      await settle(ctx.page);
 
       // Without this the dark case could silently run in light and still pass,
       // which is exactly what a stale storage key made it do.
@@ -41,7 +41,7 @@ test.describe('toasts', () => {
       await ctx.page.evaluate(() => {
         window.location.hash = '#/editor';
       });
-      await ctx.page.waitForTimeout(1500);
+      await settle(ctx.page);
 
       await ctx.page.getByRole('button', { name: /export/i }).first().click();
 

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * The library stops listening while a clip is open over it.
@@ -28,9 +28,7 @@ test.describe('keys behind an open clip', () => {
     ctx = await launchApp();
     // Enough clips that the library is taller than the window and can scroll.
     seedClips(ctx.videosRoot, 'TestGame', 12, 1);
-    await ctx.page.waitForTimeout(14_000);
-    await ctx.page.reload();
-    await ctx.page.waitForTimeout(3000);
+    await waitForClips(ctx.page, 12);
   });
 
   test.afterAll(async () => {

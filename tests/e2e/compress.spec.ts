@@ -9,7 +9,7 @@ import type { AddressInfo } from 'node:net';
 import express from 'express';
 import multer from 'multer';
 import ffprobeStatic from 'ffprobe-static';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * Two different questions, and they have different answers.
@@ -171,7 +171,7 @@ test.describe('compressing what gets shared', () => {
     // pattern at all.
     seedClips(ctx.videosRoot, 'ShareGame', 4, 4, 6);
     await saveSettings({ publisherBaseUrl: publisher.url, publisherToken: publisher.token });
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 4);
   });
 
   test.afterAll(async () => {

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, waitForClips, seedClips, type TestApp } from './app';
 
 /**
  * The two things that would be unforgivable to get wrong: losing the library,
@@ -11,7 +11,7 @@ test.describe('backups', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'BackupGame', 2);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 2);
   });
 
   test.afterAll(async () => {
@@ -51,7 +51,7 @@ test.describe('sharing on the local network', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'ShareGame', 1);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 1);
 
     const clips = await ctx.page.evaluate(() =>
       window.goodbit!.apiRequest({ method: 'GET', path: '/clips', query: { pageSize: 5 } }),
