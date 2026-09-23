@@ -70,7 +70,7 @@ async function installPlugin(): Promise<void> {
       toast.error(result.error);
       return;
     }
-    toast.success('The Stream Deck app asks to install it. Say yes and the keys connect by themselves.');
+    toast.success('Confirm the install in the Stream Deck app.');
     for (let i = 0; i < 60 && !state.value?.pluginInstalled; i++) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       await load();
@@ -144,14 +144,18 @@ async function toggleDiscard(allow: boolean): Promise<void> {
         </BaseButton>
       </div>
 
-      <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
-        <span :class="statusDotVariants({ tone: state.running ? 'ok' : 'waiting' })" />
-        <span class="text-foreground">
-          {{ state.running ? 'Listening, on this computer only' : 'Not listening' }}
-        </span>
-        <code class="ml-auto font-mono text-xs text-muted-400 truncate" :title="state.pipe">
-          {{ state.pipe }}
-        </code>
+      <!--
+        Only when something is wrong. A pipe name is nothing anybody can act on,
+        and "Listening" is what the switch above already says; what is worth a
+        row is the one case the switch is on and nothing is: another GoodBit
+        on this profile already holds the connection.
+      -->
+      <div
+        v-if="!state.running"
+        class="flex items-center gap-2 py-3 border-b border-border text-sm"
+      >
+        <span :class="statusDotVariants({ tone: 'blocker' })" />
+        <span class="text-foreground">Not listening. Another GoodBit may already be connected to the Stream Deck.</span>
       </div>
 
       <SettingToggle
