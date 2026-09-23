@@ -29,6 +29,13 @@ export interface AppSettings {
   notchDwellMs?: number;
   /** How long the pointer can be off the open island before it folds, in ms. */
   notchLeaveMs?: number;
+  /** The panels beside the open notch: off, on hover, or open with it. Unset means on hover. */
+  notchWings?: 'off' | 'hover' | 'always';
+  /** Which tiles each panel holds. Read through `resolveWingLayout`; unset is the default. */
+  notchWingLayout?: {
+    left: Array<{ id: string; x: number; y: number; tall?: boolean }>;
+    right: Array<{ id: string; x: number; y: number; tall?: boolean }>;
+  };
   /** Say "clip saved" over the game, as the notch's peek. Unset means on. */
   clipToast?: boolean;
   clipToastSound?: boolean;

@@ -37,6 +37,8 @@ const api = {
   dragOutClip: (clipId: number) => ipcRenderer.send('clip:dragOut', clipId),
   previewClipToast: () => ipcRenderer.invoke('toast:preview'),
   previewSweepToast: () => ipcRenderer.invoke('toast:previewSweep'),
+  /** Every notch tile as it would read now, for the layout editor in Settings. */
+  notchTiles: () => ipcRenderer.invoke('notch:tiles'),
   /** Fires when the shell is done with a drag this window started. */
   onDragOutEnd: (listener: () => void) => {
     const handler = (): void => listener();

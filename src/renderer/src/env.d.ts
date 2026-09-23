@@ -26,6 +26,7 @@ interface GoodBitBridge {
   dragOutClip: (clipId: number) => void;
   previewClipToast: () => Promise<void>;
   previewSweepToast: () => Promise<void>;
+  notchTiles: () => Promise<import('@shared/notch').NotchTiles>;
   onDragOutEnd: (listener: () => void) => () => void;
   steamLaunch: (
     game: string,
@@ -137,6 +138,13 @@ interface AppSettingsWire {
   notchAlwaysOn?: boolean;
   notchDwellMs?: number;
   notchLeaveMs?: number;
+  /** The panels beside the open notch: off, on hover, or open with it. Unset means on hover. */
+  notchWings?: 'off' | 'hover' | 'always';
+  /** Which tiles each panel holds. Read through `resolveWingLayout`; unset is the default. */
+  notchWingLayout?: {
+    left: Array<{ id: string; x: number; y: number; tall?: boolean }>;
+    right: Array<{ id: string; x: number; y: number; tall?: boolean }>;
+  };
   clipToast?: boolean;
   clipToastSound?: boolean;
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -217,6 +225,7 @@ interface NotchBridge {
   onChime: (listener: (kind: import('@shared/notch').NotchChime, volume: number) => void) => () => void;
   ready: () => void;
   act: (action: import('@shared/notch').NotchAction) => void;
+  press: (press: import('@shared/notch').NotchTilePress) => void;
 }
 
 interface Window {

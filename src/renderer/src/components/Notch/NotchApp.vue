@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { AnimatePresence, MotionConfig, motion } from 'motion-v';
 import {
+  islandHeight as islandHeightFor,
   NOTCH_ISLAND,
   NOTCH_LINE,
   NOTCH_PEEK,
@@ -9,10 +10,13 @@ import {
   NOTCH_STAGE,
   type NotchAction,
   type NotchState,
+  type NotchTilePress,
 } from '@shared/notch';
+import { wingRects } from '@shared/notchWings';
 import NotchPeek from './NotchPeek.vue';
 import NotchIsland from './NotchIsland.vue';
 import NotchResult from './NotchResult.vue';
+import NotchWing from './NotchWing.vue';
 import { chime } from './chime';
 
 /**
@@ -31,6 +35,7 @@ const state = ref<NotchState>({
   peek: null,
   island: null,
   result: null,
+  wings: null,
 });
 
 let detachState: (() => void) | null = null;
@@ -106,9 +111,30 @@ const SPRING = { type: 'spring', visualDuration: 0.34, bounce: 0.14 } as const;
 /** What the peek measured itself at; the shape follows it. */
 const peekWidth = ref<number>(NOTCH_PEEK.width);
 
-const islandHeight = computed(() =>
-  state.value.island?.disk ? NOTCH_ISLAND.height : NOTCH_ISLAND.height - 26,
-);
+const islandHeight = computed(() => islandHeightFor(state.value.island));
+
+/** Where each wing sits beside the island, from the same numbers main tests the pointer against. */
+const wingSides = computed(() => {
+  const wings = state.value.wings;
+  if (state.value.mode !== 'open' || !state.value.island || !wings) return [];
+  const size = { width: NOTCH_ISLAND.width, height: islandHeight.value };
+  return (['left', 'right'] as const)
+    .filter((side) => wings[side].length > 0)
+    .map((side) => ({
+      side,
+      rects: wingRects(side, NOTCH_STAGE.along, size),
+      open: wings.open[side],
+      handle: wings.mode === 'hover',
+      // With the island, after it: its spring has mostly settled by then.
+      delay: wings.mode === 'always' ? 0.26 : 0,
+      placements: wings[side],
+      tiles: wings.tiles,
+    }));
+});
+
+function press(value: NotchTilePress): void {
+  window.goodbitNotch?.press(value);
+}
 
 const shape = computed(() => {
   switch (state.value.mode) {
@@ -156,9 +182,17 @@ function act(action: NotchAction): void {
         class="relative shrink-0"
         :style="{ width: `${NOTCH_STAGE.along}px`, height: `${NOTCH_STAGE.across}px` }"
       >
-        <div class="absolute inset-x-0 top-0 flex justify-center">
+        <!-- Beside the island and under it, so the island stays the thing on top. -->
+        <NotchWing v-for="wing in wingSides" :key="wing.side" v-bind="wing" @press="press" />
+
+        <!--
+          The whole stage's width, so the shape can centre in it, which puts it
+          over the wings too: it passes the pointer through, and only the shape
+          takes it back, or nothing in a wing can be pressed.
+        -->
+        <div class="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
           <motion.div
-            class="relative bg-notch"
+            class="pointer-events-auto relative bg-notch"
             :initial="false"
             :animate="{
               width: shape.width,

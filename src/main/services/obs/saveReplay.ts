@@ -192,6 +192,21 @@ function recordingProfile() {
   return obs.profiles.find((profile) => profile.name === 'GoodBit') ?? obs.activeProfile;
 }
 
+/**
+ * The key OBS saves the replay on, as OBS writes it ("F8"), or null when
+ * nothing is bound. For showing, not pressing: a key this cannot press is
+ * still the key somebody presses.
+ */
+export function replayKeyLabel(): string | null {
+  try {
+    const chord = replayChord(recordingProfile()?.saveReplayHotkey ?? null);
+    if (!chord) return null;
+    return 'unsupported' in chord ? chord.unsupported : chord.label;
+  } catch {
+    return null;
+  }
+}
+
 async function newestSince(folder: string, since: number): Promise<string | null> {
   let names: string[];
   try {

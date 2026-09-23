@@ -171,6 +171,20 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
     shownWhen: 'Show the notch and Keep it on the desktop are both on',
   },
   {
+    label: 'Panels beside it',
+    description: 'Tiles either side of the open notch.',
+    section: 'recording',
+    keywords: ['wings', 'panels', 'tiles', 'widgets', 'side', 'notch', 'dashboard'],
+    shownWhen: 'Show the notch is on',
+  },
+  {
+    label: 'Arrange the panels',
+    description: 'Drag tiles in, move them, or drag them out. Two-cell tiles turn either way.',
+    section: 'recording',
+    keywords: ['layout', 'tiles', 'drag', 'widgets', 'wings', 'customise', 'customize', 'rotate'],
+    shownWhen: 'Show the notch is on and Panels beside it is not Off',
+  },
+  {
     label: 'Say when a clip is saved',
     description:
       'Saving, then saved. Also over games.',

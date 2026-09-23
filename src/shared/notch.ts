@@ -8,6 +8,8 @@
  * app's: nothing on it can delete a clip.
  */
 
+import type { Placement, TileId } from './notchWings.js';
+
 export type NotchMode = 'hidden' | 'line' | 'peek' | 'open';
 
 /** The colour of the line at rest, most urgent first. See `lineState`. */
@@ -52,6 +54,49 @@ export interface NotchResult {
   clipIds: number[];
 }
 
+/** A clip on a tile: enough to draw its picture and say how long it is. */
+export interface NotchClipThumb {
+  id: number;
+  /** The thumbnail's cache-buster. */
+  modifiedAt: string;
+  /** "0:21". */
+  length: string;
+  /** Moments the screen found, or null when nobody has looked. */
+  moments: number | null;
+}
+
+/** What each tile shows. A tile with nothing to say about this machine is absent, not empty. */
+export type NotchTileData =
+  | { id: 'recent'; clips: NotchClipThumb[] }
+  | { id: 'session'; game: string; clips: NotchClipThumb[]; count: number; moments: number }
+  | { id: 'found'; moments: number; clips: number }
+  | { id: 'jobs'; jobs: Array<{ label: string; progress: number; eta: string | null }> }
+  | { id: 'drive'; drive: string; free: string; hours: string | null; percent: number }
+  | { id: 'play'; game: string; name: string }
+  | { id: 'tags'; tags: Array<{ name: string; on: boolean }>; hasLatest: boolean }
+  | { id: 'star'; starred: boolean; hasLatest: boolean }
+  | { id: 'share'; state: 'idle' | 'working' | 'copied' | 'failed'; published: boolean; hasLatest: boolean }
+  | { id: 'views'; total: number; published: number; top: { name: string; views: number } | null }
+  | { id: 'obs'; recording: 'running' | 'closed' | 'missing'; key: string | null }
+  | { id: 'week'; count: number; total: string; games: Array<{ name: string; count: number }> };
+
+export type NotchTiles = Partial<{ [K in TileId]: Extract<NotchTileData, { id: K }> }>;
+
+/** The two panels beside the open island. See `notchWings.ts`. */
+export interface NotchWings {
+  mode: 'hover' | 'always';
+  open: { left: boolean; right: boolean };
+  left: Placement[];
+  right: Placement[];
+  tiles: NotchTiles;
+}
+
+/** A press on a tile. Main checks every id and name against what it sent. */
+export type NotchTilePress =
+  | { tile: 'recent' | 'session'; clipId: number }
+  | { tile: 'tags'; tag: string }
+  | { tile: Exclude<TileId, 'recent' | 'session' | 'tags'> };
+
 export interface NotchState {
   mode: NotchMode;
   line: NotchLine;
@@ -60,6 +105,8 @@ export interface NotchState {
   island: NotchIsland | null;
   /** The open result card, when opened from a found peek. */
   result: NotchResult | null;
+  /** The wings, only beside today's island and only when there is a tile to show. */
+  wings: NotchWings | null;
 }
 
 export type NotchChime = 'saving' | 'saved' | 'found';
@@ -67,9 +114,19 @@ export type NotchChime = 'saving' | 'saved' | 'found';
 export type NotchAction = 'trim' | 'open-latest' | 'library' | 'edit-highlights' | 'delete-latest';
 
 /** The page's geometry, which main needs to know where the pointer is. */
-export const NOTCH_STAGE = { along: 520, across: 300 } as const;
+/**
+ * Wide enough for the island and a wing either side of it, plus the wings'
+ * shadow. Transparent and click-through wherever nothing is drawn: main
+ * forwards the pointer only while it is over a shape (`index.ts`).
+ */
+export const NOTCH_STAGE = { along: 1040, across: 300 } as const;
 export const NOTCH_LINE = { width: 120, height: 4 } as const;
 export const NOTCH_ZONE = { width: 280, height: 10 } as const;
 export const NOTCH_PEEK = { width: 360, height: 40 } as const;
 export const NOTCH_ISLAND = { width: 420, height: 220 } as const;
 export const NOTCH_RESULT = { width: 400, height: 132 } as const;
+
+/** The island is shorter when the drive has nothing to say. Main and the page both need the number. */
+export function islandHeight(island: Pick<NotchIsland, 'disk'> | null): number {
+  return island?.disk ? NOTCH_ISLAND.height : NOTCH_ISLAND.height - 26;
+}

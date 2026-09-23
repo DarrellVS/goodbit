@@ -608,6 +608,37 @@ Both windows are real, so **`BrowserWindow.getAllWindows()[0]` is no longer the 
 is Playwright's `firstWindow()`. `tests/e2e/app.ts` and `window-state.spec.ts` pick the window whose
 URL is not a `data:` one. Ten tests across six specs failed at once when that was missed.
 
+### The notch's wings
+
+`src/shared/notchWings.ts`, `services/notch/wings.ts`, `components/Notch/NotchWing.vue` and
+`NotchTile.vue`. Two 2x2 panels of tiles either side of the open island, for the questions somebody
+at a quiet desktop asks next. **On hover by default**, in Settings, Recording, under the notch:
+`notchWings` is `off`, `hover` or `always`, and `notchWingLayout` is what each side holds.
+
+- **A tile is small (1x1), large (2x2) or oblong**, and every oblong one can lie wide (2x1) or stand
+  up (1x2). Wide by default. `resolveWingLayout` reads `settings.json` tile by tile, dropping only
+  what cannot be drawn, so one hand-edited typo does not empty both panels.
+- **Every tile reads something the app already owns, and every press is an existing Action.** A
+  tile with nothing true to say on this machine is absent rather than empty: no publisher means no
+  Views or Share, a last game Steam does not know means no Play again. The editor says which.
+- **Main checks every press against what it sent.** A clip id has to be one a tile was drawn with,
+  a tag one the tags tile offered. Tagging only adds: taking a tag off is a decision made where the
+  clip is.
+- **Left out on purpose**: a clock, weather or CPU (Windows shows them), saving a clip (the wings
+  only exist on a quiet desktop, and the replay key already works in the game), writing a note (the
+  window is `focusable: false`, which is what keeps it from ever stealing a game's keyboard), and
+  muting a track (it rewrites the file).
+- **The window is wide enough for both wings, and takes the pointer only over what is drawn.**
+  `poll` toggles `setIgnoreMouseEvents` as the pointer crosses the island, a wing or a hover zone,
+  or the transparent margin would eat clicks on the tabs underneath. The island's own centring
+  wrapper spans the whole stage, so it is `pointer-events-none` with only the shape taking the
+  pointer back; without that nothing in a wing could be pressed.
+- **A wing opens from a zone, not from its pill.** `WING_REACH` pixels out from the island's edge,
+  its full height, the same dwell and grace as the island (`stepWing`). A 6 pixel pill beside a card
+  is fiddly to aim at; "move off the side and wait" needs no aim at all.
+- **Opened with the island, the wings wait for it.** Both growing at once reads as nothing in
+  particular having moved.
+
 ### Dragging a clip out of the window
 
 `webContents.startDrag`, behind a grip beside the star on each card. The card body already drags,

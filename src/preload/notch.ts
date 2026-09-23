@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { NotchAction, NotchChime, NotchState } from '@shared/notch';
+import type { NotchAction, NotchChime, NotchState, NotchTilePress } from '@shared/notch';
 
 /**
  * The notch window's bridge, and all of it.
  *
- * Three calls, because the notch draws what main tells it and reports a button
+ * A few calls, because the notch draws what main tells it and reports a button
  * press. It deliberately does not get the app's `window.goodbit`: it is always
  * on screen over other programs, and nothing on it should be able to reach an
  * endpoint that deletes a clip.
@@ -24,6 +24,8 @@ const notch = {
   /** Says the page is listening, so main can send the state it missed. */
   ready: () => ipcRenderer.send('notch:ready'),
   act: (action: NotchAction) => ipcRenderer.send('notch:action', action),
+  /** A tile in a wing. Main checks it against what it sent before doing anything. */
+  press: (press: NotchTilePress) => ipcRenderer.send('notch:tile', press),
 };
 
 contextBridge.exposeInMainWorld('goodbitNotch', notch);

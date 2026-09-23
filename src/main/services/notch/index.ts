@@ -38,12 +38,23 @@
  * `placement.ts`; all three are pure and owned by `tests/unit`.
  */
 import { invisibleForTests } from '../../testMode.js';
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, screen } from 'electron';
 import { basename, dirname, join } from 'node:path';
 import { notchDwellMs, notchLeaveMs, resolveNotch, type NotchPlan } from '@shared/notchSettings.js';
 import {
+  notchWingsMode,
+  resolveWingLayout,
+  TILE_IDS,
+  wingRects,
+  type NotchWingsMode,
+  type WingLayout,
+  type WingSide,
+} from '@shared/notchWings.js';
+import {
+  islandHeight,
   NOTCH_ISLAND,
   NOTCH_PEEK,
+  NOTCH_RESULT,
   NOTCH_STAGE,
   NOTCH_ZONE,
   type NotchAction,
@@ -53,11 +64,26 @@ import {
   type NotchPeek,
   type NotchResult,
   type NotchState,
+  type NotchTilePress,
+  type NotchTiles,
+  type NotchWings,
 } from '@shared/notch.js';
 import { loadSettings, onSettingsChange, saveSettings } from '../../settings.js';
-import { IDLE, POLL_MS, restingMode, stepHover, type HoverState, type Rect } from './hover.js';
+import {
+  IDLE,
+  POLL_MS,
+  WING_CLOSED,
+  restingMode,
+  stepHover,
+  stepWing,
+  within,
+  type HoverState,
+  type Rect,
+  type WingHover,
+} from './hover.js';
 import { hanging, stageToScreen, windowBounds } from './placement.js';
 import { islandData, libraryDisk, lineState, type Disk } from './status.js';
+import { pressTile, readTiles, type ShareState, type TileRead } from './wings.js';
 
 /**
  * How long the saving peek waits for a receipt before giving up on itself.
@@ -106,6 +132,16 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 let statusTimer: ReturnType<typeof setInterval> | null = null;
 let hover: HoverState = IDLE;
 
+// The wings beside the island. See `notchWings.ts` and `wings.ts`.
+let wingsMode: NotchWingsMode = 'hover';
+let layout: WingLayout = resolveWingLayout(undefined);
+let tileRead: TileRead | null = null;
+let wingHover: Record<WingSide, WingHover> = { left: WING_CLOSED, right: WING_CLOSED };
+let share: ShareState = 'idle';
+let shareTimer: ReturnType<typeof setTimeout> | null = null;
+/** Whether the window is taking the pointer right now, so it is only told when that changes. */
+let capturing = false;
+
 // What the line is reporting on.
 let saving = false;
 let savingTimer: ReturnType<typeof setTimeout> | null = null;
@@ -137,6 +173,30 @@ export function settleNotchSetting(): void {
   saveSettings({ notch: settings.clipToast !== false });
 }
 
+/**
+ * The wings as they can be drawn now: only the tiles that have something to
+ * say, and nothing at all beside a result card, before the tiles have been
+ * read, or when neither side holds a tile.
+ */
+function wingsNow(): NotchWings | null {
+  if (wingsMode === 'off' || mode !== 'open' || opened !== 'island' || !island || !tileRead) return null;
+  const tiles = tileRead.tiles;
+  const left = layout.left.filter((placement) => tiles[placement.id]);
+  const right = layout.right.filter((placement) => tiles[placement.id]);
+  if (!left.length && !right.length) return null;
+  const always = wingsMode === 'always';
+  return {
+    mode: wingsMode,
+    open: {
+      left: left.length > 0 && (always || wingHover.left.phase === 'open'),
+      right: right.length > 0 && (always || wingHover.right.phase === 'open'),
+    },
+    left,
+    right,
+    tiles,
+  };
+}
+
 function snapshot(): NotchState {
   return {
     mode,
@@ -144,6 +204,7 @@ function snapshot(): NotchState {
     peek: mode === 'peek' ? peekContent : null,
     island: mode === 'open' && opened === 'island' ? island : null,
     result: mode === 'open' && opened === 'result' ? result : null,
+    wings: wingsNow(),
   };
 }
 
@@ -279,6 +340,72 @@ function registerIpc(): void {
     if (opened === 'result') result = null;
     setMode(resting());
   });
+
+  ipcMain.on('notch:tile', (event, press: NotchTilePress) => {
+    if (!win || event.sender !== win.webContents) return;
+    if (!press || typeof press !== 'object' || typeof press.tile !== 'string') return;
+    void onTile(press);
+  });
+}
+
+/** A tile was pressed. Checked against what was shown, then done. */
+async function onTile(press: NotchTilePress): Promise<void> {
+  if (!tileRead || mode !== 'open') return;
+  try {
+    const outcome = await pressTile(press, tileRead);
+    if (outcome.kind === 'navigate') {
+      opener?.(outcome.path);
+      setMode(resting());
+    } else if (outcome.kind === 'changed') {
+      await refreshIsland();
+    } else if (outcome.kind === 'share' && tileRead.latestId !== null) {
+      await shareLatest(tileRead.latestId);
+    }
+  } catch (error) {
+    console.warn('[notch] a tile press failed:', (error as Error).message);
+  }
+}
+
+function setShare(next: ShareState): void {
+  share = next;
+  if (shareTimer) clearTimeout(shareTimer);
+  shareTimer = null;
+  if (next === 'copied' || next === 'failed') {
+    // Said long enough to be read, then back to what it offers.
+    shareTimer = setTimeout(() => {
+      share = 'idle';
+      void refreshIsland();
+    }, 2600);
+  }
+}
+
+/**
+ * Publish the latest clip if it is not already, then copy its link.
+ *
+ * "Copied" only once the link is on the clipboard, which for a clip that was
+ * not yet published means once the upload has landed. `PublishClipAction`
+ * reports its own progress and failures to the app window as it always does.
+ */
+async function shareLatest(id: number): Promise<void> {
+  if (share === 'working') return;
+  setShare('working');
+  await refreshIsland();
+  try {
+    const { AppDataSource } = await import('../../data-source.js');
+    const { Clip } = await import('../../entity/Clip.js');
+    let clip = await AppDataSource.getRepository(Clip).findOneBy({ id });
+    if (clip && !clip.published) {
+      const { PublishClipAction } = await import('../../actions/PublishClipAction.js');
+      clip = (await new PublishClipAction().execute({ id })).clip;
+    }
+    if (!clip?.publishedUrl) throw new Error('the clip has no public link');
+    clipboard.writeText(clip.publishedUrl);
+    setShare('copied');
+  } catch (error) {
+    console.warn('[notch] could not share clip', id, (error as Error).message);
+    setShare('failed');
+  }
+  await refreshIsland();
 }
 
 /**
@@ -341,7 +468,7 @@ function setMode(next: NotchMode): void {
   if (next === 'hidden') {
     const target = win;
     if (target && !target.isDestroyed()) {
-      target.setIgnoreMouseEvents(true);
+      setCapture(target, false);
       publish();
       // Parked only once the fold has settled, or it vanishes mid-spring.
       hideTimer = setTimeout(() => {
@@ -354,12 +481,44 @@ function setMode(next: NotchMode): void {
       if (!target.isVisible()) park(target);
       place(target);
     }
-    target.setIgnoreMouseEvents(next !== 'open');
+    // Open, the window takes the pointer only over what is drawn: it is wide
+    // enough for both wings, and a transparent margin that ate clicks would
+    // break the tabs and title bars underneath. `poll` decides from there.
+    setCapture(target, false);
     publish();
   }
 
-  if (next !== 'open') hover = IDLE;
+  if (next !== 'open') {
+    hover = IDLE;
+    wingHover = { left: WING_CLOSED, right: WING_CLOSED };
+  }
   if (previous !== next) syncTimers();
+}
+
+function setCapture(target: BrowserWindow, on: boolean): void {
+  if (capturing === on) return;
+  capturing = on;
+  target.setIgnoreMouseEvents(!on);
+}
+
+/** The shapes the wings add while the island is open, on the screen. */
+function wingShapes(): { keep: Rect[]; sides: Array<{ side: WingSide; handle: Rect; panel: Rect }> } {
+  const wings = wingsNow();
+  if (!bounds || !wings) return { keep: [], sides: [] };
+  const size = { width: NOTCH_ISLAND.width, height: islandHeight(island) };
+  const sides: Array<{ side: WingSide; handle: Rect; panel: Rect }> = [];
+  const keep: Rect[] = [];
+  for (const side of ['left', 'right'] as const) {
+    if (!wings[side].length) continue;
+    const rects = wingRects(side, STAGE.along, size);
+    // The zone, not the pill: that is where resting opens the wing.
+    const handle = stageToScreen(bounds, rects.zone);
+    const panel = stageToScreen(bounds, rects.panel);
+    sides.push({ side, handle, panel });
+    keep.push(handle);
+    if (wings.open[side]) keep.push(panel);
+  }
+  return { keep, sides };
 }
 
 /** The cursor poll runs only while there is a line or an island to hover. */
@@ -403,9 +562,32 @@ function poll(): void {
     : stageToScreen(bounds, hanging(STAGE, NOTCH_ZONE.width, NOTCH_ZONE.height));
   const openRect = stageToScreen(bounds, hanging(STAGE, NOTCH_ISLAND.width, NOTCH_ISLAND.height));
 
+  const now = Date.now();
+  const shapes = mode === 'open' ? wingShapes() : { keep: [], sides: [] };
+
+  // Each wing first, so a wing opening this tick already keeps the island open.
+  if (mode === 'open' && wingsMode === 'hover') {
+    let moved = false;
+    for (const { side, handle, panel } of shapes.sides) {
+      const next = stepWing(wingHover[side], { now, point, handle, panel, dwellMs, leaveMs });
+      if ((next.phase === 'open') !== (wingHover[side].phase === 'open')) moved = true;
+      wingHover[side] = next;
+    }
+    if (moved) {
+      publish();
+      Object.assign(shapes, wingShapes());
+    }
+  }
+
   const before = hover.phase;
-  const step = stepHover(hover, { now: Date.now(), point, zone, island: openRect, dwellMs, leaveMs });
+  const step = stepHover(hover, { now, point, zone, island: openRect, dwellMs, leaveMs, keep: shapes.keep });
   hover = step.state;
+
+  if (mode === 'open' && win && !win.isDestroyed()) {
+    const drawn = opened === 'island' ? openRect : stageToScreen(bounds, hanging(STAGE, NOTCH_RESULT.width, NOTCH_RESULT.height));
+    const over = within(point, drawn) || shapes.keep.some((rect) => within(point, rect));
+    if (over !== capturing) setCapture(win, over);
+  }
 
   if (peeking) {
     // Resting on the peek holds it; it would be rude to fold under the pointer.
@@ -442,7 +624,11 @@ function poll(): void {
 
 async function refreshIsland(): Promise<void> {
   try {
-    island = await islandData({ obsInstalled, obsRunning, disk });
+    const placed = wingsMode === 'off' ? [] : [...layout.left, ...layout.right].map((placement) => placement.id);
+    [island, tileRead] = await Promise.all([
+      islandData({ obsInstalled, obsRunning, disk }),
+      readTiles(placed, { obsInstalled, obsRunning, disk, share }),
+    ]);
     if (mode === 'open') publish();
   } catch (error) {
     console.warn('[notch] could not read the island:', (error as Error).message);
@@ -514,11 +700,21 @@ function askAbout(exePath: string): void {
     });
 }
 
+function applyWingSettings(settings: { notchWings?: unknown; notchWingLayout?: unknown }): void {
+  const nextMode = notchWingsMode(settings);
+  const nextLayout = resolveWingLayout(settings.notchWingLayout);
+  const changed = nextMode !== wingsMode || JSON.stringify(nextLayout) !== JSON.stringify(layout);
+  wingsMode = nextMode;
+  layout = nextLayout;
+  if (changed) void refreshIsland();
+}
+
 function applySettings(): void {
   const settings = loadSettings();
   plan = resolveNotch(settings);
   dwellMs = notchDwellMs(settings);
   leaveMs = notchLeaveMs(settings);
+  applyWingSettings(settings);
 
   if (!plan.enabled) {
     setMode('hidden');
@@ -543,6 +739,8 @@ export async function warmNotch(): Promise<void> {
   plan = resolveNotch(settings);
   dwellMs = notchDwellMs(settings);
   leaveMs = notchLeaveMs(settings);
+  wingsMode = notchWingsMode(settings);
+  layout = resolveWingLayout(settings.notchWingLayout);
 
   if (detachers.length === 0) {
     const history = await import('../capture/foregroundHistory.js');
@@ -723,13 +921,22 @@ export async function previewSweepPeek(): Promise<void> {
   await showSweepFinished(4, 12, previewClipIds());
 }
 
+/**
+ * Every tile, read now, for the layout editor. A tile missing from the answer
+ * has nothing to say on this machine, which the editor explains.
+ */
+export async function notchTilesPreview(): Promise<NotchTiles> {
+  const read = await readTiles(TILE_IDS, { obsInstalled, obsRunning, disk: disk ?? (await libraryDisk()), share: 'idle' });
+  return read.tiles;
+}
+
 export function closeNotch(): void {
   for (const detach of detachers) detach();
   detachers = [];
-  for (const timer of [peekTimer, hideTimer, savingTimer]) if (timer) clearTimeout(timer);
+  for (const timer of [peekTimer, hideTimer, savingTimer, shareTimer]) if (timer) clearTimeout(timer);
   if (pollTimer) clearInterval(pollTimer);
   if (statusTimer) clearInterval(statusTimer);
-  peekTimer = hideTimer = savingTimer = null;
+  peekTimer = hideTimer = savingTimer = shareTimer = null;
   pollTimer = statusTimer = null;
   if (win && !win.isDestroyed()) win.destroy();
   win = null;

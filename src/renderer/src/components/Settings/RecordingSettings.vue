@@ -31,6 +31,9 @@ import {
   notchLeaveMs,
   resolveNotch,
 } from '@shared/notchSettings';
+import { notchWingsMode, resolveWingLayout, type WingLayout } from '@shared/notchWings';
+import type { NotchTiles } from '@shared/notch';
+import NotchWingsEditor from './NotchWingsEditor.vue';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -132,6 +135,39 @@ const notch = computed(() => resolveNotch(settings.value));
 const dwell = computed(() => notchDwellMs(settings.value));
 const leave = computed(() => notchLeaveMs(settings.value));
 
+/*
+ * The wings beside the open notch: whether they show, and what they hold.
+ * Read through the same two functions main draws them from.
+ */
+const wingsMode = computed(() => notchWingsMode(settings.value));
+/** What was just arranged, shown until the save comes back, so a dropped tile never blinks out. */
+const arranged = ref<WingLayout | null>(null);
+const wingLayout = computed(() => arranged.value ?? resolveWingLayout(settings.value.notchWingLayout));
+const WINGS_OPTIONS: ComboBoxOption[] = [
+  { value: 'off', label: 'Off', description: 'The notch alone, as before.' },
+  { value: 'hover', label: 'On hover', description: 'A handle either side; rest on one to open it.' },
+  { value: 'always', label: 'With the notch', description: 'Both open as soon as the notch does.' },
+];
+
+/** The real tiles, with what they say now, so the editor arranges what the notch will show. */
+const wingTiles = ref<NotchTiles | null>(null);
+async function loadWingTiles(): Promise<void> {
+  try {
+    wingTiles.value = (await window.goodbit?.notchTiles()) ?? {};
+  } catch {
+    wingTiles.value = {};
+  }
+}
+
+async function saveWingLayout(layout: WingLayout | undefined): Promise<void> {
+  arranged.value = layout ?? null;
+  try {
+    await saveSettings({ notchWingLayout: layout });
+  } finally {
+    arranged.value = null;
+  }
+}
+
 /** Draws the real notch, on its real edge, with the real sound. */
 function previewToast(): void {
   void window.goodbit?.previewClipToast();
@@ -161,7 +197,7 @@ function openSetup(): void {
 const GUIDE = 'https://darrellvs.github.io/goodbit/obs.html';
 
 onMounted(async () => {
-  await Promise.all([setup.refresh(), loadSettings()]);
+  await Promise.all([setup.refresh(), loadSettings(), loadWingTiles()]);
 });
 
 const headline = computed(() => {
@@ -564,6 +600,39 @@ function openGuide(): void {
               {{ leave }} ms
             </span>
           </div>
+        </div>
+
+        <!--
+          The wings: two panels of tiles beside the open island, for the
+          questions somebody at a quiet desktop asks next. Their own switch, and
+          the arrangement right under it, since the one is only worth anything
+          once the other is chosen.
+        -->
+        <SettingSelect
+          label="Panels beside it"
+          description="Tiles either side of the open notch."
+          :model-value="wingsMode"
+          :options="WINGS_OPTIONS"
+          @update:model-value="saveSettings({ notchWings: $event as 'off' | 'hover' | 'always' })"
+        />
+
+        <div
+          v-if="wingsMode !== 'off'"
+          data-setting="Arrange the panels"
+          :class="['setting-block flex flex-col gap-3', settingRing('Arrange the panels')]"
+        >
+          <div class="flex items-start justify-between gap-6">
+            <div class="min-w-0 flex-1">
+              <label class="text-sm font-medium text-foreground">Arrange the panels</label>
+              <p class="text-sm text-muted-500 mt-0.5">
+                Drag tiles in, move them, or drag them out. Two-cell tiles turn either way.
+              </p>
+            </div>
+            <BaseButton class="shrink-0" @click="saveWingLayout(undefined)">
+              Reset
+            </BaseButton>
+          </div>
+          <NotchWingsEditor :layout="wingLayout" :tiles="wingTiles" @update:layout="saveWingLayout" />
         </div>
 
         <!--

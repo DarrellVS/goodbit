@@ -101,6 +101,12 @@ export interface HoverSample {
   dwellMs?: number;
   /** How long off the island before it folds. `LEAVE_MS` when not given. */
   leaveMs?: number;
+  /**
+   * More shapes that count as the island while it is open: the wings' handles
+   * and whichever wings are out. Moving from the island into a wing must not
+   * fold the island behind it.
+   */
+  keep?: Rect[];
 }
 
 export interface HoverStep {
@@ -109,10 +115,10 @@ export interface HoverStep {
 }
 
 export function stepHover(state: HoverState, sample: HoverSample): HoverStep {
-  const { now, point, zone, island, dwellMs = DWELL_MS, leaveMs = LEAVE_MS } = sample;
+  const { now, point, zone, island, dwellMs = DWELL_MS, leaveMs = LEAVE_MS, keep = [] } = sample;
 
   if (state.phase === 'open') {
-    if (within(point, island, OPEN_PAD)) {
+    if (within(point, island, OPEN_PAD) || keep.some((rect) => within(point, rect, OPEN_PAD))) {
       return { state: { phase: 'open', outsideSince: null }, action: null };
     }
     const outsideSince = state.outsideSince ?? now;
@@ -150,4 +156,51 @@ export function restingMode(input: {
   game: boolean;
 }): 'line' | 'hidden' {
   return input.line && !input.fullscreen && !input.game ? 'line' : 'hidden';
+}
+
+/*
+ * A wing, opened from its handle.
+ *
+ * The same habit as the island, one level down: rest on the handle for the
+ * dwell and the wing opens, leave the handle and the wing for the grace and it
+ * folds. `handle` is the zone beside the island (`WING_REACH` out, the
+ * island's full height) rather than the pill drawn in it, so it is easy to
+ * land on, and a pointer crossing it on the way somewhere else never rests
+ * long enough to open anything.
+ */
+
+export type WingHover =
+  | { phase: 'closed' }
+  | { phase: 'dwelling'; since: number }
+  | { phase: 'open'; outsideSince: number | null };
+
+export const WING_CLOSED: WingHover = { phase: 'closed' };
+
+export interface WingSample {
+  now: number;
+  point: Point;
+  handle: Rect;
+  panel: Rect;
+  dwellMs?: number;
+  leaveMs?: number;
+}
+
+export function stepWing(state: WingHover, sample: WingSample): WingHover {
+  const { now, point, handle, panel, dwellMs = DWELL_MS, leaveMs = LEAVE_MS } = sample;
+
+  if (state.phase === 'open') {
+    if (within(point, panel, OPEN_PAD) || within(point, handle)) {
+      return state.outsideSince === null ? state : { phase: 'open', outsideSince: null };
+    }
+    const outsideSince = state.outsideSince ?? now;
+    if (now - outsideSince >= leaveMs) return WING_CLOSED;
+    return { phase: 'open', outsideSince };
+  }
+
+  if (!within(point, handle)) return WING_CLOSED;
+  if (state.phase === 'closed') {
+    return dwellMs <= 0 ? { phase: 'open', outsideSince: null } : { phase: 'dwelling', since: now };
+  }
+  if (now - state.since >= dwellMs) return { phase: 'open', outsideSince: null };
+  return state;
 }
