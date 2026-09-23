@@ -134,7 +134,7 @@ const frame = computed(() => [
       type="button"
       :class="['group/pic relative block w-full aspect-21/9 bg-video-bed cursor-pointer', FOCUS_RING]"
       :aria-label="`Watch ${title}`"
-      @click="openClip(clip.id)"
+      @click="openClip(clip.id, 'details', { countAsOpen: false })"
       @mousemove="preview"
       @mouseleave="stopPreview"
     >
