@@ -32,10 +32,18 @@ class PublisherService {
     onProgress?: (fraction: number) => void,
     posterPath?: string,
     goodBits?: PublishedGoodBit[],
+    options: { announce?: boolean } = {},
   ): Promise<{ filename: string; url: string; }>
   {
     const action = new RemotePublishAction();
-    const result = await action.execute({ filePath, displayName, game, onProgress, goodBits });
+    const result = await action.execute({
+      filePath,
+      displayName,
+      game,
+      onProgress,
+      goodBits,
+      announce: options.announce,
+    });
     await this.sendPoster(result.filename, posterPath ?? (await posterForFile(filePath)));
     return result;
   }

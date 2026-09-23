@@ -22,6 +22,12 @@ export interface RemotePublishInput {
   goodBits?: PublishedGoodBit[];
   /** 0-1 of the bytes sent, when the size is known. */
   onProgress?: (fraction: number) => void;
+  /**
+   * False when this puts back a clip the publisher lost rather than publishing
+   * one, so the publisher does not tell a Discord channel it is new. A
+   * publisher older than this ignores the field, as it does `goodBits`.
+   */
+  announce?: boolean;
 }
 
 export interface RemotePublishOutput {
@@ -65,6 +71,7 @@ export class RemotePublishAction extends BaseAction<RemotePublishInput, RemotePu
     // JSON in a form field: a multipart part is bytes with a name, and
     // form-data has no notion of a nested array.
     if (input.goodBits?.length) form.append('goodBits', JSON.stringify(input.goodBits));
+    if (input.announce === false) form.append('announce', '0');
     const url = `${baseUrl}/api/publish`;
     try {
       return await this.send(url, form, input);

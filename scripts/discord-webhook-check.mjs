@@ -141,12 +141,13 @@ await new Promise((resolve, reject) => {
 const api = `http://127.0.0.1:${PORT}/api/publish`;
 const auth = { Authorization: `Bearer ${TOKEN}` };
 
-async function publish(name, displayName, goodBits = []) {
+async function publish(name, displayName, goodBits = [], { announce = true } = {}) {
   const form = new FormData();
   form.append('file', new Blob([Buffer.from('not really a video')]), name);
   form.append('displayName', displayName);
   form.append('game', 'Battlefield 6');
   form.append('goodBits', JSON.stringify(goodBits));
+  if (!announce) form.append('announce', '0');
   const response = await fetch(api, { method: 'POST', headers: auth, body: form });
   return response.ok;
 }
@@ -232,6 +233,20 @@ await publish('triple.mp4', 'Triple kill');
 await poster('triple.mp4');
 await sleep(TAKEDOWN_GRACE_MS + POSTER_GRACE_MS + 400);
 ok('says nothing at all', received.length === 0, `${received.length} sent`);
+
+/* ------------------------------------------------ a restore, not news */
+
+/*
+ * The desktop re-uploads every clip it holds as published that the server
+ * lacks, at every boot. On a fresh or moved container that is the whole
+ * library at once, and each one used to be announced as new.
+ */
+console.log('\na restore, which is not news');
+received.length = 0;
+await publish('restored.mp4', 'Put back', [], { announce: false });
+await poster('restored.mp4');
+await sleep(POSTER_GRACE_MS + 600);
+ok('puts nothing in the channel, poster or no poster', received.length === 0, `${received.length} sent`);
 
 /* ----------------------------------------------------------- a takedown */
 

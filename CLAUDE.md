@@ -862,7 +862,9 @@ card sent at publish time is pictureless for ever. `StoreThumbnailAction` fires 
 poster never comes is announced after a grace period without one. **Only a first publish is news**
 (a sidecar that already existed means a re-upload), and **a takedown waits five minutes**, because a
 trim of a published clip unpublishes and publishes again within seconds and would otherwise post
-two messages per trim. The webhook URL is a secret in the same class as `PUBLISH_TOKEN` and is never
+two messages per trim. **A restore is not news either**: at every boot the desktop re-uploads
+any clip it holds as published that the server lacks, which on a fresh or moved container is the
+whole library at once, so that upload carries `announce=0` and posts nothing. The webhook URL is a secret in the same class as `PUBLISH_TOKEN` and is never
 logged; `scripts/discord-webhook-check.mjs` greps the log for it.
 
 **Rate limits key on a header, never on `req.ip`.** The publisher runs behind a reverse proxy and
