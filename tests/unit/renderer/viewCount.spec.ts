@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { viewCountLabel } from '../../../src/renderer/src/utils/viewCount';
+import { viewCountFigure, viewCountLabel } from '../../../src/renderer/src/utils/viewCount';
 
 /**
  * The view count on a library card.
@@ -29,5 +29,18 @@ describe('viewCountLabel', () => {
   it('is plural and grouped above that', () => {
     expect(viewCountLabel(37)).toBe('37 views');
     expect(viewCountLabel(1234)).toBe('1,234 views');
+  });
+});
+
+describe('viewCountFigure', () => {
+  it('is empty wherever the label is, so the chip and its words agree', () => {
+    for (const views of [null, undefined, 0, -3, Number.NaN]) {
+      expect(viewCountFigure(views)).toBe('');
+    }
+  });
+
+  it('is the grouped number alone', () => {
+    expect(viewCountFigure(1)).toBe('1');
+    expect(viewCountFigure(1234)).toBe('1,234');
   });
 });

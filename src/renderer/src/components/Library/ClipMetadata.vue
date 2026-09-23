@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { formatRelativeTime, formatExactDate } from '@renderer/helpers/dateFormat';
 import { useFormat } from '@renderer/composables/ui/useFormat';
-import { viewCountLabel } from '@renderer/utils/viewCount';
 
 /**
  * When the clip was recorded, which is the file's own date.
@@ -30,12 +29,6 @@ interface Props {
    */
   durationSec?: number | null;
   recordedAt?: string;
-  /**
-   * How often the published copy has been opened. Null for a clip that is not
-   * published or has not been counted; `viewCountLabel` decides what is said.
-   */
-  views?: number | null;
-  lastViewedAt?: string | null;
 }
 
 const props = defineProps<Props>();
@@ -54,11 +47,6 @@ const length = computed(() => {
   return hours ? `${hours}:${two(mins)}:${two(secs)}` : `${mins}:${two(secs)}`;
 });
 
-const viewsLabel = computed(() => viewCountLabel(props.views));
-const viewsHint = computed(() =>
-  props.lastViewedAt ? `Last opened ${formatRelativeTime(props.lastViewedAt)}` : undefined,
-);
-
 const displayDate = computed(() => {
   // No date is no date. Falling back to now would put a confident, wrong
   // "just now" on a clip whose age is simply not known.
@@ -72,8 +60,7 @@ const displayDate = computed(() => {
 
 <template>
   <!--
-    One line: how long, which game, how long ago, how big, and for a
-    published clip how often it has been opened.
+    One line: how long, which game, how long ago, how big.
 
     It was the duration and the file size on the left with the date pushed to
     the right edge, so each card carried a two-column layout of its own and a
@@ -101,13 +88,6 @@ const displayDate = computed(() => {
     </time>
     <span v-if="displayDate && sizeBytes" aria-hidden="true" class="shrink-0">·</span>
     <span v-if="sizeBytes" class="shrink-0 tabular-nums">{{ formatBytes(sizeBytes) }}</span>
-    <span v-if="viewsLabel && (length || game || displayDate || sizeBytes)" aria-hidden="true" class="shrink-0">·</span>
-    <span
-      v-if="viewsLabel"
-      class="shrink-0 tabular-nums"
-      data-testid="clip-view-count"
-      :title="viewsHint"
-    >{{ viewsLabel }}</span>
   </div>
 </template>
 
