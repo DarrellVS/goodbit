@@ -117,7 +117,9 @@ export class DiscardLatest extends SingletonAction {
 /**
  * The key's face as an SVG data URL, or '' for the plain icon from the manifest.
  *
- * 144 square. The thumbnail fills it at nearly full brightness, because the
+ * 144 square. The thumbnail arrives already cropped square by GoodBit (the
+ * Stream Deck's SVG renderer ignores `slice` and would squash a wide frame),
+ * and fills the key at nearly full brightness, because the
  * picture is the point of the key: darkening the whole frame so the mark read
  * made the clip itself unreadable on the LCD. The mark sits on a small dark
  * disc of its own instead, trash in the danger colour, or a lock in the light
@@ -131,7 +133,7 @@ function face(preview: Preview): string {
   const colour = kept ? '#f2efea' : '#d45757';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144">
     <rect width="144" height="144" fill="#121110"/>
-    <image x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice" xlink:href="${preview.thumbnail}"/>
+    <image x="0" y="0" width="144" height="144" xlink:href="${preview.thumbnail}"/>
     <rect width="144" height="144" fill="#121110" opacity="${kept ? 0.3 : 0.08}"/>
     <circle cx="72" cy="72" r="30" fill="#121110" opacity="0.72"/>
     <g transform="translate(50 50) scale(0.171875)" fill="${colour}">${glyph}</g>
