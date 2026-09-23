@@ -97,7 +97,10 @@ export async function startStreamDeck(): Promise<void> {
 
       const path = (req.url ?? '').split('?')[0];
       const route = ROUTES.get(`${req.method} ${path}`);
-      if (!route) return send(404, { error: 'No such key' });
+      // Only ever something this file put there, and checked to be callable
+      // before it is called, which is the guard code scanning asks for when a
+      // request chooses what runs.
+      if (typeof route !== 'function') return send(404, { error: 'No such key' });
 
       void readBody(req)
         .then((body) => route(body))
