@@ -22,7 +22,7 @@ import { audioUrl, videoUrl as videoUrlFor } from '@renderer/utils/mediaUrl';
 import { useClipExport } from '@renderer/composables/clips/useClipExport';
 import { useEditorLayout } from '@renderer/composables/editor/useEditorLayout';
 import { useClipHandlers } from '@renderer/composables/clips/useClipHandlers';
-import { getClip, type ExportOptions } from '@renderer/services/clips';
+import { getClip, getClipSuggestions, type ExportOptions } from '@renderer/services/clips';
 import { listAudioTracks } from '@renderer/services/audio';
 import { parseClipIds } from '@renderer/utils/clipIdQuery';
 import { pluralize } from '@renderer/utils/pluralize';
@@ -44,7 +44,7 @@ import { draftAsResumable } from '@renderer/utils/draftResume';
 import type { DraftFilePayload } from '@renderer/utils/draftFile';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
-import { clipGoodBitRanges } from '@renderer/utils/goodBits';
+import { anchorToGoodBit, clipGoodBitRanges } from '@renderer/utils/goodBits';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -246,7 +246,38 @@ async function loadAudioTracks(): Promise<void> {
   }
 }
 
-async function addClipsToTimeline(clips: Clip[]): Promise<void> {
+/**
+ * The ranges worth keeping in a clip: what was found in it, best first.
+ *
+ * The same ranges a suggestion chip keeps as a GoodBit, so the editor and the
+ * trim screen agree about where a moment is. A clip the sound was confident
+ * about but the screen named nothing in gets its suggested window. Read from
+ * the cache the sweep already filled, so this is quick.
+ */
+async function highlightRanges(clip: Clip, durationSec: number): Promise<Array<{ startSec: number; endSec: number }>> {
+  try {
+    const found = await getClipSuggestions(clip.id);
+    if (found.anchors.length) {
+      const ranges = found.anchors
+        .map((anchor, index) => anchorToGoodBit(anchor, durationSec, index === 0 ? found.window : null))
+        .sort((a, b) => a.startSec - b.startSec);
+      // Two kills three seconds apart are one piece, not the same seconds twice.
+      const merged: Array<{ startSec: number; endSec: number }> = [];
+      for (const { startSec, endSec } of ranges) {
+        const last = merged[merged.length - 1];
+        if (last && startSec <= last.endSec) last.endSec = Math.max(last.endSec, endSec);
+        else merged.push({ startSec, endSec });
+      }
+      return merged;
+    }
+    if (found.window) return [{ startSec: found.window.start, endSec: found.window.end }];
+  } catch (error) {
+    console.error(`Failed to read the highlights of clip ${clip.id}:`, error);
+  }
+  return [];
+}
+
+async function addClipsToTimeline(clips: Clip[], highlights = false): Promise<void> {
   // Probe durations in parallel, then append in the given order. addClip places
   // each clip at the current end of the timeline, so appending has to stay
   // ordered even though the metadata loads race each other.
@@ -262,20 +293,27 @@ async function addClipsToTimeline(clips: Clip[]): Promise<void> {
         console.error(`Failed to load video metadata for clip ${clip.id}:`, error);
       }
 
-      return { clip, videoUrl, thumbnailUrl, videoDuration };
+      const ranges = highlights ? await highlightRanges(clip, videoDuration) : [];
+      return { clip, videoUrl, thumbnailUrl, videoDuration, ranges };
     })
   );
 
   if (prepared.length > 0) record();
   for (const item of prepared) {
-    addClip(
-      item.clip.id,
-      clipLabel(item.clip),
-      item.videoUrl,
-      item.thumbnailUrl,
-      item.videoDuration,
-      clipGoodBitRanges(item.clip),
-    );
+    // One piece per highlight, in the order they happen; the whole clip when
+    // nothing was found in it, rather than leaving it out.
+    const pieces = item.ranges.length ? item.ranges : [undefined];
+    for (const range of pieces) {
+      addClip(
+        item.clip.id,
+        clipLabel(item.clip),
+        item.videoUrl,
+        item.thumbnailUrl,
+        item.videoDuration,
+        clipGoodBitRanges(item.clip),
+        range,
+      );
+    }
   }
 }
 
@@ -711,7 +749,9 @@ async function loadClipsFromQuery(): Promise<void> {
     (clip): clip is Clip => clip !== null
   );
 
-  if (resolved.length > 0) await addClipsToTimeline(resolved);
+  // `highlights=1` is the notch's "Open in the editor" after a session was
+  // read: each clip arrives cut to what was found in it.
+  if (resolved.length > 0) await addClipsToTimeline(resolved, route.query.highlights === '1');
 
   const missing = ids.length - resolved.length;
   if (missing > 0) {

@@ -52,15 +52,6 @@ interface McpState {
 
 const state = ref<McpState | null>(null);
 const working = ref(false);
-const showToken = ref(false);
-
-/** The token is a password. It is not printed until somebody asks for it. */
-const shownCommand = computed(() => {
-  if (!state.value) return '';
-  return showToken.value
-    ? state.value.command
-    : state.value.command.replace(state.value.token, '•'.repeat(12));
-});
 
 async function load(): Promise<void> {
   state.value = (await window.goodbit?.mcpState()) ?? null;
@@ -134,70 +125,35 @@ Authorization: Bearer ${state.value.token}`,
   toast.success('Address and token copied. Paste them into that app’s connector settings.');
 }
 
-async function copyCommand(): Promise<void> {
-  if (!state.value) return;
-  await navigator.clipboard.writeText(state.value.command);
-  toast.success('Copied, token and all. Run it in a terminal.');
-}
 </script>
 
 <template>
   <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Connections</h2>
-      <p class="mt-2 text-muted-500">
-        Claude, and the server that hosts your public links. Both optional, both off until you set
-        them up.
-      </p>
+      <p class="mt-2 text-muted-500">Publishing, Claude and Stream Deck. All optional.</p>
     </div>
 
-    <!--
-      The publisher first, Claude after it.
-
-      Claude was at the top because it was the only thing on this page when the
-      page was called Claude. Publishing is what somebody comes here to get
-      working, and it is the half that has an address, a token and something
-      that can be unreachable; Claude is a switch and a config file.
-    -->
     <PublisherCard />
 
     <div class="setting-card">
-      <!--
-        No glyph beside the heading. Nothing else on these pages has one, and a
-        robot face over a paragraph about what a program may read is a decoration
-        on the one block here that wants to be read carefully.
-      -->
       <div data-setting="Claude" :class="settingRing('Claude')">
-        <h3 class="font-display text-lg font-medium text-foreground">Claude</h3>
-        <p class="text-sm text-muted-500 mt-1 max-w-[76ch]">
-          GoodBit can answer questions about your library and act on it: find the clip you are
-          thinking of, tag a batch of them, say where the interesting part of a recording is, and
-          trim to it.
-        </p>
-        <p class="text-sm text-muted-400 mt-1.5 max-w-[76ch]">
-          It listens on this machine only, behind a token, and nothing it offers can delete a clip.
-        </p>
+        <h3>Claude</h3>
+        <p class="text-sm text-muted-500 mt-1">Let Claude find, tag and trim your clips.</p>
       </div>
 
-      <div class="mt-1">
-        <SettingToggle
-          :model-value="state?.enabled ?? false"
-          :disabled="working"
-          label="Let Claude reach this library"
-          description="Off by default. Nothing is listening until you turn this on."
-          @update:model-value="toggleServer"
-        />
-      </div>
+      <SettingToggle
+        :model-value="state?.enabled ?? false"
+        :disabled="working"
+        label="Let Claude reach this library"
+        description="Works with Claude Code, Claude Desktop and Cursor on this PC."
+        @update:model-value="toggleServer"
+      />
 
       <template v-if="state?.enabled">
-        <!--
-          What is true, read back from the machine: a dot, a word and the
-          address it is answering on.
-        -->
-        <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
+        <div class="flex items-center gap-2 py-3 border-t border-border text-sm">
           <span :class="statusDotVariants({ tone: state.running ? 'ok' : 'waiting' })" />
-          <span class="text-foreground">{{ state.running ? 'Listening' : 'Not listening' }}</span>
-          <code class="font-mono text-xs text-muted-400 truncate">{{ state.url }}</code>
+          <span class="text-foreground">{{ state.running ? 'Ready' : 'Not running' }}</span>
         </div>
 
         <template v-if="found.length">
@@ -205,30 +161,19 @@ async function copyCommand(): Promise<void> {
             :model-value="allRegistered"
             :disabled="working || !state.running"
             label="Set them up for me"
-            description="Writes GoodBit into the config of everything below, so there is nothing to paste. Your other servers are left alone and each file is backed up first."
+            description="Connects every app below."
             @update:model-value="(wanted: boolean) => toggleRegistration(wanted)"
           />
 
-          <!--
-            One row per client actually on this machine, so somebody can
-            connect Claude Code and leave Cursor alone. A client that is not
-            installed is never listed and never written: an empty config for
-            an app somebody does not have is litter.
-
-            Hairline rows, not bordered boxes. Three boxes in a column inside a
-            block that is itself a list of blocks was three nested frames deep.
-          -->
+          <!-- One row per app actually on this machine, so each can be connected on its own. -->
           <div
             v-for="client in found"
             :key="client.id"
-            class="flex items-center justify-between gap-3 py-3 border-b border-border"
+            class="flex items-center justify-between gap-3 py-3 border-t border-border"
           >
             <div class="min-w-0">
               <p class="text-sm text-foreground">{{ client.label }}</p>
-              <p v-if="client.writable" class="font-mono text-xs text-muted-400 truncate">
-                {{ client.configPath }}
-              </p>
-              <p v-if="client.note" class="text-sm text-muted-500 mt-1">{{ client.note }}</p>
+              <p v-if="client.note" class="text-sm text-muted-500 mt-0.5">{{ client.note }}</p>
             </div>
             <BaseButton
               v-if="client.writable"
@@ -245,41 +190,16 @@ async function copyCommand(): Promise<void> {
             </BaseButton>
           </div>
         </template>
-
-        <p v-else class="text-sm text-muted-500 py-3 border-b border-border">
-          Nothing that speaks MCP was found on this machine. The command below works wherever you
-          do have one.
+        <p v-else class="text-sm text-muted-500 py-3 border-t border-border">
+          No supported apps found on this PC.
         </p>
 
-        <!--
-          The one filled thing allowed in a block like this, and it holds
-          exactly what an inset is for: something you copy rather than read.
-        -->
-        <div class="setting-inset space-y-2">
-          <p class="text-sm text-muted-500">
-            Or do it yourself. This is the same thing the switch above writes.
-          </p>
-          <code class="block font-mono text-xs text-muted-600 break-all">{{ shownCommand }}</code>
-          <div class="flex items-center gap-2 pt-0.5">
-            <BaseButton size="sm" @click="copyCommand">Copy</BaseButton>
-            <BaseButton size="sm" @click="showToken = !showToken">
-              {{ showToken ? 'Hide the token' : 'Show the token' }}
-            </BaseButton>
-          </div>
-        </div>
-
-        <p class="text-sm text-muted-400 mt-3 max-w-[76ch]">
-          These read their config when they start, so restart after connecting. Then ask something
-          like "what did I record yesterday?"
+        <p class="text-sm text-muted-400 pt-3 border-t border-border">
+          Restart an app after connecting it.
         </p>
       </template>
     </div>
 
-    <!--
-      Last, because it is the one of the three that needs a device somebody
-      has to own first. Same shape as Claude above it: a server on this machine
-      only, behind a token, off until switched on.
-    -->
     <StreamDeckCard />
   </section>
 </template>

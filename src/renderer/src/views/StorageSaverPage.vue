@@ -28,7 +28,7 @@ const saver = useStorageSaver();
 const { settings, load: loadSettings } = useAppSettings();
 
 const days = computed(() => settings.value.unreviewedDays ?? 30);
-const windowSec = computed(() => settings.value.burstWindowSec ?? 90);
+const windowSec = computed(() => settings.value.burstWindowSec ?? 30);
 
 onMounted(async () => {
   // Settings first: both queries take a threshold from it, and firing them

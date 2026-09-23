@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
-import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import SettingToggle from './SettingToggle.vue';
 import SettingsGroup from './SettingsGroup.vue';
 import SettingAnchor from './SettingAnchor.vue';
@@ -28,7 +27,6 @@ import HealthCard from './HealthCard.vue';
  * answers the question it was standing in for.
  */
 const config = useConfiguration();
-const { settingRing } = useSettingsSearch();
 
 const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts);
 </script>
@@ -37,14 +35,14 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
   <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Advanced</h2>
-      <p class="mt-2 text-muted-500">Keyboard shortcuts, and what this machine can do</p>
+      <p class="mt-2 text-muted-500">Shortcuts and system info</p>
     </div>
 
     <SettingsGroup title="Keyboard">
       <SettingToggle
         v-model="config.public.value.enableKeyboardShortcuts"
         label="Keyboard shortcuts"
-        description="Move around and act on a clip without the mouse"
+        description="Use the app without the mouse."
       />
 
       <SettingAnchor v-if="showShortcuts" label="Change a shortcut">
@@ -53,16 +51,5 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
     </SettingsGroup>
 
     <HealthCard />
-
-    <div
-      data-setting="Where settings are kept"
-      :class="['setting-card', settingRing('Where settings are kept')]"
-    >
-      <h3>Where settings are kept</h3>
-      <p>
-        These preferences live on this computer and stay put between sessions. Export, Import
-        and Reset, at the foot of the list on the left, work on all of them at once.
-      </p>
-    </div>
   </section>
 </template>

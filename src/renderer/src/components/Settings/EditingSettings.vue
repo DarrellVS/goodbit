@@ -27,7 +27,7 @@ onMounted(load);
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Editing</h2>
       <p class="mt-2 text-muted-500">
-        Trimming, your music, and what the suggestions have learned
+        Trimming, music and suggestions
       </p>
     </div>
 
@@ -40,7 +40,7 @@ onMounted(load);
     <SettingsGroup title="Trimming">
       <SettingToggle
         label="Compress clips when trimming"
-        description="A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size."
+        description="Much smaller files, slightly lower quality."
         :model-value="settings.compressTrims === true"
         @update:model-value="save({ compressTrims: $event })"
       />

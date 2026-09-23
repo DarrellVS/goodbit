@@ -5,11 +5,14 @@ import {
   NOTCH_ISLAND,
   NOTCH_LINE,
   NOTCH_PEEK,
+  NOTCH_RESULT,
   NOTCH_STAGE,
+  type NotchAction,
   type NotchState,
 } from '@shared/notch';
 import NotchPeek from './NotchPeek.vue';
 import NotchIsland from './NotchIsland.vue';
+import NotchResult from './NotchResult.vue';
 import { chime } from './chime';
 
 /**
@@ -27,17 +30,67 @@ const state = ref<NotchState>({
   line: 'none',
   peek: null,
   island: null,
+  result: null,
 });
 
 let detachState: (() => void) | null = null;
+
+/*
+ * A notch arriving out of nothing waits until it can be seen.
+ *
+ * Main moves the window back on screen and sends the new state in the same
+ * breath, but Windows still counts a window that was just off every screen as
+ * hidden for a moment, and Chromium presents no frames for it. The spring
+ * played out during that moment and the first frame anybody saw was the
+ * finished peek, popped in. So a state that brings the notch out of hiding is
+ * held until the page is visible and has painted the folded shape twice, and
+ * only then applied, so the drop from the edge is on screen from its first
+ * frame. Anything that arrives meanwhile replaces what is held.
+ */
+let held: NotchState | null = null;
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function visible(): Promise<void> {
+  if (document.visibilityState === 'visible') return Promise.resolve();
+  return new Promise((resolve) => {
+    const onChange = (): void => {
+      if (document.visibilityState !== 'visible') return;
+      document.removeEventListener('visibilitychange', onChange);
+      resolve();
+    };
+    document.addEventListener('visibilitychange', onChange);
+  });
+}
+
+async function receive(next: NotchState): Promise<void> {
+  const arriving = state.value.mode === 'hidden' && next.mode !== 'hidden';
+  if (!arriving) {
+    if (held) {
+      held = next;
+      return;
+    }
+    state.value = next;
+    return;
+  }
+  const waiting = held !== null;
+  held = next;
+  if (waiting) return;
+  await visible();
+  await nextFrame();
+  await nextFrame();
+  const apply = held;
+  held = null;
+  if (apply) state.value = apply;
+}
 let detachChime: (() => void) | null = null;
 
 onMounted(() => {
   const bridge = window.goodbitNotch;
   if (!bridge) return;
-  detachState = bridge.onState((next) => {
-    state.value = next;
-  });
+  detachState = bridge.onState(receive);
   detachChime = bridge.onChime((kind, volume) => chime(kind, volume));
   bridge.ready();
 });
@@ -50,6 +103,9 @@ onBeforeUnmount(() => {
 /** A spring that settles in about a third of a second and barely overshoots. */
 const SPRING = { type: 'spring', visualDuration: 0.34, bounce: 0.14 } as const;
 
+/** What the peek measured itself at; the shape follows it. */
+const peekWidth = ref<number>(NOTCH_PEEK.width);
+
 const islandHeight = computed(() =>
   state.value.island?.disk ? NOTCH_ISLAND.height : NOTCH_ISLAND.height - 26,
 );
@@ -59,9 +115,16 @@ const shape = computed(() => {
     case 'line':
       return { width: NOTCH_LINE.width, height: NOTCH_LINE.height, radius: 4, opacity: 1 };
     case 'peek':
-      return { width: NOTCH_PEEK.width, height: NOTCH_PEEK.height, radius: 16, opacity: 1 };
+      return {
+        width: Math.min(Math.max(peekWidth.value, 180), 440),
+        height: NOTCH_PEEK.height,
+        radius: 16,
+        opacity: 1,
+      };
     case 'open':
-      return { width: NOTCH_ISLAND.width, height: islandHeight.value, radius: 24, opacity: 1 };
+      return state.value.result
+        ? { width: NOTCH_RESULT.width, height: NOTCH_RESULT.height, radius: 22, opacity: 1 }
+        : { width: NOTCH_ISLAND.width, height: islandHeight.value, radius: 24, opacity: 1 };
     default:
       return { width: NOTCH_LINE.width, height: 0, radius: 4, opacity: 0 };
   }
@@ -81,7 +144,7 @@ const LINE_COLOUR: Record<string, string> = {
   none: 'bg-transparent',
 };
 
-function act(action: 'trim' | 'open-latest' | 'library'): void {
+function act(action: NotchAction): void {
   window.goodbitNotch?.act(action);
 }
 </script>
@@ -142,12 +205,12 @@ function act(action: 'trim' | 'open-latest' | 'library'): void {
                   v-if="state.mode === 'peek' && state.peek"
                   key="peek"
                   class="absolute left-1/2 top-0 -translate-x-1/2"
-                  :style="{ width: `${NOTCH_PEEK.width}px`, height: `${NOTCH_PEEK.height}px` }"
+                  :style="{ height: `${NOTCH_PEEK.height}px` }"
                   :initial="{ opacity: 0, y: -4 }"
                   :animate="{ opacity: 1, y: 0, transition: { delay: 0.08, duration: 0.2 } }"
                   :exit="{ opacity: 0, transition: { duration: 0.12 } }"
                 >
-                  <NotchPeek :peek="state.peek" />
+                  <NotchPeek :peek="state.peek" @width="peekWidth = $event" />
                 </motion.div>
 
                 <motion.div
@@ -160,6 +223,18 @@ function act(action: 'trim' | 'open-latest' | 'library'): void {
                   :exit="{ opacity: 0, transition: { duration: 0.1 } }"
                 >
                   <NotchIsland :island="state.island" @act="act" />
+                </motion.div>
+
+                <motion.div
+                  v-if="state.mode === 'open' && state.result"
+                  key="result"
+                  class="absolute left-1/2 top-0 -translate-x-1/2"
+                  :style="{ width: `${NOTCH_RESULT.width}px`, height: `${NOTCH_RESULT.height}px` }"
+                  :initial="{ opacity: 0, y: -6 }"
+                  :animate="{ opacity: 1, y: 0, transition: { delay: 0.06, ...SPRING } }"
+                  :exit="{ opacity: 0, transition: { duration: 0.1 } }"
+                >
+                  <NotchResult :result="state.result" @act="act" />
                 </motion.div>
               </AnimatePresence>
             </div>

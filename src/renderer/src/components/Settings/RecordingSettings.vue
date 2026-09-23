@@ -258,7 +258,7 @@ function openGuide(): void {
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Recording</h2>
       <p class="mt-2 text-muted-500">
-        OBS, your clips folder, and what happens when you press the key
+        OBS, your clips folder and the notch
       </p>
     </div>
 
@@ -313,7 +313,7 @@ function openGuide(): void {
               />
               <div class="min-w-0">
                 <p class="text-sm font-medium text-foreground">{{ finding.title }}</p>
-                <p class="text-sm text-muted-500 mt-0.5 max-w-[76ch]">{{ finding.detail }}</p>
+                <p class="text-sm text-muted-500 mt-0.5">{{ finding.detail }}</p>
               </div>
             </li>
           </ul>
@@ -349,36 +349,31 @@ function openGuide(): void {
             </button>
           </div>
 
-          <p v-if="status.setupWrittenAt" class="text-sm text-muted-400 mt-3 max-w-[76ch]">
-            GoodBit last wrote to OBS on
-            {{ new Date(status.setupWrittenAt).toLocaleDateString() }}. Your other profiles were not
-            touched.
-            <!--
-              Nothing here is one-way. Undo removes the files GoodBit created and
-              restores the one key it changed in a file it did not, from the
-              backup it took at the time.
-            -->
+          <!--
+            One sentence with the link inside it, so it wraps as text. Undo
+            removes what GoodBit wrote and restores the one key it changed in
+            OBS's own file, from the backup taken at the time.
+          -->
+          <p v-if="status.setupWrittenAt" class="text-sm text-muted-400 mt-3">
+            Set up on {{ new Date(status.setupWrittenAt).toLocaleDateString() }}.
             <button
               type="button"
-              class="ml-1 text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
+              class="inline text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
               @click="undo"
-            >
-              Undo that
-            </button>
+            >Undo</button>
           </p>
         </template>
       </div>
 
       <div
         data-setting="Run the setup again"
-        :class="['setting-card', settingRing('Run the setup again')]"
+        :class="['setting-card setting-card-row', settingRing('Run the setup again')]"
       >
-        <h3>Run the setup again</h3>
-        <p>
-          The first run, from the start: your clips folder, OBS if it is missing, and the recording
-          setup. Nothing is reset, and every step shows what is already set.
-        </p>
-        <div class="mt-4">
+        <div class="setting-card-body">
+          <h3>Run the setup again</h3>
+          <p>Walk through the first-run steps. Nothing is reset.</p>
+        </div>
+        <div class="setting-card-actions">
           <BaseButton @click="runOnboarding">Start it</BaseButton>
         </div>
       </div>
@@ -397,7 +392,7 @@ function openGuide(): void {
       <template v-if="status?.installed">
         <SettingSelect
           label="Recording quality"
-          description="How hard OBS compresses what it records. It cannot change clips you already have."
+          description="Applies to new recordings."
           :model-value="quality"
           :options="QUALITIES"
           :disabled="working"
@@ -412,7 +407,7 @@ function openGuide(): void {
         -->
         <div v-if="qualityPending" class="setting-block flex items-start justify-between gap-6">
           <div class="min-w-0 flex-1">
-            <p class="text-sm text-muted-500 max-w-[62ch]">
+            <p class="text-sm text-muted-500">
               OBS is still recording at
               <span class="text-foreground">{{ qualityInObs ?? 'something else' }}</span
               >.
@@ -422,10 +417,10 @@ function openGuide(): void {
                 OBS was closed and the button beside it would write it right now.
               -->
               <template v-if="status?.running">
-                GoodBit cannot change it while OBS is open, so close OBS and write it then.
+                Close OBS to apply it.
               </template>
               <template v-else>
-                Write it to OBS and the next recording uses it.
+                Apply it to use it for the next recording.
               </template>
             </p>
           </div>
@@ -457,26 +452,26 @@ function openGuide(): void {
     -->
     <SettingsGroup
       title="While you play"
-      description="What keeps the replay key working, including after a restart"
+      description="Keep the replay key working"
     >
       <SettingToggle
         v-if="status?.installed"
         label="Start OBS with GoodBit"
-        description="Minimised, with the replay buffer running, so your key works after a restart without opening anything."
+        description="Minimised, with the replay buffer on."
         :model-value="settings.startObsWithGoodbit === true"
         @update:model-value="saveSettings({ startObsWithGoodbit: $event })"
       />
 
       <SettingToggle
         label="Start with Windows"
-        description="Runs in the tray and indexes clips as they are recorded"
+        description="Runs in the tray."
         :model-value="settings.startAtLogin"
         @update:model-value="saveSettings({ startAtLogin: $event })"
       />
 
       <SettingToggle
         label="Keep running when the window closes"
-        description="Off means closing the window quits, and nothing is indexed until you open it again"
+        description="Off quits GoodBit when you close the window."
         :model-value="settings.keepRunningInTray"
         @update:model-value="saveSettings({ keepRunningInTray: $event })"
       />
@@ -491,12 +486,12 @@ function openGuide(): void {
     -->
     <SettingsGroup
       title="The notch"
-      description="A strip of black at the top of your screen that says when a clip is saved"
+      description="Shows when a clip is saved"
     >
 
       <SettingToggle
         label="Show the notch"
-        description="A strip of black on the edge of your screen that says when a clip is saved. Off means GoodBit never draws over another program."
+        description="Off means nothing is drawn over other apps."
         :model-value="notch.enabled"
         @update:model-value="saveSettings({ notch: $event })"
       />
@@ -504,7 +499,7 @@ function openGuide(): void {
       <div v-if="notch.enabled" class="setting-children">
         <SettingToggle
           label="Keep it on the desktop"
-          description="A thin line between clips that shows whether OBS is running. Rest your pointer on it to see today's clips. It steps aside for games and fullscreen video."
+          description="A thin status line at the top. Hover it for today's clips. Hidden in games and fullscreen."
           :model-value="settings.notchAlwaysOn !== false"
           @update:model-value="saveSettings({ notchAlwaysOn: $event })"
         />
@@ -521,8 +516,8 @@ function openGuide(): void {
         >
           <div class="min-w-0 flex-1">
             <label for="notch-dwell" class="text-sm font-medium text-foreground">Open after resting for</label>
-            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-              Longer keeps it out of the way of tabs and title bars under it
+            <p class="text-sm text-muted-500 mt-0.5">
+              How long to hover before it opens.
             </p>
           </div>
           <div class="flex items-center gap-3 shrink-0 mt-0.5">
@@ -550,8 +545,8 @@ function openGuide(): void {
         >
           <div class="min-w-0 flex-1">
             <label for="notch-leave" class="text-sm font-medium text-foreground">Close after leaving for</label>
-            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-              A little grace lets you overshoot a button without losing it
+            <p class="text-sm text-muted-500 mt-0.5">
+              How long it stays after the pointer leaves.
             </p>
           </div>
           <div class="flex items-center gap-3 shrink-0 mt-0.5">
@@ -580,7 +575,7 @@ function openGuide(): void {
         -->
         <SettingToggle
           label="Say when a clip is saved"
-          description="The notch opens while the clip is filed and again once it is in your library, over a game too, then folds away. It never takes focus and clicks pass straight through it."
+          description="Saving, then saved. Also over games."
           :model-value="settings.clipToast !== false"
           @update:model-value="saveSettings({ clipToast: $event })"
         />
@@ -588,7 +583,7 @@ function openGuide(): void {
         <template v-if="settings.clipToast !== false">
           <SettingToggle
             label="Play a sound with it"
-            description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
+            description="Two short notes."
             :model-value="settings.clipToastSound !== false"
             @update:model-value="saveSettings({ clipToastSound: $event })"
           />
@@ -606,8 +601,8 @@ function openGuide(): void {
           >
             <div class="min-w-0 flex-1">
               <label class="text-sm font-medium text-foreground">How loud</label>
-              <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-                Press Show me after changing it, to hear where it lands
+              <p class="text-sm text-muted-500 mt-0.5">
+                Use Show me to hear it.
               </p>
             </div>
             <div class="flex items-center gap-3 shrink-0 mt-0.5">
@@ -638,8 +633,8 @@ function openGuide(): void {
           >
             <div class="min-w-0 flex-1">
               <label class="text-sm font-medium text-foreground">Try it</label>
-              <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-                Opens the notch and plays the chime, without recording anything
+              <p class="text-sm text-muted-500 mt-0.5">
+                Preview the notch and the sound.
               </p>
             </div>
             <BaseButton class="shrink-0" @click="previewToast">
@@ -656,8 +651,8 @@ function openGuide(): void {
           v-if="notch.invisible"
           class="setting-block flex items-start justify-between gap-6"
         >
-          <p class="min-w-0 flex-1 text-sm text-muted-500 max-w-[62ch]">
-            Nothing is switched on for the notch to show, so you will not see it.
+          <p class="min-w-0 flex-1 text-sm text-muted-500">
+            Everything is off, so the notch never shows.
           </p>
           <BaseButton class="shrink-0" @click="saveSettings({ notchAlwaysOn: true })">
             Keep it on the desktop
@@ -665,16 +660,15 @@ function openGuide(): void {
         </div>
 
         <!-- The one thing that can make this look broken, said once and quietly. -->
-        <p class="setting-block text-sm text-muted-400 max-w-[76ch]">
-          Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
-          games default to, is fine.
+        <p class="setting-block text-sm text-muted-400">
+          Not visible over games in exclusive fullscreen. Borderless windowed is fine.
         </p>
       </div>
     </SettingsGroup>
 
     <SettingsGroup
       title="When you stop playing"
-      description="Read a session's clips for good bits the moment the game closes"
+      description="Find good bits when a game closes"
     >
 
       <!--
@@ -684,7 +678,7 @@ function openGuide(): void {
       -->
       <SettingToggle
         label="Look for GoodBits when a game closes"
-        description="Goes through that session's clips while nothing else needs the machine. Alt-tabbing does not count as closing, and it leaves you alone if you start another game."
+        description="Checks that session's clips once you close the game."
         :model-value="settings.analyzeOnGameClose !== false"
         @update:model-value="saveSettings({ analyzeOnGameClose: $event })"
       />
@@ -692,7 +686,7 @@ function openGuide(): void {
       <div v-if="settings.analyzeOnGameClose !== false && notch.enabled" class="setting-children">
         <SettingToggle
           label="Say what it found"
-          description="The notch opens while it looks, and again at the end if it found anything."
+          description="Shows the result in the notch."
           :model-value="settings.analyzeOnGameCloseToast !== false"
           @update:model-value="saveSettings({ analyzeOnGameCloseToast: $event })"
         />
@@ -700,7 +694,7 @@ function openGuide(): void {
         <SettingToggle
           v-if="notch.enabled && settings.analyzeOnGameCloseToast !== false"
           label="Play a sound with that one"
-          description="A short sound when it finds something, at the volume above."
+          description="A short sound when it finds something."
           :model-value="settings.analyzeOnGameCloseSound !== false"
           @update:model-value="saveSettings({ analyzeOnGameCloseSound: $event })"
         />
@@ -712,8 +706,8 @@ function openGuide(): void {
         >
           <div class="min-w-0 flex-1">
             <label class="text-sm font-medium text-foreground">Try that one</label>
-            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-              Shows both halves, without reading anything
+            <p class="text-sm text-muted-500 mt-0.5">
+              Preview it.
             </p>
           </div>
           <BaseButton class="shrink-0" @click="previewSweep">

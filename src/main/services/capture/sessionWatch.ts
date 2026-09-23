@@ -265,6 +265,8 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
 
   let done = 0;
   let found = 0;
+  /** The clips that held something, for the notch's "open them in the editor". */
+  const withMoments: number[] = [];
   const repo = AppDataSource.getRepository(Clip);
   const queue = [...clips];
 
@@ -289,6 +291,7 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
          */
         const moments = result.anchors.length || (result.confident ? 1 : 0);
         found += moments;
+        if (moments > 0) withMoments.push(clip.id);
         await repo.update({ id: clip.id }, { suggestedCount: moments });
 
         // The window is looking at rows that no longer match the database.
@@ -328,6 +331,6 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
    * was worth drawing because it says why the machine is busy; this half is
    * only worth drawing when it resolves into something.
    */
-  if (found > 0) await showSweepFinished(found, clips.length);
+  if (found > 0) await showSweepFinished(found, clips.length, withMoments);
   else dismissPeek();
 }

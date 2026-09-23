@@ -250,7 +250,7 @@ const DEFAULTS: Settings = {
   migratedFromWebApp: false,
   recordingQuality: DEFAULT_RECORDING_QUALITY,
   unreviewedDays: 30,
-  burstWindowSec: 90,
+  burstWindowSec: 30,
 };
 
 let cached: Settings | null = null;

@@ -44,16 +44,27 @@ export interface NotchIsland {
   disk: { percent: number; free: string; drive: string; danger: boolean } | null;
 }
 
+/** What a session's sweep found, for the card the found peek opens into. */
+export interface NotchResult {
+  found: number;
+  clips: number;
+  /** The clips that held a moment, in the order they were read. */
+  clipIds: number[];
+}
+
 export interface NotchState {
   mode: NotchMode;
   line: NotchLine;
   peek: NotchPeek | null;
+  /** The open island: today's clips, when opened from the line. */
   island: NotchIsland | null;
+  /** The open result card, when opened from a found peek. */
+  result: NotchResult | null;
 }
 
 export type NotchChime = 'saving' | 'saved' | 'found';
 
-export type NotchAction = 'trim' | 'open-latest' | 'library';
+export type NotchAction = 'trim' | 'open-latest' | 'library' | 'edit-highlights';
 
 /** The page's geometry, which main needs to know where the pointer is. */
 export const NOTCH_STAGE = { along: 520, across: 300 } as const;
@@ -61,3 +72,4 @@ export const NOTCH_LINE = { width: 120, height: 4 } as const;
 export const NOTCH_ZONE = { width: 280, height: 10 } as const;
 export const NOTCH_PEEK = { width: 360, height: 40 } as const;
 export const NOTCH_ISLAND = { width: 420, height: 220 } as const;
+export const NOTCH_RESULT = { width: 400, height: 132 } as const;

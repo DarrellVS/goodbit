@@ -41,7 +41,7 @@ const encoderLabel = computed(() => {
 <template>
   <div data-setting="Health" :class="['setting-card', settingRing('Health')]">
     <h3>Health</h3>
-    <p>Four facts about this machine, and the first four lines of any bug report.</p>
+    <p>System info for bug reports.</p>
 
     <!--
       A description list, which is what this is: a label and the fact it names.
@@ -72,7 +72,7 @@ const encoderLabel = computed(() => {
     </dl>
 
     <p v-if="!encodersLoading && encoders && !encoders.hardware" class="!text-warning !mt-3">
-      No graphics-card encoder was found, so exports run on the processor and will be slower.
+      No GPU encoder found. Exports will be slower.
     </p>
   </div>
 </template>

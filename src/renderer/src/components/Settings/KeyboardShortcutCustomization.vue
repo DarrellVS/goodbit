@@ -39,7 +39,6 @@ function getActionLabel(actionId: string): string {
 <template>
   <div class="setting-card">
     <h3>Change a shortcut</h3>
-    <p>Change any of these to whatever your hands already do.</p>
 
     <!--
       A conflict is the one thing on this screen that has gone wrong, so it is
@@ -87,7 +86,7 @@ function getActionLabel(actionId: string): string {
         >
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-foreground">{{ action.label }}</div>
-            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">{{ action.description }}</p>
+            <p class="text-sm text-muted-500 mt-0.5">{{ action.description }}</p>
           </div>
 
           <div v-if="editingActionId === action.id" class="flex items-center gap-2 shrink-0">

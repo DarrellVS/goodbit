@@ -90,15 +90,8 @@ async function toggleDiscard(allow: boolean): Promise<void> {
   <div class="setting-card">
     <div data-setting="Stream Deck" :class="settingRing('Stream Deck')">
       <h3 class="font-display text-lg font-medium text-foreground">Stream Deck</h3>
-      <p class="text-sm text-muted-500 mt-1 max-w-[76ch]">
-        Keys that save the replay, tag, publish or throw away the clip you just saved, and show
-        today's count, without leaving the game. Saving presses the key OBS already has for it, so
-        nothing in OBS changes.
-      </p>
-      <p class="text-sm text-muted-400 mt-1.5 max-w-[76ch]">
-        It listens on this computer only, through a named pipe that web pages cannot reach and
-        other Windows accounts cannot write to. There is no token to copy: GoodBit tells the plugin
-        where to find it.
+      <p class="text-sm text-muted-500 mt-1">
+        Save, tag, publish or delete clips with a key.
       </p>
     </div>
 
@@ -107,7 +100,7 @@ async function toggleDiscard(allow: boolean): Promise<void> {
         :model-value="state?.enabled ?? false"
         :disabled="working"
         label="Let the Stream Deck reach this library"
-        description="Off by default. Nothing is listening until you turn this on."
+        description="Needed for the GoodBit plugin."
         @update:model-value="toggleServer"
       />
     </div>
@@ -127,7 +120,7 @@ async function toggleDiscard(allow: boolean): Promise<void> {
           <div class="text-muted-500">
             {{
               state.pluginInstalled
-                ? 'It connects to GoodBit by itself. Drag GoodBit keys onto your Stream Deck.'
+                ? 'Drag GoodBit keys onto your Stream Deck.'
                 : 'Needs the Stream Deck app. It asks before installing.'
             }}
           </div>
@@ -155,13 +148,13 @@ async function toggleDiscard(allow: boolean): Promise<void> {
         class="flex items-center gap-2 py-3 border-b border-border text-sm"
       >
         <span :class="statusDotVariants({ tone: 'blocker' })" />
-        <span class="text-foreground">Not listening. Another GoodBit may already be connected to the Stream Deck.</span>
+        <span class="text-foreground">Not connected. Another GoodBit may be using the Stream Deck.</span>
       </div>
 
       <SettingToggle
         :model-value="state.allowDiscard"
         label="Let a key throw away the last clip"
-        description="Off by default. The key has to be held, and GoodBit keeps any clip you have named, tagged, starred, marked, written a note on or published."
+        description="Hold the key to delete. Clips you tagged, starred or wrote a note on are kept."
         @update:model-value="toggleDiscard"
       />
     </template>

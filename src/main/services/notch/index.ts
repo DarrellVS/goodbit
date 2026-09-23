@@ -39,10 +39,11 @@
  */
 import { invisibleForTests } from '../../testMode.js';
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { notchDwellMs, notchLeaveMs, resolveNotch, type NotchPlan } from '@shared/notchSettings.js';
 import {
   NOTCH_ISLAND,
+  NOTCH_PEEK,
   NOTCH_STAGE,
   NOTCH_ZONE,
   type NotchAction,
@@ -50,6 +51,7 @@ import {
   type NotchIsland,
   type NotchMode,
   type NotchPeek,
+  type NotchResult,
   type NotchState,
 } from '@shared/notch.js';
 import { loadSettings, onSettingsChange, saveSettings } from '../../settings.js';
@@ -68,8 +70,15 @@ const SAVING_TIMEOUT_MS = 45_000;
 /** How long the finished peek stays before it folds. */
 const PEEK_SHOW_MS = 3600;
 
-/** Long enough for the fold to settle before the window is hidden. */
-const FOLD_MS = 420;
+/**
+ * Long enough for the fold to settle before the window is parked.
+ *
+ * Generously so: the spring's visual duration is not its whole tail, and the
+ * last frame painted before parking is the first frame seen at the next reveal.
+ * Parked mid-fold, the next peek would open out of half a shape.
+ */
+const FOLD_MS = 700;
+
 
 /** How often OBS and the drive are looked at while the line is showing. */
 const STATUS_REFRESH_MS = 15_000;
@@ -80,11 +89,16 @@ let win: BrowserWindow | null = null;
 let pageReady = false;
 let mode: NotchMode = 'hidden';
 let bounds: Rect | null = null;
+let parked = true;
 let plan: NotchPlan = resolveNotch({});
 let dwellMs = notchDwellMs({});
 let leaveMs = notchLeaveMs({});
 let peekContent: NotchPeek | null = null;
 let island: NotchIsland | null = null;
+/** What the last sweep found, while its peek or its card is up. */
+let result: NotchResult | null = null;
+/** Which card `open` is showing: today's island, or the sweep's result. */
+let opened: 'island' | 'result' = 'island';
 
 let peekTimer: ReturnType<typeof setTimeout> | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -128,7 +142,8 @@ function snapshot(): NotchState {
     mode,
     line: lineState({ saving, obsInstalled, obsRunning, disk }),
     peek: mode === 'peek' ? peekContent : null,
-    island: mode === 'open' ? island : null,
+    island: mode === 'open' && opened === 'island' ? island : null,
+    result: mode === 'open' && opened === 'result' ? result : null,
   };
 }
 
@@ -144,13 +159,19 @@ function sendChime(kind: NotchChime): void {
 }
 
 /**
- * A file out of the build, by the app's own path.
+ * A file out of the build, found by walking up to the `out` folder.
  *
- * Not `import.meta.dirname`: this module is a dynamic import, so it is bundled
- * into `out/main/chunks/` and a path relative to it lands one folder short.
+ * Not a fixed `../` from `import.meta.dirname`: this module is a dynamic
+ * import, bundled into `out/main/chunks/`, and whether it stays a chunk is the
+ * bundler's call. Not `app.getAppPath()` either: launched as
+ * `electron out/main/index.js`, which is how the e2e suite starts it, that is
+ * `out/main` rather than the project.
  */
 function fromBuild(...parts: string[]): string {
-  return join(app.getAppPath(), 'out', ...parts);
+  let dir = import.meta.dirname;
+  while (basename(dir) !== 'out' && dirname(dir) !== dir) dir = dirname(dir);
+  const out = basename(dir) === 'out' ? dir : join(app.getAppPath(), 'out');
+  return join(out, ...parts);
 }
 
 function build(): BrowserWindow {
@@ -221,7 +242,11 @@ function build(): BrowserWindow {
 }
 
 function ensureWindow(): BrowserWindow {
-  if (!win || win.isDestroyed()) win = build();
+  if (!win || win.isDestroyed()) {
+    win = build();
+    // Shown once, out of sight, and from then on only ever moved.
+    park(win);
+  }
   return win;
 }
 
@@ -243,6 +268,10 @@ function registerIpc(): void {
     if (action === 'trim' && latest != null) opener?.(`/trim/${latest}`);
     else if (action === 'open-latest' && latest != null) opener?.(`/clips/${latest}`);
     else if (action === 'library') opener?.('/');
+    else if (action === 'edit-highlights' && result?.clipIds.length) {
+      opener?.(`/editor?clips=${result.clipIds.join(',')}&highlights=1`);
+    }
+    if (opened === 'result') result = null;
     setMode(resting());
   });
 }
@@ -258,6 +287,34 @@ function place(target: BrowserWindow): void {
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   bounds = windowBounds(display.workArea, STAGE);
   target.setBounds(bounds);
+  parked = false;
+}
+
+/**
+ * Put the window out of the way without hiding it: one transparent pixel at
+ * the middle of the edge.
+ *
+ * Hiding and showing it again was how the notch went away and came back, and
+ * showing a window is something Windows animates: the notch rose from below
+ * before its own drop played. Moving it off every screen instead was measured
+ * and was worse in a different way: Windows counts a window that was just
+ * off-screen as hidden for a moment, Chromium presents nothing for it, and the
+ * first frame seen was the finished peek, popped in. A one pixel window is
+ * never hidden and never off-screen, so the page keeps painting, and growing it
+ * back is a resize, which nothing animates. One click-through pixel overlaps
+ * nothing anybody could notice.
+ */
+function park(target: BrowserWindow): void {
+  const anchor =
+    bounds ?? windowBounds(screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea, STAGE);
+  target.setBounds({ x: Math.round(anchor.x + anchor.width / 2), y: anchor.y, width: 1, height: 1 });
+  parked = true;
+  if (!target.isVisible()) {
+    // The e2e suite runs on somebody's desktop; the notch is there and
+    // working, and not seen.
+    if (invisibleForTests) target.setOpacity(0);
+    target.showInactive();
+  }
 }
 
 function resting(): 'line' | 'hidden' {
@@ -281,19 +338,16 @@ function setMode(next: NotchMode): void {
     if (target && !target.isDestroyed()) {
       target.setIgnoreMouseEvents(true);
       publish();
-      // Hidden only once the fold has settled, or it vanishes mid-spring.
+      // Parked only once the fold has settled, or it vanishes mid-spring.
       hideTimer = setTimeout(() => {
-        if (mode === 'hidden' && !target.isDestroyed()) target.hide();
+        if (mode === 'hidden' && !target.isDestroyed()) park(target);
       }, FOLD_MS);
     }
   } else {
     const target = ensureWindow();
-    if (!target.isVisible()) {
+    if (parked || !target.isVisible()) {
+      if (!target.isVisible()) park(target);
       place(target);
-      // The e2e suite runs on somebody's desktop; the notch is there and
-      // working, and not seen.
-      if (invisibleForTests) target.setOpacity(0);
-      target.showInactive();
     }
     target.setIgnoreMouseEvents(next !== 'open');
     publish();
@@ -304,8 +358,13 @@ function setMode(next: NotchMode): void {
 }
 
 /** The cursor poll runs only while there is a line or an island to hover. */
+/** A found peek can be opened, so the pointer is watched while it is up. */
+function foundPeek(): boolean {
+  return mode === 'peek' && peekContent?.state === 'found' && result !== null;
+}
+
 function syncTimers(): void {
-  const hoverable = mode === 'line' || mode === 'open';
+  const hoverable = mode === 'line' || mode === 'open' || foundPeek();
   if (hoverable && !pollTimer) pollTimer = setInterval(poll, POLL_MS);
   if (!hoverable && pollTimer) {
     clearInterval(pollTimer);
@@ -324,20 +383,50 @@ function syncTimers(): void {
 }
 
 function poll(): void {
-  if (!bounds || (mode !== 'line' && mode !== 'open')) return;
+  const peeking = foundPeek();
+  if (!bounds || (mode !== 'line' && mode !== 'open' && !peeking)) return;
   const point = screen.getCursorScreenPoint();
-  const zone = stageToScreen(bounds, hanging(STAGE, NOTCH_ZONE.width, NOTCH_ZONE.height));
+  // A found peek is the zone itself: the whole bar, not the thin strip over the line.
+  const zone = peeking
+    ? stageToScreen(bounds, hanging(STAGE, NOTCH_PEEK.width + 80, NOTCH_PEEK.height + 8))
+    : stageToScreen(bounds, hanging(STAGE, NOTCH_ZONE.width, NOTCH_ZONE.height));
   const openRect = stageToScreen(bounds, hanging(STAGE, NOTCH_ISLAND.width, NOTCH_ISLAND.height));
 
   const before = hover.phase;
   const step = stepHover(hover, { now: Date.now(), point, zone, island: openRect, dwellMs, leaveMs });
   hover = step.state;
 
+  if (peeking) {
+    // Resting on the peek holds it; it would be rude to fold under the pointer.
+    if (step.state.phase === 'dwelling' && peekTimer) {
+      clearTimeout(peekTimer);
+      peekTimer = null;
+    }
+    // Moved off before it opened: fold a moment later, as it would have.
+    if (before === 'dwelling' && step.state.phase === 'idle' && !peekTimer) {
+      peekTimer = setTimeout(endPeek, Math.max(leaveMs, 1200));
+    }
+    if (step.action === 'open') {
+      if (peekTimer) clearTimeout(peekTimer);
+      peekTimer = null;
+      opened = 'result';
+      setMode('open');
+    }
+    return;
+  }
+
   // The pointer has just arrived: read the island now, during the wait, so the
   // moment it opens there is something current to show.
   if (before === 'idle' && step.state.phase === 'dwelling') void refreshIsland();
-  if (step.action === 'open' && mode === 'line') setMode('open');
-  if (step.action === 'close') setMode(resting());
+  if (step.action === 'open' && mode === 'line') {
+    opened = 'island';
+    setMode('open');
+  }
+  if (step.action === 'close') {
+    // The result card is read once; it does not come back from the line.
+    if (opened === 'result') result = null;
+    setMode(resting());
+  }
 }
 
 async function refreshIsland(): Promise<void> {
@@ -468,6 +557,8 @@ function peek(content: NotchPeek, { chime, enabled, lingerMs }: PeekOptions): vo
   peekTimer = null;
 
   peekContent = content;
+  // Anything but the found peek leaves the last result behind.
+  if (content.state !== 'found') result = null;
   // A peek wins over an open island: the island folds into the peek.
   setMode('peek');
   if (chime) sendChime(chime);
@@ -488,6 +579,7 @@ function endPeek(): void {
   if (peekTimer) clearTimeout(peekTimer);
   peekTimer = null;
   if (mode !== 'peek') return;
+  result = null;
   setMode(resting());
 }
 
@@ -554,8 +646,14 @@ export async function showSweepStarted(clips: number, game: string, lingerMs: nu
 }
 
 /** The sweep found something. Only called when there is something to report. */
-export async function showSweepFinished(found: number, clips: number): Promise<void> {
+export async function showSweepFinished(
+  found: number,
+  clips: number,
+  clipIds: number[] = [],
+): Promise<void> {
   try {
+    // Set before the peek, so the pointer watch it starts knows it can open.
+    result = clipIds.length ? { found, clips, clipIds } : null;
     peek(
       {
         state: 'found',
@@ -564,6 +662,7 @@ export async function showSweepFinished(found: number, clips: number): Promise<v
       },
       { chime: plan.sweepSound ? 'found' : null, enabled: plan.sweepPeek },
     );
+    syncTimers();
   } catch (error) {
     console.error('[notch]', error instanceof Error ? error.message : error);
   }
@@ -581,11 +680,16 @@ export async function previewClipPeek(): Promise<void> {
   await showClipSaved('Battlefield 6 · 0:30');
 }
 
+/** A few real clip ids for the preview, so its button opens something. */
+function previewClipIds(): number[] {
+  return island?.latest ? [island.latest.id] : [];
+}
+
 /** The sweep's pair, from Settings, for the same reason. */
 export async function previewSweepPeek(): Promise<void> {
   await showSweepStarted(12, 'Battlefield 6', 8000);
   await new Promise((resolve) => setTimeout(resolve, 1900));
-  await showSweepFinished(4, 12);
+  await showSweepFinished(4, 12, previewClipIds());
 }
 
 export function closeNotch(): void {

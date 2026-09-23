@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import SettingSelect from './SettingSelect.vue';
@@ -46,10 +47,25 @@ const AGES = [
 ];
 
 const WINDOWS = [
+  { value: 5, label: '5 seconds' },
+  { value: 10, label: '10 seconds' },
+  { value: 20, label: '20 seconds' },
   { value: 30, label: '30 seconds' },
-  { value: 90, label: '90 seconds' },
-  { value: 180, label: '3 minutes' },
+  { value: 45, label: '45 seconds' },
+  { value: 60, label: '1 minute' },
 ];
+
+/**
+ * The stored window, shown as the nearest option. The list used to go up to
+ * three minutes, so a library set to 90 or 180 seconds shows the closest one
+ * rather than an empty dropdown; choosing it writes that value.
+ */
+const burstWindow = computed(() => {
+  const stored = Number(settings.value.burstWindowSec ?? 30);
+  return WINDOWS.reduce((best, option) =>
+    Math.abs(option.value - stored) < Math.abs(best.value - stored) ? option : best,
+  ).value;
+});
 </script>
 
 <template>
@@ -57,8 +73,7 @@ const WINDOWS = [
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Your data</h2>
       <p class="mt-2 text-muted-500">
-        Your clips are files on disk and GoodBit never touches them. Everything on this page is
-        about the other half: the names, tags, notes and collections that only exist here.
+        Backups and cleanup. Your clip files are never touched here.
       </p>
     </div>
 
@@ -72,17 +87,16 @@ const WINDOWS = [
       <SettingToggle
         v-model="config.public.value.confirmBeforeDelete"
         label="Confirm Before Delete"
-        description="Ask for confirmation when deleting clips"
+        description="Ask before deleting a clip."
       />
     </SettingsGroup>
 
     <SettingsGroup
       title="Storage Saver"
-      description="When a clip counts as forgotten, and when two saves are really one moment"
     >
       <SettingSelect
         label="Call a clip forgotten after"
-        description="How long a clip can go unopened, unstarred, untagged and unmarked before Storage Saver offers it up."
+        description="When untouched clips show up in Storage Saver."
         :model-value="settings.unreviewedDays ?? 30"
         :options="AGES"
         @update:model-value="saveSettings({ unreviewedDays: Number($event) })"
@@ -90,8 +104,8 @@ const WINDOWS = [
 
       <SettingSelect
         label="Treat saves this close as one moment"
-        description="The replay buffer holds the last few seconds, so two presses this close apart have the same footage in both files."
-        :model-value="settings.burstWindowSec ?? 90"
+        description="Saves closer together than this count as duplicates."
+        :model-value="burstWindow"
         :options="WINDOWS"
         @update:model-value="saveSettings({ burstWindowSec: Number($event) })"
       />

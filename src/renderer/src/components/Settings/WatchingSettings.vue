@@ -83,15 +83,15 @@ const dateFormatOptions = [
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Watching</h2>
       <p class="mt-2 text-muted-500">
-        How your library looks, how clips play, and which games you see
+        How your library looks and plays
       </p>
     </div>
 
-    <SettingsGroup title="The library" description="How it looks, and how much of it shows at once">
+    <SettingsGroup title="The library">
       <SettingSelect
         v-model="theme"
         label="Appearance"
-        description="Follow the system, or pick a side"
+        description="Light, dark or match your system."
         :options="themeOptions"
       />
 
@@ -105,14 +105,14 @@ const dateFormatOptions = [
       <SettingSelect
         v-model="config.public.value.viewMode"
         label="How clips are laid out"
-        description="Takes effect straight away, on the library and in a collection. The L key switches it too."
+        description="Also switch with L."
         :options="viewModeOptions"
       />
 
       <SettingSelect
         v-model="config.public.value.dateFormat"
         label="Date Format"
-        description="How dates should be displayed"
+        description="Relative or exact dates."
         :options="dateFormatOptions"
       />
 
@@ -126,20 +126,20 @@ const dateFormatOptions = [
       <SettingSelect
         v-model="config.public.value.pageSize"
         label="Items Per Page"
-        description="Number of clips to load at once (lower = faster)"
+        description="Fewer loads faster."
         :options="pageSizeOptions"
       />
 
       <SettingToggle
         v-model="config.public.value.showMetadata"
         label="Show Clip Metadata"
-        description="Display file size, resolution, and other details"
+        description="File size, resolution and more on each clip."
       />
 
       <SettingToggle
         v-model="config.public.value.compactMode"
         label="Compact Mode"
-        description="Reduce spacing and show more content"
+        description="Less spacing, more clips."
       />
     </SettingsGroup>
 
@@ -153,19 +153,19 @@ const dateFormatOptions = [
       <SettingToggle
         v-model="config.public.value.autoPlayOnHover"
         label="Auto-play on Hover"
-        description="Automatically play clips when hovering over them"
+        description="Play a clip when you hover it."
       />
 
       <SettingToggle
         v-model="config.public.value.hoverScrub"
         label="Scrub on Hover"
-        description="Move the pointer across the bottom third of a clip to seek through it"
+        description="Hover the bottom of a clip to seek."
       />
 
       <SettingToggle
         v-model="config.public.value.muteVideosByDefault"
         label="Mute Videos by Default"
-        description="Start videos muted (can be unmuted manually)"
+        description="Start clips muted."
       />
     </SettingsGroup>
 

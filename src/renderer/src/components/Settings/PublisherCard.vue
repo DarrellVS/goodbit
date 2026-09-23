@@ -80,8 +80,7 @@ async function testPublisher(): Promise<void> {
     >
       <h3>Publisher</h3>
       <p>
-        Optional. A server that hosts public links for the clips you publish. Leave empty and
-        publishing is simply off.
+        Share clips with a link, from your own server.
       </p>
 
       <!--
@@ -157,8 +156,7 @@ async function testPublisher(): Promise<void> {
       </div>
 
       <p class="!mt-2.5">
-        The same value as <code class="font-mono">PUBLISH_TOKEN</code> on the server. Uploads are
-        refused without it.
+        From your publisher's setup.
       </p>
 
       <!-- One line, and what it says depends on what the address answered. -->
@@ -183,7 +181,7 @@ async function testPublisher(): Promise<void> {
         <SettingToggle
           v-if="settings.publisherBaseUrl"
           label="Compress clips when publishing"
-          description="The file on disk is untouched; only the copy behind the public link is re-encoded, so it downloads in a fifth of the time. Off uploads the recording as it is."
+          description="Faster to watch. Your own file is untouched."
           :model-value="settings.compressPublished !== false"
           @update:model-value="saveCompressPublished($event)"
         />

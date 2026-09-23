@@ -21,15 +21,19 @@ export function useTimeline() {
     thumbnailUrl: string,
     originalDuration: number,
     goodBits?: readonly { startSec: number; endSec: number }[],
+    /** Place only this part of the source, as if it had been trimmed to it. */
+    range?: { startSec: number; endSec: number },
   ): void {
+    const trimStart = range ? Math.max(0, Math.min(range.startSec, originalDuration)) : 0;
+    const trimEnd = range ? Math.max(trimStart, Math.min(range.endSec, originalDuration)) : originalDuration;
     const clip: TimelineClip = {
       id: uuidv4(),
       clipId,
       name,
       startTime: duration.value,
-      duration: originalDuration,
-      trimStart: 0,
-      trimEnd: originalDuration,
+      duration: trimEnd - trimStart,
+      trimStart,
+      trimEnd,
       volume: 1,
       muted: false,
       videoUrl,

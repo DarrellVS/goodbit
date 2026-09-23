@@ -108,10 +108,7 @@ onMounted(() => {
     -->
     <h3>Library backups</h3>
     <p>
-      A copy of the library is taken and read back whenever a new version of GoodBit starts, in
-      case an update changes how things are stored. The last five are kept, and any of them can
-      be put back. Your clips themselves are never touched. This is only the names, tags, notes
-      and collections.
+      Names, tags, notes and collections. Taken on every update; the last five are kept.
     </p>
 
     <!--

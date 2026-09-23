@@ -30,25 +30,19 @@ async function change(): Promise<void> {
 </script>
 
 <template>
-  <!--
-    A heading, the path, what it is for, then the button. The same shape as the
-    clips folder directly above it, which it was not: the button sat level with
-    the heading while the path and the sentence ran underneath it, so the one
-    control on the row belonged to the shortest line on it.
-  -->
+  <!-- The same shape as the clips folder: what it is, then the button on the right. -->
   <div
     data-setting="Music folder"
-    :class="['setting-card', settingRing('Music folder')]"
+    :class="['setting-card setting-card-row', settingRing('Music folder')]"
   >
-    <h3>Music folder</h3>
-
-    <p class="font-mono !text-foreground !mt-2 truncate" :title="settings.audioRoot">
-      {{ settings.audioRoot || 'Not set' }}
-    </p>
-
-    <p>Where GoodBit looks for the audio you can lay under a clip in the editor.</p>
-
-    <div class="mt-4">
+    <div class="setting-card-body">
+      <h3>Music folder</h3>
+      <p class="font-mono !text-foreground !mt-2 truncate" :title="settings.audioRoot">
+        {{ settings.audioRoot || 'Not set' }}
+      </p>
+      <p>Music for the editor.</p>
+    </div>
+    <div class="setting-card-actions">
       <BaseButton @click="change">Change</BaseButton>
     </div>
   </div>

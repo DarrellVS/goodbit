@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { AnimatePresence, motion } from 'motion-v';
 import type { NotchPeek } from '@shared/notch';
 
@@ -11,12 +11,31 @@ import type { NotchPeek } from '@shared/notch';
  * shape closing and reopening.
  */
 const props = defineProps<{ peek: NotchPeek }>();
+const emit = defineEmits<{ width: [px: number] }>();
+
+/*
+ * The notch is as wide as what it says, so "Clip saved" does not sit in the
+ * middle of a bar sized for "Saving your clip". The width is measured here and
+ * handed up, and the shape springs to it, so going from one state to the next
+ * is the same smooth move as opening.
+ */
+const root = ref<HTMLElement | null>(null);
+let observer: ResizeObserver | null = null;
+
+onMounted(() => {
+  if (!root.value) return;
+  observer = new ResizeObserver(() => {
+    if (root.value) emit('width', root.value.offsetWidth);
+  });
+  observer.observe(root.value);
+});
+onBeforeUnmount(() => observer?.disconnect());
 
 const done = computed(() => props.peek.state === 'saved' || props.peek.state === 'found');
 </script>
 
 <template>
-  <div class="flex h-full items-center gap-2.5 pl-4 pr-5 whitespace-nowrap">
+  <div ref="root" class="flex h-full w-max max-w-[440px] items-center gap-2.5 pl-4 pr-5 whitespace-nowrap">
     <div class="relative size-5 shrink-0">
       <AnimatePresence>
         <motion.svg
@@ -52,14 +71,18 @@ const done = computed(() => props.peek.state === 'saved' || props.peek.state ===
       </AnimatePresence>
     </div>
 
-    <AnimatePresence mode="popLayout">
+    <!--
+      One sentence at a time: the old one leaves, then the new one arrives, and
+      the shape springs to the new width between them. Overlapping the two put
+      "Clip saved" on top of "Saving your clip" for a fifth of a second.
+    -->
+    <AnimatePresence mode="wait">
       <motion.div
         :key="peek.title"
         class="flex min-w-0 items-baseline gap-2"
         :initial="{ opacity: 0, y: 4 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :exit="{ opacity: 0, y: -4 }"
-        :transition="{ duration: 0.2 }"
+        :animate="{ opacity: 1, y: 0, transition: { duration: 0.18, ease: 'easeOut' } }"
+        :exit="{ opacity: 0, y: -4, transition: { duration: 0.1, ease: 'easeIn' } }"
       >
         <span class="text-[13px] font-semibold text-muted-900">{{ peek.title }}</span>
         <span class="min-w-0 truncate text-[12.5px] text-muted-400">{{ peek.subtitle }}</span>

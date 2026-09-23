@@ -45,37 +45,37 @@ export const SETTING_SECTIONS: readonly SettingSection[] = [
     id: 'recording',
     label: 'Recording',
     icon: 'material-symbols:fiber-manual-record',
-    description: 'OBS, your clips folder, and what happens when you press the key',
+    description: 'OBS, your clips folder and the notch',
   },
   {
     id: 'watching',
     label: 'Watching',
     icon: 'material-symbols:visibility',
-    description: 'How your library looks, how clips play, and which games you see',
+    description: 'How your library looks and plays',
   },
   {
     id: 'editing',
     label: 'Editing',
     icon: 'material-symbols:content-cut',
-    description: 'Trimming, your music, and what the suggestions have learned',
+    description: 'Trimming, music and suggestions',
   },
   {
     id: 'data',
     label: 'Your data',
     icon: 'material-symbols:database',
-    description: 'Backups you can put back, and rereading the folder',
+    description: 'Backups and cleanup',
   },
   {
     id: 'connections',
     label: 'Connections',
     icon: 'material-symbols:cable',
-    description: 'Claude, and the server that hosts your public links',
+    description: 'Publishing, Claude and Stream Deck',
   },
   {
     id: 'advanced',
     label: 'Advanced',
     icon: 'material-symbols:tune',
-    description: 'Keyboard shortcuts, and what this machine can do',
+    description: 'Shortcuts and system info',
   },
 ];
 

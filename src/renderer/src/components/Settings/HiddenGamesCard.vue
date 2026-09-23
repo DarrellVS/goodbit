@@ -65,7 +65,7 @@ onMounted(load);
     data-setting="Hidden games"
     :class="settingRing('Hidden games')"
     title="Hidden games"
-    description="Hide folders you don't want in your library. The files stay on disk, they just stop showing up in clips, stats and the editor."
+    description="Hidden games don't show in your library. The files stay on disk."
   >
     <div class="setting-block flex items-center gap-3">
       <div class="relative flex-1">

@@ -517,8 +517,24 @@ body {
   @apply font-display text-lg font-medium text-foreground;
 }
 .settings-group-head p,
-.setting-card > p {
-  @apply text-sm text-muted-500 mt-1 max-w-[68ch];
+.setting-card > p,
+.setting-card-body > p {
+  @apply text-sm text-muted-500 mt-1;
+}
+/*
+ * A card whose action is a button: what it is on the left, the button on the
+ * right, level with the middle of the text. The same shape as a switch or a
+ * dropdown row, so every control on a settings page sits in one column at the
+ * right edge rather than some beside their row and some under it.
+ */
+.setting-card-row {
+  @apply flex items-center gap-6;
+}
+.setting-card-body {
+  @apply min-w-0 flex-1;
+}
+.setting-card-actions {
+  @apply flex shrink-0 items-center gap-2;
 }
 
 .settings-group-body,

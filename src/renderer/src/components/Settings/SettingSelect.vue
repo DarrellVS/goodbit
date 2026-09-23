@@ -67,7 +67,7 @@ function onChange(value: ComboBoxValue | ComboBoxValue[] | null): void {
   >
     <div class="flex-1 min-w-0">
       <label class="text-sm font-medium text-foreground">{{ label }}</label>
-      <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">{{ description }}</p>
+      <p class="text-sm text-muted-500 mt-0.5">{{ description }}</p>
     </div>
     <!--
       Quiet, because a settings row is a line of prose with an answer at the end

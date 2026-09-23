@@ -121,10 +121,7 @@ onMounted(refresh);
   <div class="setting-card">
     <h3>Suggestions learn from your trims</h3>
     <p>
-      Every trim records where you cut and what GoodBit had suggested, on the trim screen and on
-      each clip of a montage when you export one. Once there are enough, it fits a small model to
-      those decisions and uses it instead of the built-in rule, then keeps refitting as you go.
-      Nothing leaves this machine.
+      Suggestions get better as you trim. Nothing leaves this PC.
     </p>
 
     <template v-if="summary">
@@ -154,8 +151,7 @@ onMounted(refresh);
           >, on {{ when(summary.model.trainedAt) }}</template>.
         </p>
         <p v-if="summary.model.heldOutAccuracy !== null" class="text-sm text-muted-500">
-          It got {{ Math.round(summary.model.heldOutAccuracy * 100) }}% of the decisions it was not
-          shown right. It refits itself after every 25 new ones.
+          {{ Math.round(summary.model.heldOutAccuracy * 100) }}% accurate on trims it had not seen.
         </p>
       </div>
 
@@ -172,8 +168,7 @@ onMounted(refresh);
           <div class="h-full bg-accent transition-all" :style="{ width: progress + '%' }" />
         </div>
         <p class="text-sm text-muted-400">
-          A decision is a trim made while a suggestion was on screen, or the Wrong button. Until
-          there are enough, the built-in rule decides.
+          Until then, the built-in rule decides.
         </p>
       </div>
 

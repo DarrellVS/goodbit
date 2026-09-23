@@ -91,7 +91,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   },
   {
     label: 'Clips folder',
-    description: 'Your library, and where OBS records into. They are always the same folder.',
+    description: 'Where your clips are recorded and kept.',
     section: 'recording',
     keywords: [
       'videos root',
@@ -107,7 +107,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Recording quality',
     description:
-      'How hard OBS compresses what it records. It cannot change clips you already have.',
+      'Applies to new recordings.',
     section: 'recording',
     keywords: [
       'quality',
@@ -124,48 +124,48 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Start OBS with GoodBit',
     description:
-      'Minimised, with the replay buffer running, so your key works after a restart without opening anything.',
+      'Minimised, with the replay buffer on.',
     section: 'recording',
     keywords: ['launch', 'autostart', 'replay buffer', 'startup'],
   },
   {
     label: 'Start with Windows',
-    description: 'Runs in the tray and indexes clips as they are recorded',
+    description: 'Runs in the tray.',
     section: 'recording',
     keywords: ['startup', 'login', 'boot', 'autostart', 'launch', 'app'],
   },
   {
     label: 'Keep running when the window closes',
     description:
-      'Off means closing the window quits, and nothing is indexed until you open it again',
+      'Off quits GoodBit when you close the window.',
     section: 'recording',
     keywords: ['tray', 'background', 'quit', 'exit', 'close', 'app'],
   },
   {
     label: 'Show the notch',
     description:
-      'A strip of black on the edge of your screen that says when a clip is saved. Off means GoodBit never draws over another program.',
+      'Off means nothing is drawn over other apps.',
     section: 'recording',
     keywords: ['overlay', 'notch', 'island', 'status', 'bar', 'popup', 'toast'],
   },
   {
     label: 'Keep it on the desktop',
     description:
-      "A thin line between clips that shows whether OBS is running. Rest your pointer on it to see today's clips. It steps aside for games and fullscreen video.",
+      "A thin status line at the top. Hover it for today's clips. Hidden in games and fullscreen.",
     section: 'recording',
     keywords: ['always on', 'line', 'status', 'hover', 'minimised', 'widget'],
     shownWhen: 'Show the notch is on',
   },
   {
     label: 'Open after resting for',
-    description: 'Longer keeps it out of the way of tabs and title bars under it',
+    description: 'How long to hover before it opens.',
     section: 'recording',
     keywords: ['delay', 'hover', 'wait', 'dwell', 'speed', 'milliseconds', 'notch'],
     shownWhen: 'Show the notch and Keep it on the desktop are both on',
   },
   {
     label: 'Close after leaving for',
-    description: 'A little grace lets you overshoot a button without losing it',
+    description: 'How long it stays after the pointer leaves.',
     section: 'recording',
     keywords: ['delay', 'hover', 'close', 'hide', 'grace', 'milliseconds', 'notch'],
     shownWhen: 'Show the notch and Keep it on the desktop are both on',
@@ -173,7 +173,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Say when a clip is saved',
     description:
-      'The notch opens while the clip is filed and again once it is in your library, over a game too, then folds away. It never takes focus and clicks pass straight through it.',
+      'Saving, then saved. Also over games.',
     section: 'recording',
     keywords: ['overlay', 'toast', 'notification', 'popup', 'banner', 'confirmation'],
     shownWhen: 'Show the notch is on',
@@ -181,28 +181,28 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Play a sound with it',
     description:
-      'Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption.',
+      'Two short notes.',
     section: 'recording',
     keywords: ['chime', 'sound', 'beep', 'audio', 'notification'],
     shownWhen: 'Show the notch and Say when a clip is saved are both on',
   },
   {
     label: 'How loud',
-    description: 'Press Show me after changing it, to hear where it lands',
+    description: 'Use Show me to hear it.',
     section: 'recording',
     keywords: ['volume', 'loudness', 'chime', 'quiet'],
     shownWhen: 'Show the notch, Say when a clip is saved and Play a sound with it are all on',
   },
   {
     label: 'Try it',
-    description: 'Opens the notch and plays the chime, without recording anything',
+    description: 'Preview the notch and the sound.',
     section: 'recording',
     keywords: ['preview', 'test', 'demo', 'show me'],
   },
   {
     label: 'Look for GoodBits when a game closes',
     description:
-      "Goes through that session's clips while nothing else needs the machine. Alt-tabbing does not count as closing, and it leaves you alone if you start another game.",
+      "Checks that session's clips once you close the game.",
     section: 'recording',
     keywords: [
       'analyse',
@@ -218,7 +218,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Say what it found',
     description:
-      'The notch opens while it looks, and again at the end if it found anything.',
+      'Shows the result in the notch.',
     section: 'recording',
     keywords: ['overlay', 'toast', 'notification', 'silent', 'card', 'notch'],
     shownWhen: 'Show the notch and Look for GoodBits when a game closes are both on',
@@ -226,14 +226,14 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Play a sound with that one',
     description:
-      'A short sound when it finds something, at the volume above.',
+      'A short sound when it finds something.',
     section: 'recording',
     keywords: ['chime', 'sound', 'beep', 'audio', 'notification'],
     shownWhen: 'Show the notch, Look for GoodBits when a game closes and Say what it found are all on',
   },
   {
     label: 'Try that one',
-    description: 'Shows both halves, without reading anything',
+    description: 'Preview it.',
     section: 'recording',
     keywords: ['preview', 'test', 'demo', 'show me'],
     shownWhen: 'Show the notch, Look for GoodBits when a game closes and Say what it found are all on',
@@ -242,14 +242,14 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   // Watching
   {
     label: 'Appearance',
-    description: 'Follow the system, or pick a side',
+    description: 'Light, dark or match your system.',
     section: 'watching',
     keywords: ['dark mode', 'light mode', 'theme', 'night', 'colour', 'color', 'general'],
   },
   {
     label: 'How clips are laid out',
     description:
-      'Takes effect straight away, on the library and in a collection. The L key switches it too.',
+      'Also switch with L.',
     section: 'watching',
     keywords: [
       'view mode',
@@ -265,50 +265,50 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   },
   {
     label: 'Date Format',
-    description: 'How dates should be displayed',
+    description: 'Relative or exact dates.',
     section: 'watching',
     keywords: ['relative', 'absolute', 'today', 'yesterday', 'timestamp', 'general'],
   },
   {
     label: 'Items Per Page',
-    description: 'Number of clips to load at once (lower = faster)',
+    description: 'Fewer loads faster.',
     section: 'watching',
     keywords: ['page size', 'pagination', 'how many', 'load', 'slow', 'general'],
   },
   {
     label: 'Show Clip Metadata',
-    description: 'Display file size, resolution, and other details',
+    description: 'File size, resolution and more on each clip.',
     section: 'watching',
     keywords: ['resolution', 'file size', 'details', 'info', 'general'],
   },
   {
     label: 'Compact Mode',
-    description: 'Reduce spacing and show more content',
+    description: 'Less spacing, more clips.',
     section: 'watching',
     keywords: ['density', 'spacing', 'smaller', 'general'],
   },
   {
     label: 'Auto-play on Hover',
-    description: 'Automatically play clips when hovering over them',
+    description: 'Play a clip when you hover it.',
     section: 'watching',
     keywords: ['preview', 'hover', 'autoplay', 'playback'],
   },
   {
     label: 'Scrub on Hover',
-    description: 'Move the pointer across the bottom third of a clip to seek through it',
+    description: 'Hover the bottom of a clip to seek.',
     section: 'watching',
     keywords: ['seek', 'preview', 'scrub', 'hover', 'playback'],
   },
   {
     label: 'Mute Videos by Default',
-    description: 'Start videos muted (can be unmuted manually)',
+    description: 'Start clips muted.',
     section: 'watching',
     keywords: ['sound', 'audio', 'volume', 'silent', 'playback'],
   },
   {
     label: 'Hidden games',
     description:
-      "Hide folders you don't want in your library. The files stay on disk, they just stop showing up in clips, stats and the editor.",
+      "Hidden games don't show in your library. The files stay on disk.",
     section: 'watching',
     keywords: ['hide', 'show', 'exclude', 'folder', 'game list', 'games'],
   },
@@ -317,13 +317,13 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Compress clips when trimming',
     description:
-      'A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size.',
+      'Much smaller files, slightly lower quality.',
     section: 'editing',
     keywords: ['file size', 'quality', 'encode', 'trim', 'cut', 'smaller', 'app'],
   },
   {
     label: 'Music folder',
-    description: 'Where GoodBit looks for the audio you can lay under a clip in the editor.',
+    description: 'Music for the editor.',
     section: 'editing',
     keywords: ['audio root', 'songs', 'soundtrack', 'path', 'location', 'app'],
   },
@@ -351,7 +351,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Library backups',
     description:
-      'A copy of the library is taken and read back whenever a new version of GoodBit starts, in case an update changes how things are stored. The last five are kept, and any of them can be put back. Your clips themselves are never touched. This is only the names, tags, notes and collections.',
+      'Names, tags, notes and collections. Taken on every update; the last five are kept.',
     section: 'data',
     keywords: [
       'backup',
@@ -369,27 +369,27 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Rescan the clips folder',
     description:
-      'GoodBit indexes a clip the moment it is recorded and sweeps the folder every few hours, so this is rarely needed. It is the way back after a drive was unplugged, or after clips were added by something other than GoodBit.',
+      'Only needed after adding clips outside GoodBit or reconnecting a drive.',
     section: 'data',
     keywords: ['scan', 'refresh', 'reindex', 'missing clips', 'not showing', 'app'],
   },
   {
     label: 'Call a clip forgotten after',
     description:
-      'How long a clip can go unopened, unstarred, untagged and unmarked before Storage Saver offers it up.',
+      'When untouched clips show up in Storage Saver.',
     section: 'data',
     keywords: ['storage', 'saver', 'space', 'disk', 'cleanup', 'unreviewed', 'old', 'forgotten'],
   },
   {
     label: 'Treat saves this close as one moment',
     description:
-      'The replay buffer holds the last few seconds, so two presses this close apart have the same footage in both files.',
+      'Saves closer together than this count as duplicates.',
     section: 'data',
     keywords: ['storage', 'saver', 'burst', 'duplicate', 'twice', 'space', 'disk'],
   },
   {
     label: 'Confirm Before Delete',
-    description: 'Ask for confirmation when deleting clips',
+    description: 'Ask before deleting a clip.',
     section: 'data',
     keywords: ['are you sure', 'remove', 'recycle bin', 'warning', 'general'],
   },
@@ -404,7 +404,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   },
   {
     label: 'Let the Stream Deck reach this library',
-    description: 'Off by default. Nothing is listening until you turn this on.',
+    description: 'Needed for the GoodBit plugin.',
     section: 'connections',
     keywords: ['stream deck', 'elgato', 'server', 'connection', 'pipe'],
     shownWhen: 'always, in the Stream Deck block',
@@ -412,7 +412,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Let a key throw away the last clip',
     description:
-      'Off by default. The key has to be held, and GoodBit keeps any clip you have named, tagged, starred, marked, written a note on or published.',
+      'Hold the key to delete. Clips you tagged, starred or wrote a note on are kept.',
     section: 'connections',
     keywords: ['stream deck', 'discard', 'delete', 'trash', 'recycle bin'],
     shownWhen: 'Let the Stream Deck reach this library is on',
@@ -426,7 +426,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   },
   {
     label: 'Let Claude reach this library',
-    description: 'Off by default. Nothing is listening until you turn this on.',
+    description: 'Needed for the GoodBit plugin.',
     section: 'connections',
     keywords: ['mcp', 'server', 'token', 'port', 'listening'],
   },
@@ -440,14 +440,14 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Publisher',
     description:
-      'Optional. A server that hosts public links for the clips you publish. Leave empty and publishing is simply off.',
+      'Share clips with a link, from your own server.',
     section: 'connections',
     keywords: ['share', 'public link', 'url', 'token', 'server', 'host', 'embed', 'app'],
   },
   {
     label: 'Compress clips when publishing',
     description:
-      'The file on disk is untouched; only the copy behind the public link is re-encoded, so it downloads in a fifth of the time. Off uploads the recording as it is.',
+      'Faster to watch. Your own file is untouched.',
     section: 'connections',
     keywords: ['file size', 'quality', 'share', 'upload', 'link', 'app'],
   },
@@ -455,7 +455,7 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   // Advanced
   {
     label: 'Keyboard shortcuts',
-    description: 'Move around and act on a clip without the mouse',
+    description: 'Use the app without the mouse.',
     section: 'advanced',
     keywords: ['hotkeys', 'keys', 'keybindings'],
   },
@@ -481,11 +481,5 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
       'about',
       'app',
     ],
-  },
-  {
-    label: 'Where settings are kept',
-    description: 'These preferences live on this computer and stay put between sessions.',
-    section: 'advanced',
-    keywords: ['settings file', 'storage', 'export', 'import', 'reset'],
   },
 ];

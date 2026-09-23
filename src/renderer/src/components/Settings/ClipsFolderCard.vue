@@ -131,36 +131,34 @@ async function followMove(jobId: string): Promise<void> {
 
 <template>
   <!--
-    A heading, the path, what the buttons do, then the buttons.
-
-    This was `.b-setting` shaped: a title on the left with the two actions
-    floated right, so they sat level with the folder's name rather than with
-    the sentence that says what each of them does to it. `.b-card-quiet` is
-    the shape for a block that needs more than one line of explanation.
+    What it is on the left, the two actions on the right, level with the
+    middle of the text rather than with the heading, so they sit in the same
+    right-hand column as every other control on the page.
   -->
   <div
     data-setting="Clips folder"
-    :class="['setting-card', settingRing('Clips folder')]"
+    :class="['setting-card setting-card-row', settingRing('Clips folder')]"
   >
-    <h3>Clips folder</h3>
+    <div class="setting-card-body">
+      <h3>Clips folder</h3>
 
-    <p class="font-mono !text-foreground !mt-2 truncate" :title="settings.videosRoot">
-      {{ settings.videosRoot || 'Not set' }}
-    </p>
+      <p class="font-mono !text-foreground !mt-2 truncate" :title="settings.videosRoot">
+        {{ settings.videosRoot || 'Not set' }}
+      </p>
 
-    <!--
-      This used to explain that changing it moves nothing. It no longer needs
-      to: changing it now asks which of the two things you meant, and OBS is
-      pointed at the same folder either way rather than being a second setting
-      that can disagree with this one.
-    -->
-    <p>Your library, and where OBS records into. They are always the same folder.</p>
-    <p class="!text-muted-400">
-      Move clips takes everything with it, tags and dates included. Change only points GoodBit
-      somewhere else and leaves the files alone.
-    </p>
+      <!--
+        This used to explain that changing it moves nothing. It no longer needs
+        to: changing it now asks which of the two things you meant, and OBS is
+        pointed at the same folder either way rather than being a second setting
+        that can disagree with this one.
+      -->
+      <p>Where your clips are recorded and kept.</p>
+      <p class="!text-muted-400">
+        Move clips moves the files. Change only points GoodBit elsewhere.
+      </p>
+    </div>
 
-    <div class="flex items-center gap-2 mt-4">
+    <div class="setting-card-actions">
       <button
         type="button"
         class="h-9 px-3.5 inline-flex items-center rounded-md border border-line-strong text-sm font-medium text-foreground hover:bg-muted-50 outline-none focus-visible:focus-ring transition-colors duration-150"
