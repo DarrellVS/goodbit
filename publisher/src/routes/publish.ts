@@ -93,12 +93,16 @@ publishRouter.post('/', upload.single('file'), asyncHandler(async (req, res) => 
   // A multipart field, so a JSON string. Unparseable or absent is no marks,
   // which is what every desktop older than the chaptered player sends.
   const goodBits = parseGoodBits(req.body?.goodBits);
+  // `announce=0` is a restore, not news. Absent is a normal publish, which is
+  // what every desktop older than this sends.
+  const announce = req.body?.announce !== '0';
   const result = await clipsService.publish(
     req.file.path,
     req.file.originalname,
     displayName,
     game,
     goodBits,
+    announce,
   );
   res.json(result);
 }));

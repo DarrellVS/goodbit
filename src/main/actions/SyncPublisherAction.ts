@@ -28,13 +28,24 @@ export class SyncPublisherAction extends BaseAction<void, SyncPublisherOutput> {
 
     const publicBase = (process.env.PUBLISHER_PUBLIC_BASE_URL || '').replace(/\/$/, '');
 
-    // Upload any clips marked published but missing remotely
+    /*
+     * Put back any clip marked published that the publisher does not have.
+     *
+     * Quietly: this runs at every boot, so a fresh or moved container gets
+     * every published clip in the library at once, and each would otherwise
+     * reach the publisher as a first publish and be announced to Discord.
+     * Putting a link back where it was is not news.
+     */
     for (const clip of allClips.filter(c => c.published && !remoteFiles.has(c.filename))) {
       const gameDisplayName = gameDisplayNameMap.get(clip.game) || clip.game;
       const result = await publisherService.publish(
-        clip.filePath, 
+        clip.filePath,
         clip.displayName || clip.filename,
-        gameDisplayName
+        gameDisplayName,
+        undefined,
+        undefined,
+        undefined,
+        { announce: false },
       );
       clip.published = true;
       clip.publishedUrl = result.url || (publicBase ? `${publicBase}/${encodeURIComponent(clip.filename)}` : null);

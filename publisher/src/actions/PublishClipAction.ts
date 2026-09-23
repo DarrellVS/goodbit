@@ -18,6 +18,14 @@ export interface PublishClipInput {
    * chaptered player, which is a plain player and not a broken one.
    */
   goodBits?: PublishedGoodBit[];
+  /**
+   * False for an upload that puts back a clip the publisher lost, rather than
+   * one somebody just published. The desktop re-uploads every clip it holds as
+   * published but the server does not have, which is what happens once to a
+   * fresh or moved container, and every one of those looks like a first
+   * publish here: a Discord channel got one post per clip in the library.
+   */
+  announce?: boolean;
 }
 
 export interface PublishClipOutput {
@@ -101,7 +109,7 @@ export class PublishClipAction extends BaseAction<PublishClipInput, PublishClipO
 
     // Announced when the poster lands, or after a grace period without one,
     // and only if this is news. See `services/discordWebhook.ts`.
-    notePublished(filename, hadSidecar);
+    if (input.announce !== false) notePublished(filename, hadSidecar);
 
     return { filename, url };
   }
