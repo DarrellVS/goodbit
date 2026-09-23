@@ -16,6 +16,8 @@
  * The routes are versioned (`/v1/...`) because the plugin ships separately and
  * will be a version behind the app sooner or later.
  */
+import { writePluginConnection } from './plugin.js';
+import { prepareReplayKey } from '../obs/saveReplay.js';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { loadSettings, saveSettings } from '../../settings.js';
@@ -24,6 +26,7 @@ import {
   discardLatest,
   health,
   publishLatest,
+  saveReplayFromKey,
   stats,
   tagLatest,
   type KeyResult,
@@ -62,6 +65,7 @@ const ROUTES: Record<string, Handler> = {
   'POST /v1/latest/tag': (body) => tagLatest(body),
   'POST /v1/latest/publish': () => publishLatest(),
   'POST /v1/latest/discard': (body) => discardLatest(body),
+  'POST /v1/replay/save': () => saveReplayFromKey(),
 };
 
 async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -130,6 +134,10 @@ export async function startStreamDeck(): Promise<void> {
     listeningOn = port;
     if (settings.streamDeckPort !== port) saveSettings({ streamDeckPort: port });
     console.log(`[streamdeck] listening on ${streamDeckUrl()}`);
+    // An installed plugin learns the address and token from GoodBit itself,
+    // and the key helper is compiled now rather than on the first press.
+    writePluginConnection({ url: streamDeckUrl(), token });
+    prepareReplayKey();
   } catch (error) {
     console.error('[streamdeck] could not start:', error instanceof Error ? error.message : error);
     await stopStreamDeck();

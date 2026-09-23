@@ -1,11 +1,19 @@
 import streamDeck from '@elgato/streamdeck';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * The one place this plugin talks to GoodBit.
  *
  * GoodBit listens on `127.0.0.1` behind a bearer token, off until somebody
- * switches it on in Settings, Connections. The address and the token are
- * pasted into this plugin's global settings once and shared by every key.
+ * switches it on in Settings, Connections.
+ *
+ * **Where the address and token come from.** GoodBit's *Install the plugin*
+ * button writes them into `connection.json` in this plugin's own folder, so
+ * nobody has to paste a forty character token. What is pasted into a key's
+ * settings wins over the file, so a hand-set connection is never overwritten
+ * by a GoodBit that happens to be running a different profile.
  *
  * **Every call has a short timeout.** A key that waits thirty seconds for an
  * app that is not running looks exactly like a broken key, so after four
@@ -26,17 +34,28 @@ export interface GoodBitReply {
 const DEFAULT_URL = 'http://127.0.0.1:43120';
 const TIMEOUT_MS = 4000;
 
+/** `connection.json`, written by GoodBit beside `bin/`. Read on every press, so a new token is picked up at once. */
+function fromFile(): GoodBitSettings {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    return JSON.parse(readFileSync(join(here, '..', 'connection.json'), 'utf-8')) as GoodBitSettings;
+  } catch {
+    return {};
+  }
+}
+
 async function connection(): Promise<{ url: string; token: string }> {
   const settings = await streamDeck.settings.getGlobalSettings<GoodBitSettings>();
+  const file = fromFile();
   return {
-    url: (settings.url || DEFAULT_URL).replace(/\/$/, ''),
-    token: settings.token || '',
+    url: (settings.url || file.url || DEFAULT_URL).replace(/\/$/, ''),
+    token: settings.token || file.token || '',
   };
 }
 
 export async function goodbit(
   path: string,
-  options: { method?: 'GET' | 'POST'; body?: Record<string, unknown> } = {},
+  options: { method?: 'GET' | 'POST'; body?: Record<string, unknown>; timeoutMs?: number } = {},
 ): Promise<GoodBitReply> {
   const { url, token } = await connection();
   if (!token) return { status: 0, body: { error: 'No token set' } };
@@ -49,7 +68,7 @@ export async function goodbit(
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(options.timeoutMs ?? TIMEOUT_MS),
     });
     let body: Record<string, unknown> = {};
     try {

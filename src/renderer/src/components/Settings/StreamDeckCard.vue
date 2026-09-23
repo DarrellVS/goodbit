@@ -28,6 +28,8 @@ interface DeckState {
   url: string;
   token: string;
   allowDiscard: boolean;
+  pluginInstalled: boolean;
+  pluginAvailable: boolean;
 }
 
 const toast = useToastStore();
@@ -55,6 +57,31 @@ async function toggleServer(enabled: boolean): Promise<void> {
   }
 }
 
+/*
+ * One press: Windows hands the plugin to the Stream Deck app, which asks, and
+ * GoodBit writes the address and token into it once it lands. The state is
+ * polled for a while afterwards so the row turns to "Installed" by itself.
+ */
+const installing = ref(false);
+async function installPlugin(): Promise<void> {
+  installing.value = true;
+  try {
+    const result = await window.goodbit?.streamDeckInstallPlugin();
+    if (!result) return;
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success('The Stream Deck app asks to install it. Say yes and the keys connect by themselves.');
+    for (let i = 0; i < 60 && !state.value?.pluginInstalled; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await load();
+    }
+  } finally {
+    installing.value = false;
+  }
+}
+
 async function toggleDiscard(allow: boolean): Promise<void> {
   await save({ streamDeckAllowDiscard: allow });
   await load();
@@ -75,8 +102,9 @@ async function copy(value: string, what: string): Promise<void> {
     <div data-setting="Stream Deck" :class="settingRing('Stream Deck')">
       <h3 class="font-display text-lg font-medium text-foreground">Stream Deck</h3>
       <p class="text-sm text-muted-500 mt-1 max-w-[76ch]">
-        Keys that tag or publish the clip you just saved, and show today's count, without leaving
-        the game. Use Elgato's own OBS plugin for the key that saves the replay.
+        Keys that save the replay, tag, publish or throw away the clip you just saved, and show
+        today's count, without leaving the game. Saving presses the key OBS already has for it, so
+        nothing in OBS changes.
       </p>
       <p class="text-sm text-muted-400 mt-1.5 max-w-[76ch]">
         It listens on this machine only, behind a token. The token stops web pages and other
@@ -95,6 +123,37 @@ async function copy(value: string, what: string): Promise<void> {
     </div>
 
     <template v-if="state?.enabled">
+      <!--
+        The plugin first: it is the part somebody came here for, and once it is
+        installed the address and the token below are only for connecting by
+        hand, because GoodBit hands them to the plugin itself.
+      -->
+      <div class="flex items-center gap-3 py-3 border-b border-border text-sm">
+        <span :class="statusDotVariants({ tone: state.pluginInstalled ? 'ok' : 'waiting' })" />
+        <div class="min-w-0">
+          <div class="text-foreground">
+            {{ state.pluginInstalled ? 'The plugin is installed' : 'The plugin is not installed yet' }}
+          </div>
+          <div class="text-muted-500">
+            {{
+              state.pluginInstalled
+                ? 'It connects to GoodBit by itself. Drag GoodBit keys onto your Stream Deck.'
+                : 'Needs the Stream Deck app. It asks before installing.'
+            }}
+          </div>
+        </div>
+        <BaseButton
+          size="sm"
+          :tone="state.pluginInstalled ? 'default' : 'strong'"
+          class="ml-auto shrink-0"
+          :disabled="installing || !state.pluginAvailable"
+          :title="state.pluginAvailable ? undefined : 'This build of GoodBit does not carry the plugin'"
+          @click="installPlugin"
+        >
+          {{ installing ? 'Installing' : state.pluginInstalled ? 'Reinstall' : 'Install the plugin' }}
+        </BaseButton>
+      </div>
+
       <div class="flex items-center gap-2 py-3 border-b border-border text-sm">
         <span :class="statusDotVariants({ tone: state.running ? 'ok' : 'waiting' })" />
         <span class="text-foreground">{{ state.running ? 'Listening' : 'Not listening' }}</span>
