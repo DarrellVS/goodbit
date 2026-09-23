@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * Moving between clips without closing the one you are on.
@@ -26,7 +26,7 @@ test.describe('paging between clips inside the modal', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'PagerGame', 12);
-    await ctx.page.waitForTimeout(10000);
+    await waitForClips(ctx.page, 12);
   });
 
   test.afterAll(async () => {
@@ -43,11 +43,11 @@ test.describe('paging between clips inside the modal', () => {
    */
   async function openFirstClip(): Promise<void> {
     await ctx.page.keyboard.press('Escape');
-    await ctx.page.waitForTimeout(300);
+    await settle(ctx.page);
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(1200);
+    await settle(ctx.page);
     await ctx.page.locator('article').first().click();
     await expect(ctx.page.getByRole('dialog')).toBeVisible();
   }
@@ -70,14 +70,14 @@ test.describe('paging between clips inside the modal', () => {
 
     for (const expected of ['2 of 12', '3 of 12', '4 of 12']) {
       await next.click();
-      await ctx.page.waitForTimeout(500);
+      await settle(ctx.page);
       await expect(readout()).toHaveText(expected);
     }
 
     // On to the last one, where there is nowhere forward. It does not wrap.
     for (let i = 5; i <= 12; i++) {
       await next.click();
-      await ctx.page.waitForTimeout(350);
+      await settle(ctx.page);
     }
     await expect(readout()).toHaveText('12 of 12');
     await expect(next).toBeDisabled();
@@ -96,7 +96,7 @@ test.describe('paging between clips inside the modal', () => {
 
     const next = ctx.page.getByRole('button', { name: 'Next clip' });
     await next.click();
-    await ctx.page.waitForTimeout(700);
+    await settle(ctx.page);
 
     // The modal's own name field, which is the clip it has loaded.
     const showing = await ctx.page
@@ -121,7 +121,7 @@ test.describe('paging between clips inside the modal', () => {
     await ctx.page.addStyleTag({
       content: '*, *::before, *::after { transition: none !important; animation: none !important; }',
     });
-    await ctx.page.waitForTimeout(200);
+    await settle(ctx.page);
 
     /*
      * Measure the chevron that can actually move.
@@ -154,7 +154,7 @@ test.describe('paging between clips inside the modal', () => {
     const next = ctx.page.getByRole('button', { name: 'Next clip' });
     for (let i = 2; i <= 10; i++) {
       await next.click();
-      await ctx.page.waitForTimeout(250);
+      await settle(ctx.page);
     }
     await expect(readout()).toHaveText('10 of 12');
     const after = await box();
@@ -169,11 +169,11 @@ test.describe('paging between clips inside the modal', () => {
     await openFirstClip();
 
     await ctx.page.keyboard.press(']');
-    await ctx.page.waitForTimeout(500);
+    await settle(ctx.page);
     await expect(readout()).toHaveText('2 of 12');
 
     await ctx.page.keyboard.press('[');
-    await ctx.page.waitForTimeout(500);
+    await settle(ctx.page);
     await expect(readout()).toHaveText('1 of 12');
 
     // Inside the clip's own name field, a bracket is a bracket.
@@ -181,7 +181,7 @@ test.describe('paging between clips inside the modal', () => {
     await name.click();
     const original = await name.inputValue();
     await name.press(']');
-    await ctx.page.waitForTimeout(400);
+    await settle(ctx.page);
 
     await expect(readout()).toHaveText('1 of 12');
     expect(await name.inputValue()).not.toBe(original);

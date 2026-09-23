@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * Searching the library, which until now could not find a note.
@@ -43,7 +43,7 @@ test.describe('search', () => {
     )) as { status: number; body: T };
 
     if (response.status >= 400) {
-      throw new Error(`${method} ${path} answered ${response.status}`);
+      throw new Error(`${method} ${path} answered ${response.status}: ${JSON.stringify(response.body)}`);
     }
     return response.body;
   };
@@ -61,7 +61,7 @@ test.describe('search', () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'Battlefield 6', 3, 2);
     seedClips(ctx.videosRoot, 'Counter Strike', 2, 2);
-    await ctx.page.waitForTimeout(10_000);
+    await waitForClips(ctx.page, 5);
 
     const { items } = await call<{ items: ClipRow[] }>('GET', '/clips', undefined, {
       pageSize: '200',

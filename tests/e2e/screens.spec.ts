@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, nextFrame, seedClips, settle, videosReady, waitForClips, type TestApp } from './app';
 import {
   assertParserWorks,
   collectTextRuns,
@@ -50,12 +50,15 @@ const ROUTES = [
 ];
 
 test.describe('every screen, in both palettes', () => {
+  // Each test works on its own screens, so they spread across workers, each
+  // with its own app from `beforeAll`.
+  test.describe.configure({ mode: 'parallel' });
   let ctx: TestApp;
 
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 3);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -69,7 +72,7 @@ test.describe('every screen, in both palettes', () => {
       // added from outside is clobbered the next time it does.
       await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
       await ctx.page.reload();
-      await ctx.page.waitForTimeout(1200);
+      await settle(ctx.page);
 
       const applied = await ctx.page.evaluate(() =>
         document.documentElement.classList.contains('dark'),
@@ -87,7 +90,7 @@ test.describe('every screen, in both palettes', () => {
         await ctx.page.evaluate((h) => {
           window.location.hash = h;
         }, route.hash);
-        await ctx.page.waitForTimeout(700);
+        await settle(ctx.page);
         await ctx.page.addStyleTag({ content: FREEZE_CSS });
 
         await ctx.page.screenshot({
@@ -151,7 +154,7 @@ test.describe('every screen, in both palettes', () => {
     test(`${theme}: nothing changes size on hover or focus`, async () => {
       await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
       await ctx.page.reload();
-      await ctx.page.waitForTimeout(1200);
+      await settle(ctx.page);
       await ctx.page.addStyleTag({ content: FREEZE_CSS });
 
       const problems: string[] = [];
@@ -160,7 +163,7 @@ test.describe('every screen, in both palettes', () => {
         await ctx.page.evaluate((h) => {
           window.location.hash = h;
         }, route.hash);
-        await ctx.page.waitForTimeout(700);
+        await settle(ctx.page);
         await ctx.page.addStyleTag({ content: FREEZE_CSS });
 
         // Controls, and the containers the contract names beside them: a
@@ -186,11 +189,11 @@ test.describe('every screen, in both palettes', () => {
           // card reveals its actions from the card's own `group` rather than
           // from the button that appears.
           await target.hover({ force: true, timeout: 2000 }).catch(() => undefined);
-          await ctx.page.waitForTimeout(120);
+          await nextFrame(ctx.page);
           const hovered = await target.boundingBox();
 
           await target.focus({ timeout: 2000 }).catch(() => undefined);
-          await ctx.page.waitForTimeout(120);
+          await nextFrame(ctx.page);
           const focused = await target.boundingBox();
 
           for (const [state, after] of [
@@ -227,13 +230,14 @@ test.describe('every screen, in both palettes', () => {
  * nothing errored.
  */
 test.describe('layout', () => {
+  test.describe.configure({ mode: 'parallel' });
   let ctx: TestApp;
 
   test.beforeAll(async () => {
     ctx = await launchApp();
     // Enough games that the sidebar list is taller than the window.
     for (let i = 0; i < 14; i++) seedClips(ctx.videosRoot, `Game${i}`, 1);
-    await ctx.page.waitForTimeout(10000);
+    await waitForClips(ctx.page, 14);
   });
 
   test.afterAll(async () => {
@@ -244,7 +248,7 @@ test.describe('layout', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(2500);
+    await settle(ctx.page);
 
     const overflow = await ctx.page.evaluate(() => ({
       body: document.body.scrollHeight - document.body.clientHeight,
@@ -278,14 +282,14 @@ test.describe('layout', () => {
       await ctx.page.evaluate((h) => {
         window.location.hash = h;
       }, route.hash);
-      await ctx.page.waitForTimeout(1200);
+      await settle(ctx.page);
 
       // Hover-revealed controls in the margin are measured every run, not
       // only when an earlier test happened to leave the pointer over them.
       const hanging = ctx.page.locator('[data-in-gutter]').first();
       if (await hanging.count()) {
         await hanging.hover({ force: true }).catch(() => {});
-        await ctx.page.waitForTimeout(300);
+        await nextFrame(ctx.page);
       }
 
       const found = await ctx.page.evaluate(() => {
@@ -377,7 +381,8 @@ test.describe('layout', () => {
       }, route.hash);
       // A video reports its own size only once the metadata has loaded, and
       // the layout is not final until it has.
-      await ctx.page.waitForTimeout(route.name === 'trim' ? 3000 : 600);
+      if (route.name === 'trim' || route.name === 'clip detail') await videosReady(ctx.page);
+      else await settle(ctx.page);
 
       // The editor used h-screen, which is 100vh and ignores the title bar
       // above it, so it overflowed by exactly the bar's height.
@@ -401,7 +406,7 @@ test.describe('layout', () => {
     await ctx.page.evaluate((clipId) => {
       window.location.hash = `#/trim/${clipId}`;
     }, id);
-    await ctx.page.waitForTimeout(3000);
+    await videosReady(ctx.page);
 
     // Nothing overflowed the document. The page had its own scroller, so the
     // window-height test above was blind to this. What was actually wrong is
@@ -434,7 +439,7 @@ test.describe('layout', () => {
     await ctx.page.evaluate((clipId) => {
       window.location.hash = `#/trim/${clipId}`;
     }, id);
-    await ctx.page.waitForTimeout(3000);
+    await videosReady(ctx.page);
 
     // The range opens on the whole clip, so both handles are at the extremes,
     // which is exactly where a mispositioned one shows up. Radix pulls a thumb
@@ -464,7 +469,7 @@ test.describe('layout', () => {
   test('dark mode has no pale surfaces left over from light', async () => {
     await ctx.page.evaluate(() => localStorage.setItem('goodbit-theme', 'dark'));
     await ctx.page.reload();
-    await ctx.page.waitForTimeout(1200);
+    await settle(ctx.page);
 
     expect(
       await ctx.page.evaluate(() => document.documentElement.classList.contains('dark')),
@@ -477,7 +482,7 @@ test.describe('layout', () => {
       await ctx.page.evaluate((h) => {
         window.location.hash = h;
       }, route.hash);
-      await ctx.page.waitForTimeout(600);
+      await settle(ctx.page);
 
       // Tailwind's -50 and -100 steps are specific pale colours, not 'a hint
       // of the hue'. Over a dark ground they composite to washed cream, which

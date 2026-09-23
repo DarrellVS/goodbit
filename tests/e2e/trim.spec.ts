@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips } from './app';
 
 /**
  * The trim page as a place to decide what a clip is, not only where to cut it.
@@ -27,7 +27,7 @@ test.describe('the trim page', () => {
     // refuses a sweep that would remove more than half the library, so the
     // deleting tests need more clips than they delete.
     seedClips(ctx.videosRoot, 'BinGame', 3, 2);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 4);
   });
 
   test.afterAll(async () => {

@@ -1183,6 +1183,27 @@ fixes it. Fixing it makes that test fail, which is the announcement.
 root and database; fixtures are generated with the bundled ffmpeg. **A test must never touch the real
 library.**
 
+**The suite is silent, invisible and parallel, and takes about two minutes.** It took twelve, nearly
+all of it sleeping. There is no headless Electron on Windows, so `tests/e2e/app.ts` launches with
+`GOODBIT_TEST_INVISIBLE=1` and `--mute-audio`: `testMode.ts` shows every window at opacity 0, out of
+the taskbar and without focus, with background throttling off (or an unfocused window stops painting
+and the measurements wait for ever) and every transition switched off, since nothing here changes
+size mid-transition anyway. The window is still laid out and painted, so what is measured is real.
+`GOODBIT_TEST_VISIBLE=1` shows it, for watching a test. Four workers, one file each, because every
+launch has its own data directory and single-instance lock; `GOODBIT_E2E_WORKERS` overrides.
+
+- **Wait for a condition, never for a number of milliseconds.** `waitForClips(page, n)` asks main
+  for the row count and then reloads; `settle(page)` waits for the DOM to go quiet *and* for
+  `window.goodbit.apiInFlight()` to reach zero, which the preload counts; `videosReady(page)` waits
+  for every video that is meant to load. A sleep is either too short on a busy machine or wasted on
+  an idle one, and usually both across a run.
+- **The sleeps that remain are timers the app really has**: a second-resolution backup stamp, the
+  window-state debounce, an mtime that has to move, a boot step in main the page cannot see.
+- **A faster suite finds what a slow one hid.** Deleting a clip seconds after it arrived failed,
+  because its thumbnail's ffmpeg still held the file and the Recycle Bin refused it with "Operation
+  was aborted"; ten seconds of sleep had let every job finish first. A delete now cancels them
+  (`cancelSource`), the way a trim does.
+
 `screens.spec.ts` walks every screen in both palettes and measures each text node against its own
 *painted* background, translucent layers composited, since a tint like `bg-accent/10` computes to
 `rgb(193 99 62 / 0.1)` and reading it as opaque terracotta flags every label on it. The floor is

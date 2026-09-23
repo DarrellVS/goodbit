@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, settle } from './app';
 
 /**
  * The library grows as you scroll, and does not mix two lists while doing it.
@@ -51,7 +51,7 @@ test.describe('the library loads as you scroll', () => {
         return (answer.body as { total: number }).total;
       });
       if (total >= TOTAL) break;
-      await ctx.page.waitForTimeout(2000);
+      await ctx.page.waitForTimeout(400);
     }
 
     /*
@@ -71,7 +71,7 @@ test.describe('the library loads as you scroll', () => {
       }
     });
     await ctx.page.reload();
-    await ctx.page.waitForTimeout(3000);
+    await settle(ctx.page);
   });
 
   test.afterAll(async () => {
@@ -109,7 +109,7 @@ test.describe('the library loads as you scroll', () => {
      * survives one.
      */
     await ctx.page.reload();
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
 
     // The first page has landed, and there is more than it.
     await expect(loadMore()).toHaveCount(1, { timeout: 20_000 });
@@ -123,7 +123,7 @@ test.describe('the library loads as you scroll', () => {
      */
     let last = -1;
     for (let attempt = 0; attempt < 30; attempt++) {
-      await ctx.page.waitForTimeout(600);
+      await ctx.page.waitForTimeout(200);
       const now = await cards().count();
       if (now === last && now > 0) return now;
       last = now;
@@ -157,8 +157,13 @@ test.describe('the library loads as you scroll', () => {
 
     for (let press = 0; press < 20; press++) {
       if (!(await loadMore().count())) break;
+      const shown = await cards().count();
       await loadMore().click();
-      await ctx.page.waitForTimeout(600);
+      // The page, not a quiet moment: the button is disabled while a page is
+      // in the air and replaced when it lands, and pressing it in between is
+      // a click on something that is going away.
+      await expect.poll(async () => cards().count(), { timeout: 10_000 }).toBeGreaterThan(shown);
+      await settle(ctx.page);
     }
 
     await expect(cards()).toHaveCount(TOTAL);
@@ -195,7 +200,7 @@ test.describe('the library loads as you scroll', () => {
      */
     void loadMore().click();
     await ctx.page.getByRole('button', { name: /OtherGame/ }).first().click();
-    await ctx.page.waitForTimeout(3000);
+    await settle(ctx.page);
 
     // Three clips, all of them the other game, and no trace of the first list.
     await expect(cards()).toHaveCount(OTHER_GAME);

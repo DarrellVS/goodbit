@@ -1,7 +1,7 @@
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { launchApp, makeVideo, type TestApp } from './app';
+import { launchApp, makeVideo, type TestApp, settle } from './app';
 
 /**
  * What a library costs once the list stops paging: the measurement issue #3
@@ -102,7 +102,7 @@ function scaleBench(): void {
         return (answer.body as { total: number }).total;
       });
       if (total >= HOW_MANY) break;
-      await ctx.page.waitForTimeout(2000);
+      await ctx.page.waitForTimeout(500);
     }
   });
 
@@ -121,11 +121,11 @@ function scaleBench(): void {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/stats';
     });
-    await ctx.page.waitForTimeout(800);
+    await settle(ctx.page);
     await ctx.page.evaluate(() => {
       window.location.hash = '#/';
     });
-    await ctx.page.waitForTimeout(3500);
+    await settle(ctx.page);
 
     /*
      * Every process, not only the renderer.

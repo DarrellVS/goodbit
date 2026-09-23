@@ -8,7 +8,7 @@ here cost something to find out.
 ```bash
 # 1. On the release branch, with a clean tree
 npm run check                 # typecheck + 431 unit tests, seconds
-npm run test:e2e              # the full gate, ~7 minutes, 118 tests, must be 0 skips
+npm run test:e2e              # the full gate, ~2 minutes, 145 tests, must be 0 skips
 
 # 2. Version, in both files
 #    package.json, then sync the lockfile
@@ -57,7 +57,7 @@ and CI trigger points at what is really a snapshot.
 ### `electron-builder --win`, not `build:win`
 
 `build:win` runs `check:pre-release`, which runs the whole e2e suite again. You
-ran it in step 1. Running it twice adds seven minutes and proves nothing new.
+ran it in step 1. Running it twice adds two minutes and proves nothing new.
 
 The suite cannot run on the CI runner at all: it needs a desktop session, a GPU
 and ffmpeg. That is why the gate is a real machine before the tag, and why the

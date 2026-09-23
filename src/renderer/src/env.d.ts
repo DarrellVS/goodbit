@@ -9,6 +9,7 @@ declare module '*.vue' {
 /** What the preload exposes. See `src/preload/index.ts`. */
 interface GoodBitBridge {
   /** Every data call, dispatched through the router in main. */
+  apiInFlight: () => number;
   apiRequest: (request: {
     method: string;
     path: string;

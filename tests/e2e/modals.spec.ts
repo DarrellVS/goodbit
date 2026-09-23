@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle, videosReady } from './app';
 import {
   assertParserWorks,
   collectTextRuns,
@@ -26,7 +26,7 @@ test.describe('the clip layer, in both palettes', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'ModalGame', 3);
-    await ctx.page.waitForTimeout(10000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -48,7 +48,7 @@ test.describe('the clip layer, in both palettes', () => {
     test(`${theme}: the clip panel and the trimmer are readable`, async () => {
       await ctx.page.evaluate((t) => localStorage.setItem('goodbit-theme', t), theme);
       await ctx.page.reload();
-      await ctx.page.waitForTimeout(1200);
+      await settle(ctx.page);
 
       const id = await clipId();
       const problems: string[] = [];
@@ -129,7 +129,7 @@ test.describe('the clip layer, in both palettes', () => {
     await ctx.page.evaluate((h) => {
       window.location.hash = h;
     }, `#/clips/${id}`);
-    await ctx.page.waitForTimeout(2500);
+    await videosReady(ctx.page);
 
     const fit = await ctx.page.evaluate(() => {
       const panel = document.querySelector('[role="dialog"]');

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, waitForClips, seedClips, type TestApp } from './app';
 
 /**
  * The transport: media over `goodbit://`, data over IPC, and no socket at all.
@@ -14,7 +14,7 @@ test.describe('the bridge', () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 2);
     // The watcher settles the files before indexing them.
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 2);
   });
 
   test.afterAll(async () => {

@@ -11,6 +11,7 @@ import { useBatchOperations } from '@renderer/composables/library/useBatchOperat
 import { useClipListKeyboardShortcuts } from '@renderer/composables/library/useClipListKeyboardShortcuts';
 import { useClipListHandlers } from '@renderer/composables/library/useClipListHandlers';
 import { useLibraryRescan } from '@renderer/composables/library/useLibraryRescan';
+import { useLibraryViewCounts } from '@renderer/composables/library/useLibraryViewCounts';
 import { useSelectAllShortcut } from '@renderer/composables/ui/useSelectAllShortcut';
 import { useScrolledPage } from '@renderer/composables/ui/useScrolledPage';
 import type { Clip } from '@renderer/types/clip';
@@ -28,6 +29,8 @@ const gamesStore = useGamesStore();
 const config = useConfiguration();
 const { getVideoUrl, getThumbUrl } = useClipHandlers();
 const { rescan } = useLibraryRescan();
+// The view counts on published cards, refreshed while the library is looked at.
+useLibraryViewCounts();
 
 /** The shell follows the scroll; this row only reads it. */
 const { scrolled } = useScrolledPage();

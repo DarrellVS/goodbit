@@ -252,7 +252,7 @@ test.describe('measurements for 2.0', () => {
         if (job.status === 'done') return job;
         if (job.status === 'error') throw new Error(job.error ?? 'export failed');
         if (job.status === 'cancelled') throw new Error('export cancelled');
-        await ctx.page.waitForTimeout(500);
+        await ctx.page.waitForTimeout(250);
       }
     }
 
@@ -266,8 +266,13 @@ test.describe('measurements for 2.0', () => {
     // The render lands in the library as a clip of its own. Every clip on this
     // timeline is from one game, so it belongs to that game, in its own
     // `Exports/` folder, rather than to the flat top level one.
-    const exports = await clipsIn(game);
-    expect(exports.items.some((clip) => clip.filename.startsWith('measure-bench'))).toBe(true);
+    // Indexed by the watcher once the file is whole, which is a few seconds
+    // after the job reports done, so this is asked until it is true.
+    await expect
+      .poll(async () => (await clipsIn(game)).items.some((clip) => clip.filename.startsWith('measure-bench')), {
+        timeout: 20_000,
+      })
+      .toBe(true);
   });
 });
 

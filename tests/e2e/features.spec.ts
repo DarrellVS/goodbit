@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { launchApp, seedClips, seedSwellClip, type TestApp } from './app';
+import { launchApp, seedClips, seedSwellClip, type TestApp, waitForClips } from './app';
 
 /**
  * The features themselves, exercised through the desktop app.
@@ -30,7 +30,7 @@ test.describe('features survive the port', () => {
     seedClips(ctx.videosRoot, 'TestGame', 2);
     // A clip with nothing in it, for the refusal test below.
     seedSwellClip(ctx.videosRoot, 'MenuGame');
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -166,7 +166,7 @@ test.describe('features survive the port', () => {
 
     let final: { status: string; clip: unknown } | null = null;
     for (let i = 0; i < 90; i++) {
-      await ctx.page.waitForTimeout(1000);
+      await ctx.page.waitForTimeout(250);
       const poll = await call('GET', `/clips/export/${exportId}/status`);
       final = poll.body as { status: string; clip: unknown };
       if (final.status !== 'running') break;

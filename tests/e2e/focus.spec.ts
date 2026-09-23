@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * The focus ring, and whether anything cuts it in half.
@@ -156,7 +156,7 @@ test.describe('the focus ring survives its surroundings', () => {
   test.beforeAll(async () => {
     ctx = await launchApp();
     seedClips(ctx.videosRoot, 'TestGame', 3);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 3);
   });
 
   test.afterAll(async () => {
@@ -171,7 +171,7 @@ test.describe('the focus ring survives its surroundings', () => {
       await ctx.page.evaluate((hash) => {
         window.location.hash = hash;
       }, route.hash);
-      await ctx.page.waitForTimeout(700);
+      await settle(ctx.page);
 
       const walk = await ctx.page.evaluate(walkFocusables, RING_REACH);
       focused += walk.focused;

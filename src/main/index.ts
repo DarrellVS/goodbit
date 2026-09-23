@@ -1,4 +1,5 @@
 // First, and on its own line: see the file. Reordering this is a crash on install.
+import { invisibleForTests, showForTests } from './testMode.js';
 import './bootstrap.js';
 import { app, BrowserWindow, Menu, Tray, shell, nativeImage } from 'electron';
 import { join } from 'node:path';
@@ -135,13 +136,18 @@ function createWindow(): BrowserWindow {
       // off disk; there is no reason for it to reach Node directly.
       contextIsolation: true,
       nodeIntegration: false,
+      // A transparent test window reads as hidden to Chromium, which would
+      // stop timers and animation frames in it. Only ever off for the suite.
+      backgroundThrottling: !invisibleForTests,
     },
   });
 
   if (remembered.maximized) window.maximize();
   rememberWindowState(window);
 
-  window.once('ready-to-show', () => window.show());
+  window.once('ready-to-show', () => {
+    if (!showForTests(window)) window.show();
+  });
 
   // Anything aimed at a new window is a real link; hand it to the browser
   // rather than opening a chromeless Electron window on it.
@@ -176,6 +182,7 @@ function showWindow(): void {
     return;
   }
   if (mainWindow.isMinimized()) mainWindow.restore();
+  if (showForTests(mainWindow)) return;
   mainWindow.show();
   mainWindow.focus();
 }

@@ -37,6 +37,7 @@
  * `resolveNotch`, the hover timing through `stepHover`, where it sits through
  * `placement.ts`; all three are pure and owned by `tests/unit`.
  */
+import { invisibleForTests } from '../../testMode.js';
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import { join } from 'node:path';
 import { notchDwellMs, notchLeaveMs, resolveNotch, type NotchPlan } from '@shared/notchSettings.js';
@@ -289,6 +290,9 @@ function setMode(next: NotchMode): void {
     const target = ensureWindow();
     if (!target.isVisible()) {
       place(target);
+      // The e2e suite runs on somebody's desktop; the notch is there and
+      // working, and not seen.
+      if (invisibleForTests) target.setOpacity(0);
       target.showInactive();
     }
     target.setIgnoreMouseEvents(next !== 'open');

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launchApp, seedClips, type TestApp } from './app';
+import { launchApp, seedClips, type TestApp, waitForClips, settle } from './app';
 
 /**
  * Editor controls that do what they are labelled, and a timeline whose blocks
@@ -18,7 +18,7 @@ test.describe('the editor', () => {
     // Long enough that the timeline exceeds its 1000px minimum width, or a
     // block can never reach the end of its track and the overhang cannot show.
     seedClips(ctx.videosRoot, 'TestGame', 2, 26);
-    await ctx.page.waitForTimeout(9000);
+    await waitForClips(ctx.page, 2);
   });
 
   test.afterAll(async () => {
@@ -29,7 +29,7 @@ test.describe('the editor', () => {
     await ctx.page.evaluate(() => {
       window.location.hash = '#/editor';
     });
-    await ctx.page.waitForTimeout(1500);
+    await settle(ctx.page);
   }
 
   const readZoom = async (): Promise<number> => {
@@ -48,13 +48,13 @@ test.describe('the editor', () => {
 
     const before = await readZoom();
     await ctx.page.getByTitle('Zoom in').click();
-    await ctx.page.waitForTimeout(400);
+    await settle(ctx.page);
 
     expect(await readZoom(), 'zooming in should raise the zoom').toBeGreaterThan(before);
 
     await ctx.page.getByTitle('Zoom out').click();
     await ctx.page.getByTitle('Zoom out').click();
-    await ctx.page.waitForTimeout(400);
+    await settle(ctx.page);
 
     expect(await readZoom(), 'zooming out should lower it').toBeLessThan(before);
   });
@@ -64,12 +64,12 @@ test.describe('the editor', () => {
 
     // Put a clip on the timeline; the last one is where the overhang showed.
     await ctx.page.locator('img[src^="goodbit://media/thumb"]').first().click();
-    await ctx.page.waitForTimeout(1200);
+    await settle(ctx.page);
 
     for (const zoom of ['none', 'in', 'in'] as const) {
       if (zoom === 'in') {
         await ctx.page.getByTitle('Zoom in').click();
-        await ctx.page.waitForTimeout(400);
+        await settle(ctx.page);
       }
 
       const overhang = await ctx.page.evaluate(() => {
@@ -112,7 +112,7 @@ test.describe('the editor', () => {
     await openEditor();
 
     await ctx.page.locator('img[src^="goodbit://media/thumb"]').first().click();
-    await ctx.page.waitForTimeout(1200);
+    await settle(ctx.page);
 
     const at = await ctx.page.evaluate(() => {
       const left = (element: Element | null | undefined): number | null =>
@@ -194,7 +194,7 @@ test.describe('the editor', () => {
     await openEditor();
 
     await ctx.page.getByText(/Music lane/).click();
-    await ctx.page.waitForTimeout(600);
+    await settle(ctx.page);
 
     await expect(ctx.page.getByText('Drop files or click', { exact: false })).toBeVisible();
   });

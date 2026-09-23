@@ -10,13 +10,20 @@ export const statsRouter = express.Router();
 /**
  * Bring the publisher's view counts back, and say what it reported.
  *
+ * Also asked by the library, throttled, so the counts on its cards follow the
+ * publisher while the app sits in the tray for days.
+ *
  * A POST rather than a GET: it writes to `clip` rows. Pulled by the Publisher
  * screen when it opens and once at boot, rather than polled, because a number
  * only matters while somebody is looking at it and every refresh is a request
  * over a home uplink to somebody's own server.
  */
-statsRouter.post('/publisher/sync', asyncHandler(async (_req, res) => {
-  const result = await new SyncPublisherStatsAction().execute();
+statsRouter.post('/publisher/sync', asyncHandler(async (req, res) => {
+  // The library passes `maxAgeMs` and is answered from the last sync when it
+  // is recent; the Publisher screen passes nothing and always asks.
+  const raw = Number(req.body?.maxAgeMs);
+  const maxAgeMs = Number.isFinite(raw) && raw > 0 ? raw : undefined;
+  const result = await new SyncPublisherStatsAction().execute({ maxAgeMs });
   res.json(result);
 }));
 
