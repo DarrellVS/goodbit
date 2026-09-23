@@ -2,7 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "io.github.darrellvs.goodbit",
   "Name": "GoodBit",
-  "Version": "0.2.0.0",
+  "Version": "0.3.0.0",
   "Author": "GoodBit",
   "Description": "Save the replay, then tag, publish or discard the clip you just saved, and see today's count, without leaving the game. Needs GoodBit running with the Stream Deck connection switched on in Settings, Connections.",
   "URL": "https://darrellvs.github.io/goodbit/",
@@ -30,7 +30,6 @@
       "Name": "Save the replay",
       "Tooltip": "Saves the replay buffer by pressing the key OBS already has for it, and ticks only once the clip has landed.",
       "Icon": "imgs/actions/save",
-      "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],
@@ -62,7 +61,6 @@
       "Name": "Publish the last clip",
       "Tooltip": "Uploads the clip you just saved to your publisher.",
       "Icon": "imgs/actions/publish",
-      "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],
@@ -78,7 +76,6 @@
       "Name": "Discard the last clip (hold)",
       "Tooltip": "Hold to send the clip you just saved to the Recycle Bin. Off in GoodBit until you allow it, and it keeps any clip you have tagged, named, starred, marked, noted or published.",
       "Icon": "imgs/actions/discard",
-      "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],
@@ -94,7 +91,6 @@
       "Name": "Today's clips",
       "Tooltip": "How many clips you saved today, and how many there are altogether.",
       "Icon": "imgs/actions/stats",
-      "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],

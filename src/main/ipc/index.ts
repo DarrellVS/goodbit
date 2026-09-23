@@ -129,15 +129,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle('streamdeck:state', async () => {
-    const { streamDeckRunning, streamDeckUrl, streamDeckToken } = await import(
+    const { streamDeckRunning, streamDeckPipe } = await import(
       '../services/streamdeck/server.js'
     );
     const settings = loadSettings();
     return {
       enabled: settings.streamDeckEnabled === true,
       running: streamDeckRunning(),
-      url: streamDeckUrl(),
-      token: streamDeckToken(),
+      pipe: streamDeckPipe(),
       allowDiscard: settings.streamDeckAllowDiscard === true,
       pluginInstalled: pluginInstalled(),
       pluginAvailable: pluginPackage() !== null,
@@ -145,8 +144,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle('streamdeck:installPlugin', async () => {
-    const { streamDeckUrl, streamDeckToken } = await import('../services/streamdeck/server.js');
-    return installPlugin(() => ({ url: streamDeckUrl(), token: streamDeckToken() }));
+    const { streamDeckPipe } = await import('../services/streamdeck/server.js');
+    return installPlugin(() => ({ pipe: streamDeckPipe() }));
   });
 
   ipcMain.handle('streamdeck:enable', async (_event, enabled: boolean) => {

@@ -126,13 +126,11 @@ export interface Settings {
   mcpPort?: number;
   mcpToken?: string;
   /**
-   * The Stream Deck plugin's server. Off unless switched on, for the same
-   * reason the MCP server is: it is a port into a library holding the only
-   * copy of somebody's tags and notes. See `services/streamdeck/server.ts`.
+   * The Stream Deck plugin's server, on a named pipe. Off unless switched on:
+   * it is a way into a library holding the only copy of somebody's tags and
+   * notes. See `services/streamdeck/pipe.ts`.
    */
   streamDeckEnabled?: boolean;
-  streamDeckPort?: number;
-  streamDeckToken?: string;
   /**
    * Whether a Stream Deck key may throw the latest clip away.
    *

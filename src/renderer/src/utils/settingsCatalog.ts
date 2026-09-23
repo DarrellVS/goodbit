@@ -374,15 +374,15 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Stream Deck',
     description:
-      "Keys that tag or publish the clip you just saved, and show today's count, without leaving the game. Use Elgato's own OBS plugin for the key that saves the replay.",
+      "Keys that save the replay, tag, publish or throw away the clip you just saved, and show today's count, without leaving the game. Install the plugin from here.",
     section: 'connections',
-    keywords: ['stream deck', 'elgato', 'keys', 'buttons', 'hotkey', 'macro', 'plugin'],
+    keywords: ['stream deck', 'elgato', 'keys', 'buttons', 'hotkey', 'macro', 'plugin', 'replay', 'install'],
   },
   {
     label: 'Let the Stream Deck reach this library',
     description: 'Off by default. Nothing is listening until you turn this on.',
     section: 'connections',
-    keywords: ['stream deck', 'elgato', 'server', 'port', 'token'],
+    keywords: ['stream deck', 'elgato', 'server', 'connection', 'pipe'],
     shownWhen: 'always, in the Stream Deck block',
   },
   {

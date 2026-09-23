@@ -622,17 +622,21 @@ unless the user turns it on**, in Settings, Connections.
   Windows redirects its `%APPDATA%` into `%LOCALAPPDATA%/Packages/Claude_<id>/LocalCache/Roaming`.
   Writing the documented path on a Store install produces a file the app never reads.
 
-### A Stream Deck plugin, and the second port
+### A Stream Deck plugin, on a named pipe
 
 `src/main/services/streamdeck/` is a small HTTP server for the plugin in `streamdeck-plugin/`.
-**Off unless the user turns it on**, in Settings, Connections, and built exactly like the MCP server
-because that is the precedent for opening a port here honestly: `127.0.0.1` only, a bearer token
-checked in constant time before routing, and **a Host and Origin check written by hand** in
-`auth.ts`, because the MCP SDK does that for its server and a plain `http.createServer` does not.
-Without it a web page the user merely has open can post to the port, and a page on a name it has
-re-pointed at `127.0.0.1` arrives with a foreign `Host`. `tests/unit/main/streamdeckAuth.spec.ts`
-owns the predicates, since a bug there is a security bug; `scripts/streamdeck-check.mjs` proves the
-401, both 403s, and that the port answers on no address but loopback.
+**Off unless the user turns it on**, in Settings, Connections. It was a port on `127.0.0.1` behind a
+bearer token and a hand-written Host and Origin check, because a loopback port is reachable by any
+web page the user has open. **It is a named pipe now** (`pipe.ts`), the same move the internal API
+made: a browser cannot open one, and Windows' default security descriptor lets only this account
+(plus administrators and SYSTEM) write to it. That retired the token, which only ever stopped web
+pages and other machines: anything running as the user could read it from the plugin anyway, and
+that is exactly who can still reach the pipe. It is still HTTP, spoken over the pipe with
+`socketPath`, so the routes and replies did not change. **The pipe name carries the profile**: the
+default profile gets `\\.\pipe\goodbit-streamdeck`, a profile moved with `GOODBIT_USER_DATA`
+gets a hashed suffix, and the plugin learns which from `connection.json`. `scripts/streamdeck-check.mjs`
+proves the plugin gets in with no token and that the app under test listens on no TCP port; that
+another Windows account cannot write to the pipe rests on the default descriptor and is not benched.
 
 - **The handlers are a transport.** Each finds a clip and hands it to an Action that already exists:
   `BatchAddTagsAction`, `PublishClipAction`, `BatchDeleteAction`.
@@ -651,9 +655,9 @@ owns the predicates, since a bug there is a security bug; `scripts/streamdeck-ch
   four reasons. `replayHotkey.ts` maps OBS key names to virtual keys and `tests/unit` owns it,
   because a wrong entry presses a different key in somebody's game.
 - **One press installs the plugin.** It ships in `resources/streamdeck/` (`build:streamdeck`, run
-  by `build:win`); `shell.openPath` hands it to the Stream Deck app, and GoodBit then writes the
-  address and token into the installed plugin's own `connection.json`, rewritten whenever the
-  server starts. A key's own settings win over the file.
+  by `build:win`); `shell.openPath` hands it to the Stream Deck app, and GoodBit then writes which
+  pipe to use into the installed plugin's own `connection.json`, rewritten whenever the server
+  starts. There is nothing secret in it, and nothing for anybody to paste.
 
 ### Steam, off the local disk
 
