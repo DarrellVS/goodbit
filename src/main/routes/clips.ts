@@ -800,8 +800,20 @@ clipsRouter.post('/:id/compress', asyncHandler(async (req, res) => {
       // The row is the answer worth waiting for: the tile has to redraw with
       // the new size, and a refusal has to redraw with the old one.
       const after = await AppDataSource.getRepository(Clip).findOneBy({ id: clipId });
+      // A refusal is an answer, not a failure, and the job says which in words
+      // the toast can show: before this it was a log line, so a clip that was
+      // left alone looked exactly like one that had been compressed.
       if (!result.replaced) {
         console.log(`[compress] ${clip.filename}: ${result.reason}, left alone`);
+        setJobProgress(
+          jobId,
+          100,
+          result.reason === 'not-smaller'
+            ? 'Already about as small as a compression would make it, so it was left alone.'
+            : 'The compressed copy came out the wrong length, so the original was kept.',
+        );
+      } else {
+        setJobProgress(jobId, 100, 'Compressed');
       }
       completeJob(jobId, after ? ClipDTO.fromEntity(after) : undefined);
     })

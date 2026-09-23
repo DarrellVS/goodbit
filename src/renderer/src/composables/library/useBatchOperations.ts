@@ -1,3 +1,4 @@
+import { useCompressionResult } from '@renderer/composables/clips/useCompressionResult';
 import { ref, computed, toValue, type MaybeRefOrGetter, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBatchOperationsStore } from '@renderer/stores/batchOperations';
@@ -86,6 +87,7 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
   const collectionsStore = useCollectionsStore();
   const tagsStore = useTagsStore();
   const config = useConfiguration();
+  const compression = useCompressionResult();
 
   const showTagDialog = ref(false);
   const showCollectionDialog = ref(false);
@@ -189,10 +191,19 @@ export function useBatchOperations(options: UseBatchOperationsOptions) {
         'Recycle Bin, so you can still get the originals back from there. Marks, tags and ' +
         'notes are untouched.',
       () => {
-        void Promise.allSettled(clipIds.map((id) => clipsService.compressClip(id)));
         toastStore.info(
-          `${count} ${pluralize(count, 'clip')} queued. They finish in the background.`,
+          `${count} ${pluralize(count, 'clip')} queued. Each card updates when it is done.`,
           'Compressing',
+        );
+        const byId = new Map(clips.map((clip) => [clip.id, clip]));
+        // Each one followed to its end, so each card gets its new size and a
+        // refusal or a failure is said rather than silently left.
+        void Promise.allSettled(
+          clipIds.map(async (id) => {
+            const { jobId } = await clipsService.compressClip(id);
+            const before = byId.get(id);
+            if (before) await compression.follow(jobId, before);
+          }),
         );
         exitAndCleanup(batchStore);
       },

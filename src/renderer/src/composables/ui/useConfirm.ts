@@ -36,6 +36,12 @@ export interface ConfirmOptions {
   tone?: ConfirmTone;
   /** Iconify name, shown beside the question. */
   icon?: string;
+  /**
+   * A part of the sentence to set in bold, the first place it appears: the
+   * name of the thing being asked about, so it stands out from the sentence
+   * that says what will happen to it.
+   */
+  emphasis?: string;
 }
 
 interface Pending extends Required<ConfirmOptions> {
@@ -74,6 +80,7 @@ export function useConfirm() {
       tone,
       confirmLabel: options.confirmLabel ?? 'Confirm',
       icon: options.icon ?? DEFAULT_ICON[tone],
+      emphasis: options.emphasis ?? '',
     };
   }
 

@@ -1,3 +1,4 @@
+import { planDuplicateRows } from '../services/duplicateRows.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import fg from 'fast-glob';
@@ -192,6 +193,8 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
       }
     }
 
+    await this.retireDuplicateRows();
+
     const allClips = await clipRepo.find();
     const missing = allClips.filter((clip) => !nowOnDisk.has(samePath(clip.filePath)));
 
@@ -253,6 +256,45 @@ export class ScanAndSyncClipsAction extends BaseAction<void, ScanResult> {
 
     return { added, updated, removed, total, hidden: Number(hiddenRow?.n ?? 0), pruneSkipped };
   }
+
+  /**
+   * Remove a second row for a file that already has one, when it holds nothing
+   * of its own. See `services/duplicateRows.ts` for the rule; this is the
+   * reading and the deleting. Rows only: the file is never touched.
+   */
+  private async retireDuplicateRows(): Promise<void> {
+    const rows: Array<Record<string, unknown>> = await AppDataSource.query(`
+      SELECT c.id, c.filePath, c.displayName, c.notes, c.starred, c.published, c.openCount,
+        (SELECT COUNT(*) FROM clip_tags_tag t WHERE t.clipId = c.id) AS tags,
+        (SELECT COUNT(*) FROM good_bit g WHERE g.clipId = c.id) AS marks,
+        (SELECT COUNT(*) FROM collection_clips_clip k WHERE k.clipId = c.id) AS collections
+      FROM clip c
+      WHERE REPLACE(LOWER(c.filePath), char(92), '/') IN (
+        SELECT REPLACE(LOWER(filePath), char(92), '/') FROM clip
+        GROUP BY REPLACE(LOWER(filePath), char(92), '/') HAVING COUNT(*) > 1
+      )`);
+    if (!rows.length) return;
+
+    const plan = planDuplicateRows(
+      rows.map((row) => ({
+        id: Number(row.id),
+        filePath: String(row.filePath),
+        displayName: (row.displayName as string | null) ?? null,
+        notes: (row.notes as string | null) ?? null,
+        starred: Boolean(row.starred),
+        published: Boolean(row.published),
+        openCount: Number(row.openCount ?? 0),
+        tags: Number(row.tags),
+        marks: Number(row.marks),
+        collections: Number(row.collections),
+      })),
+    );
+    for (const group of plan.kept) {
+      console.warn(`[scan] ${group.path} has ${group.ids.length} rows that each hold something; left as they are`);
+    }
+    if (plan.remove.length) {
+      await AppDataSource.getRepository(Clip).delete(plan.remove);
+      console.log(`[scan] removed ${plan.remove.length} duplicate row(s) for files that already had one: ${plan.remove.join(', ')}`);
+    }
+  }
 }
-
-

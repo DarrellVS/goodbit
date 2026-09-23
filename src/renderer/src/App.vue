@@ -43,6 +43,7 @@ onUnmounted(() => {
     :confirm-label="pending?.confirmLabel"
     :tone="pending?.tone"
     :icon="pending?.icon"
+    :emphasis="pending?.emphasis"
     @confirm="accept"
     @cancel="cancel"
   />
