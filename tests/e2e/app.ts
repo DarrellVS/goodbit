@@ -137,12 +137,29 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
    */
   const packaged = process.env.GOODBIT_TEST_BINARY;
 
+  /*
+   * Silent and out of the way, always.
+   *
+   * `--mute-audio` mutes every renderer, which covers video previews, the
+   * players and the chimes the overlay card synthesises: a test run made
+   * noise on the machine it ran on. `GOODBIT_TEST_INVISIBLE` makes the
+   * windows transparent, taskbar-less and focus-less while still painting
+   * them (see `src/main/testMode.ts`), and the occlusion switch stops Chromium
+   * deciding a transparent window is hidden and pausing it.
+   * `GOODBIT_TEST_VISIBLE=1` shows them again, for watching a run.
+   */
+  const quiet = ['--mute-audio', '--disable-features=CalculateNativeWinOcclusion'];
   const app = await electron.launch({
     ...(packaged
-      ? { executablePath: packaged, args: [] }
-      : { args: ['out/main/index.js'] }),
+      ? { executablePath: packaged, args: quiet }
+      : { args: ['out/main/index.js', ...quiet] }),
     cwd: process.cwd(),
-    env: { ...process.env, GOODBIT_USER_DATA: dataDir, ...env },
+    env: {
+      ...process.env,
+      GOODBIT_USER_DATA: dataDir,
+      ...(process.env.GOODBIT_TEST_VISIBLE ? {} : { GOODBIT_TEST_INVISIBLE: '1' }),
+      ...env,
+    },
   });
 
   /*
