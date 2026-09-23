@@ -115,7 +115,7 @@ function unpublishSelected(): void {
 </script>
 
 <template>
-  <div class="space-y-8 pb-16">
+  <div class="px-12 py-6 space-y-8 pb-16">
     <!--
       No publisher is not an error. It is the ordinary state for anybody who
       has never set one up, and this screen is the only place that can say what

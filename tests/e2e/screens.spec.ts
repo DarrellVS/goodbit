@@ -262,6 +262,78 @@ test.describe('layout', () => {
     expect(overflow.sidebarOverflow).toBeLessThanOrEqual(1);
   });
 
+  /*
+   * Every page carries its own gutter on its root, `px-12`, and the page
+   * header above it is inset by the same amount. Storage Saver and Publisher
+   * shipped without it: the title was inset and every panel, heading and tile
+   * under it ran flush from the sidebar to the window edge. Nothing measured
+   * that, because nothing on those pages overflowed or changed size.
+   *
+   * So: whatever paints inside the page, text or a hairline, sits within the
+   * header's inset on both sides.
+   */
+  test('a page keeps the gutter its header has', async () => {
+    const paged = ROUTES.filter((r) => !r.name.startsWith('settings') && r.name !== 'editor');
+    for (const route of paged) {
+      await ctx.page.evaluate((h) => {
+        window.location.hash = h;
+      }, route.hash);
+      await ctx.page.waitForTimeout(1200);
+
+      const found = await ctx.page.evaluate(() => {
+        const main = document.querySelector('main');
+        // The page header sits above `main`, in the layout, not inside the page.
+        const title = document.querySelector('h1');
+        if (!main || !title) return { inspected: 0, outside: [] as string[] };
+        const box = main.getBoundingClientRect();
+        const inset = title.getBoundingClientRect().left - box.left;
+        const left = box.left + inset - 1;
+        // The scrollbar lives inside `main` and is not the page's to pad.
+        const right = box.left + main.clientWidth - inset + 1;
+
+        const outside: string[] = [];
+        let inspected = 0;
+        for (const el of main.querySelectorAll<HTMLElement>('*')) {
+          const r = el.getBoundingClientRect();
+          if (r.width < 1 || r.height < 1) continue;
+          const style = getComputedStyle(el);
+          if (style.visibility === 'hidden' || Number(style.opacity) === 0) continue;
+          const hasText = [...el.childNodes].some(
+            (n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim(),
+          );
+          // A border counts only when it can be seen: the clip name field is
+          // outset on purpose with a transparent one, so its text lines up.
+          const seen = (width: string, colour: string) =>
+            parseFloat(width) > 0 && !/rgba\([^)]*,\s*0\)|transparent/.test(colour);
+          const hasBorder =
+            seen(style.borderLeftWidth, style.borderLeftColor) ||
+            seen(style.borderRightWidth, style.borderRightColor);
+          if (!hasText && !hasBorder) continue;
+          // Today's carousel scrolls sideways, so its later tiles are past the
+          // edge by design. Something a scroller inside the page clips is that
+          // scroller's business; the scroller itself is still measured.
+          let clipped = false;
+          for (let up = el.parentElement; up && up !== main; up = up.parentElement) {
+            if (getComputedStyle(up).overflowX === 'visible') continue;
+            const c = up.getBoundingClientRect();
+            if (r.left < c.left - 1 || r.right > c.right + 1) clipped = true;
+            break;
+          }
+          if (clipped) continue;
+          inspected++;
+          if (r.left < left || r.right > right) {
+            outside.push(`${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 40)}" at ${Math.round(r.left)}..${Math.round(r.right)}, gutter ${Math.round(left)}..${Math.round(right)}`);
+          }
+        }
+        return { inspected, outside: outside.slice(0, 5) };
+      });
+
+      // An empty walk and a clean walk look the same; this page drew something.
+      expect(found.inspected, `${route.name}: nothing inspected`).toBeGreaterThan(3);
+      expect(found.outside, `${route.name} runs past its gutter`).toEqual([]);
+    }
+  });
+
   test('no screen is taller than the window', async () => {
     // The two routes that need a clip id are the two most likely to overflow:
     // both put a video on the page, and a video is as tall as it is asked to
