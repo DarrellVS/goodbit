@@ -64,7 +64,7 @@ export interface NotchState {
 
 export type NotchChime = 'saving' | 'saved' | 'found';
 
-export type NotchAction = 'trim' | 'open-latest' | 'library' | 'edit-highlights';
+export type NotchAction = 'trim' | 'open-latest' | 'library' | 'edit-highlights' | 'delete-latest';
 
 /** The page's geometry, which main needs to know where the pointer is. */
 export const NOTCH_STAGE = { along: 520, across: 300 } as const;

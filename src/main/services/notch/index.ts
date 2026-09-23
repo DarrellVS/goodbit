@@ -270,6 +270,11 @@ function registerIpc(): void {
     else if (action === 'library') opener?.('/');
     else if (action === 'edit-highlights' && result?.clipIds.length) {
       opener?.(`/editor?clips=${result.clipIds.join(',')}&highlights=1`);
+    } else if (action === 'delete-latest' && latest != null) {
+      // Asked on the island itself; the island stays open and shows what is
+      // latest now, so a second throwaway is one more press.
+      void deleteLatest(latest);
+      return;
     }
     if (opened === 'result') result = null;
     setMode(resting());
@@ -358,9 +363,15 @@ function setMode(next: NotchMode): void {
 }
 
 /** The cursor poll runs only while there is a line or an island to hover. */
-/** A found peek can be opened, so the pointer is watched while it is up. */
+/**
+ * A peek that opens under the pointer: "Clip saved" into today's island, and
+ * "Found N GoodBits" into its result, so the pointer is watched while either
+ * is up.
+ */
 function foundPeek(): boolean {
-  return mode === 'peek' && peekContent?.state === 'found' && result !== null;
+  if (mode !== 'peek' || !peekContent) return false;
+  if (peekContent.state === 'saved') return true;
+  return peekContent.state === 'found' && result !== null;
 }
 
 function syncTimers(): void {
@@ -409,7 +420,7 @@ function poll(): void {
     if (step.action === 'open') {
       if (peekTimer) clearTimeout(peekTimer);
       peekTimer = null;
-      opened = 'result';
+      opened = peekContent?.state === 'found' ? 'result' : 'island';
       setMode('open');
     }
     return;
@@ -436,6 +447,24 @@ async function refreshIsland(): Promise<void> {
   } catch (error) {
     console.warn('[notch] could not read the island:', (error as Error).message);
   }
+}
+
+/**
+ * Send the latest clip to the Recycle Bin, the way the library does.
+ *
+ * `BatchDeleteAction`, so it unpublishes first and goes through the one
+ * deleter that knows how to hand Windows a path. The file can be fetched back
+ * from the Recycle Bin; the row cannot, which is why the island asks first.
+ */
+async function deleteLatest(id: number): Promise<void> {
+  try {
+    const { BatchDeleteAction } = await import('../../actions/BatchOperationsAction.js');
+    const outcome = await new BatchDeleteAction().execute({ clipIds: [id] });
+    if (outcome.failed > 0) console.warn('[notch] could not delete clip', id, outcome.errors);
+  } catch (error) {
+    console.warn('[notch] could not delete clip', id, (error as Error).message);
+  }
+  await refreshIsland();
 }
 
 /** OBS, the drive and the island, off the path of anything the pointer does. */
@@ -621,6 +650,8 @@ export async function showClipSaved(subtitle: string): Promise<void> {
       { state: 'saved', title: 'Clip saved', subtitle },
       { chime: plan.clipSound ? 'saved' : null, enabled: plan.clipPeek },
     );
+    // Hovering it opens today's island, so the pointer is watched from now.
+    syncTimers();
   } catch (error) {
     console.error('[notch]', error instanceof Error ? error.message : error);
   }
