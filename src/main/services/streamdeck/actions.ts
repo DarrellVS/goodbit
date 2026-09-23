@@ -229,7 +229,7 @@ async function discardVerdict(clip: Clip): Promise<ReturnType<typeof discardable
  * "Kept" after a five second hold was the first time somebody learned the
  * newest clip was protected, which is the wrong moment. So the key shows the
  * clip itself, its own thumbnail, and whether it would be kept, and the press
- * only confirms what is already on the key. The picture is 144 pixels tall,
+ * only confirms what is already on the key. The picture is 144 pixels square,
  * which is the key's own height at 2x; the cached thumbnail is 1280 wide.
  */
 export async function latestPreview(): Promise<KeyResult> {
@@ -242,7 +242,21 @@ export async function latestPreview(): Promise<KeyResult> {
     const file = await videoService.ensureThumbnail(clip);
     const image = nativeImage.createFromPath(file);
     if (!image.isEmpty()) {
-      thumbnail = `data:image/jpeg;base64,${image.resize({ height: 144 }).toJPEG(80).toString('base64')}`;
+      /*
+       * Cropped square here, not in the key's SVG. The Stream Deck app draws
+       * SVG with a renderer that ignores `preserveAspectRatio="... slice"`, so
+       * a 21:9 frame handed to it was squashed into the square key rather than
+       * covering it. The middle of the frame is where the action is.
+       */
+      const { width, height } = image.getSize();
+      const side = Math.min(width, height);
+      const square = image.crop({
+        x: Math.floor((width - side) / 2),
+        y: Math.floor((height - side) / 2),
+        width: side,
+        height: side,
+      });
+      thumbnail = `data:image/jpeg;base64,${square.resize({ width: 144, height: 144 }).toJPEG(82).toString('base64')}`;
     }
   } catch {
     // No picture is a key with a plain face, not a failed key.
