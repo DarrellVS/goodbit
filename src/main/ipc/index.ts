@@ -1,3 +1,4 @@
+import { installPlugin, pluginInstalled, pluginPackage } from '../services/streamdeck/plugin.js';
 import { app, dialog, ipcMain, nativeImage, shell, BrowserWindow } from 'electron';
 import { readFile } from 'node:fs/promises';
 import { basename, normalize } from 'node:path';
@@ -138,7 +139,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       url: streamDeckUrl(),
       token: streamDeckToken(),
       allowDiscard: settings.streamDeckAllowDiscard === true,
+      pluginInstalled: pluginInstalled(),
+      pluginAvailable: pluginPackage() !== null,
     };
+  });
+
+  ipcMain.handle('streamdeck:installPlugin', async () => {
+    const { streamDeckUrl, streamDeckToken } = await import('../services/streamdeck/server.js');
+    return installPlugin(() => ({ url: streamDeckUrl(), token: streamDeckToken() }));
   });
 
   ipcMain.handle('streamdeck:enable', async (_event, enabled: boolean) => {

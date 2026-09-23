@@ -36,6 +36,10 @@ asarUnpack:
 extraResources:
   - from: build/icon.png
     to: icon.png
+  # The Stream Deck plugin, so Settings, Connections can install it in one
+  # press. Built by `npm run build:streamdeck`, which `build:win` runs first.
+  - from: streamdeck-plugin/dist/io.github.darrellvs.goodbit.streamDeckPlugin
+    to: streamdeck/io.github.darrellvs.goodbit.streamDeckPlugin
 
 win:
   icon: build/icon.png

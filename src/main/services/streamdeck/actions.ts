@@ -8,6 +8,7 @@ import { incomingDir } from '../capture/incoming.js';
 import { isVideoFile } from '@shared/constants/videoFiles.js';
 import { discardableFromAKey } from './auth.js';
 import { loadSettings } from '../../settings.js';
+import { saveReplay } from '../obs/saveReplay.js';
 
 /**
  * What each Stream Deck key does, and nothing more.
@@ -185,4 +186,20 @@ export async function discardLatest(input: { confirm?: unknown }): Promise<KeyRe
   const result = await new BatchDeleteAction().execute({ clipIds: [found.id] });
   if (result.failed > 0) return refused(500, 'Could not move it to the Recycle Bin');
   return ok({ id: found.id, title: title(found), discarded: true });
+}
+
+/**
+ * Save the replay buffer: the key the plugin used to send people elsewhere for.
+ *
+ * `saveReplay` presses the hotkey OBS already has and answers only once a new
+ * recording has landed, so a tick on the key means a file exists. The four
+ * ways it does not are told apart for the key's title: OBS off, no key bound,
+ * a key GoodBit cannot press, and a press that produced nothing, which is
+ * almost always a replay buffer that is not running.
+ */
+export async function saveReplayFromKey(): Promise<KeyResult> {
+  const result = await saveReplay();
+  if (result.saved) return ok({ saved: true, key: result.key });
+  const status = result.reason === 'nothing-landed' ? 504 : result.reason === 'helper' ? 500 : 409;
+  return refused(status, result.message, { reason: result.reason });
 }

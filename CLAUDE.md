@@ -643,8 +643,17 @@ owns the predicates, since a bug there is a security bug; `scripts/streamdeck-ch
   plugin says to the server as `confirm: true`; and `discardableFromAKey`, which keeps any clip
   carrying something that exists only in GoodBit. The file comes back from the Recycle Bin, the row
   does not, and a key has no room for the question `clipDeleteQuestion.ts` asks.
-- **There is no key to save the replay.** GoodBit has no channel into OBS to press it, obs-websocket
-  would mean writing OBS's config again, and Elgato's own OBS plugin already has that key.
+- **The save key presses the hotkey OBS already has**, through a compiled `SendInput` helper
+  (`services/obs/saveReplay.ts`), and never obs-websocket: that is a server OBS binds to every
+  interface once enabled, and a config of OBS's own to write. Nothing in OBS changes. The key goes
+  to the foreground, the game, exactly as the physical key would. **It answers on the file, not the
+  press**: "saved" only once a new recording lands in the folder OBS writes to, and otherwise one of
+  four reasons. `replayHotkey.ts` maps OBS key names to virtual keys and `tests/unit` owns it,
+  because a wrong entry presses a different key in somebody's game.
+- **One press installs the plugin.** It ships in `resources/streamdeck/` (`build:streamdeck`, run
+  by `build:win`); `shell.openPath` hands it to the Stream Deck app, and GoodBit then writes the
+  address and token into the installed plugin's own `connection.json`, rewritten whenever the
+  server starts. A key's own settings win over the file.
 
 ### Steam, off the local disk
 

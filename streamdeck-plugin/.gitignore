@@ -4,3 +4,4 @@ dist/
 io.github.darrellvs.goodbit.sdPlugin/bin/plugin.js
 io.github.darrellvs.goodbit.sdPlugin/bin/plugin.js.map
 io.github.darrellvs.goodbit.sdPlugin/logs/
+io.github.darrellvs.goodbit.sdPlugin/connection.json

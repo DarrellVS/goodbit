@@ -52,8 +52,11 @@ interface GoodBitBridge {
     url: string;
     token: string;
     allowDiscard: boolean;
+    pluginInstalled: boolean;
+    pluginAvailable: boolean;
   }>;
   streamDeckEnable: (enabled: boolean) => Promise<{ ok: boolean }>;
+  streamDeckInstallPlugin: () => Promise<{ ok: true } | { ok: false; error: string }>;
   mcpRegister: (
     wanted: boolean,
     ids?: string[],

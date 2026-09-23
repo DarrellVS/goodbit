@@ -191,6 +191,20 @@ try {
   });
   ok('discard is refused while it is switched off', discardOff.status === 403, String(discardOff.status));
 
+  // The save key presses a real key, so this bench only runs it where it
+  // cannot: with OBS closed it must say so, and press nothing.
+  const obsUp = execFileSync('tasklist', ['/FI', 'IMAGENAME eq obs64.exe', '/NH']).toString().includes('obs64.exe');
+  if (!obsUp) {
+    const save = await call('/v1/replay/save', { method: 'POST', headers: auth });
+    ok(
+      'the save key says OBS is off rather than pretending',
+      save.status === 409 && save.body?.reason === 'obs-off',
+      JSON.stringify(save.body),
+    );
+  } else {
+    console.log('  (OBS is running, so the save key is not pressed by this bench)');
+  }
+
   const tagged = await call('/v1/latest/tag', { method: 'POST', headers: auth, body: { tag: 'clutch' } });
   ok('a key tags the newest clip', tagged.status === 200 && tagged.body?.tag === 'clutch', JSON.stringify(tagged.body));
 

@@ -2,9 +2,9 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "io.github.darrellvs.goodbit",
   "Name": "GoodBit",
-  "Version": "0.1.0.0",
+  "Version": "0.2.0.0",
   "Author": "GoodBit",
-  "Description": "Tag, publish or discard the clip you just saved, and see today's count, without leaving the game. Needs GoodBit running with the Stream Deck connection switched on in Settings, Connections.",
+  "Description": "Save the replay, then tag, publish or discard the clip you just saved, and see today's count, without leaving the game. Needs GoodBit running with the Stream Deck connection switched on in Settings, Connections.",
   "URL": "https://darrellvs.github.io/goodbit/",
   "Category": "GoodBit",
   "CategoryIcon": "imgs/category",
@@ -26,17 +26,33 @@
   },
   "Actions": [
     {
+      "UUID": "io.github.darrellvs.goodbit.save-replay",
+      "Name": "Save the replay",
+      "Tooltip": "Saves the replay buffer by pressing the key OBS already has for it, and ticks only once the clip has landed.",
+      "Icon": "imgs/actions/save",
+      "PropertyInspectorPath": "ui/connection.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/keys/save",
+          "TitleAlignment": "bottom"
+        }
+      ]
+    },
+    {
       "UUID": "io.github.darrellvs.goodbit.tag-latest",
       "Name": "Tag the last clip",
       "Tooltip": "Adds this key's tag to the clip you just saved.",
-      "Icon": "imgs/tag",
+      "Icon": "imgs/actions/tag",
       "PropertyInspectorPath": "ui/tag.html",
       "Controllers": [
         "Keypad"
       ],
       "States": [
         {
-          "Image": "imgs/tag",
+          "Image": "imgs/keys/tag",
           "TitleAlignment": "bottom"
         }
       ]
@@ -45,14 +61,14 @@
       "UUID": "io.github.darrellvs.goodbit.publish-latest",
       "Name": "Publish the last clip",
       "Tooltip": "Uploads the clip you just saved to your publisher.",
-      "Icon": "imgs/publish",
+      "Icon": "imgs/actions/publish",
       "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],
       "States": [
         {
-          "Image": "imgs/publish",
+          "Image": "imgs/keys/publish",
           "TitleAlignment": "bottom"
         }
       ]
@@ -61,14 +77,14 @@
       "UUID": "io.github.darrellvs.goodbit.discard-latest",
       "Name": "Discard the last clip (hold)",
       "Tooltip": "Hold to send the clip you just saved to the Recycle Bin. Off in GoodBit until you allow it, and it keeps any clip you have tagged, named, starred, marked, noted or published.",
-      "Icon": "imgs/discard",
+      "Icon": "imgs/actions/discard",
       "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],
       "States": [
         {
-          "Image": "imgs/discard",
+          "Image": "imgs/keys/discard",
           "TitleAlignment": "bottom"
         }
       ]
@@ -77,14 +93,14 @@
       "UUID": "io.github.darrellvs.goodbit.stats",
       "Name": "Today's clips",
       "Tooltip": "How many clips you saved today, and how many there are altogether.",
-      "Icon": "imgs/stats",
+      "Icon": "imgs/actions/stats",
       "PropertyInspectorPath": "ui/connection.html",
       "Controllers": [
         "Keypad"
       ],
       "States": [
         {
-          "Image": "imgs/stats",
+          "Image": "imgs/keys/stats",
           "TitleAlignment": "middle",
           "FontSize": 12
         }
