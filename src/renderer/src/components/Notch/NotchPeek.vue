@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { AnimatePresence, motion } from 'motion-v';
 import type { NotchPeek } from '@shared/notch';
+import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 
 /**
  * What the corner card used to say, in one line: a promise, then its receipt.
@@ -36,21 +37,24 @@ const done = computed(() => props.peek.state === 'saved' || props.peek.state ===
 
 <template>
   <div ref="root" class="flex h-full w-max max-w-[440px] items-center gap-2.5 pl-4 pr-5 whitespace-nowrap">
+    <!--
+      The app's own mark with the light moving along it while saving, as the
+      corner card had and every other wait in the app has. A plain ring said
+      something was happening; this says GoodBit is.
+    -->
     <div class="relative size-5 shrink-0">
       <AnimatePresence>
-        <motion.svg
+        <motion.div
           v-if="!done"
           key="spinner"
-          class="absolute inset-0 text-accent"
-          viewBox="0 0 20 20"
+          class="absolute inset-0 flex items-center justify-center text-accent"
           :initial="{ opacity: 0 }"
-          :animate="{ opacity: 1, rotate: 360 }"
+          :animate="{ opacity: 1 }"
           :exit="{ opacity: 0, scale: 0.6 }"
-          :transition="{ rotate: { duration: 0.9, repeat: Infinity, ease: 'linear' }, opacity: { duration: 0.15 } }"
+          :transition="{ duration: 0.15 }"
         >
-          <circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="2.4" />
-          <path d="M10 2.5a7.5 7.5 0 0 1 7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
-        </motion.svg>
+          <BaseSpinner :size="22" label="Saving" />
+        </motion.div>
         <motion.div
           v-else
           key="tick"
