@@ -243,15 +243,15 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   /** The overlay, on demand, so a corner and a chime can be judged. */
   ipcMain.handle('toast:preview', async () => {
-    const { previewClipToast } = await import('../services/clipToast.js');
-    await previewClipToast();
+    const { previewClipPeek } = await import('../services/notch/index.js');
+    await previewClipPeek();
     return { ok: true };
   });
 
   /** The sweep's pair, for the same reason. */
   ipcMain.handle('toast:previewSweep', async () => {
-    const { previewSweepToast } = await import('../services/clipToast.js');
-    await previewSweepToast();
+    const { previewSweepPeek } = await import('../services/notch/index.js');
+    await previewSweepPeek();
     return { ok: true };
   });
 

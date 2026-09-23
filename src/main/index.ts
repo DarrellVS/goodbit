@@ -356,6 +356,9 @@ app.whenReady().then(async () => {
   registerIpc(() => mainWindow);
   registerUpdater(() => mainWindow);
   buildTray();
+  // The notch's buttons open the window on a route, the way the tray does.
+  const { setNotchOpener } = await import('./services/notch/index.js');
+  setNotchOpener(openIn);
   applyLoginItem();
   registerProtocolClient();
   // The menu quotes the library and two settings, so it follows both.

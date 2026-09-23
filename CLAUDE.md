@@ -552,9 +552,27 @@ in Settings, Recording.
 
 ### Saying the clip was saved, over the game
 
-`src/main/services/clipToast.ts`. Pressing the replay key and getting nothing back is the most
-uncertain moment in using this app: OBS says nothing useful, its window is behind a game, and the
-clip takes seconds to reach the library. **Off by opting out**, in Settings, Recording.
+`src/main/services/notch/`, which replaced the corner card `clipToast.ts`. Pressing the replay key
+and getting nothing back is the most uncertain moment in using this app: OBS says nothing useful,
+its window is behind a game, and the clip takes seconds to reach the library. **Off by opting out**,
+in Settings, Recording.
+
+- **A notch at the top of the screen, not a card in a corner.** It opens out of the middle of the
+  top edge, says saving then saved, and folds away. A setting for the other three edges was built
+  and dropped: a notch reads as part of the bezel only where people already expect one.
+- **Between peeks, a status line, but only on a quiet desktop.** `notchAlwaysOn`: 120 by 4 pixels,
+  coloured by OBS and the drive, which opens into an island after the pointer rests on it for
+  `DWELL_MS` (the top edge is where tabs and the Windows 11 snap bar live, so opening on touch is
+  wrong). It is gone while a known game is in front or the foreground window covers its monitor,
+  which is a fullscreen video as much as a borderless game. The foreground helper reports that as
+  an `F` line, because Electron can say nothing about another program's window.
+- **The old switches kept their names.** `clipToast*` and `analyzeOnGameCloseToast` now steer the
+  peek, so an older build still reads them. `notch` is new, and the first boot that sees it unset
+  writes it from `clipToast` (`settleNotchSetting`), so somebody who had turned the card off is not
+  handed a line. `src/shared/notchSettings.ts` is the one place the combinations are worked out, for
+  main and for the settings screen; `tests/unit` owns it, the hover timing and the placement.
+- **Buttons without a bridge.** The page stays sandboxed with no preload; a button navigates to
+  `https://notch.invalid/<action>` and main cancels it in `will-navigate`.
 
 - **Two states, one card.** "Saving your clip" the instant a file appears in staging, becoming
   "Clip saved · Game · 0:30" once the row exists. The wait is the reason the feature exists, so the
@@ -976,6 +994,13 @@ stays.
   marks are named in the sentence when the clip has them, and only when it has
   them. A warning about notes on a clip with no notes is what teaches somebody
   to press Confirm without reading.
+- **A settings page is a stack of cards, one subject each.** `Settings/SettingsGroup.vue` is a
+  named card of rows; `.setting-card` is a block that brings its own heading and is a card on its
+  own or a block inside a group. It used to be one column of rows with small-caps subheads, which
+  read as one long list with nothing saying where a subject ended. Rows keep their components;
+  the hairlines between them come from the card (`divide-y`), and rows that exist only because
+  the one above is on go in `.setting-children`, indented on a quieter ground. `.setting-subhead`
+  is gone, so a heading cannot drift back into the middle of a list.
 - **A section header has a floor on its height** (`SECTION_HEADER` in
   `Base/geometry.ts`). Two sections side by side must line up whether or not
   either has a button in its header, and the notes header grows one the moment

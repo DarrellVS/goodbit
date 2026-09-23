@@ -51,6 +51,18 @@
  * that has not finished. A process that genuinely exits *with* code 259 reads
  * as alive for ever, which means a sweep that never fires, which is the safe
  * direction.
+ *
+ * ## And "does that one own the screen"
+ *
+ * The notch keeps a status line at the top of the desktop, and it must not sit
+ * over a game or a fullscreen video. Electron can say nothing about another
+ * program's window, and the helper is already holding the foreground one once a
+ * second, so it says whether that window covers its whole monitor on a line of
+ * its own. Three tests, because each alone is wrong somewhere: Windows' own
+ * `SHQueryUserNotificationState` for exclusive D3D and presentation mode; the
+ * desktop ruled out by class, since it covers its monitor too; and a caption
+ * ruled out, since a maximised window with an auto-hiding taskbar also covers
+ * the monitor and keeps its title bar, while going fullscreen drops it.
  */
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -95,6 +107,94 @@ public static class GoodBitForeground
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool GetExitCodeProcess(IntPtr handle, out uint code);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool SetProcessDPIAware();
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hWnd, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetShellWindow();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(IntPtr hWnd, StringBuilder name, int size);
+
+    [DllImport("user32.dll")]
+    private static extern int GetWindowLong(IntPtr hWnd, int index);
+
+    [DllImport("shell32.dll")]
+    private static extern int SHQueryUserNotificationState(out int state);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hWnd, int attribute, ref int value, int size);
+
+    private const int DWMWA_TRANSITIONS_FORCEDISABLED = 3;
+
+    // Windows plays its own animation when a window is shown, a short slide up
+    // and fade, and on the notch that read as it arriving from below before
+    // its own drop from the top edge. Turned off for the one window asked
+    // about; the attribute lasts as long as the window does.
+    private static void NoTransitions(long handle)
+    {
+        int on = 1;
+        DwmSetWindowAttribute(new IntPtr(handle), DWMWA_TRANSITIONS_FORCEDISABLED, ref on, sizeof(int));
+    }
+
+    private const int GWL_STYLE = -16;
+    private const int WS_CAPTION = 0x00C00000;
+    private const uint MONITOR_DEFAULTTONEAREST = 2;
+    private const int QUNS_RUNNING_D3D_FULL_SCREEN = 3;
+    private const int QUNS_PRESENTATION_MODE = 4;
+
+    // Does the window in front own its whole monitor? A borderless game, a
+    // video in fullscreen, a presentation. The desktop itself covers its
+    // monitor too, so it is ruled out by class. A maximised ordinary window
+    // with an auto-hiding taskbar covers the monitor as well, and is told
+    // apart by still having a caption: going fullscreen drops it.
+    private static bool Fullscreen(IntPtr window)
+    {
+        int quns;
+        if (SHQueryUserNotificationState(out quns) == 0 &&
+            (quns == QUNS_RUNNING_D3D_FULL_SCREEN || quns == QUNS_PRESENTATION_MODE)) return true;
+
+        if (window == IntPtr.Zero || window == GetShellWindow()) return false;
+
+        StringBuilder cls = new StringBuilder(64);
+        GetClassName(window, cls, 64);
+        string name = cls.ToString();
+        if (name == "Progman" || name == "WorkerW" || name == "Shell_TrayWnd") return false;
+
+        if ((GetWindowLong(window, GWL_STYLE) & WS_CAPTION) == WS_CAPTION) return false;
+
+        RECT rect;
+        if (!GetWindowRect(window, out rect)) return false;
+
+        MONITORINFO info = new MONITORINFO();
+        info.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+        if (!GetMonitorInfo(MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST), ref info)) return false;
+
+        return rect.Left <= info.rcMonitor.Left && rect.Top <= info.rcMonitor.Top &&
+               rect.Right >= info.rcMonitor.Right && rect.Bottom >= info.rcMonitor.Bottom;
+    }
 
     private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
     private const uint STILL_ACTIVE = 259;
@@ -150,6 +250,11 @@ public static class GoodBitForeground
             {
                 Track(0);
             }
+            else if (parts[0] == "N" && parts.Length > 1)
+            {
+                long handle;
+                if (long.TryParse(parts[1], out handle)) NoTransitions(handle);
+            }
         }
     }
 
@@ -178,6 +283,10 @@ public static class GoodBitForeground
 
         DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        // Physical pixels for every window and monitor, so the fullscreen test
+        // compares like with like on a scaled display.
+        SetProcessDPIAware();
+
         Thread commands = new Thread(ReadCommands);
         commands.IsBackground = true;
         commands.Start();
@@ -202,6 +311,10 @@ public static class GoodBitForeground
             // knows nothing about it parses NaN and skips it.
             string state = TrackedState();
             if (state.Length > 0) Console.WriteLine("L\t" + trackedPid + "\t" + state);
+
+            // A third, every sample: whether the window in front owns its
+            // monitor. Its own line, for the same reason as the one above.
+            Console.WriteLine("F\t" + (Fullscreen(window) ? "1" : "0"));
 
             Console.Out.Flush();
             Thread.Sleep(intervalMs);

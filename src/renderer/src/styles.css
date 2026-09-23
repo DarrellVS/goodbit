@@ -123,6 +123,13 @@
    * `on-video` is fixed, and for the same reason.
    */
   --color-video-bed: #0d0c0b;
+  /*
+   * The notch, which hangs from the edge of the screen and reads as part of
+   * the bezel. Pure black in both palettes for the same reason the bed is
+   * fixed: it belongs to the monitor, not to a theme. Its window forces the
+   * dark palette for everything drawn on it.
+   */
+  --color-notch: #000000;
   --color-scrim: rgb(9 8 7 / 0.58);
   /*
    * The veil behind a modal, which is not the scrim over a frame.
@@ -467,83 +474,87 @@ body {
 .card { @apply rounded-lg bg-card border border-border; }
 
 /*
- * A quiet block on a settings page, and the inset inside it.
+ * A settings page, and the cards it is made of.
  *
- * `.b-card-quiet` in the design: a 17px display heading, a muted line under it
- * at most 76 characters wide, and a hairline above the whole thing. No box.
- * `.b-inset` is the one filled thing allowed inside one, for a path or a
- * readback, at 6px radius on the surface a step up from the page.
+ * It was one column of rows with a hairline under each and a small-caps
+ * subhead now and then, which reads as one long list: nothing said where one
+ * subject stopped and the next began, so finding a setting meant reading all of
+ * them. A page is a stack of cards now, a fixed gap apart, and each card is one
+ * subject: its name and one line about it at the top, then its rows.
  *
- * These are classes rather than a component because the eleven call sites are
- * `<div>`s with their own contents and their own `data-setting` anchors, and
- * swapping a class keeps every one of those.
+ * Two ways to be a card, drawn the same. `SettingsGroup` for a named list of
+ * rows; `.setting-card` for a block that brings its own heading, which is a
+ * card on its own and a block inside a group when one holds it. Rows are
+ * `.setting-block`, and inside a card the hairlines between them come from the
+ * card (`divide-y`) rather than from each row, so nothing ever draws a line
+ * with nothing under it.
+ *
+ * `.setting-children` holds the rows that only exist because the row above
+ * them is on. Indented, on a quieter ground, so a dependent choice reads as
+ * part of the one it depends on rather than as the next unrelated setting.
  */
-.setting-card {
-  @apply py-5 border-b border-border;
+.settings-page {
+  @apply flex flex-col gap-6;
 }
-/*
- * The hairline goes underneath, not on top.
- *
- * `.setting-block` already carried one underneath, so a section holding one of
- * each drew two lines between the same pair of rows, three pixels apart.
- */
-.setting-card:last-child {
-  @apply border-b-0 pb-0;
+
+.settings-group,
+.setting-card:not(.settings-group .setting-card) {
+  @apply rounded-xl border border-border bg-card;
 }
-/*
- * A descendant rather than a child, because a heading sometimes has a status
- * dot beside it and is then one level down inside a flex row.
- */
+.settings-group {
+  @apply overflow-hidden;
+}
+.setting-card:not(.settings-group .setting-card) {
+  @apply px-6 py-5;
+}
+
+.settings-group-head {
+  @apply px-6 pt-5 pb-4;
+}
+.settings-group-head h3,
 .setting-card h3,
 .setting-card .setting-card-title {
   @apply font-display text-lg font-medium text-foreground;
 }
+.settings-group-head p,
 .setting-card > p {
-  @apply text-sm text-muted-500 mt-1 max-w-[76ch];
+  @apply text-sm text-muted-500 mt-1 max-w-[68ch];
+}
+
+.settings-group-body,
+.setting-children {
+  @apply divide-y divide-border;
+}
+.settings-group-head + .settings-group-body {
+  @apply border-t border-border;
 }
 /*
- * A subheading inside a settings section, and the row directly under it.
- *
- * Small caps in the muted ladder, like every other label in this design that
- * names a group rather than a thing. It was `font-medium text-foreground` at
- * body size, which is the same weight as the row labels it was meant to be
- * heading, with its own padding chosen by hand in each of the two places that
- * had one.
- *
- * The row under it gives up most of its top padding, because a label belongs
- * to what it labels: the full 20px put the heading nearer the row above it
- * than the one it names.
+ * A block that brings its own heading, inside a group that already has one, is
+ * a row with a name rather than a second card title: at the group's own size
+ * the two headings read as equals and the group stops looking like one thing.
  */
-.setting-subhead {
-  @apply pt-7 pb-1 text-xs font-medium uppercase tracking-label text-muted-400;
+.settings-group-head + .settings-group-body .setting-card h3 {
+  @apply font-sans text-sm font-semibold;
 }
-.setting-subhead + .setting-block,
-.setting-subhead + .setting-card {
-  @apply pt-2;
+
+.setting-block {
+  @apply py-5;
+}
+.settings-group .setting-block {
+  @apply px-6 py-4;
+}
+.settings-group .setting-card {
+  @apply px-6 py-5;
+}
+.setting-children {
+  @apply bg-muted-50;
+}
+.setting-children .setting-block {
+  @apply pl-12;
 }
 
 .setting-inset {
   @apply mt-3.5 px-4 py-3.5 rounded-sm bg-muted-100 text-sm text-muted-600;
-}
-
-/*
- * One setting, and the rule under it.
- *
- * Every row in Settings was a card: its own ground, its own 1px border, its
- * own radius, stacked six deep down a column. A box says "this is a thing in
- * its own right", and six of them say it six times about what is actually one
- * list. Space and a hairline separate them now, the way everything else in
- * this design is separated, so the column reads as a list of settings rather
- * than as a shelf of panels.
- *
- * `:last-child` drops the final rule, or every section ends on a line with
- * nothing under it.
- */
-.setting-block {
-  @apply py-5 border-b border-border;
-}
-.setting-block:last-child {
-  @apply border-b-0 pb-0;
 }
 
 .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 h-9 text-sm font-medium border border-border transition-colors duration-150; }

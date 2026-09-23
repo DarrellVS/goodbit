@@ -6,6 +6,7 @@ import BackupsCard from './BackupsCard.vue';
 import RescanCard from './RescanCard.vue';
 import SettingAnchor from './SettingAnchor.vue';
 import SettingToggle from './SettingToggle.vue';
+import SettingsGroup from './SettingsGroup.vue';
 
 /**
  * The section for somebody who is worried about losing something.
@@ -52,7 +53,7 @@ const WINDOWS = [
 </script>
 
 <template>
-  <section>
+  <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Your data</h2>
       <p class="mt-2 text-muted-500">
@@ -67,28 +68,33 @@ const WINDOWS = [
 
     <RescanCard />
 
-    <SettingToggle
-      v-model="config.public.value.confirmBeforeDelete"
-      label="Confirm Before Delete"
-      description="Ask for confirmation when deleting clips"
-    />
+    <SettingsGroup title="Deleting">
+      <SettingToggle
+        v-model="config.public.value.confirmBeforeDelete"
+        label="Confirm Before Delete"
+        description="Ask for confirmation when deleting clips"
+      />
+    </SettingsGroup>
 
-    <h3 class="setting-subhead">Storage Saver</h3>
+    <SettingsGroup
+      title="Storage Saver"
+      description="When a clip counts as forgotten, and when two saves are really one moment"
+    >
+      <SettingSelect
+        label="Call a clip forgotten after"
+        description="How long a clip can go unopened, unstarred, untagged and unmarked before Storage Saver offers it up."
+        :model-value="settings.unreviewedDays ?? 30"
+        :options="AGES"
+        @update:model-value="saveSettings({ unreviewedDays: Number($event) })"
+      />
 
-    <SettingSelect
-      label="Call a clip forgotten after"
-      description="How long a clip can go unopened, unstarred, untagged and unmarked before Storage Saver offers it up."
-      :model-value="settings.unreviewedDays ?? 30"
-      :options="AGES"
-      @update:model-value="saveSettings({ unreviewedDays: Number($event) })"
-    />
-
-    <SettingSelect
-      label="Treat saves this close as one moment"
-      description="The replay buffer holds the last few seconds, so two presses this close apart have the same footage in both files."
-      :model-value="settings.burstWindowSec ?? 90"
-      :options="WINDOWS"
-      @update:model-value="saveSettings({ burstWindowSec: Number($event) })"
-    />
+      <SettingSelect
+        label="Treat saves this close as one moment"
+        description="The replay buffer holds the last few seconds, so two presses this close apart have the same footage in both files."
+        :model-value="settings.burstWindowSec ?? 90"
+        :options="WINDOWS"
+        @update:model-value="saveSettings({ burstWindowSec: Number($event) })"
+      />
+    </SettingsGroup>
   </section>
 </template>

@@ -59,7 +59,27 @@ export interface Settings {
    * restarts.
    */
   /**
-   * Say "clip saved" over the game, in a corner, for a few seconds.
+   * The notch: a strip of black on the edge of the screen that says a clip was
+   * saved and, on a quiet desktop, stays as a status line. Off draws nothing
+   * over any other program, ever.
+   *
+   * Unset until the first boot that sees it, which writes it down from
+   * `clipToast` (`settleNotchSetting`), so somebody who had turned the old
+   * corner card off is not handed a line they never asked for.
+   */
+  notch?: boolean;
+  /**
+   * The status line between peeks. Hidden anyway while a game or a fullscreen
+   * video is in front. Unset means on, so switching the notch on brings it.
+   */
+  notchAlwaysOn?: boolean;
+  /** How long the pointer rests on the line before it opens. See `notchDwellMs`. */
+  notchDwellMs?: number;
+  /** How long the pointer can be off the open island before it folds. See `notchLeaveMs`. */
+  notchLeaveMs?: number;
+  /**
+   * Say "clip saved" over the game, for a few seconds. Since the notch, this
+   * is the notch's peek; the name stayed so an older build still reads it.
    *
    * On by default: pressing the replay key and getting nothing back is the
    * single most uncertain moment in using this app, and the library takes
@@ -71,7 +91,10 @@ export interface Settings {
   /** A short chime with it. Separately switchable: the picture and the noise
    *  are different levels of intrusion. */
   clipToastSound?: boolean;
-  /** Which corner of the screen the pointer is on. */
+  /**
+   * Which corner the old card appeared in. No longer read, since the notch
+   * has one place, and left in the file so a downgrade finds it.
+   */
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   /**
    * How loud the chime is, 0 to 100.

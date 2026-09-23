@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsGroup from './SettingsGroup.vue';
 import BaseToggle from '@renderer/components/Base/BaseToggle.vue';
 import { computed, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
@@ -60,19 +61,13 @@ onMounted(load);
     it. It is a card at the foot of Watching now: hiding a game is a thing you
     do to your library rather than a thing you configure about games.
   -->
-  <section
+  <SettingsGroup
     data-setting="Hidden games"
-    :class="['space-y-4 pt-2 border-t border-border', settingRing('Hidden games')]"
+    :class="settingRing('Hidden games')"
+    title="Hidden games"
+    description="Hide folders you don't want in your library. The files stay on disk, they just stop showing up in clips, stats and the editor."
   >
-    <div class="pt-4">
-      <h3 class="font-medium text-foreground">Hidden games</h3>
-      <p class="text-sm text-muted-500 mt-1">
-        Hide folders you don't want in your library. The files stay on disk, they just stop showing up
-        in clips, stats and the editor.
-      </p>
-    </div>
-
-    <div class="flex items-center gap-3">
+    <div class="setting-block flex items-center gap-3">
       <div class="relative flex-1">
         <BaseField icon="material-symbols:search">
           <input v-model="search" type="search" placeholder="Search games" class="text-sm" />
@@ -85,7 +80,7 @@ onMounted(load);
 
     <div
       v-if="loading"
-      class="flex items-center gap-2 text-sm text-muted-500 p-4"
+      class="setting-block flex items-center gap-2 text-sm text-muted-500"
     >
       <BaseSpinner class="text-lg" />
       Loading games...
@@ -98,7 +93,7 @@ onMounted(load);
       {{ search ? 'No games match that search' : 'No games found' }}
     </div>
 
-    <div v-else class="space-y-2">
+    <div v-else class="divide-y divide-border">
       <div
         v-for="game in filteredGames"
         :key="game.game"
@@ -143,5 +138,5 @@ onMounted(load);
         />
       </div>
     </div>
-  </section>
+  </SettingsGroup>
 </template>

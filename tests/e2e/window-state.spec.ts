@@ -27,7 +27,7 @@ test.describe('window state', () => {
         // Resizing that one and then asserting on the app's size is how this
         // spec started reporting a saved width of 408.
         const w = BrowserWindow.getAllWindows().find(
-          (candidate) => !candidate.webContents.getURL().startsWith('data:'),
+          (candidate) => !/^data:|notch\.html/.test(candidate.webContents.getURL()),
         );
         if (!w) return;
 
@@ -68,7 +68,7 @@ test.describe('window state', () => {
        */
       asked = await first.app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()
-          .find((candidate) => !candidate.webContents.getURL().startsWith('data:'))!
+          .find((candidate) => !/^data:|notch\.html/.test(candidate.webContents.getURL()))!
           .getNormalBounds(),
       );
     } finally {
@@ -114,7 +114,7 @@ test.describe('window state', () => {
 
       const bounds = await second.app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()
-          .find((candidate) => !candidate.webContents.getURL().startsWith('data:'))!
+          .find((candidate) => !/^data:|notch\.html/.test(candidate.webContents.getURL()))!
           .getNormalBounds(),
       );
 
@@ -137,7 +137,7 @@ test.describe('window state', () => {
 
       const bounds = await ctx.app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()
-          .find((candidate) => !candidate.webContents.getURL().startsWith('data:'))!
+          .find((candidate) => !/^data:|notch\.html/.test(candidate.webContents.getURL()))!
           .getNormalBounds(),
       );
 

@@ -45,7 +45,9 @@ export default defineConfig({
     build: {
       rollupOptions: {
         external: ['electron'],
-        input: { index: resolve('src/preload/index.ts') },
+        // The notch gets a bridge of its own with three calls on it, rather
+        // than the app's, which can delete clips.
+        input: { index: resolve('src/preload/index.ts'), notch: resolve('src/preload/notch.ts') },
       },
     },
   },
@@ -57,7 +59,10 @@ export default defineConfig({
     plugins: [vue()],
     build: {
       rollupOptions: {
-        input: { index: resolve('src/renderer/index.html') },
+        input: {
+          index: resolve('src/renderer/index.html'),
+          notch: resolve('src/renderer/notch.html'),
+        },
       },
     },
   },

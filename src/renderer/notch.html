@@ -1,0 +1,17 @@
+<!doctype html>
+<!--
+  The notch's own page, in its own always-on-top window.
+
+  `dark` is fixed rather than following the theme: the notch is black in both
+  palettes, so what is drawn on it takes the palette made for a dark ground.
+-->
+<html lang="en" class="dark h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GoodBit notch</title>
+  </head>
+  <body class="h-full" style="background: transparent; overflow: hidden; font-family: 'Segoe UI Variable Text', 'Segoe UI', ui-sans-serif, system-ui, sans-serif">
+    <div id="notch"></div>
+    <script type="module" src="/src/notch.ts"></script>
+  </body>
+</html>

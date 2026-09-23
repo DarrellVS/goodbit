@@ -162,8 +162,9 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
       const target = offPrimary;
       await app.evaluate(({ BrowserWindow }, origin) => {
         for (const win of BrowserWindow.getAllWindows()) {
-          // The toast overlay places itself on purpose and is left alone.
-          if (win.webContents.getURL().startsWith('data:')) continue;
+          // The notch places itself on purpose and is left alone.
+          const url = win.webContents.getURL();
+          if (url.startsWith('data:') || url.includes('notch.html')) continue;
           const bounds = win.getBounds();
           win.setBounds({ ...bounds, x: origin.x, y: origin.y });
         }
@@ -219,7 +220,9 @@ export async function launchApp(options: LaunchOptions = {}): Promise<TestApp> {
  * process needs to know the difference, which is why the fix belongs here.
  */
 async function mainWindow(app: ElectronApplication): Promise<Page> {
-  const isApp = (candidate: Page): boolean => !candidate.url().startsWith('data:');
+  // The notch is a page of the renderer bundle too, so it is told apart by name.
+  const isApp = (candidate: Page): boolean =>
+    !candidate.url().startsWith('data:') && !candidate.url().includes('notch.html');
 
   const existing = app.windows().find(isApp);
   if (existing) return existing;

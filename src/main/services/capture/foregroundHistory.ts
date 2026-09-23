@@ -48,6 +48,25 @@ let trackedState: TrackedState | null = null;
 /** Everyone who wants to know about a sample as it lands, rather than later. */
 const listeners = new Set<(sample: ForegroundSample) => void>();
 
+/** Whether the window in front covers its whole monitor, as of the last sample. */
+let fullscreen = false;
+const fullscreenListeners = new Set<(fullscreen: boolean) => void>();
+
+/**
+ * Hear when the window in front starts or stops owning its monitor.
+ *
+ * Only on a change, so a listener can act on every call. At the helper's one
+ * sample a second, which is soon enough for a line to get out of the way.
+ */
+export function onFullscreenChange(listener: (fullscreen: boolean) => void): () => void {
+  fullscreenListeners.add(listener);
+  return () => fullscreenListeners.delete(listener);
+}
+
+export function foregroundIsFullscreen(): boolean {
+  return fullscreen;
+}
+
 function remember(sample: ForegroundSample): void {
   samples.push(sample);
 
@@ -107,6 +126,22 @@ function readLines(chunk: string): void {
       continue;
     }
 
+    // Whether the window in front owns its monitor. See the helper.
+    if (line.startsWith('F\t')) {
+      const now = line.slice(2).trim() === '1';
+      if (now !== fullscreen) {
+        fullscreen = now;
+        for (const listener of fullscreenListeners) {
+          try {
+            listener(now);
+          } catch (error) {
+            console.warn('[capture] fullscreen listener failed:', (error as Error).message);
+          }
+        }
+      }
+      continue;
+    }
+
     const [at, pid, ...rest] = line.split('\t');
     const exePath = rest.join('\t').trim();
     const when = Number(at);
@@ -138,6 +173,7 @@ export async function startForegroundHistory(): Promise<void> {
   // A helper that restarted has forgotten what it was watching, and the caller
   // is not told, so ask again for whatever was being tracked.
   if (trackedPid !== 0) child.stdin?.write(`T ${trackedPid}\n`);
+  for (const handle of quietWindows) child.stdin?.write(`N ${handle}\n`);
 
   let pending = '';
   child.stdout?.setEncoding('utf-8');
@@ -197,6 +233,23 @@ export function trackProcess(pid: number): void {
  * Null until it has said anything, which is the first second after a pid is
  * handed over, and after a helper restart.
  */
+/** Windows whose show animation has been turned off, remembered for a restarted helper. */
+const quietWindows = new Set<string>();
+
+/**
+ * Turn off Windows' own show and hide animation for one of our windows.
+ *
+ * The helper does it because it is already a compiled program holding the
+ * Win32 imports, and Electron has no switch for it. A helper that restarts is
+ * handed the list again, since the attribute has to be set by somebody and a
+ * restart forgets nothing about the window itself but everything about this.
+ */
+export function disableWindowTransitions(hwnd: bigint): void {
+  const handle = hwnd.toString();
+  quietWindows.add(handle);
+  child?.stdin?.write(`N ${handle}\n`);
+}
+
 export function trackedProcessState(): { pid: number; state: TrackedState } | null {
   if (trackedPid === 0 || trackedState === null) return null;
   return { pid: trackedPid, state: trackedState };

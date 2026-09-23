@@ -142,11 +142,41 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
     keywords: ['tray', 'background', 'quit', 'exit', 'close', 'app'],
   },
   {
+    label: 'Show the notch',
+    description:
+      'A strip of black on the edge of your screen that says when a clip is saved. Off means GoodBit never draws over another program.',
+    section: 'recording',
+    keywords: ['overlay', 'notch', 'island', 'status', 'bar', 'popup', 'toast'],
+  },
+  {
+    label: 'Keep it on the desktop',
+    description:
+      "A thin line between clips that shows whether OBS is running. Rest your pointer on it to see today's clips. It steps aside for games and fullscreen video.",
+    section: 'recording',
+    keywords: ['always on', 'line', 'status', 'hover', 'minimised', 'widget'],
+    shownWhen: 'Show the notch is on',
+  },
+  {
+    label: 'Open after resting for',
+    description: 'Longer keeps it out of the way of tabs and title bars under it',
+    section: 'recording',
+    keywords: ['delay', 'hover', 'wait', 'dwell', 'speed', 'milliseconds', 'notch'],
+    shownWhen: 'Show the notch and Keep it on the desktop are both on',
+  },
+  {
+    label: 'Close after leaving for',
+    description: 'A little grace lets you overshoot a button without losing it',
+    section: 'recording',
+    keywords: ['delay', 'hover', 'close', 'hide', 'grace', 'milliseconds', 'notch'],
+    shownWhen: 'Show the notch and Keep it on the desktop are both on',
+  },
+  {
     label: 'Say when a clip is saved',
     description:
-      'A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it.',
+      'The notch opens while the clip is filed and again once it is in your library, over a game too, then folds away. It never takes focus and clicks pass straight through it.',
     section: 'recording',
     keywords: ['overlay', 'toast', 'notification', 'popup', 'banner', 'confirmation'],
+    shownWhen: 'Show the notch is on',
   },
   {
     label: 'Play a sound with it',
@@ -154,24 +184,18 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
       'Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption.',
     section: 'recording',
     keywords: ['chime', 'sound', 'beep', 'audio', 'notification'],
-    shownWhen: 'Say when a clip is saved is on',
+    shownWhen: 'Show the notch and Say when a clip is saved are both on',
   },
   {
     label: 'How loud',
     description: 'Press Show me after changing it, to hear where it lands',
     section: 'recording',
     keywords: ['volume', 'loudness', 'chime', 'quiet'],
-    shownWhen: 'Say when a clip is saved and Play a sound with it are both on',
-  },
-  {
-    label: 'Where it appears',
-    description: 'Follows your pointer to whichever screen you are playing on.',
-    section: 'recording',
-    keywords: ['corner', 'position', 'top right', 'bottom left', 'overlay', 'monitor'],
+    shownWhen: 'Show the notch, Say when a clip is saved and Play a sound with it are all on',
   },
   {
     label: 'Try it',
-    description: 'Shows the card and plays the chime, without recording anything',
+    description: 'Opens the notch and plays the chime, without recording anything',
     section: 'recording',
     keywords: ['preview', 'test', 'demo', 'show me'],
   },
@@ -194,10 +218,10 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
   {
     label: 'Say what it found',
     description:
-      'A card while it looks, and another at the end if it found anything.',
+      'The notch opens while it looks, and again at the end if it found anything.',
     section: 'recording',
-    keywords: ['overlay', 'toast', 'notification', 'silent', 'card'],
-    shownWhen: 'Look for GoodBits when a game closes is on',
+    keywords: ['overlay', 'toast', 'notification', 'silent', 'card', 'notch'],
+    shownWhen: 'Show the notch and Look for GoodBits when a game closes are both on',
   },
   {
     label: 'Play a sound with that one',
@@ -205,14 +229,14 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
       'A short sound when it finds something, at the volume above.',
     section: 'recording',
     keywords: ['chime', 'sound', 'beep', 'audio', 'notification'],
-    shownWhen: 'Look for GoodBits when a game closes and Say what it found are both on',
+    shownWhen: 'Show the notch, Look for GoodBits when a game closes and Say what it found are all on',
   },
   {
     label: 'Try that one',
     description: 'Shows both halves, without reading anything',
     section: 'recording',
     keywords: ['preview', 'test', 'demo', 'show me'],
-    shownWhen: 'Look for GoodBits when a game closes and Say what it found are both on',
+    shownWhen: 'Show the notch, Look for GoodBits when a game closes and Say what it found are all on',
   },
 
   // Watching

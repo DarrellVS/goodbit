@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { useAppSettings } from '@renderer/composables/app/useAppSettings';
 import SettingToggle from './SettingToggle.vue';
+import SettingsGroup from './SettingsGroup.vue';
 import MusicFolderCard from './MusicFolderCard.vue';
 import SettingAnchor from './SettingAnchor.vue';
 import SuggestionsCard from './SuggestionsCard.vue';
@@ -22,7 +23,7 @@ onMounted(load);
 </script>
 
 <template>
-  <section>
+  <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Editing</h2>
       <p class="mt-2 text-muted-500">
@@ -36,12 +37,14 @@ onMounted(load);
       a trim replaces the only copy of that moment, and a published copy is a
       copy. Off here, on there, and the reason is in each description.
     -->
-    <SettingToggle
-      label="Compress clips when trimming"
-      description="A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size."
-      :model-value="settings.compressTrims === true"
-      @update:model-value="save({ compressTrims: $event })"
-    />
+    <SettingsGroup title="Trimming">
+      <SettingToggle
+        label="Compress clips when trimming"
+        description="A trim always lands on the exact frames you chose, and it replaces the only copy of that moment. Off keeps the picture close to the recording. On squeezes it to roughly a fifth of the size."
+        :model-value="settings.compressTrims === true"
+        @update:model-value="save({ compressTrims: $event })"
+      />
+    </SettingsGroup>
 
     <MusicFolderCard />
 

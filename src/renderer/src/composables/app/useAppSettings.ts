@@ -21,7 +21,15 @@ export interface AppSettings {
   keepRunningInTray: boolean;
   /** Start OBS, minimised with its buffer running, when GoodBit starts. */
   startObsWithGoodbit?: boolean;
-  /** Say "clip saved" over the game. Unset means on. */
+  /** The notch as a whole. Main writes it down at first boot; see `resolveNotch`. */
+  notch?: boolean;
+  /** The status line between peeks. Unset means on. */
+  notchAlwaysOn?: boolean;
+  /** How long the pointer rests on the line before it opens, in ms. */
+  notchDwellMs?: number;
+  /** How long the pointer can be off the open island before it folds, in ms. */
+  notchLeaveMs?: number;
+  /** Say "clip saved" over the game, as the notch's peek. Unset means on. */
   clipToast?: boolean;
   clipToastSound?: boolean;
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';

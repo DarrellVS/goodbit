@@ -9,6 +9,7 @@ import { ICON_BOX } from '@renderer/components/Base/geometry';
 import BaseButton from '@renderer/components/Base/BaseButton.vue';
 import SettingToggle from './SettingToggle.vue';
 import SettingSelect from './SettingSelect.vue';
+import SettingsGroup from './SettingsGroup.vue';
 import type { ComboBoxOption } from '@renderer/components/Base/types';
 import {
   DEFAULT_RECORDING_QUALITY,
@@ -23,6 +24,13 @@ import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSea
 import { useToastStore } from '@renderer/stores/toast';
 import BaseSpinner from '@renderer/components/Base/BaseSpinner.vue';
 import { useConfirm } from '@renderer/composables/ui/useConfirm';
+import {
+  NOTCH_DWELL,
+  NOTCH_LEAVE,
+  notchDwellMs,
+  notchLeaveMs,
+  resolveNotch,
+} from '@shared/notchSettings';
 
 // Confirmations are a dialog, never a toast.
 const { confirm: confirmAction } = useConfirm();
@@ -115,14 +123,16 @@ const qualityInObs = computed(() => {
   return null;
 });
 
-const CORNERS = [
-  { value: 'top-right', label: 'Top right' },
-  { value: 'top-left', label: 'Top left' },
-  { value: 'bottom-right', label: 'Bottom right' },
-  { value: 'bottom-left', label: 'Bottom left' },
-];
+/**
+ * What the notch will actually do, out of the same function main draws it
+ * from, so this screen cannot describe a different notch from the one that
+ * appears.
+ */
+const notch = computed(() => resolveNotch(settings.value));
+const dwell = computed(() => notchDwellMs(settings.value));
+const leave = computed(() => notchLeaveMs(settings.value));
 
-/** Draws the real overlay, with the real corner and the real sound. */
+/** Draws the real notch, on its real edge, with the real sound. */
 function previewToast(): void {
   void window.goodbit?.previewClipToast();
 }
@@ -244,7 +254,7 @@ function openGuide(): void {
 </script>
 
 <template>
-  <section>
+  <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Recording</h2>
       <p class="mt-2 text-muted-500">
@@ -252,179 +262,186 @@ function openGuide(): void {
       </p>
     </div>
 
-    <div
-      data-setting="OBS setup"
-      :class="['setting-card', settingRing('OBS setup')]"
-    >
-      <!--
-        A dot and a sentence, which is how Connections says the same kind of
-        thing two pages along. It was a 20px glyph in the success green beside
-        a heading, so the loudest thing in the section was the news that
-        nothing needs doing.
-      -->
-      <div class="flex items-center gap-2">
-        <BaseSpinner v-if="!status" class="size-3.5 shrink-0 block text-muted-400" />
-        <span v-else :class="statusDotVariants({ tone: status.ready ? 'ok' : 'waiting' })" />
-        <h3>{{ headline }}</h3>
-      </div>
-      <p>{{ subhead }}</p>
-
-      <!--
-        One way in, installed or not.
-
-        This used to show its own install buttons when OBS was missing, which
-        meant the setup itself could not be reached from the one screen that
-        says it is missing. The wizard installs OBS as its first step now, so
-        the button is the same button either way.
-      -->
-      <template v-if="status">
+    <!--
+      OBS, what it records at, and running the setup again, as one card: they
+      are one subject, and the state the quality setting depends on is the
+      status at the top of it.
+    -->
+    <SettingsGroup>
+      <div
+        data-setting="OBS setup"
+        :class="['setting-card', settingRing('OBS setup')]"
+      >
         <!--
-          What is wrong, as rows rather than as a stack of tinted boxes.
-
-          A blocker keeps a colour, because it is the one thing here that
-          stops the feature working at all; it is a dot and the ink, not a
-          filled panel. A warning is just a row: it is a remark, and a box
-          around a remark makes it look like a failure.
+          A dot and a sentence, which is how Connections says the same kind of
+          thing two pages along. It was a 20px glyph in the success green beside
+          a heading, so the loudest thing in the section was the news that
+          nothing needs doing.
         -->
-        <ul v-if="blockers.length || warnings.length" class="mt-4">
-          <li
-            v-for="finding in [...blockers, ...warnings]"
-            :key="finding.id"
-            class="flex items-start gap-2.5 py-3 border-t border-border"
-          >
-            <span
-              :class="[statusDotVariants({ tone: finding.level === 'blocker' ? 'blocker' : 'quiet' }), 'mt-2']"
-            />
-            <div class="min-w-0">
-              <p class="text-sm font-medium text-foreground">{{ finding.title }}</p>
-              <p class="text-sm text-muted-500 mt-0.5 max-w-[76ch]">{{ finding.detail }}</p>
-            </div>
-          </li>
-        </ul>
+        <div class="flex items-center gap-2">
+          <BaseSpinner v-if="!status" class="size-3.5 shrink-0 block text-muted-400" />
+          <span v-else :class="statusDotVariants({ tone: status.ready ? 'ok' : 'waiting' })" />
+          <h3>{{ headline }}</h3>
+        </div>
+        <p>{{ subhead }}</p>
 
-        <div class="flex flex-wrap items-center gap-2 mt-4">
+        <!--
+          One way in, installed or not.
+
+          This used to show its own install buttons when OBS was missing, which
+          meant the setup itself could not be reached from the one screen that
+          says it is missing. The wizard installs OBS as its first step now, so
+          the button is the same button either way.
+        -->
+        <template v-if="status">
+          <!--
+            What is wrong, as rows rather than as a stack of tinted boxes.
+
+            A blocker keeps a colour, because it is the one thing here that
+            stops the feature working at all; it is a dot and the ink, not a
+            filled panel. A warning is just a row: it is a remark, and a box
+            around a remark makes it look like a failure.
+          -->
+          <ul v-if="blockers.length || warnings.length" class="mt-4">
+            <li
+              v-for="finding in [...blockers, ...warnings]"
+              :key="finding.id"
+              class="flex items-start gap-2.5 py-3 border-t border-border"
+            >
+              <span
+                :class="[statusDotVariants({ tone: finding.level === 'blocker' ? 'blocker' : 'quiet' }), 'mt-2']"
+              />
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-foreground">{{ finding.title }}</p>
+                <p class="text-sm text-muted-500 mt-0.5 max-w-[76ch]">{{ finding.detail }}</p>
+              </div>
+            </li>
+          </ul>
+
+          <div class="flex flex-wrap items-center gap-2 mt-4">
+            <BaseButton
+              tone="strong"
+              :disabled="loading || working"
+              @click="openSetup"
+            >
+              {{
+                !status.installed
+                  ? 'Install OBS and set it up'
+                  : singleTrackAudio
+                    ? 'Give each sound its own track'
+                    : status.ready
+                      ? 'Change the setup'
+                      : 'Set up OBS for me'
+              }}
+            </BaseButton>
+
+            <BaseButton v-if="status.ready" @click="launch">
+              {{ status.running ? 'OBS is running' : 'Start OBS' }}
+            </BaseButton>
+
+            <button
+              type="button"
+              class="ml-auto inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
+              @click="openGuide"
+            >
+              <Icon icon="material-symbols:open-in-new" :class="ICON_BOX" />
+              Rather do it by hand?
+            </button>
+          </div>
+
+          <p v-if="status.setupWrittenAt" class="text-sm text-muted-400 mt-3 max-w-[76ch]">
+            GoodBit last wrote to OBS on
+            {{ new Date(status.setupWrittenAt).toLocaleDateString() }}. Your other profiles were not
+            touched.
+            <!--
+              Nothing here is one-way. Undo removes the files GoodBit created and
+              restores the one key it changed in a file it did not, from the
+              backup it took at the time.
+            -->
+            <button
+              type="button"
+              class="ml-1 text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
+              @click="undo"
+            >
+              Undo that
+            </button>
+          </p>
+        </template>
+      </div>
+
+      <div
+        data-setting="Run the setup again"
+        :class="['setting-card', settingRing('Run the setup again')]"
+      >
+        <h3>Run the setup again</h3>
+        <p>
+          The first run, from the start: your clips folder, OBS if it is missing, and the recording
+          setup. Nothing is reset, and every step shows what is already set.
+        </p>
+        <div class="mt-4">
+          <BaseButton @click="runOnboarding">Start it</BaseButton>
+        </div>
+      </div>
+
+      <!--
+        What OBS records at, which is not what either of the two Compress
+        settings under Publishing does. Those re-encode a clip GoodBit already
+        has; this decides what lands on disk in the first place, and it can
+        never improve a recording already made.
+
+        It sits directly under the OBS card because it is the same subject, and
+        because the card above is where the state it depends on is shown: this
+        cannot take effect until the profile is next written, and the profile
+        cannot be written while OBS is open.
+      -->
+      <template v-if="status?.installed">
+        <SettingSelect
+          label="Recording quality"
+          description="How hard OBS compresses what it records. It cannot change clips you already have."
+          :model-value="quality"
+          :options="QUALITIES"
+          :disabled="working"
+          @update:model-value="saveSettings({ recordingQuality: $event as RecordingQuality })"
+        />
+
+        <!--
+          A setting that silently does nothing is the failure to avoid here, so
+          the gap between what was chosen and what OBS is on is said out loud,
+          with the one action that closes it. `ApplyObsSetupAction` refuses to
+          run while OBS is open, so the offer depends on that.
+        -->
+        <div v-if="qualityPending" class="setting-block flex items-start justify-between gap-6">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-muted-500 max-w-[62ch]">
+              OBS is still recording at
+              <span class="text-foreground">{{ qualityInObs ?? 'something else' }}</span
+              >.
+              <!--
+                Two sentences, because the way to finish it depends on whether OBS
+                is running. It used to say "cannot happen while OBS is open" when
+                OBS was closed and the button beside it would write it right now.
+              -->
+              <template v-if="status?.running">
+                GoodBit cannot change it while OBS is open, so close OBS and write it then.
+              </template>
+              <template v-else>
+                Write it to OBS and the next recording uses it.
+              </template>
+            </p>
+          </div>
           <BaseButton
-            tone="strong"
-            :disabled="loading || working"
+            v-if="!status?.running"
+            class="shrink-0"
             @click="openSetup"
           >
-            {{
-              !status.installed
-                ? 'Install OBS and set it up'
-                : singleTrackAudio
-                  ? 'Give each sound its own track'
-                  : status.ready
-                    ? 'Change the setup'
-                    : 'Set up OBS for me'
-            }}
+            Write it to OBS
           </BaseButton>
-
-          <BaseButton v-if="status.ready" @click="launch">
-            {{ status.running ? 'OBS is running' : 'Start OBS' }}
+          <BaseButton v-else class="shrink-0" :disabled="working" @click="closeObsForQuality">
+            Close OBS
           </BaseButton>
-
-          <button
-            type="button"
-            class="ml-auto inline-flex items-center gap-1.5 text-sm text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
-            @click="openGuide"
-          >
-            <Icon icon="material-symbols:open-in-new" :class="ICON_BOX" />
-            Rather do it by hand?
-          </button>
         </div>
-
-        <p v-if="status.setupWrittenAt" class="text-sm text-muted-400 mt-3 max-w-[76ch]">
-          GoodBit last wrote to OBS on
-          {{ new Date(status.setupWrittenAt).toLocaleDateString() }}. Your other profiles were not
-          touched.
-          <!--
-            Nothing here is one-way. Undo removes the files GoodBit created and
-            restores the one key it changed in a file it did not, from the
-            backup it took at the time.
-          -->
-          <button
-            type="button"
-            class="ml-1 text-accent-ink hover:text-foreground outline-none focus-visible:focus-ring rounded-xs transition-colors duration-150"
-            @click="undo"
-          >
-            Undo that
-          </button>
-        </p>
       </template>
-    </div>
-
-    <div
-      data-setting="Run the setup again"
-      :class="['setting-card', settingRing('Run the setup again')]"
-    >
-      <h3>Run the setup again</h3>
-      <p>
-        The first run, from the start: your clips folder, OBS if it is missing, and the recording
-        setup. Nothing is reset, and every step shows what is already set.
-      </p>
-      <div class="mt-4">
-        <BaseButton @click="runOnboarding">Start it</BaseButton>
-      </div>
-    </div>
-
-    <!--
-      What OBS records at, which is not what either of the two Compress
-      settings under Publishing does. Those re-encode a clip GoodBit already
-      has; this decides what lands on disk in the first place, and it can
-      never improve a recording already made.
-
-      It sits directly under the OBS card because it is the same subject, and
-      because the card above is where the state it depends on is shown: this
-      cannot take effect until the profile is next written, and the profile
-      cannot be written while OBS is open.
-    -->
-    <template v-if="status?.installed">
-      <SettingSelect
-        label="Recording quality"
-        description="How hard OBS compresses what it records. It cannot change clips you already have."
-        :model-value="quality"
-        :options="QUALITIES"
-        :disabled="working"
-        @update:model-value="saveSettings({ recordingQuality: $event as RecordingQuality })"
-      />
-
-      <!--
-        A setting that silently does nothing is the failure to avoid here, so
-        the gap between what was chosen and what OBS is on is said out loud,
-        with the one action that closes it. `ApplyObsSetupAction` refuses to
-        run while OBS is open, so the offer depends on that.
-      -->
-      <div v-if="qualityPending" class="setting-block flex items-start justify-between gap-6">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm text-muted-500 max-w-[62ch]">
-            OBS is still recording at
-            <span class="text-foreground">{{ qualityInObs ?? 'something else' }}</span
-            >.
-            <!--
-              Two sentences, because the way to finish it depends on whether OBS
-              is running. It used to say "cannot happen while OBS is open" when
-              OBS was closed and the button beside it would write it right now.
-            -->
-            <template v-if="status?.running">
-              GoodBit cannot change it while OBS is open, so close OBS and write it then.
-            </template>
-            <template v-else>
-              Write it to OBS and the next recording uses it.
-            </template>
-          </p>
-        </div>
-        <BaseButton
-          v-if="!status?.running"
-          class="shrink-0"
-          @click="openSetup"
-        >
-          Write it to OBS
-        </BaseButton>
-        <BaseButton v-else class="shrink-0" :disabled="working" @click="closeObsForQuality">
-          Close OBS
-        </BaseButton>
-      </div>
-    </template>
+    </SettingsGroup>
 
     <ClipsFolderCard />
 
@@ -438,177 +455,273 @@ function openGuide(): void {
       The whole point is that the last thirty seconds are always there, which
       is only true while OBS is running with its buffer on.
     -->
-    <SettingToggle
-      v-if="status?.installed"
-      label="Start OBS with GoodBit"
-      description="Minimised, with the replay buffer running, so your key works after a restart without opening anything."
-      :model-value="settings.startObsWithGoodbit === true"
-      @update:model-value="saveSettings({ startObsWithGoodbit: $event })"
-    />
-
-    <SettingToggle
-      label="Start with Windows"
-      description="Runs in the tray and indexes clips as they are recorded"
-      :model-value="settings.startAtLogin"
-      @update:model-value="saveSettings({ startAtLogin: $event })"
-    />
-
-    <SettingToggle
-      label="Keep running when the window closes"
-      description="Off means closing the window quits, and nothing is indexed until you open it again"
-      :model-value="settings.keepRunningInTray"
-      @update:model-value="saveSettings({ keepRunningInTray: $event })"
-    />
-
-    <!--
-      One feature, one heading.
-
-      This was five bordered boxes stacked in a row, then a card with the rows
-      flush inside it and hand-cut dividers between them, which made a group of
-      five dependent settings a frame of its own inside a page that has no other
-      frames. It is a heading and five ordinary rows now, so the hairlines line
-      up with everything above and below, and the `v-if`s already say which ones
-      depend on which.
-    -->
-    <h3 class="setting-subhead">Saying a clip was saved</h3>
-
-    <!--
-      Pressing the replay key and getting nothing back is the most uncertain
-      moment in using this app: OBS says nothing useful, its window is behind
-      a game, and the clip takes a few seconds to reach the library. This is
-      the receipt, and it appears only once the clip is actually indexed, so
-      it cannot say "saved" about a buffer that was not running.
-    -->
-    <SettingToggle
-      label="Say when a clip is saved"
-      description="A small card over the game for a few seconds, once the clip is filed and in your library. It never takes focus and clicks pass straight through it."
-      :model-value="settings.clipToast !== false"
-      @update:model-value="saveSettings({ clipToast: $event })"
-    />
-
-    <template v-if="settings.clipToast !== false">
+    <SettingsGroup
+      title="While you play"
+      description="What keeps the replay key working, including after a restart"
+    >
       <SettingToggle
-        label="Play a sound with it"
-        description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
-        :model-value="settings.clipToastSound !== false"
-        @update:model-value="saveSettings({ clipToastSound: $event })"
+        v-if="status?.installed"
+        label="Start OBS with GoodBit"
+        description="Minimised, with the replay buffer running, so your key works after a restart without opening anything."
+        :model-value="settings.startObsWithGoodbit === true"
+        @update:model-value="saveSettings({ startObsWithGoodbit: $event })"
       />
 
-      <!--
-        Loudness is the one thing the app cannot work out for itself: the
-        chime plays over a game, so the right level depends on how loud that
-        game is and how the machine is mixed. Fixed, it was too quiet to hear
-        over anything.
-      -->
-      <div
-        v-if="settings.clipToastSound !== false"
-        data-setting="How loud"
-        :class="['setting-block flex items-start justify-between gap-6', settingRing('How loud')]"
-      >
-        <div class="min-w-0 flex-1">
-          <label class="text-sm font-medium text-foreground">How loud</label>
-          <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-            Press Show me after changing it, to hear where it lands
-          </p>
+      <SettingToggle
+        label="Start with Windows"
+        description="Runs in the tray and indexes clips as they are recorded"
+        :model-value="settings.startAtLogin"
+        @update:model-value="saveSettings({ startAtLogin: $event })"
+      />
+
+      <SettingToggle
+        label="Keep running when the window closes"
+        description="Off means closing the window quits, and nothing is indexed until you open it again"
+        :model-value="settings.keepRunningInTray"
+        @update:model-value="saveSettings({ keepRunningInTray: $event })"
+      />
+    </SettingsGroup>
+
+    <!--
+      The notch replaced the corner card that said a clip was saved. One
+      switch for the whole thing, then what it can do, indented under it: stay
+      on the desktop as a line, and open when a clip is saved. The second is
+      the old card's own switch, under its old key, so nobody's choice was
+      reset.
+    -->
+    <SettingsGroup
+      title="The notch"
+      description="A strip of black at the top of your screen that says when a clip is saved"
+    >
+
+      <SettingToggle
+        label="Show the notch"
+        description="A strip of black on the edge of your screen that says when a clip is saved. Off means GoodBit never draws over another program."
+        :model-value="notch.enabled"
+        @update:model-value="saveSettings({ notch: $event })"
+      />
+
+      <div v-if="notch.enabled" class="setting-children">
+        <SettingToggle
+          label="Keep it on the desktop"
+          description="A thin line between clips that shows whether OBS is running. Rest your pointer on it to see today's clips. It steps aside for games and fullscreen video."
+          :model-value="settings.notchAlwaysOn !== false"
+          @update:model-value="saveSettings({ notchAlwaysOn: $event })"
+        />
+
+        <!--
+          How long the pointer rests before the line opens. A matter of hand:
+          near instant for somebody who throws the pointer up to look, longer
+          for somebody whose browser tabs live under the line.
+        -->
+        <div
+          v-if="notch.line"
+          data-setting="Open after resting for"
+          :class="['setting-block flex items-start justify-between gap-6', settingRing('Open after resting for')]"
+        >
+          <div class="min-w-0 flex-1">
+            <label for="notch-dwell" class="text-sm font-medium text-foreground">Open after resting for</label>
+            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+              Longer keeps it out of the way of tabs and title bars under it
+            </p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0 mt-0.5">
+            <input
+              id="notch-dwell"
+              :value="dwell"
+              type="range"
+              :min="NOTCH_DWELL.min"
+              :max="NOTCH_DWELL.max"
+              :step="NOTCH_DWELL.step"
+              class="w-40"
+              @change="saveSettings({ notchDwellMs: Number(($event.target as HTMLInputElement).value) })"
+            />
+            <span class="w-14 text-right font-mono text-xs tabular-nums text-muted-400">
+              {{ dwell }} ms
+            </span>
+          </div>
         </div>
-        <div class="flex items-center gap-3 shrink-0 mt-0.5">
-          <input
-            :value="settings.clipToastVolume ?? 75"
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            class="w-40"
-            aria-label="Chime volume"
-            @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
+
+        <!-- The other half of the same habit: how long it stays once the pointer has gone. -->
+        <div
+          v-if="notch.line"
+          data-setting="Close after leaving for"
+          :class="['setting-block flex items-start justify-between gap-6', settingRing('Close after leaving for')]"
+        >
+          <div class="min-w-0 flex-1">
+            <label for="notch-leave" class="text-sm font-medium text-foreground">Close after leaving for</label>
+            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+              A little grace lets you overshoot a button without losing it
+            </p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0 mt-0.5">
+            <input
+              id="notch-leave"
+              :value="leave"
+              type="range"
+              :min="NOTCH_LEAVE.min"
+              :max="NOTCH_LEAVE.max"
+              :step="NOTCH_LEAVE.step"
+              class="w-40"
+              @change="saveSettings({ notchLeaveMs: Number(($event.target as HTMLInputElement).value) })"
+            />
+            <span class="w-14 text-right font-mono text-xs tabular-nums text-muted-400">
+              {{ leave }} ms
+            </span>
+          </div>
+        </div>
+
+        <!--
+          Pressing the replay key and getting nothing back is the most uncertain
+          moment in using this app: OBS says nothing useful, its window is behind
+          a game, and the clip takes a few seconds to reach the library. This is
+          the receipt, and it appears only once the clip is actually indexed, so
+          it cannot say "saved" about a buffer that was not running.
+        -->
+        <SettingToggle
+          label="Say when a clip is saved"
+          description="The notch opens while the clip is filed and again once it is in your library, over a game too, then folds away. It never takes focus and clicks pass straight through it."
+          :model-value="settings.clipToast !== false"
+          @update:model-value="saveSettings({ clipToast: $event })"
+        />
+
+        <template v-if="settings.clipToast !== false">
+          <SettingToggle
+            label="Play a sound with it"
+            description="Two short notes. Separate from the card, since a noise and a picture are different amounts of interruption."
+            :model-value="settings.clipToastSound !== false"
+            @update:model-value="saveSettings({ clipToastSound: $event })"
           />
-          <span class="w-10 text-right font-mono text-xs tabular-nums text-muted-400">
-            {{ settings.clipToastVolume ?? 75 }}%
-          </span>
-        </div>
-      </div>
 
-      <SettingSelect
-        label="Where it appears"
-        description="Follows your pointer to whichever screen you are playing on."
-        :model-value="settings.clipToastCorner ?? 'top-right'"
-        :options="CORNERS"
-        @update:model-value="saveSettings({ clipToastCorner: $event as never })"
-      />
+          <!--
+            Loudness is the one thing the app cannot work out for itself: the
+            chime plays over a game, so the right level depends on how loud that
+            game is and how the machine is mixed. Fixed, it was too quiet to hear
+            over anything.
+          -->
+          <div
+            v-if="settings.clipToastSound !== false"
+            data-setting="How loud"
+            :class="['setting-block flex items-start justify-between gap-6', settingRing('How loud')]"
+          >
+            <div class="min-w-0 flex-1">
+              <label class="text-sm font-medium text-foreground">How loud</label>
+              <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+                Press Show me after changing it, to hear where it lands
+              </p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0 mt-0.5">
+              <input
+                :value="settings.clipToastVolume ?? 75"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                class="w-40"
+                aria-label="Chime volume"
+                @change="saveSettings({ clipToastVolume: Number(($event.target as HTMLInputElement).value) })"
+              />
+              <span class="w-10 text-right font-mono text-xs tabular-nums text-muted-400">
+                {{ settings.clipToastVolume ?? 75 }}%
+              </span>
+            </div>
+          </div>
+
+          <!--
+            A row like the rest, because it was a bare button with two sentences
+            of prose wrapped around it, which read as a paragraph that happened to
+            contain a button.
+          -->
+          <div
+            data-setting="Try it"
+            :class="['setting-block flex items-start justify-between gap-6', settingRing('Try it')]"
+          >
+            <div class="min-w-0 flex-1">
+              <label class="text-sm font-medium text-foreground">Try it</label>
+              <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+                Opens the notch and plays the chime, without recording anything
+              </p>
+            </div>
+            <BaseButton class="shrink-0" @click="previewToast">
+              Show me
+            </BaseButton>
+          </div>
+        </template>
+
+        <!--
+          Everything under the switch is off, so the notch is on and will never
+          be seen. Said, with the fix one press away, rather than looking broken.
+        -->
+        <div
+          v-if="notch.invisible"
+          class="setting-block flex items-start justify-between gap-6"
+        >
+          <p class="min-w-0 flex-1 text-sm text-muted-500 max-w-[62ch]">
+            Nothing is switched on for the notch to show, so you will not see it.
+          </p>
+          <BaseButton class="shrink-0" @click="saveSettings({ notchAlwaysOn: true })">
+            Keep it on the desktop
+          </BaseButton>
+        </div>
+
+        <!-- The one thing that can make this look broken, said once and quietly. -->
+        <p class="setting-block text-sm text-muted-400 max-w-[76ch]">
+          Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
+          games default to, is fine.
+        </p>
+      </div>
+    </SettingsGroup>
+
+    <SettingsGroup
+      title="When you stop playing"
+      description="Read a session's clips for good bits the moment the game closes"
+    >
 
       <!--
-        A row like the rest, because it was a bare button with two sentences
-        of prose wrapped around it, which read as a paragraph that happened to
-        contain a button.
+        Here rather than beside the suggestion settings, because the trigger is
+        about playing rather than about the analysis: it fires when a game
+        closes, and what it costs is a machine somebody has just stopped using.
       -->
-      <div
-        data-setting="Try it"
-        :class="['setting-block flex items-start justify-between gap-6', settingRing('Try it')]"
-      >
-        <div class="min-w-0 flex-1">
-          <label class="text-sm font-medium text-foreground">Try it</label>
-          <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-            Shows the card and plays the chime, without recording anything
-          </p>
-        </div>
-        <BaseButton class="shrink-0" @click="previewToast">
-          Show me
-        </BaseButton>
-      </div>
-
-      <!-- The one thing that can make this look broken, said once and quietly. -->
-      <p class="setting-block !border-b-0 text-sm text-muted-400 max-w-[76ch]">
-        Nothing can draw over a game in exclusive fullscreen. Borderless windowed, which most
-        games default to, is fine.
-      </p>
-    </template>
-
-    <h3 class="setting-subhead">When you stop playing</h3>
-
-    <!--
-      Here rather than beside the suggestion settings, because the trigger is
-      about playing rather than about the analysis: it fires when a game
-      closes, and what it costs is a machine somebody has just stopped using.
-    -->
-    <SettingToggle
-      label="Look for GoodBits when a game closes"
-      description="Goes through that session's clips while nothing else needs the machine. Alt-tabbing does not count as closing, and it leaves you alone if you start another game."
-      :model-value="settings.analyzeOnGameClose !== false"
-      @update:model-value="saveSettings({ analyzeOnGameClose: $event })"
-    />
-
-    <template v-if="settings.analyzeOnGameClose !== false">
       <SettingToggle
-        label="Say what it found"
-        description="A card while it looks, and another at the end if it found anything."
-        :model-value="settings.analyzeOnGameCloseToast !== false"
-        @update:model-value="saveSettings({ analyzeOnGameCloseToast: $event })"
+        label="Look for GoodBits when a game closes"
+        description="Goes through that session's clips while nothing else needs the machine. Alt-tabbing does not count as closing, and it leaves you alone if you start another game."
+        :model-value="settings.analyzeOnGameClose !== false"
+        @update:model-value="saveSettings({ analyzeOnGameClose: $event })"
       />
 
-      <SettingToggle
-        v-if="settings.analyzeOnGameCloseToast !== false"
-        label="Play a sound with that one"
-        description="A short sound when it finds something, at the volume above."
-        :model-value="settings.analyzeOnGameCloseSound !== false"
-        @update:model-value="saveSettings({ analyzeOnGameCloseSound: $event })"
-      />
+      <div v-if="settings.analyzeOnGameClose !== false && notch.enabled" class="setting-children">
+        <SettingToggle
+          label="Say what it found"
+          description="The notch opens while it looks, and again at the end if it found anything."
+          :model-value="settings.analyzeOnGameCloseToast !== false"
+          @update:model-value="saveSettings({ analyzeOnGameCloseToast: $event })"
+        />
 
-      <div
-        v-if="settings.analyzeOnGameCloseToast !== false"
-        data-setting="Try that one"
-        :class="['setting-block !border-b-0 flex items-start justify-between gap-6', settingRing('Try that one')]"
-      >
-        <div class="min-w-0 flex-1">
-          <label class="text-sm font-medium text-foreground">Try that one</label>
-          <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
-            Shows both halves, without reading anything
-          </p>
+        <SettingToggle
+          v-if="notch.enabled && settings.analyzeOnGameCloseToast !== false"
+          label="Play a sound with that one"
+          description="A short sound when it finds something, at the volume above."
+          :model-value="settings.analyzeOnGameCloseSound !== false"
+          @update:model-value="saveSettings({ analyzeOnGameCloseSound: $event })"
+        />
+
+        <div
+          v-if="notch.enabled && settings.analyzeOnGameCloseToast !== false"
+          data-setting="Try that one"
+          :class="['setting-block flex items-start justify-between gap-6', settingRing('Try that one')]"
+        >
+          <div class="min-w-0 flex-1">
+            <label class="text-sm font-medium text-foreground">Try that one</label>
+            <p class="text-sm text-muted-500 mt-0.5 max-w-[62ch]">
+              Shows both halves, without reading anything
+            </p>
+          </div>
+          <BaseButton class="shrink-0" @click="previewSweep">
+            Show me
+          </BaseButton>
         </div>
-        <BaseButton class="shrink-0" @click="previewSweep">
-          Show me
-        </BaseButton>
       </div>
-    </template>
+    </SettingsGroup>
 
     <ObsSetupDialog
       v-model:open="showDialog"

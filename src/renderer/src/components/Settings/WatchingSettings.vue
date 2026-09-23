@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useTheme, type ThemeChoice } from '@renderer/composables/ui/useTheme';
 import SettingToggle from './SettingToggle.vue';
+import SettingsGroup from './SettingsGroup.vue';
 import SettingSelect from './SettingSelect.vue';
 import HiddenGamesCard from './HiddenGamesCard.vue';
 
@@ -78,7 +79,7 @@ const dateFormatOptions = [
 </script>
 
 <template>
-  <section>
+  <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Watching</h2>
       <p class="mt-2 text-muted-500">
@@ -86,59 +87,61 @@ const dateFormatOptions = [
       </p>
     </div>
 
-    <SettingSelect
-      v-model="theme"
-      label="Appearance"
-      description="Follow the system, or pick a side"
-      :options="themeOptions"
-    />
+    <SettingsGroup title="The library" description="How it looks, and how much of it shows at once">
+      <SettingSelect
+        v-model="theme"
+        label="Appearance"
+        description="Follow the system, or pick a side"
+        :options="themeOptions"
+      />
 
-    <!--
-      Not a default, which is what it used to call itself. There is one stored
-      value and this is it, which is why changing it here changes the library
-      immediately. It is also the only control for it now: the toggle that
-      floated over the clips is gone, and this, the `L` key and the command
-      palette are what is left, neither of the last two occupying any screen.
-    -->
-    <SettingSelect
-      v-model="config.public.value.viewMode"
-      label="How clips are laid out"
-      description="Takes effect straight away, on the library and in a collection. The L key switches it too."
-      :options="viewModeOptions"
-    />
+      <!--
+        Not a default, which is what it used to call itself. There is one stored
+        value and this is it, which is why changing it here changes the library
+        immediately. It is also the only control for it now: the toggle that
+        floated over the clips is gone, and this, the `L` key and the command
+        palette are what is left, neither of the last two occupying any screen.
+      -->
+      <SettingSelect
+        v-model="config.public.value.viewMode"
+        label="How clips are laid out"
+        description="Takes effect straight away, on the library and in a collection. The L key switches it too."
+        :options="viewModeOptions"
+      />
 
-    <SettingSelect
-      v-model="config.public.value.dateFormat"
-      label="Date Format"
-      description="How dates should be displayed"
-      :options="dateFormatOptions"
-    />
+      <SettingSelect
+        v-model="config.public.value.dateFormat"
+        label="Date Format"
+        description="How dates should be displayed"
+        :options="dateFormatOptions"
+      />
 
-    <!--
-      No `.number` on this one any more. A modifier on a component's `v-model`
-      only arrives as a `modelModifiers` prop for the component to apply, and
-      this one never declared it, so it did nothing here except fall through
-      to the row's own `<div>` as an attribute. The dropdown emits the
-      option's own value, and these options are numbers.
-    -->
-    <SettingSelect
-      v-model="config.public.value.pageSize"
-      label="Items Per Page"
-      description="Number of clips to load at once (lower = faster)"
-      :options="pageSizeOptions"
-    />
+      <!--
+        No `.number` on this one any more. A modifier on a component's `v-model`
+        only arrives as a `modelModifiers` prop for the component to apply, and
+        this one never declared it, so it did nothing here except fall through
+        to the row's own `<div>` as an attribute. The dropdown emits the
+        option's own value, and these options are numbers.
+      -->
+      <SettingSelect
+        v-model="config.public.value.pageSize"
+        label="Items Per Page"
+        description="Number of clips to load at once (lower = faster)"
+        :options="pageSizeOptions"
+      />
 
-    <SettingToggle
-      v-model="config.public.value.showMetadata"
-      label="Show Clip Metadata"
-      description="Display file size, resolution, and other details"
-    />
+      <SettingToggle
+        v-model="config.public.value.showMetadata"
+        label="Show Clip Metadata"
+        description="Display file size, resolution, and other details"
+      />
 
-    <SettingToggle
-      v-model="config.public.value.compactMode"
-      label="Compact Mode"
-      description="Reduce spacing and show more content"
-    />
+      <SettingToggle
+        v-model="config.public.value.compactMode"
+        label="Compact Mode"
+        description="Reduce spacing and show more content"
+      />
+    </SettingsGroup>
 
     <!--
       What a card does under the pointer. Three switches, which had a section of
@@ -146,25 +149,25 @@ const dateFormatOptions = [
       are the same question as the six above: what happens when you look at the
       library.
     -->
-    <h3 class="setting-subhead">While the pointer is over a clip</h3>
+    <SettingsGroup title="While the pointer is over a clip">
+      <SettingToggle
+        v-model="config.public.value.autoPlayOnHover"
+        label="Auto-play on Hover"
+        description="Automatically play clips when hovering over them"
+      />
 
-    <SettingToggle
-      v-model="config.public.value.autoPlayOnHover"
-      label="Auto-play on Hover"
-      description="Automatically play clips when hovering over them"
-    />
+      <SettingToggle
+        v-model="config.public.value.hoverScrub"
+        label="Scrub on Hover"
+        description="Move the pointer across the bottom third of a clip to seek through it"
+      />
 
-    <SettingToggle
-      v-model="config.public.value.hoverScrub"
-      label="Scrub on Hover"
-      description="Move the pointer across the bottom third of a clip to seek through it"
-    />
-
-    <SettingToggle
-      v-model="config.public.value.muteVideosByDefault"
-      label="Mute Videos by Default"
-      description="Start videos muted (can be unmuted manually)"
-    />
+      <SettingToggle
+        v-model="config.public.value.muteVideosByDefault"
+        label="Mute Videos by Default"
+        description="Start videos muted (can be unmuted manually)"
+      />
+    </SettingsGroup>
 
     <!--
       Hiding a game is not a setting about games, it is a setting about what the

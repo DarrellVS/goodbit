@@ -142,7 +142,7 @@ async function copyCommand(): Promise<void> {
 </script>
 
 <template>
-  <section>
+  <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Connections</h2>
       <p class="mt-2 text-muted-500">

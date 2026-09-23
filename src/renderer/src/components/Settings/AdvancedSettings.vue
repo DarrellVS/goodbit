@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useConfiguration } from '@renderer/composables/app/useConfiguration';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import SettingToggle from './SettingToggle.vue';
+import SettingsGroup from './SettingsGroup.vue';
 import SettingAnchor from './SettingAnchor.vue';
 import KeyboardShortcutCustomization from './KeyboardShortcutCustomization.vue';
 import HealthCard from './HealthCard.vue';
@@ -33,21 +34,23 @@ const showShortcuts = computed(() => config.public.value.enableKeyboardShortcuts
 </script>
 
 <template>
-  <section>
+  <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Advanced</h2>
       <p class="mt-2 text-muted-500">Keyboard shortcuts, and what this machine can do</p>
     </div>
 
-    <SettingToggle
-      v-model="config.public.value.enableKeyboardShortcuts"
-      label="Keyboard shortcuts"
-      description="Move around and act on a clip without the mouse"
-    />
+    <SettingsGroup title="Keyboard">
+      <SettingToggle
+        v-model="config.public.value.enableKeyboardShortcuts"
+        label="Keyboard shortcuts"
+        description="Move around and act on a clip without the mouse"
+      />
 
-    <SettingAnchor v-if="showShortcuts" label="Change a shortcut">
-      <KeyboardShortcutCustomization />
-    </SettingAnchor>
+      <SettingAnchor v-if="showShortcuts" label="Change a shortcut">
+        <KeyboardShortcutCustomization />
+      </SettingAnchor>
+    </SettingsGroup>
 
     <HealthCard />
 

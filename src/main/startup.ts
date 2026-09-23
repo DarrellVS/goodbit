@@ -187,7 +187,7 @@ function clipWasFiled(filePath: string, game: string): void {
     try {
       const { AppDataSource } = await import('./data-source.js');
       const { Clip } = await import('./entity/Clip.js');
-      const { showClipSaved } = await import('./services/clipToast.js');
+      const { showClipSaved } = await import('./services/notch/index.js');
 
       const clip = await AppDataSource.getRepository(Clip)
         .createQueryBuilder('clip')
@@ -230,7 +230,7 @@ function attachFiledListener(): void {
   // `clipWasFiled` above, and only it says "saved".
   onClipArriving(() => {
     void (async () => {
-      const { showClipSaving } = await import('./services/clipToast.js');
+      const { showClipSaving } = await import('./services/notch/index.js');
       await showClipSaving();
     })();
   });
@@ -404,9 +404,9 @@ export async function startServices(): Promise<void> {
     ['staging', () => drainIncoming()],
     // Built now so the first clip of the session does not wait for a window to
     // be constructed and a page to load before it hears anything.
-    ['toast', async () => {
-      const { warmClipToast } = await import('./services/clipToast.js');
-      warmClipToast();
+    ['notch', async () => {
+      const { warmNotch } = await import('./services/notch/index.js');
+      await warmNotch();
     }],
     // After the library is ready, because a clip that lands while this is
     // still scanning should find a watcher waiting for it.

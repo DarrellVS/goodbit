@@ -253,8 +253,8 @@ async function sweepSession(session: EndedSession): Promise<void> {
 
 /** The work itself, as a job, so it has progress, an ETA and a way to stop. */
 async function readClips(clips: Clip[], game: string): Promise<void> {
-  const { dismissClipToast, showSweepFinished, showSweepStarted } = await import(
-    '../clipToast.js'
+  const { dismissPeek, showSweepFinished, showSweepStarted } = await import(
+    '../notch/index.js'
   );
 
   const job = createJob('analyze', `Looking for GoodBits in ${clips.length} ${game} clips`);
@@ -312,7 +312,7 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   if (signal?.aborted) {
     failJob(job.id, 'cancelled');
-    dismissClipToast();
+    dismissPeek();
     console.log(`[sweep] stopped after ${done}/${clips.length} clips`);
     return;
   }
@@ -329,5 +329,5 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
    * only worth drawing when it resolves into something.
    */
   if (found > 0) await showSweepFinished(found, clips.length);
-  else dismissClipToast();
+  else dismissPeek();
 }

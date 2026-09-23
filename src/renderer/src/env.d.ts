@@ -132,6 +132,10 @@ interface AppSettingsWire {
   startObsWithGoodbit?: boolean;
   /** A person's own correction to what a folder's game is called. */
   gameOverrides?: Record<string, string>;
+  notch?: boolean;
+  notchAlwaysOn?: boolean;
+  notchDwellMs?: number;
+  notchLeaveMs?: number;
   clipToast?: boolean;
   clipToastSound?: boolean;
   clipToastCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -203,6 +207,19 @@ type UpdateStateWire =
   | { status: 'ready'; version: string }
   | { status: 'error'; message: string };
 
+/**
+ * The notch window's bridge, which is all it gets: it is always on screen over
+ * other programs, so nothing on it reaches the app's API. See `preload/notch.ts`.
+ */
+interface NotchBridge {
+  onState: (listener: (state: import('@shared/notch').NotchState) => void) => () => void;
+  onChime: (listener: (kind: import('@shared/notch').NotchChime, volume: number) => void) => () => void;
+  ready: () => void;
+  act: (action: import('@shared/notch').NotchAction) => void;
+}
+
 interface Window {
+  /** Only in the notch window. */
+  goodbitNotch?: NotchBridge;
   goodbit?: GoodBitBridge;
 }
