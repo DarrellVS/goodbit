@@ -281,7 +281,7 @@ export const WING_HANDLE = { width: 16, height: 56, gap: 3 } as const;
  */
 export const WING_REACH = 120;
 /** Between a handle's outer edge and its wing. */
-export const WING_OFFSET = 6;
+export const WING_OFFSET = 5;
 
 export interface Rect {
   x: number;
