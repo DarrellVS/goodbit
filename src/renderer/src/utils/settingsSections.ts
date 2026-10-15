@@ -69,7 +69,7 @@ export const SETTING_SECTIONS: readonly SettingSection[] = [
     id: 'connections',
     label: 'Connections',
     icon: 'material-symbols:cable',
-    description: 'Publishing, Claude and Stream Deck',
+    description: 'Publishing, Claude, other apps and Stream Deck',
   },
   {
     id: 'advanced',

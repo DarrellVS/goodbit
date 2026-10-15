@@ -171,6 +171,15 @@ export interface Settings {
    * something that exists only in GoodBit.
    */
   streamDeckAllowDiscard?: boolean;
+  /**
+   * The local API: a named pipe with a random name per launch, found through
+   * `local-api.json`. Off unless switched on. Unset until the first boot that
+   * sees it, which writes it from `streamDeckEnabled` (`settleLocalApiSetting`),
+   * so somebody who already let a program in is not asked twice.
+   */
+  localApiEnabled?: boolean;
+  /** Whether a client of the local API may throw the latest clip away. Off by default, like the Stream Deck's. */
+  localApiAllowDiscard?: boolean;
   /** Set once the legacy web-app database has been adopted. */
   migratedFromWebApp: boolean;
   /**

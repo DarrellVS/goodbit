@@ -38,6 +38,29 @@ const RETENTION_MS = 15 * 60 * 1000;
 const jobs = new Map<string, Job>();
 const controllers = new Map<string, AbortController>();
 
+let jobListeners: Array<() => void> = [];
+
+/**
+ * Told whenever any job is created, moves, or settles. Progress is set per
+ * ffmpeg tick, so a listener that does work throttles itself.
+ */
+export function onJobsChange(listener: () => void): () => void {
+  jobListeners.push(listener);
+  return () => {
+    jobListeners = jobListeners.filter((l) => l !== listener);
+  };
+}
+
+function changed(): void {
+  for (const listener of jobListeners) {
+    try {
+      listener();
+    } catch (error) {
+      console.error('[jobs] listener threw:', error);
+    }
+  }
+}
+
 function prune(): void {
   const cutoff = Date.now() - RETENTION_MS;
   for (const [id, job] of jobs) {
@@ -61,6 +84,7 @@ export function createJob(kind: JobKind, label = '', id = randomUUID()): Job {
   };
   jobs.set(id, job);
   controllers.set(id, new AbortController());
+  changed();
   return job;
 }
 
@@ -83,6 +107,7 @@ export function setJobProgress(id: string, progress: number, message?: string): 
   if (!job || job.status !== 'running') return;
   job.progress = Math.max(0, Math.min(100, Math.round(progress)));
   if (message !== undefined) job.message = message;
+  changed();
 }
 
 export function completeJob(id: string, clip?: ClipDTO): void {
@@ -93,6 +118,7 @@ export function completeJob(id: string, clip?: ClipDTO): void {
   if (clip) job.clip = clip;
   job.finishedAt = Date.now();
   controllers.delete(id);
+  changed();
 }
 
 export function failJob(id: string, error: string): void {
@@ -106,6 +132,7 @@ export function failJob(id: string, error: string): void {
   job.error = error;
   job.finishedAt = Date.now();
   controllers.delete(id);
+  changed();
 }
 
 /** Ask a running job to stop. Returns false when there was nothing to stop. */
@@ -118,6 +145,7 @@ export function cancelJob(id: string): boolean {
   job.message = 'Cancelled';
   job.finishedAt = Date.now();
   controllers.delete(id);
+  changed();
   return true;
 }
 

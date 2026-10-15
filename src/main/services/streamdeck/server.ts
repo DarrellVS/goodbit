@@ -18,6 +18,7 @@
 import { writePluginConnection } from './plugin.js';
 import { prepareReplayKey } from '../obs/saveReplay.js';
 import { streamDeckPipeName } from './pipe.js';
+import { localApiPipe } from '../localApi/index.js';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { loadSettings, saveSettings } from '../../settings.js';
 import {
@@ -140,7 +141,9 @@ export async function startStreamDeck(): Promise<void> {
     console.log(`[streamdeck] listening on ${pipe}`);
     // An installed plugin learns which pipe from GoodBit itself, and the key
     // helper is compiled now rather than on the first press.
-    writePluginConnection({ pipe });
+    // While the local API runs, the plugin is pointed at its random pipe; this
+    // fixed one stays as the alias an older plugin falls back to.
+    writePluginConnection({ pipe: localApiPipe() ?? pipe });
     prepareReplayKey();
   } catch (error) {
     console.error('[streamdeck] could not start:', error instanceof Error ? error.message : error);

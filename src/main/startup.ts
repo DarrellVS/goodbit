@@ -58,6 +58,27 @@ export type ServiceEvent =
   | { type: 'clip-ready'; clipId: number; game: string; filePath: string }
   | { type: 'clip-removed'; filePath: string }
   /**
+   * A replay has landed in staging and is being filed. No game and no id yet,
+   * on purpose: the first card is a promise, `clip-saved` is the receipt.
+   */
+  | { type: 'clip-saving' }
+  /**
+   * The receipt: the clip is filed, has a row and is openable. Fires on the
+   * row, never on the key. `clip-ready` carries the same id for the window;
+   * this one also carries what a card needs to say.
+   */
+  | { type: 'clip-saved'; clipId: number; game: string; durationSec: number | null }
+  /**
+   * The game closed and the read of its session's clips began. `lingerMs` is
+   * how long a card about it may stay up, since a sweep can outrun the
+   * clip card's own timeout.
+   */
+  | { type: 'sweep-started'; clips: number; game: string; lingerMs: number }
+  /** The sweep found something. Only emitted when there is something to report. */
+  | { type: 'sweep-finished'; found: number; clips: number; clipIds: number[] }
+  /** The sweep was cancelled or found nothing: take its card down without a receipt. */
+  | { type: 'sweep-dismissed' }
+  /**
    * A clip has been read and this is what the analysis found in it.
    *
    * The sweep writes `suggestedCount` straight to the row, and a database the
@@ -188,7 +209,6 @@ function clipWasFiled(filePath: string, game: string): void {
     try {
       const { AppDataSource } = await import('./data-source.js');
       const { Clip } = await import('./entity/Clip.js');
-      const { showClipSaved } = await import('./services/notch/index.js');
 
       const clip = await AppDataSource.getRepository(Clip)
         .createQueryBuilder('clip')
@@ -206,18 +226,11 @@ function clipWasFiled(filePath: string, game: string): void {
 
       emit({ type: 'clip-ready', clipId: clip.id, game, filePath });
 
-      const length = clip.durationSec ? ` · ${formatLength(clip.durationSec)}` : '';
-      await showClipSaved(`${game}${length}`);
+      emit({ type: 'clip-saved', clipId: clip.id, game, durationSec: clip.durationSec ?? null });
     } catch (error) {
       console.error('[capture] could not announce the clip:', error);
     }
   })();
-}
-
-/** "0:30", which is how long a replay reads on every other screen in the app. */
-function formatLength(seconds: number): string {
-  const whole = Math.round(seconds);
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 }
 
 let detachFiled: (() => void) | null = null;
@@ -229,12 +242,7 @@ function attachFiledListener(): void {
 
   // The promise, as early as anything can know to make it. The receipt is
   // `clipWasFiled` above, and only it says "saved".
-  onClipArriving(() => {
-    void (async () => {
-      const { showClipSaving } = await import('./services/notch/index.js');
-      await showClipSaving();
-    })();
-  });
+  onClipArriving(() => emit({ type: 'clip-saving' }));
 }
 
 /**
@@ -423,8 +431,14 @@ export async function startServices(): Promise<void> {
      * optional and it starts last; a dynamic import keeps it out of the way.
      */
     ['mcp', async () => (await import('./services/mcp/server.js')).startMcp()],
+    // The local API, for the same reason and with the same switch behaviour:
+    // imported here, and only listening if somebody turned it on. Before the
+    // Stream Deck step, whose alias pipe points an installed plugin at this
+    // one while it runs.
+    ['local api', async () => (await import('./services/localApi/index.js')).initLocalApi()],
     // Dynamically imported for the same reason as the MCP server above, and
-    // only listening if somebody switched it on.
+    // only listening if somebody switched it on. The fixed alias pipe an older
+    // plugin falls back to; the local API above is the way in for everything new.
     ['stream deck', async () => (await import('./services/streamdeck/server.js')).startStreamDeck()],
   ];
 

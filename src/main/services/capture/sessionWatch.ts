@@ -253,15 +253,11 @@ async function sweepSession(session: EndedSession): Promise<void> {
 
 /** The work itself, as a job, so it has progress, an ETA and a way to stop. */
 async function readClips(clips: Clip[], game: string): Promise<void> {
-  const { dismissPeek, showSweepFinished, showSweepStarted } = await import(
-    '../notch/index.js'
-  );
-
   const job = createJob('analyze', `Looking for GoodBits in ${clips.length} ${game} clips`);
   const signal = jobSignal(job.id);
   const started = Date.now();
 
-  await showSweepStarted(clips.length, game, CARD_MAX_MS);
+  announce({ type: 'sweep-started', clips: clips.length, game, lingerMs: CARD_MAX_MS });
 
   let done = 0;
   let found = 0;
@@ -319,7 +315,7 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   if (signal?.aborted) {
     failJob(job.id, 'cancelled');
-    dismissPeek();
+    announce({ type: 'sweep-dismissed' });
     console.log(`[sweep] stopped after ${done}/${clips.length} clips`);
     return;
   }
@@ -335,6 +331,6 @@ async function readClips(clips: Clip[], game: string): Promise<void> {
    * was worth drawing because it says why the machine is busy; this half is
    * only worth drawing when it resolves into something.
    */
-  if (found > 0) await showSweepFinished(found, clips.length, withMoments);
-  else dismissPeek();
+  if (found > 0) announce({ type: 'sweep-finished', found, clips: clips.length, clipIds: withMoments });
+  else announce({ type: 'sweep-dismissed' });
 }
