@@ -56,6 +56,8 @@ node scripts/compress-check.mjs   # squeeze a real recording and read back what 
 node scripts/publisher-views-check.mjs  # run the real publisher and see what it counts
 node scripts/discord-webhook-check.mjs  # run the publisher against a fake Discord and read what it sent
 node scripts/streamdeck-check.mjs  # start the app with the Stream Deck server on and knock on its door
+node scripts/local-api-check.mjs   # the local API on a throw-away profile: no TCP port, random pipe, who owns it, saving then saved
+node scripts/local-api-check.mjs --attach   # read only against the running app: hello, state, ten seconds of events, one thumbnail
 node scripts/export-check.mjs   # render a short movie with a dissolve and read back what landed
 node scripts/ux-seed.mjs     # a throw-away library to drive the app against
 node scripts/ux-session.mjs  # replay a list of actions and screenshot every step
@@ -581,8 +583,16 @@ in Settings, Recording.
   writes it from `clipToast` (`settleNotchSetting`), so somebody who had turned the card off is not
   handed a line. `src/shared/notchSettings.ts` is the one place the combinations are worked out, for
   main and for the settings screen; `tests/unit` owns it, the hover timing and the placement.
-- **Buttons without a bridge.** The page stays sandboxed with no preload; a button navigates to
-  `https://notch.invalid/<action>` and main cancels it in `will-navigate`.
+- **Buttons go through a small bridge, and main checks who rang.** The page has its own preload
+  (`notch.mjs`, `contextIsolation` on, `nodeIntegration` off; an ESM preload cannot run sandboxed),
+  which sends `notch:action` and `notch:tile`. Main answers only when `event.sender` is the notch's
+  own `webContents`, and the page navigates nowhere: `will-navigate` is cancelled and every new
+  window denied.
+- **The island can throw the latest clip away.** A square bin beside Open GoodBit grows over it into
+  "Delete this clip", with a way back, and the second press sends the file to the Recycle Bin through
+  `BatchDeleteAction`, the same deleter the library uses. It is asked on the island because the
+  notch has no window to put a dialog in, and asked at all because the file comes back from the Bin
+  and the row, with its name, tags and marks, does not. Trim never moves while it is open.
 
 - **Two states, one card.** "Saving your clip" the instant a file appears in staging, becoming
   "Clip saved · Game · 0:30" once the row exists. The wait is the reason the feature exists, so the
@@ -596,14 +606,15 @@ in Settings, Recording.
   *now*, and the whole reason attribution is a vote over the clip's own window is that the instant
   reading is usually wrong. A guess the second card contradicts is worse than no guess.
 - **Nothing about it may disturb a game.** `focusable: false` and `showInactive()`, so it can never
-  alt-tab somebody out of a firefight; `setIgnoreMouseEvents(true)`, so a click cannot be eaten; the
+  alt-tab somebody out of a firefight; `setIgnoreMouseEvents(true)` at rest, so a click on the tabs
+underneath cannot be eaten (it is switched off only while the pointer is over something drawn); the
   `'screen-saver'` always-on-top level, because plain `alwaysOnTop` loses to a maximised game; and
   it opens on the display the pointer is on, which is the one being played on.
 - **Opaque card, transparent window.** At 92% the button behind it bled through and read as a
-  control of ours. Only the frame around the card is transparent, and only so the shadow and the
-  rounded corners have somewhere to fall. The shadow's offset plus blur must stay inside `BLEED` or
-  the window edge cuts it off in a straight line, and `MARGIN` must be at least `BLEED` or Windows
-  shoves the window back on screen and moves the card with it.
+  control of ours. The window is a fixed stage (`NOTCH_STAGE` in `src/shared/notch.ts`), wide
+  enough for the island and a wing either side, and everything on it that is not a shape is
+  transparent and click-through. Windows' own shadow is off (`hasShadow: false`); the shadows are
+  drawn by the page, inside the stage, so the window edge has nothing to cut off.
 - **Latency is the product, so both costs were paid up front.** The announce watch is a raw
   `fs.watch` rather than chokidar, which normalises events and stats every path, and the window is
   built during boot rather than on first use. Measured 4 ms from the filesystem event to the card,
@@ -615,8 +626,9 @@ in Settings, Recording.
   is fine. The Settings text says so.
 
 Both windows are real, so **`BrowserWindow.getAllWindows()[0]` is no longer the app**, and neither
-is Playwright's `firstWindow()`. `tests/e2e/app.ts` and `window-state.spec.ts` pick the window whose
-URL is not a `data:` one. Ten tests across six specs failed at once when that was missed.
+is Playwright's `firstWindow()`. The notch is `notch.html` in the renderer bundle, so
+`tests/e2e/app.ts` and `window-state.spec.ts` pick the window whose URL is neither a `data:` one nor
+`notch.html`. Ten tests across six specs failed at once when that was missed.
 
 ### The notch's wings
 
@@ -727,6 +739,79 @@ another Windows account cannot write to the pipe rests on the default descriptor
   by `build:win`); `shell.openPath` hands it to the Stream Deck app, and GoodBit then writes which
   pipe to use into the installed plugin's own `connection.json`, rewritten whenever the server
   starts. There is nothing secret in it, and nothing for anybody to paste.
+
+### A local API, on a named pipe
+
+`src/main/services/localApi/`, with the contract in `src/shared/localApi.ts`. It is what lets any
+other program on this PC, a status bar, a PowerShell script, a deck, follow what GoodBit is doing
+and act on the clip you just saved, without GoodBit knowing who it is. **Off until somebody turns it
+on**, in Settings, Connections, "Other apps on this PC", with "Allow deleting clips" under it, also
+off. The card shows where the discovery file is and a Copy button, and nothing else: there is no
+address and no token to show.
+
+- **HTTP/1.1 over a named pipe whose name is random per launch.** `\\.\pipe\goodbit-api-<uuid>`,
+  found by reading `local-api.json` in the data directory, which is written last (so a client that
+  finds it can connect) and removed first at stop and quit. A crash leaves it, and the pid inside is
+  how a client tells a file from a running app. `GET /v1/events` never ends and carries NDJSON;
+  everything else is one request and one reply. The contract is versioned in the path and additive
+  within a major: a client ignores what it does not know.
+- **The client always speaks first.** The default pipe descriptor lets everybody read, which is only
+  harmless because HTTP never writes before it is asked. Any protocol added to this pipe has to keep
+  that property, or it leaks state to other accounts.
+- **Threat model, honestly.** The pipe keeps out everything that is not a program running as this
+  Windows user: web pages, because a browser cannot open a named pipe; other machines, because
+  nothing offers the pipe to the network; and other accounts on this PC, because the default
+  descriptor lets only the creating user, administrators and SYSTEM write, and a name that is new at
+  every launch cannot be squatted or learned in advance. **It does not keep out anything running as
+  you.** Any program you start can read `local-api.json`, open the pipe, and star, tag, publish,
+  open GoodBit's windows or launch a game, and with "Allow deleting clips" on, send your latest clip
+  to the Recycle Bin. That is the same exposure as the Stream Deck server and less than
+  `goodbit.db`, which the same program could open directly. **The session rule is not a lock against
+  a hostile client**: it stops a confused one acting on something it never saw, and a hostile one
+  runs as you and can simply open a session.
+- **An id is accepted only if GoodBit sent it on that session.** The session comes from
+  `GET /v1/events` or `GET /v1/state` and is carried in a `GoodBit-Session` header; a tag name
+  follows the same rule, and tagging only adds. It is the notch's "only ids it drew" rule made to
+  work for any client, and `SessionSeen` is a pure class in `src/shared` so `tests/unit` owns it
+  with no pipe and no clock.
+- **Capabilities follow the settings, and absent means refused.** `hello` lists what is on right
+  now: no publisher means no `clips.publish`, "Allow deleting clips" off means no `clips.discard`.
+  A client draws what it is offered, so a capability that is off is missing rather than refused
+  later; the 403 is the backstop, and is checked before the session so that a switched off route
+  never reveals whether a session is any good.
+- **Discard keeps the Stream Deck's three locks and adds two.** Its own setting, `confirm: true`,
+  and `discardableFromAKey`, which keeps a clip carrying anything that exists only in GoodBit; plus
+  the clip must still be the latest (409 `latest_changed`) and nothing may be arriving in staging
+  (409 `saving`). The file goes through `BatchDeleteAction`. A refusal for what a clip carries is a
+  403, because no 409 code fits.
+- **One latest, defined once.** Not an export, newest by `COALESCE(recordedAt, fileModifiedAt)` and
+  then id (`LATEST_CLIP_ORDER`). It used to be three definitions, the Stream Deck's, the island's
+  and the wings', which is how a key and a card named different clips.
+- **State is whole sections, never a field.** A snapshot is fifteen named sections, and a `state`
+  line replaces whole ones, so a client can never hold half of one. Events are moments, not state:
+  a dropped connection loses events and never state, because the reconnect starts with a snapshot.
+  `SECTION_NAMES` is the one list, and `scripts/local-api-check.mjs` fails if a snapshot parses none
+  of them, since an empty walk and a clean one look the same.
+- **The notch is a client of the same events, not the owner of them.** Saving, saved and the sweep's
+  three moments are `ServiceEvent`s that the notch subscribes to instead of being called, so the API
+  keeps working with the notch off, which is how it is meant to be run.
+- **Pictures travel as bytes over the pipe, never as a URL or a path.** `GET
+  /v1/clips/{id}/thumbnail?w=` resizes to 160, 320 or 640 so a client never decodes the 1280 cache
+  file, and a new cut is a new `modifiedAt` and so a new picture. Game art is Steam's local artwork,
+  for display on this machine and never uploaded; the appid always comes from the `Game` row.
+- **The Stream Deck keeps its routes and its alias.** Its group is served only while its own switch
+  is on, under the old paths and rules, and the fixed `goodbit-streamdeck` pipe stays until a plugin
+  that reads `connection.json` for the random name is the only one in use. `localApiEnabled` is
+  written from `streamDeckEnabled` on the first boot that finds it unset (`settleLocalApiSetting`),
+  so somebody who had already let a program in is not asked twice.
+- **Left out on purpose**: saving a replay (the key works in the game, and it sends a keypress to
+  the foreground window), renaming, notes and trims.
+- `tests/unit` owns the contract and the pure rules, `tests/e2e/local-api.spec.ts` drives the real
+  pipe from the test process, and `scripts/local-api-check.mjs` proves what a spec cannot: no TCP
+  listener (Playwright's own launcher opens two inspector ports, so the bench starts the app itself),
+  a random name, and that the process owning the pipe is the one the discovery file names, read off
+  the handle with `GetNamedPipeServerProcessId`. Its `--attach` mode is read only, for the running
+  app.
 
 ### Steam, off the local disk
 
