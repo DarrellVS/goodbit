@@ -410,6 +410,27 @@ export const SETTINGS_CATALOG: readonly SettingEntry[] = [
 
   // Connections
   {
+    label: 'Other apps on this PC',
+    description:
+      'A status bar, a script or a deck can read what GoodBit is doing and star, tag or publish the clip you just saved, over a private connection only this Windows account can use.',
+    section: 'connections',
+    keywords: ['api', 'local', 'pipe', 'script', 'powershell', 'status bar', 'integration', 'programs', 'apps'],
+  },
+  {
+    label: 'Let other apps reach this library',
+    description: 'Off until you turn it on.',
+    section: 'connections',
+    keywords: ['api', 'local', 'pipe', 'server', 'connection', 'listening'],
+    shownWhen: 'always, in the Other apps block',
+  },
+  {
+    label: 'Allow deleting clips',
+    description: 'A connected app may send the latest clip to the Recycle Bin. Clips you tagged, starred or wrote a note on are kept.',
+    section: 'connections',
+    keywords: ['api', 'local', 'discard', 'delete', 'trash', 'recycle bin'],
+    shownWhen: 'Let other apps reach this library is on',
+  },
+  {
     label: 'Stream Deck',
     description:
       "Keys that save the replay, tag, publish or throw away the clip you just saved, and show today's count, without leaving the game. Install the plugin from here.",

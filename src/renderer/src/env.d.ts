@@ -48,6 +48,14 @@ interface GoodBitBridge {
     }>;
   }>;
   mcpEnable: (enabled: boolean) => Promise<{ ok: boolean }>;
+  localApiState: () => Promise<{
+    enabled: boolean;
+    running: boolean;
+    allowDiscard: boolean;
+    discoveryPath: string;
+  }>;
+  localApiEnable: (enabled: boolean) => Promise<{ ok: boolean; running: boolean }>;
+  localApiAllowDiscard: (allow: boolean) => Promise<{ ok: boolean }>;
   streamDeckState: () => Promise<{
     enabled: boolean;
     running: boolean;
@@ -157,6 +165,8 @@ interface AppSettingsWire {
   mcpToken?: string;
   streamDeckEnabled?: boolean;
   streamDeckAllowDiscard?: boolean;
+  localApiEnabled?: boolean;
+  localApiAllowDiscard?: boolean;
   migratedFromWebApp: boolean;
   /** The app version that last booted against this database. Main's, not the window's. */
   schemaVersion?: string;

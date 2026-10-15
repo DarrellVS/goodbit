@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue';
 import SettingToggle from './SettingToggle.vue';
 import PublisherCard from './PublisherCard.vue';
 import StreamDeckCard from './StreamDeckCard.vue';
+import LocalApiCard from './LocalApiCard.vue';
 import { useToastStore } from '@renderer/stores/toast';
 import { useSettingsSearch } from '@renderer/composables/settings/useSettingsSearch';
 import BaseButton from '@renderer/components/Base/BaseButton.vue';
@@ -131,7 +132,7 @@ Authorization: Bearer ${state.value.token}`,
   <section class="settings-page">
     <div class="pb-2">
       <h2 class="font-display text-[28px] leading-tight font-medium text-foreground">Connections</h2>
-      <p class="mt-2 text-muted-500">Publishing, Claude and Stream Deck. All optional.</p>
+      <p class="mt-2 text-muted-500">Publishing, Claude, other apps on this PC and Stream Deck. All optional.</p>
     </div>
 
     <PublisherCard />
@@ -199,6 +200,8 @@ Authorization: Bearer ${state.value.token}`,
         </p>
       </template>
     </div>
+
+    <LocalApiCard />
 
     <StreamDeckCard />
   </section>
