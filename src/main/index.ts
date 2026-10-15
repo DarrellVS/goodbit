@@ -366,6 +366,9 @@ app.whenReady().then(async () => {
   // The notch's buttons open the window on a route, the way the tray does.
   const { setNotchOpener } = await import('./services/notch/index.js');
   setNotchOpener(openIn);
+  // `POST /v1/app/show` opens the window on a route the same way.
+  const { setShowInAppOpener } = await import('./actions/ShowInAppAction.js');
+  setShowInAppOpener(openIn);
   applyLoginItem();
   registerProtocolClient();
   // The menu quotes the library and two settings, so it follows both.
@@ -405,4 +408,7 @@ app.on('before-quit', () => {
   // A share is only ever meant to outlive the sheet that started it, not the app.
   shareService.stop();
   void stopApiBridge();
+  // The discovery file goes first, so a client reading it now finds nothing
+  // rather than a pipe that is about to close.
+  void import('./services/localApi/index.js').then((localApi) => localApi.stopLocalApi());
 });

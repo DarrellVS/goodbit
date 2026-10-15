@@ -69,6 +69,7 @@ import {
   type NotchWings,
 } from '@shared/notch.js';
 import { loadSettings, onSettingsChange, saveSettings } from '../../settings.js';
+import { onServiceEvent } from '../../startup.js';
 import {
   IDLE,
   POLL_MS,
@@ -82,7 +83,7 @@ import {
   type WingHover,
 } from './hover.js';
 import { hanging, stageToScreen, windowBounds } from './placement.js';
-import { islandData, libraryDisk, lineState, type Disk } from './status.js';
+import { clipLength, islandData, libraryDisk, lineState, type Disk } from './status.js';
 import { pressTile, readTiles, type ShareState, type TileRead } from './wings.js';
 
 /**
@@ -746,6 +747,29 @@ export async function warmNotch(): Promise<void> {
     const history = await import('../capture/foregroundHistory.js');
     fullscreen = history.foregroundIsFullscreen();
     detachers.push(
+      // The card follows the service's own events rather than being called by
+      // whoever happens to know a clip arrived, so anything else can listen too.
+      onServiceEvent((event) => {
+        switch (event.type) {
+          case 'clip-saving':
+            void showClipSaving();
+            break;
+          case 'clip-saved': {
+            const length = event.durationSec ? ` · ${clipLength(event.durationSec)}` : '';
+            void showClipSaved(`${event.game}${length}`);
+            break;
+          }
+          case 'sweep-started':
+            void showSweepStarted(event.clips, event.game, event.lingerMs);
+            break;
+          case 'sweep-finished':
+            void showSweepFinished(event.found, event.clips, event.clipIds);
+            break;
+          case 'sweep-dismissed':
+            dismissPeek();
+            break;
+        }
+      }),
       onSettingsChange(() => applySettings()),
       history.onFullscreenChange((now) => {
         fullscreen = now;

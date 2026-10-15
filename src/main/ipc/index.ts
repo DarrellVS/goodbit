@@ -128,6 +128,33 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     };
   });
 
+  /**
+   * The local API: what the Connections card shows. The pipe name is random per
+   * launch and is deliberately not returned, only where to find it.
+   */
+  ipcMain.handle('localApi:state', async () => {
+    const { localApiRunning } = await import('../services/localApi/index.js');
+    const { discoveryPath } = await import('../services/localApi/discovery.js');
+    const settings = loadSettings();
+    return {
+      enabled: settings.localApiEnabled === true,
+      running: localApiRunning(),
+      allowDiscard: settings.localApiAllowDiscard === true,
+      discoveryPath: discoveryPath(),
+    };
+  });
+
+  ipcMain.handle('localApi:enable', async (_event, enabled: boolean) => {
+    const { setLocalApiEnabled } = await import('../services/localApi/index.js');
+    return { ok: true, running: await setLocalApiEnabled(enabled === true) };
+  });
+
+  /** Takes effect on the next request: capabilities are read from settings each time. */
+  ipcMain.handle('localApi:allowDiscard', async (_event, allow: boolean) => {
+    saveSettings({ localApiAllowDiscard: allow === true });
+    return { ok: true };
+  });
+
   ipcMain.handle('streamdeck:state', async () => {
     const { streamDeckRunning, streamDeckPipe } = await import(
       '../services/streamdeck/server.js'
@@ -145,7 +172,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   ipcMain.handle('streamdeck:installPlugin', async () => {
     const { streamDeckPipe } = await import('../services/streamdeck/server.js');
-    return installPlugin(() => ({ pipe: streamDeckPipe() }));
+    const { localApiPipe } = await import('../services/localApi/index.js');
+    return installPlugin(() => ({ pipe: localApiPipe() ?? streamDeckPipe() }));
   });
 
   ipcMain.handle('streamdeck:enable', async (_event, enabled: boolean) => {
